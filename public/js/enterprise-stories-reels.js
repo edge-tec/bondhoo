@@ -1202,6 +1202,27 @@ const JugajugMediaSuite = {
             photoTab?.classList.remove('active');
             if (photoSection) photoSection.style.display = 'none';
             if (textSection) textSection.style.display = 'block';
+            this.updateStoryTextPreview();
+        }
+    },
+
+    setStoryBgPreset(gradient, dotEl) {
+        const select = document.getElementById('storyTextBgPreset');
+        if (select) select.value = gradient;
+        document.querySelectorAll('.story-palette-dot').forEach(d => d.classList.remove('active'));
+        if (dotEl) dotEl.classList.add('active');
+        this.updateStoryTextPreview();
+    },
+
+    updateStoryTextPreview() {
+        const card = document.getElementById('storyTextPreviewCard');
+        const text = document.getElementById('storyTextContent')?.value || 'আপনার মনের কথা এখানে লিখুন...';
+        const bg = document.getElementById('storyTextBgPreset')?.value || 'linear-gradient(135deg, #1877f2, #00c6ff)';
+        const font = document.getElementById('storyFontFamilySelect')?.value || 'Hind Siliguri, sans-serif';
+        if (card) {
+            card.style.background = bg;
+            card.style.fontFamily = font;
+            card.innerText = text;
         }
     },
 
@@ -1219,6 +1240,9 @@ const JugajugMediaSuite = {
         if (musicBadge) musicBadge.style.display = 'none';
         const pollContainer = document.getElementById('storyPollFieldsBox');
         if (pollContainer) pollContainer.style.display = 'none';
+        const textContent = document.getElementById('storyTextContent');
+        if (textContent) textContent.value = '';
+        this.switchCreateStoryTab('photo');
     },
 
     handleStoryFileSelect(e) {
@@ -1302,10 +1326,20 @@ const JugajugMediaSuite = {
                 <div class="multi-media-item">
                     ${isVid ? `<video src="${url}" muted playsinline></video>` : `<img src="${url}">`}
                     <span class="multi-media-type-badge">${badgeText} (${sizeMb}M)</span>
-                    <button type="button" class="multi-media-remove" onclick="JugajugMediaSuite.removeStoryFile(${idx})">✕</button>
+                    <button type="button" class="multi-media-remove" onclick="JugajugMediaSuite.removeStoryFile(${idx})" title="মুছে ফেলুন">✕</button>
                 </div>
             `;
         });
+
+        if (this.selectedStoryFiles.length < 10) {
+            html += `
+                <div class="multi-media-item" onclick="document.getElementById('storyMediaFileInput')?.click()" style="display:flex; flex-direction:column; align-items:center; justify-content:center; border:2px dashed #94a3b8; border-radius:12px; cursor:pointer; background:rgba(241,245,249,0.7); min-height:100px;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span style="font-size:11px; font-weight:700; color:#64748b; margin-top:4px;">আরও যোগ</span>
+                </div>
+            `;
+        }
+
         grid.innerHTML = html;
     },
 
@@ -2437,6 +2471,9 @@ const JugajugMediaSuite = {
         this.reelMusicVolume = 0.75;
         this.reelMusicStartOffset = 0;
 
+        const studioLayout = document.querySelector('.reel-studio-layout');
+        if (studioLayout) studioLayout.classList.remove('has-media');
+
         const video = document.getElementById('reelStudioPreviewVideo');
         if (video) {
             video.src = '';
@@ -2455,6 +2492,11 @@ const JugajugMediaSuite = {
         document.querySelectorAll('.reel-step-pill').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.step === step);
         });
+
+        const activeBtn = document.querySelector(`.reel-step-pill[data-step="${step}"]`);
+        if (activeBtn) {
+            activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
 
         const panelMedia = document.getElementById('reelStudioStep_media');
         const panelEditor = document.getElementById('reelStudioStep_editor');
@@ -2481,6 +2523,9 @@ const JugajugMediaSuite = {
 
         this.selectedReelFile = file;
         this.reelVideoUrl = URL.createObjectURL(file);
+
+        const studioLayout = document.querySelector('.reel-studio-layout');
+        if (studioLayout) studioLayout.classList.add('has-media');
 
         const video = document.getElementById('reelStudioPreviewVideo');
         if (video) {

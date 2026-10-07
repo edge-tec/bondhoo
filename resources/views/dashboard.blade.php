@@ -1998,34 +1998,83 @@
     <!-- =========================================================================
          ENTERPRISE CREATE STORY MODAL (PHOTO/VIDEO RESUMABLE + TEXT + MUSIC + POLL)
          ========================================================================= -->
-    <div class="modal-overlay" id="createStoryModalV2" style="display: none;">
-        <div class="modal-box" style="max-width: 540px;">
-            <div class="modal-header">
-                <span class="modal-title">নতুন স্টোরি প্রকাশ করুন</span>
-                <button type="button" class="modal-close" onclick="JugajugMediaSuite.closeCreateStoryModal()">✕</button>
+    <!-- =========================================================================
+         ENTERPRISE CREATE STORY MODAL (PHOTO/VIDEO RESUMABLE + TEXT + MUSIC + POLL)
+         ========================================================================= -->
+    <div class="modal-overlay" id="createStoryModalV2" style="display: none; z-index: 99999;">
+        <div class="modal-box" style="max-width: 520px;">
+            <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #e2e8f0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="story-modal-brand-badge">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
+                    </span>
+                    <div>
+                        <div class="modal-title" style="font-size: 16px; font-weight: 800; color: #0f172a; line-height: 1.2;">নতুন স্টোরি প্রকাশ করুন</div>
+                        <div style="font-size: 11px; color: #64748b;">২৪ ঘণ্টার জন্য বন্ধুদের সাথে শেয়ার করুন</div>
+                    </div>
+                </div>
+                <button type="button" class="modal-close" onclick="JugajugMediaSuite.closeCreateStoryModal()" title="বন্ধ করুন">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
-            <div class="modal-body">
-                <!-- Tab Selector: Photo/Video vs Text -->
-                <div style="display: flex; gap: 8px; margin-bottom: 14px;">
-                    <button type="button" class="sr-tab-btn active" id="cstTabPhoto" onclick="JugajugMediaSuite.switchCreateStoryTab('photo')">📸 ছবি / ভিডিও স্টোরি</button>
-                    <button type="button" class="sr-tab-btn" id="cstTabText" onclick="JugajugMediaSuite.switchCreateStoryTab('text')">✍️ টেক্সট স্টোরি</button>
+            <div class="modal-body" style="padding: 16px;">
+                <!-- Tab Selector: Photo/Video vs Text with Modern SVG Icons -->
+                <div class="story-segmented-tabs">
+                    <button type="button" class="story-tab-pill active" id="cstTabPhoto" onclick="JugajugMediaSuite.switchCreateStoryTab('photo')">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span>ছবি বা ভিডিও স্টোরি</span>
+                    </button>
+                    <button type="button" class="story-tab-pill" id="cstTabText" onclick="JugajugMediaSuite.switchCreateStoryTab('text')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        <span>কালারফুল টেক্সট স্টোরি</span>
+                    </button>
                 </div>
 
                 <!-- SECTION 1: PHOTO / VIDEO UPLOAD -->
                 <div id="cstPhotoSection">
-                    <div style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 22px; text-align: center; cursor: pointer; background: #f8fafc; transition: border-color 0.2s;" onclick="document.getElementById('storyMediaFileInput').click()">
-                        <div style="font-size: 38px; margin-bottom: 6px;">📁</div>
-                        <div style="font-weight: 700; color: #1e293b; font-size: 15px;">ছবি বা ভিডিও নির্বাচন করুন (একাধিক নির্বাচনযোগ্য)</div>
-                        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Photo, Video, Reel-Style Vertical Video (JPEG, PNG, WebP, MP4, WebM, MOV)</div>
+                    <div class="story-upload-dropzone" onclick="document.getElementById('storyMediaFileInput').click()">
+                        <div class="story-dropzone-icon-circle">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <div class="story-dropzone-title">ছবি বা ভিডিও নির্বাচন করুন বা ড্র্যাগ করুন</div>
+                        <div class="story-dropzone-subtitle">Photo, Video, Reel-Style Vertical 9:16 (JPEG, PNG, WebP, MP4, WebM, MOV)</div>
+                        <div class="story-dropzone-badges">
+                            <span class="story-badge-pill">🖼️ হাই-কোয়ালিটি ফটো</span>
+                            <span class="story-badge-pill">🎬 ৬০ সে. ভিডিও</span>
+                            <span class="story-badge-pill">📱 ফুলস্ক্রিন ৯:১৬</span>
+                        </div>
                         <input type="file" id="storyMediaFileInput" accept="image/*,video/*" multiple style="display: none;" onchange="JugajugMediaSuite.handleStoryFileSelect(event)">
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button type="button" class="btn-fb-primary" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: #e7f3ff; color: #1877f2; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;" onclick="document.getElementById('storyMediaFileInput').click()">
-                            📁 ফাইল ব্রাউজ করুন
+                    <!-- Action Buttons -->
+                    <div class="story-actions-row">
+                        <button type="button" class="story-action-btn story-btn-browse" onclick="document.getElementById('storyMediaFileInput').click()">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>ফাইল ব্রাউজ করুন</span>
                         </button>
-                        <button type="button" class="btn-fb-primary" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: #fdf2f8; color: #db2777; border: 1px solid #fbcfe8; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;" onclick="JugajugMediaSuite.startStoryCameraCapture()">
-                            📷 ক্যামেরা দিয়ে তুলুন
+                        <button type="button" class="story-action-btn story-btn-camera" onclick="JugajugMediaSuite.startStoryCameraCapture()">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                            <span>ক্যামেরা দিয়ে তুলুন</span>
                         </button>
                     </div>
 
@@ -2033,27 +2082,41 @@
                     <div id="storyMultiMediaGrid" class="multi-media-grid" style="display: none;"></div>
 
                     <div style="margin-top: 14px;">
-                        <input type="text" id="storyPhotoCaption" class="modal-input" placeholder="ক্যাপশন লিখুন (ঐচ্ছিক)..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px;">
+                        <input type="text" id="storyPhotoCaption" class="modal-input" placeholder="ক্যাপশন লিখুন (ঐচ্ছিক)..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; font-size: 13.5px;">
                     </div>
                 </div>
 
                 <!-- SECTION 2: TEXT STORY -->
                 <div id="cstTextSection" style="display: none;">
+                    <!-- Live Text Preview Card -->
+                    <div id="storyTextPreviewCard" class="story-text-preview-card" style="background: linear-gradient(135deg, #1877f2, #00c6ff); font-family: 'Hind Siliguri', sans-serif;">
+                        আপনার চিন্তাভাবনা লিখুন...
+                    </div>
+
+                    <!-- Color Swatches Bar -->
                     <div style="margin-bottom: 12px;">
-                        <label style="font-size: 13px; font-weight: 700; display: block; margin-bottom: 6px;">ব্যাকগ্রাউন্ড থিম:</label>
-                        <select id="storyTextBgPreset" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px;">
-                            <option value="linear-gradient(135deg, #1877f2, #00c6ff)">নীল গ্রেডিয়েন্ট (Classic Blue)</option>
-                            <option value="linear-gradient(135deg, #ff416c, #ff4b2b)">সানসেট প্যাশন (Sunset)</option>
-                            <option value="linear-gradient(135deg, #11998e, #38ef7d)">এমেরাল্ড গ্লো (Emerald)</option>
-                            <option value="linear-gradient(135deg, #8a2387, #e94057, #f27121)">মেটাবলিক ভাইব্রেন্ট</option>
-                            <option value="linear-gradient(135deg, #4facfe, #00f2fe)">আকাশী সমুদ্র (Sky Ocean)</option>
-                            <option value="#0f172a">ডিপ মিডনাইট স্লেট (Slate)</option>
+                        <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">ব্যাকগ্রাউন্ড থিম নির্বাচন:</label>
+                        <div class="story-color-palette" id="storyPaletteDotsContainer">
+                            <span class="story-palette-dot active" style="background: linear-gradient(135deg, #1877f2, #00c6ff);" onclick="JugajugMediaSuite.setStoryBgPreset('linear-gradient(135deg, #1877f2, #00c6ff)', this)" title="Classic Blue"></span>
+                            <span class="story-palette-dot" style="background: linear-gradient(135deg, #ff416c, #ff4b2b);" onclick="JugajugMediaSuite.setStoryBgPreset('linear-gradient(135deg, #ff416c, #ff4b2b)', this)" title="Sunset Passion"></span>
+                            <span class="story-palette-dot" style="background: linear-gradient(135deg, #11998e, #38ef7d);" onclick="JugajugMediaSuite.setStoryBgPreset('linear-gradient(135deg, #11998e, #38ef7d)', this)" title="Emerald Glow"></span>
+                            <span class="story-palette-dot" style="background: linear-gradient(135deg, #8a2387, #e94057, #f27121);" onclick="JugajugMediaSuite.setStoryBgPreset('linear-gradient(135deg, #8a2387, #e94057, #f27121)', this)" title="Vibrant Glow"></span>
+                            <span class="story-palette-dot" style="background: linear-gradient(135deg, #4facfe, #00f2fe);" onclick="JugajugMediaSuite.setStoryBgPreset('linear-gradient(135deg, #4facfe, #00f2fe)', this)" title="Sky Ocean"></span>
+                            <span class="story-palette-dot" style="background: #0f172a;" onclick="JugajugMediaSuite.setStoryBgPreset('#0f172a', this)" title="Midnight Slate"></span>
+                        </div>
+                        <select id="storyTextBgPreset" style="display: none;">
+                            <option value="linear-gradient(135deg, #1877f2, #00c6ff)">Classic Blue</option>
+                            <option value="linear-gradient(135deg, #ff416c, #ff4b2b)">Sunset Passion</option>
+                            <option value="linear-gradient(135deg, #11998e, #38ef7d)">Emerald Glow</option>
+                            <option value="linear-gradient(135deg, #8a2387, #e94057, #f27121)">Vibrant Glow</option>
+                            <option value="linear-gradient(135deg, #4facfe, #00f2fe)">Sky Ocean</option>
+                            <option value="#0f172a">Midnight Slate</option>
                         </select>
                     </div>
 
                     <div style="margin-bottom: 12px;">
-                        <label style="font-size: 13px; font-weight: 700; display: block; margin-bottom: 6px;">ফন্ট স্টাইল:</label>
-                        <select id="storyFontFamilySelect" style="width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">ফন্ট স্টাইল:</label>
+                        <select id="storyFontFamilySelect" style="width: 100%; height: 40px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0 12px; font-size: 13px;" onchange="JugajugMediaSuite.updateStoryTextPreview()">
                             <option value="Hind Siliguri, sans-serif">হিন্দ শিলিগুড়ি (Bangla Clean)</option>
                             <option value="Inter, sans-serif">ইন্টার (Modern Clean)</option>
                             <option value="Georgia, serif">জর্জিয়া (Editorial Serif)</option>
@@ -2061,39 +2124,58 @@
                         </select>
                     </div>
 
-                    <textarea id="storyTextContent" class="modal-textarea" placeholder="আপনার স্টোরিতে কী লিখতে চান?" style="height: 120px; font-size: 16px;"></textarea>
+                    <textarea id="storyTextContent" class="modal-textarea" placeholder="আপনার স্টোরিতে কী লিখতে চান?" style="height: 100px; font-size: 15px; border-radius: 10px;" oninput="JugajugMediaSuite.updateStoryTextPreview()"></textarea>
                 </div>
 
-                <!-- ADD-ONS: MUSIC & INTERACTIVE POLL -->
+                <!-- ADD-ONS: MUSIC & INTERACTIVE POLL (WITH CLEAN SVG ICONS) -->
                 <div style="margin-top: 14px; border-top: 1px solid #f1f5f9; padding-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button type="button" class="btn-fb-primary" style="background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;" onclick="JugajugMusicSuite.openModal('story')">
-                        🎵 ব্যাকগ্রাউন্ড মিউজিক
+                    <button type="button" class="story-addon-chip" onclick="JugajugMusicSuite.openModal('story')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 18V5l12-2v13"></path>
+                            <circle cx="6" cy="18" r="3"></circle>
+                            <circle cx="18" cy="16" r="3"></circle>
+                        </svg>
+                        <span>ব্যাকগ্রাউন্ড মিউজিক</span>
                     </button>
-                    <button type="button" style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #475569;" onclick="JugajugMediaSuite.toggleStoryPoll()">
-                        📊 পোল স্টিকার
+                    <button type="button" class="story-addon-chip" onclick="JugajugMediaSuite.toggleStoryPoll()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                        <span>পোল স্টিকার</span>
                     </button>
                 </div>
 
                 <!-- Attached Music Badge for Story -->
-                <div id="storyAttachedMusicBadge" style="display: none; align-items: center; justify-content: space-between; background: #e0f2fe; border: 1px solid #bae6fd; padding: 8px 12px; border-radius: 8px; margin-top: 8px; font-size: 12px; font-weight: 600; color: #0369a1;">
-                    <span id="storyAttachedMusicTitle">🎵 ব্যাকগ্রাউন্ড মিউজিক</span>
+                <div id="storyAttachedMusicBadge" style="display: none; align-items: center; justify-content: space-between; background: #e0f2fe; border: 1px solid #bae6fd; padding: 8px 12px; border-radius: 10px; margin-top: 8px; font-size: 12.5px; font-weight: 600; color: #0369a1;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <span id="storyAttachedMusicTitle">ব্যাকগ্রাউন্ড মিউজিক</span>
+                    </div>
                     <button type="button" style="background: none; border: none; color: #ef4444; font-weight: 700; cursor: pointer;" onclick="JugajugMediaSuite.removeStoryMusic()">✕ মুছুন</button>
                 </div>
 
                 <!-- Interactive Poll Form -->
-                <div id="storyPollFieldsBox" style="display: none; margin-top: 10px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-                    <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">📊 ইন্টারেক্টিভ পোল কনফিগার করুন:</div>
-                    <input type="text" id="storyPollQuestionInput" class="modal-input" placeholder="পোলের প্রশ্ন লিখুন (যেমন: আপনার প্রিয় রঙ কোনটি?)..." style="margin-bottom: 8px; font-size: 13px;">
+                <div id="storyPollFieldsBox" style="display: none; margin-top: 10px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                    <div style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        <span>ইন্টারেক্টিভ পোল কনফিগার করুন</span>
+                    </div>
+                    <input type="text" id="storyPollQuestionInput" class="modal-input" placeholder="পোলের প্রশ্ন লিখুন (যেমন: আপনার প্রিয় রঙ কোনটি?)..." style="margin-bottom: 8px; font-size: 13px; border-radius: 8px;">
                     <div style="display: flex; gap: 8px;">
-                        <input type="text" id="storyPollOpt1Input" class="modal-input" placeholder="অপশন ১ (যেমন: নীল)" style="font-size: 12px;">
-                        <input type="text" id="storyPollOpt2Input" class="modal-input" placeholder="অপশন ২ (যেমন: লাল)" style="font-size: 12px;">
+                        <input type="text" id="storyPollOpt1Input" class="modal-input" placeholder="অপশন ১ (যেমন: নীল)" style="font-size: 12.5px; border-radius: 8px;">
+                        <input type="text" id="storyPollOpt2Input" class="modal-input" placeholder="অপশন ২ (যেমন: লাল)" style="font-size: 12.5px; border-radius: 8px;">
                     </div>
                 </div>
 
-                <!-- Privacy Selection -->
-                <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="font-size: 13px; font-weight: 700; color: #475569;">কারা দেখতে পাবেন:</div>
-                    <select id="storyPrivacySelect" style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px;">
+                <!-- Privacy Selection with Clean SVG Icon -->
+                <div style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #475569;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        <span>কারা দেখতে পাবেন:</span>
+                    </div>
+                    <select id="storyPrivacySelect" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; font-size: 13px; background: #ffffff;">
                         <option value="public">🌐 সর্বজনীন (Public)</option>
                         <option value="friends">👥 বন্ধুরা (Friends Only)</option>
                         <option value="only_me">🔒 শুধুমাত্র আমি (Only Me)</option>
@@ -2101,7 +2183,7 @@
                 </div>
 
                 <!-- Chunked Resumable Upload Progress Card -->
-                <div class="upload-resumable-progress-card" id="storyUploadProgressBox" style="display: none;">
+                <div class="upload-resumable-progress-card" id="storyUploadProgressBox" style="display: none; margin-top: 12px;">
                     <div class="upload-resumable-header">
                         <span class="upload-resumable-filename">মিডিয়া আপলোড হচ্ছে...</span>
                         <span class="upload-resumable-stat" id="storyProgressPercentText">0%</span>
@@ -2116,7 +2198,13 @@
                     </div>
                 </div>
 
-                <button type="button" class="modal-btn-submit" id="storySubmitBtn" onclick="JugajugMediaSuite.submitStory()" style="margin-top: 16px;">স্টোরি পাবলিশ করুন 🌟</button>
+                <button type="button" class="story-submit-btn" id="storySubmitBtn" onclick="JugajugMediaSuite.submitStory()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    <span>স্টোরি পাবলিশ করুন</span>
+                </button>
             </div>
         </div>
     </div>
@@ -2419,7 +2507,8 @@
                                 </defs>
                             </svg>
                         </span>
-                        <span>Bondhoo রিল স্টুডিও — নতুন রিল তৈরি ও সম্পাদনা</span>
+                        <span class="reel-studio-title-full">Bondhoo রিল স্টুডিও — নতুন রিল তৈরি ও সম্পাদনা</span>
+                        <span class="reel-studio-title-short">Bondhoo রিল স্টুডিও</span>
                     </div>
                     <button type="button" class="modal-close" onclick="JugajugMediaSuite.closeCreateReelModal()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>

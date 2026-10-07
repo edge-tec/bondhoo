@@ -770,18 +770,18 @@ button, a, input, select, textarea, [role="button"] {
    7. RESPONSIVE MODAL BOTTOM SHEETS (FOR MOBILE)
    ------------------------------------------------------------------------------ */
 @media (max-width: 768px) {
-    /* All full modals turn into bottom sheets on mobile */
-    .modal-overlay,
+    /* Standard modals turn into bottom sheets on mobile, EXCEPT media creators / viewers */
+    .modal-overlay:not(#createStoryModalV2):not(#createReelModalV2):not(#fbReelViewerModal):not(#fbStoryViewerModal),
     .jj-modal-overlay,
-    div[id$="Modal"]:not(.desktop-only) {
+    div[id$="Modal"]:not(.desktop-only):not(#createStoryModalV2):not(#createReelModalV2):not(#fbReelViewerModal):not(#fbStoryViewerModal) {
         align-items: flex-end !important;
         padding: 0 !important;
     }
 
     .modal-card,
     .fb-modal-content,
-    div[id$="Modal"] .fb-card,
-    div[id$="Modal"] > div:not(.modal-overlay) {
+    div[id$="Modal"]:not(#createStoryModalV2):not(#createReelModalV2):not(#fbReelViewerModal):not(#fbStoryViewerModal) .fb-card,
+    div[id$="Modal"]:not(#createStoryModalV2):not(#createReelModalV2):not(#fbReelViewerModal):not(#fbStoryViewerModal) > div:not(.modal-overlay) {
         width: 100% !important;
         max-width: 100% !important;
         border-radius: 20px 20px 0 0 !important;
@@ -798,6 +798,51 @@ button, a, input, select, textarea, [role="button"] {
         background: var(--fb-card) !important;
         z-index: 10 !important;
         padding: 12px 16px !important;
+    }
+
+    /* DEDICATED CENTERED & HIGHLY RESPONSIVE STORY & REELS CREATOR MODALS ON MOBILE */
+    #createStoryModalV2,
+    #createReelModalV2 {
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 12px 10px !important;
+        background: rgba(0, 0, 0, 0.78) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    #createStoryModalV2 .modal-box,
+    #createReelModalV2 .modal-box {
+        width: 100% !important;
+        border-radius: 20px !important;
+        margin: auto !important;
+        max-height: calc(100dvh - 24px) !important;
+        max-height: calc(100vh - 24px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
+        overflow: hidden !important;
+        border: 1px solid rgba(226, 232, 240, 0.9) !important;
+        background: #ffffff !important;
+    }
+
+    #createStoryModalV2 .modal-box {
+        max-width: 520px !important;
+    }
+
+    #createReelModalV2 .modal-box {
+        max-width: 960px !important;
+    }
+
+    #createStoryModalV2 .modal-body,
+    #createReelModalV2 .modal-body {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        flex: 1 1 auto !important;
+        max-height: calc(100dvh - 120px) !important;
+        padding: 14px 16px !important;
     }
 }
 
