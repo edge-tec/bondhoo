@@ -622,7 +622,7 @@
                 <!-- Password -->
                 <div class="form-group">
                     <label class="form-label" for="regPassword">
-                        <span>নতুন পাসওয়ার্ড (কমপক্ষে ১২ অক্ষর)</span>
+                        <span>নতুন পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর)</span>
                     </label>
                     <div class="input-wrap">
                         <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -642,7 +642,7 @@
                     </div>
                     <div class="strength-row">
                         <span id="strengthText" class="strength-text">পাসওয়ার্ড নিরাপত্তা স্কোর: অপেক্ষমান</span>
-                        <span id="lengthHint" style="color: #94a3b8; font-size: 11px;">ন্যূনতম ১২ অক্ষর</span>
+                        <span id="lengthHint" style="color: #94a3b8; font-size: 11px;">ন্যূনতম ৮ অক্ষর</span>
                     </div>
                 </div>
 
@@ -809,8 +809,8 @@
                 return;
             }
 
-            if (pass.length < 12) {
-                showError('পাসওয়ার্ড অবশ্যই কমপক্ষে ১২ অক্ষরের হতে হবে।');
+            if (pass.length < 8) {
+                showError('পাসওয়ার্ড অবশ্যই কমপক্ষে ৮ অক্ষরের হতে হবে।');
                 return;
             }
 

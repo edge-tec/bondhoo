@@ -3417,7 +3417,7 @@
     </div>
 
     <!-- REGISTRATION MODAL -->
-    <div class="modal-overlay" id="registerModal" style="display: none;">
+    <div class="modal-overlay" id="registerModal" style="display: none; z-index: 9999;">
         <div class="modal-box" style="max-width: 440px;">
             <div class="modal-header">
                 <span class="modal-title">নতুন একাউন্ট সাইন-আপ</span>
@@ -3436,7 +3436,7 @@
     </div>
 
     <!-- FORGOT PASSWORD MODAL -->
-    <div class="modal-overlay" id="forgotPasswordModal" style="display: none;">
+    <div class="modal-overlay" id="forgotPasswordModal" style="display: none; z-index: 9999;">
         <div class="modal-box" style="max-width: 440px;">
             <div class="modal-header">
                 <span class="modal-title">পাসওয়ার্ড রিসেট</span>
@@ -3789,15 +3789,15 @@
                     </button>
                 </form>
 
-                <div style="text-align: center; font-size: 13px; color: var(--fb-primary); margin-top: 4px; cursor: pointer;" onclick="openForgotPasswordModal()">
+                <a href="/forgot-password" style="text-align: center; font-size: 14px; color: var(--fb-primary); margin-top: 4px; text-decoration: none; font-weight: 500;">
                     পাসওয়ার্ড ভুলে গেছেন?
-                </div>
+                </a>
 
                 <div style="height: 1px; background: var(--fb-border); margin: 4px 0;"></div>
 
-                <button class="modal-btn-submit" style="background: #42b72a; height: 46px; font-size: 16px; font-weight: 700;" onclick="openRegisterModal()">
+                <a href="/register" class="modal-btn-submit" style="background: #42b72a; height: 46px; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none; color: #ffffff;">
                     নতুন অ্যাকাউন্ট তৈরি করুন
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -3920,7 +3920,8 @@
                 await syncUserAuth();
             }
             if (!currentToken || !currentUser) {
-                if (overlay) overlay.style.display = 'flex';
+                window.location.replace('/login');
+                return;
             } else {
                 if (overlay) overlay.style.display = 'none';
                 try {
@@ -4031,10 +4032,11 @@
         /* REGISTRATION & PASSWORD RESET */
         /* ------------------------------------------------------------- */
         function openRegisterModal() {
-            document.getElementById('registerModal').style.display = 'flex';
+            window.location.href = '/register';
         }
         function closeRegisterModal() {
-            document.getElementById('registerModal').style.display = 'none';
+            const m = document.getElementById('registerModal');
+            if (m) m.style.display = 'none';
         }
         async function handleRegistration(e) {
             e.preventDefault();
@@ -4067,11 +4069,11 @@
         }
 
         function openForgotPasswordModal() {
-            document.getElementById('forgotPasswordModal').style.display = 'flex';
-            document.getElementById('resetPasswordBox').style.display = 'none';
+            window.location.href = '/forgot-password';
         }
         function closeForgotPasswordModal() {
-            document.getElementById('forgotPasswordModal').style.display = 'none';
+            const m = document.getElementById('forgotPasswordModal');
+            if (m) m.style.display = 'none';
         }
         async function handleForgotPassword(e) {
             e.preventDefault();

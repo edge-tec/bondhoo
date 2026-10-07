@@ -21,7 +21,11 @@ use App\Services\AuthServiceV2;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('dashboard');
+    if (auth('web')->check() || request()->cookie('bondhoo_token') || request()->cookie('jugajug_token')) {
+        return view('dashboard');
+    }
+
+    return view('auth.login');
 })->name('dashboard');
 
 Route::get('/dashboard', function () {
@@ -34,7 +38,7 @@ Route::get('/dashboard', function () {
 
 // Authentication Pages & Actions (Facebook-style UX & Government Grade Security)
 Route::get('/login', function () {
-    if (auth('web')->check()) {
+    if (auth('web')->check() || request()->cookie('bondhoo_token') || request()->cookie('jugajug_token')) {
         return redirect()->route('dashboard');
     }
 
@@ -81,6 +85,10 @@ Route::middleware(['auth:web'])->group(function () {
 });
 
 Route::get('/register', function () {
+    if (auth('web')->check() || request()->cookie('bondhoo_token') || request()->cookie('jugajug_token')) {
+        return redirect()->route('dashboard');
+    }
+
     return view('auth.register');
 })->name('register');
 
