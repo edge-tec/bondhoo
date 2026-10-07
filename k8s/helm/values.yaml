@@ -1,0 +1,42 @@
+replicaCount: 10
+
+image:
+  repository: registry.jugajug.com/app
+  pullPolicy: IfNotPresent
+  tag: "v2.0.0"
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: jugajug.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: jugajug-tls
+      hosts:
+        - jugajug.com
+
+autoscaling:
+  enabled: true
+  minReplicas: 10
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+resources:
+  limits:
+    cpu: 4000m
+    memory: 8Gi
+  requests:
+    cpu: 1000m
+    memory: 2Gi

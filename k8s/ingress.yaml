@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jugajug-ingress
+  namespace: jugajug-prod
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/websocket-services: "jugajug-app-service"
+spec:
+  tls:
+    - hosts:
+        - jugajug.com
+        - ws.jugajug.com
+      secretName: jugajug-tls
+  rules:
+    - host: jugajug.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jugajug-app-service
+                port:
+                  number: 80
+    - host: ws.jugajug.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jugajug-app-service
+                port:
+                  number: 8080

@@ -1,0 +1,232 @@
+services:
+  # 1. Nginx Reverse Proxy & Static Caching
+  nginx:
+    image: nginx:alpine
+    container_name: jugajug-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html:ro
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - php-fpm
+      - reverb
+    networks:
+      - jugajug-network
+
+  # 2. PHP-FPM Application Engine
+  php-fpm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jugajug-php
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www/html
+      - ./docker/php/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini:ro
+    environment:
+      APP_ENV: production
+      DB_HOST: mysql-primary
+      REDIS_HOST: redis
+    depends_on:
+      - mysql-primary
+      - redis
+    networks:
+      - jugajug-network
+
+  # 3. Redis In-Memory Cache & Priority Queues
+  redis:
+    image: redis:7-alpine
+    container_name: jugajug-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "2gb", "--maxmemory-policy", "volatile-lru"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - jugajug-network
+
+  # 4. MySQL Primary Database (Write Master)
+  mysql-primary:
+    image: mysql:8.0
+    container_name: jugajug-mysql-primary
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: jugajug
+      MYSQL_USER: jugajug
+      MYSQL_PASSWORD: secret_password
+      MYSQL_ROOT_PASSWORD: root_secret_password
+    volumes:
+      - mysql-primary-data:/var/lib/mysql
+      - ./docker/mysql/primary.cnf:/etc/mysql/conf.d/primary.cnf:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - jugajug-network
+
+  # 5. MySQL Read Replica (Read Scaling)
+  mysql-replica:
+    image: mysql:8.0
+    container_name: jugajug-mysql-replica
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: jugajug
+      MYSQL_USER: jugajug
+      MYSQL_PASSWORD: secret_password
+      MYSQL_ROOT_PASSWORD: root_secret_password
+    volumes:
+      - mysql-replica-data:/var/lib/mysql
+      - ./docker/mysql/replica.cnf:/etc/mysql/conf.d/replica.cnf:ro
+    depends_on:
+      - mysql-primary
+    networks:
+      - jugajug-network
+
+  # 6. Meilisearch High-Performance Search Cluster
+  meilisearch:
+    image: getmeili/meilisearch:v1.6
+    container_name: jugajug-meilisearch
+    restart: unless-stopped
+    ports:
+      - "7700:7700"
+    environment:
+      MEILI_MASTER_KEY: meili_master_secret_key_123
+      MEILI_ENV: production
+    volumes:
+      - meili-data:/meili_data
+    networks:
+      - jugajug-network
+
+  # 7. Laravel Reverb Real-Time WebSocket Server
+  reverb:
+    image: php:8.4-cli-alpine
+    container_name: jugajug-reverb
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    networks:
+      - jugajug-network
+
+  # 8. Laravel Horizon Enterprise Queue Supervisor
+  horizon:
+    image: php:8.4-cli-alpine
+    container_name: jugajug-horizon
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    command: ["php", "artisan", "horizon"]
+    depends_on:
+      - redis
+      - mysql-primary
+    networks:
+      - jugajug-network
+
+  # 9. Laravel Cron Task Scheduler
+  scheduler:
+    image: php:8.4-cli-alpine
+    container_name: jugajug-scheduler
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    command: ["sh", "-c", "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"]
+    depends_on:
+      - redis
+      - mysql-primary
+    networks:
+      - jugajug-network
+
+  # 10. Prometheus Metric Scraper
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: jugajug-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - jugajug-network
+
+  # 11. Grafana Metric & Observability Dashboards
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: jugajug-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: grafana_secret_password
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - jugajug-network
+
+  # 12. Loki Log Aggregator
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: jugajug-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+    networks:
+      - jugajug-network
+
+  # 13. Tempo Distributed Tracing
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: jugajug-tempo
+    restart: unless-stopped
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+    volumes:
+      - ./monitoring/tempo/tempo-config.yml:/etc/tempo.yaml:ro
+    networks:
+      - jugajug-network
+
+  # 14. MinIO S3-Compatible Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: jugajug-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: minio_secret_password
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - jugajug-network
+
+networks:
+  jugajug-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  mysql-primary-data:
+  mysql-replica-data:
+  meili-data:
+  prometheus-data:
+  grafana-data:
+  minio-data:

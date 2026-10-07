@@ -1,0 +1,1800 @@
+/* =========================================================================
+   JUGAJUG ENTERPRISE STORIES, REELS & RESUMABLE MEDIA UPLOAD SUITE CSS
+   Facebook / Instagram / TikTok Grade Experience with Micro-animations
+   ========================================================================= */
+
+/* --- Stories & Reels Top Switcher Bar --- */
+.story-reel-switcher {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 6px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    gap: 8px;
+    position: relative;
+}
+
+.sr-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    user-select: none;
+}
+
+.sr-tab-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sr-tab-btn:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.sr-tab-btn:hover .sr-tab-icon {
+    transform: scale(1.12);
+}
+
+.sr-tab-btn#srTabStories.active {
+    background: linear-gradient(135deg, rgba(24, 119, 242, 0.12), rgba(6, 182, 212, 0.08));
+    color: #1877f2;
+    box-shadow: 0 2px 8px rgba(24, 119, 242, 0.12);
+}
+
+.sr-tab-btn#srTabStories.active .sr-tab-icon svg {
+    stroke: #1877f2;
+}
+
+.sr-tab-btn#srTabReels.active {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(147, 51, 234, 0.1));
+    color: #9333ea;
+    box-shadow: 0 2px 8px rgba(147, 51, 234, 0.15);
+}
+
+.sr-tab-btn#srTabReels.active .sr-tab-icon svg {
+    stroke: #9333ea;
+}
+
+/* --- Container with Scroll Buttons --- */
+.stories-wrapper-rel {
+    position: relative;
+    width: 100%;
+}
+
+.stories-carousel-container {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 2px 14px 2px;
+    scroll-behavior: smooth;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.stories-carousel-container::-webkit-scrollbar { display: none; }
+
+/* --- Story Card Modern Styling --- */
+.fb-story-card {
+    width: 130px;
+    height: 220px;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+    background: #1e293b;
+    user-select: none;
+}
+
+.fb-story-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+}
+
+/* Creator Story Card */
+.fb-create-story-card {
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(0,0,0,0.08);
+}
+
+.fb-create-story-card .avatar-preview {
+    height: 155px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.fb-create-story-card:hover .avatar-preview {
+    transform: scale(1.04);
+}
+
+.fb-create-story-card .bottom-action {
+    height: 65px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 8px;
+    background: #ffffff;
+}
+
+.fb-create-story-plus {
+    position: absolute;
+    top: -20px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #1877f2;
+    border: 4px solid #ffffff;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 800;
+    box-shadow: 0 2px 6px rgba(24, 119, 242, 0.4);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.fb-create-story-card:hover .fb-create-story-plus {
+    transform: scale(1.1);
+    background: #166fe5;
+}
+
+.fb-create-story-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #050505;
+    text-align: center;
+}
+
+/* Normal User Story Card */
+.fb-story-bg {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 12px;
+    transition: transform 0.35s ease;
+}
+
+.fb-story-card:hover .fb-story-bg {
+    transform: scale(1.05);
+}
+
+.fb-story-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.8) 100%);
+    z-index: 1;
+}
+
+/* Unviewed Story Gradient Ring */
+.fb-story-ring {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(45deg, #1877f2, #9333ea, #f43f5e);
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.fb-story-ring.viewed {
+    background: #cbd5e1;
+}
+
+.fb-story-ring img, .fb-story-ring .initial-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #ffffff;
+    background: #3b82f6;
+    font-size: 14px;
+}
+
+.fb-story-text-preview {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    text-align: center;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.4;
+    word-break: break-word;
+    z-index: 1;
+}
+
+.fb-story-footer-name {
+    position: relative;
+    z-index: 2;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Advanced Create Reel Card --- */
+.fb-create-reel-card {
+    background: #ffffff !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.fb-create-reel-card:hover {
+    transform: translateY(-5px) scale(1.025);
+    box-shadow: 0 14px 28px rgba(147, 51, 234, 0.22);
+    border-color: rgba(147, 51, 234, 0.35);
+}
+
+.fb-create-reel-top {
+    height: 150px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1e1b4b, #312e81, #4c1d95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fb-create-reel-bg-avatar {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.65) blur(1.5px);
+    transition: transform 0.4s ease;
+}
+
+.fb-create-reel-card:hover .fb-create-reel-bg-avatar {
+    transform: scale(1.08);
+}
+
+.fb-create-reel-center-avatar {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    border: 3px solid #ffffff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    object-fit: cover;
+    z-index: 2;
+    transition: transform 0.3s ease;
+}
+
+.fb-create-reel-center-initial {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    border: 3px solid #ffffff;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    color: #ffffff;
+    font-size: 26px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    z-index: 2;
+    transition: transform 0.3s ease;
+}
+
+.fb-create-reel-card:hover .fb-create-reel-center-avatar,
+.fb-create-reel-card:hover .fb-create-reel-center-initial {
+    transform: scale(1.06);
+}
+
+.fb-create-reel-badge-top {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 3px 8px;
+    font-size: 10.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 3;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.fb-create-reel-plus-btn {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    border: 3px solid #ffffff;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.5);
+    z-index: 5;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fb-create-reel-card:hover .fb-create-reel-plus-btn {
+    transform: translateX(-50%) scale(1.15) rotate(90deg);
+}
+
+.fb-create-reel-bottom {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 22px 8px 10px 8px;
+    background: #ffffff;
+    text-align: center;
+}
+
+.fb-create-reel-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.fb-create-reel-sub {
+    font-size: 11px;
+    color: #9333ea;
+    font-weight: 700;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* --- Reels Preview Cards in Carousel --- */
+.fb-reel-card {
+    width: 140px;
+    height: 230px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    background: #0f172a;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease;
+}
+
+.fb-reel-card:hover {
+    transform: translateY(-5px) scale(1.025);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.fb-reel-card-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+    display: block;
+}
+
+.fb-reel-card:hover .fb-reel-card-thumb {
+    transform: scale(1.06);
+}
+
+.fb-reel-top-badges {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.fb-reel-badge-views {
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.fb-reel-badge-likes {
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.fb-reel-hover-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    z-index: 4;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+}
+
+.fb-reel-hover-play svg {
+    margin-left: 2px;
+}
+
+.fb-reel-card:hover .fb-reel-hover-play {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+.fb-reel-bottom-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 24px 10px 10px 10px;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.6) 60%, rgba(0, 0, 0, 0) 100%);
+    color: #ffffff;
+    z-index: 3;
+}
+
+.fb-reel-author-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.fb-reel-author-mini-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 1.5px solid #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+.fb-reel-author-name-text {
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.fb-reel-verified-badge {
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+.fb-reel-bottom-caption {
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    opacity: 0.92;
+    margin-bottom: 4px;
+}
+
+.fb-reel-music-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+    padding: 2px 7px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.fb-reel-music-tag svg {
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+
+.fb-reel-music-tag-text {
+    font-size: 9.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.95;
+}
+
+/* =========================================================================
+   SVG ICON SYSTEM STYLING
+   ========================================================================= */
+.jj-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: middle;
+    transition: transform 0.2s, stroke 0.2s, fill 0.2s;
+    flex-shrink: 0;
+}
+
+.jj-icon-sm { width: 16px; height: 16px; }
+.jj-icon-md { width: 22px; height: 22px; }
+.jj-icon-lg { width: 28px; height: 28px; }
+.jj-icon-xl { width: 36px; height: 36px; }
+
+.jj-icon.filled {
+    fill: currentColor;
+}
+
+/* =========================================================================
+   FULL-SCREEN FACEBOOK / INSTAGRAM STORY VIEWER
+   ========================================================================= */
+.fb-story-viewer-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(10, 12, 16, 0.96);
+    backdrop-filter: blur(12px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.fb-story-viewer-frame {
+    width: 100%;
+    max-width: 440px;
+    height: 92vh;
+    max-height: 820px;
+    background: #000000;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+.fb-story-progress-segments {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    gap: 5px;
+    z-index: 10;
+}
+
+.fb-story-segment {
+    flex: 1;
+    height: 3px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.fb-story-segment-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 0%;
+    background: #ffffff;
+    transition: width linear;
+}
+
+.fb-story-segment-bar.filled {
+    width: 100% !important;
+}
+
+.fb-story-viewer-header {
+    position: absolute;
+    top: 24px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+    color: #ffffff;
+}
+
+.fb-story-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fb-story-header-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    object-fit: cover;
+    background: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.fb-story-header-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.fb-story-header-name {
+    font-size: 14px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.fb-story-header-time {
+    font-size: 11px;
+    opacity: 0.85;
+}
+
+.fb-story-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fb-story-ctrl-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.fb-story-ctrl-btn:hover {
+    background: rgba(255,255,255,0.25);
+    transform: scale(1.08);
+}
+
+.fb-story-content-viewport {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    user-select: none;
+    background: #000000;
+}
+
+.fb-story-media-item {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
+}
+
+.fb-story-text-canvas {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    color: #ffffff;
+    font-size: 26px;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+/* Tap Areas for Navigation */
+.fb-story-tap-left, .fb-story-tap-right {
+    position: absolute;
+    top: 60px;
+    bottom: 80px;
+    z-index: 5;
+    cursor: pointer;
+}
+.fb-story-tap-left { left: 0; width: 35%; }
+.fb-story-tap-right { right: 0; width: 65%; }
+
+.fb-story-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 100;
+}
+.fb-story-nav-btn:hover {
+    background: rgba(255,255,255,0.4);
+    transform: translateY(-50%) scale(1.1);
+}
+.fb-story-nav-prev { left: -70px; }
+.fb-story-nav-next { right: -70px; }
+
+@media (max-width: 640px) {
+    .fb-story-nav-btn { display: none; }
+}
+
+.fb-story-bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 14px 16px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+}
+
+.fb-story-reply-input {
+    flex: 1;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 24px;
+    padding: 10px 16px;
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+    transition: background 0.2s;
+}
+
+.fb-story-reply-input::placeholder {
+    color: rgba(255,255,255,0.7);
+}
+
+.fb-story-reply-input:focus {
+    background: rgba(255,255,255,0.35);
+    border-color: #ffffff;
+}
+
+.fb-story-reaction-tray {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fb-story-reaction-btn {
+    font-size: 22px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.fb-story-reaction-btn:hover {
+    transform: scale(1.35) rotate(-6deg);
+}
+
+.fb-story-viewers-btn {
+    background: rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 20px;
+    color: #ffffff;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+.fb-story-viewers-btn:hover {
+    background: rgba(255,255,255,0.4);
+}
+
+/* =========================================================================
+   RESUMABLE CHUNKED UPLOAD PROGRESS CARD
+   ========================================================================= */
+.upload-resumable-progress-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    margin-top: 14px;
+}
+
+.upload-resumable-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.upload-resumable-filename {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    max-width: 65%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.upload-resumable-stat {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1877f2;
+}
+
+.upload-progress-track {
+    width: 100%;
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.upload-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(45deg, #1877f2 25%, #3b82f6 25%, #3b82f6 50%, #1877f2 50%, #1877f2 75%, #3b82f6 75%, #3b82f6 100%);
+    background-size: 20px 20px;
+    animation: uploadProgressStripe 1s linear infinite;
+    border-radius: 6px;
+    transition: width 0.2s ease;
+}
+
+@keyframes uploadProgressStripe {
+    0% { background-position: 0 0; }
+    100% { background-position: 20px 0; }
+}
+
+.upload-resumable-status-text {
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.upload-resumable-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.upload-ctrl-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.upload-ctrl-pause {
+    background: #f1f5f9;
+    color: #475569;
+}
+.upload-ctrl-pause:hover {
+    background: #e2e8f0;
+}
+
+.upload-ctrl-cancel {
+    background: #fee2e2;
+    color: #ef4444;
+}
+.upload-ctrl-cancel:hover {
+    background: #fecaca;
+}
+
+/* =========================================================================
+   DEDICATED FULL-SCREEN REELS VIEWER (TIKTOK / SHORTS GRADE)
+   ========================================================================= */
+.fb-reel-viewer-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.96);
+    backdrop-filter: blur(14px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.fb-reel-viewer-container {
+    width: 100%;
+    max-width: 450px;
+    height: 94vh;
+    max-height: 860px;
+    background: #000000;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    box-shadow: 0 25px 70px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+.fb-reel-video-element {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
+    cursor: pointer;
+}
+
+.fb-reel-overlay-top {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+}
+
+.fb-reel-sidebar-actions {
+    position: absolute;
+    right: 14px;
+    bottom: 95px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    z-index: 10;
+}
+
+.fb-reel-action-btn {
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50%;
+    width: 46px;
+    height: 46px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
+}
+
+.fb-reel-action-btn:hover {
+    transform: scale(1.15);
+    background: rgba(255,255,255,0.25);
+}
+
+.fb-reel-action-btn.liked {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+}
+
+.fb-reel-action-btn.saved {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+}
+
+.fb-reel-action-label {
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    margin-top: 4px;
+    text-align: center;
+}
+
+.fb-reel-info-bottom {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 76px;
+    z-index: 10;
+    color: #ffffff;
+}
+
+.fb-reel-author-tag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.fb-reel-author-name {
+    font-weight: 800;
+    font-size: 15px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.fb-reel-follow-btn {
+    background: #1877f2;
+    color: #ffffff;
+    border: none;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.fb-reel-follow-btn:hover {
+    background: #166fe5;
+}
+
+.fb-reel-audio-track {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    opacity: 0.95;
+    margin-top: 6px;
+}
+
+.vinyl-disc-anim {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #333 30%, #111 60%, #444 90%);
+    border: 2px solid rgba(255,255,255,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: spinRecord 4s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes spinRecord {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* =========================================================================
+   REEL COMMENTS DRAWER
+   ========================================================================= */
+.reel-comments-drawer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65%;
+    max-height: 480px;
+    background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    z-index: 50;
+    display: none;
+    flex-direction: column;
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.4);
+    animation: slideUpDrawer 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUpDrawer {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.reel-comments-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.reel-comments-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.reel-comments-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.reel-comment-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.reel-comment-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: white;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.reel-comment-body {
+    flex: 1;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 8px 12px;
+}
+
+.reel-comment-author {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.reel-comment-text {
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.4;
+}
+
+.reel-comment-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.reel-comment-like-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.reel-comment-input-box {
+    padding: 10px 16px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+}
+
+.reel-comment-input {
+    flex: 1;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    outline: none;
+}
+.reel-comment-input:focus {
+    border-color: #1877f2;
+}
+
+.reel-comment-send-btn {
+    background: #1877f2;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* =========================================================================
+   PROFESSIONAL REEL EDITOR STUDIO
+   ========================================================================= */
+.modal-box.reel-studio-modal {
+    width: 100% !important;
+    max-width: 960px !important;
+    width: 95vw !important;
+    max-height: 92vh !important;
+    border-radius: 20px !important;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35) !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #ffffff !important;
+}
+
+.reel-studio-layout {
+    display: grid !important;
+    grid-template-columns: 340px 1fr !important;
+    gap: 24px !important;
+    align-items: start !important;
+}
+
+@media (max-width: 820px) {
+    .reel-studio-layout {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+}
+
+.reel-studio-preview-box {
+    background: #090d16 !important;
+    border-radius: 16px !important;
+    height: 520px !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important;
+    border: 1px solid #1e293b !important;
+}
+
+@media (max-width: 820px) {
+    .reel-studio-preview-box {
+        height: 380px !important;
+    }
+}
+
+.reel-studio-video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    transition: transform 0.3s ease !important;
+}
+
+.reel-studio-steps {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding-bottom: 10px !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+}
+.reel-studio-steps::-webkit-scrollbar {
+    display: none !important;
+}
+
+.reel-step-pill {
+    padding: 8px 16px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #f8fafc !important;
+    border-radius: 20px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.reel-step-pill:hover {
+    background: #f1f5f9 !important;
+    color: #1e293b !important;
+    border-color: #cbd5e1 !important;
+}
+
+.reel-step-pill.active {
+    background: #1877f2 !important;
+    color: #ffffff !important;
+    border-color: #1877f2 !important;
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3) !important;
+}
+
+/* Sliders & Audio Mixer */
+.studio-control-group {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.studio-control-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.studio-slider {
+    width: 100%;
+    height: 6px;
+    accent-color: #1877f2;
+    cursor: pointer;
+}
+
+/* Music Selector Badge */
+.studio-music-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 8px;
+}
+
+.studio-music-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.studio-music-thumb {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+/* Hashtag Chips */
+.hashtag-chips-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.hashtag-chip {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1877f2;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.hashtag-chip:hover {
+    background: #e0f2fe;
+    border-color: #38bdf8;
+    transform: translateY(-1px);
+}
+
+/* Music Library Modal */
+.music-library-list {
+    max-height: 360px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.music-track-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.music-track-item:hover {
+    background: #f0f7ff;
+    border-color: #93c5fd;
+}
+
+.music-track-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.music-track-cover {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #cbd5e1;
+}
+
+.music-play-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #1877f2;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Toast Notifications */
+.jj-toast-box {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.jj-toast {
+    background: #1e293b;
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: toastFadeIn 0.25s ease-out;
+}
+
+@keyframes toastFadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Reel Studio Dropzone & Branding Enhancements --- */
+.reel-dropzone-icon-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 68px;
+    height: 68px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(139, 92, 246, 0.1));
+    margin-bottom: 12px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.reel-dropzone-icon-box:hover {
+    transform: scale(1.1);
+}
+
+.reel-studio-brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 2px 6px rgba(168, 85, 247, 0.3));
+}
+
+.reel-top-logo-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 2px 6px rgba(236, 72, 153, 0.4));
+}
+
+/* --- Enterprise Dropzone & Camera CTA --- */
+.reel-upload-dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    background: #f8fafc;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reel-upload-dropzone:hover {
+    background: #f0f7ff;
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+}
+
+.reel-camera-cta-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.reel-camera-cta-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1877f2, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* --- Professional Camera Shutter Control --- */
+.camera-shutter-btn {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    border: 4px solid #ffffff;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.camera-shutter-btn:hover {
+    transform: scale(1.08);
+}
+
+.camera-shutter-btn:active {
+    transform: scale(0.95);
+}
+
+.shutter-inner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #ef4444;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.camera-shutter-btn.recording .shutter-inner {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: #dc2626;
+    animation: pulseRecord 1s infinite;
+}
+
+@keyframes pulseRecord {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+/* --- Floating Reel More Menu --- */
+.reel-more-popup {
+    position: absolute;
+    right: 56px;
+    bottom: -10px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+    border: 1px solid #e2e8f0;
+    width: 230px;
+    overflow: hidden;
+    z-index: 1000;
+    animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reel-more-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: none;
+    background: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+}
+
+.reel-more-item:hover {
+    background: #f1f5f9;
+}
+
+.reel-more-item.danger:hover {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+/* --- Share Modal Destinations & Picker --- */
+.share-destination-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 4px;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.share-destination-btn:hover {
+    transform: translateY(-3px);
+    background: #f8fafc;
+}
+
+.share-destination-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.share-conv-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: background 0.15s;
+}
+
+.share-conv-item:hover {
+    background: #f1f5f9;
+}
+
+/* --- Report Modal Reasons --- */
+.report-reasons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.report-reason-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    transition: all 0.15s;
+}
+
+.report-reason-item:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.report-reason-item input[type="radio"]:checked + span {
+    color: #1877f2;
+    font-weight: 700;
+}
+

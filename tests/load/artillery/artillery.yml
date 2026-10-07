@@ -1,0 +1,17 @@
+config:
+  target: "http://localhost"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 50
+      name: "Sustained load"
+scenarios:
+  - flow:
+      - get:
+          url: "/api/v1/health"
+      - get:
+          url: "/api/v1/feed"
+      - get:
+          url: "/api/v1/system/status"

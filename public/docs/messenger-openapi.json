@@ -1,0 +1,394 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Jugajug Enterprise Real-Time Messenger, Calling & Communication API",
+    "version": "1.0.0",
+    "description": "Comprehensive, production-ready, API-first communication platform specification for Jugajug. Supports 1-to-1, group messaging, WebRTC audio/video calling, voice notes, pinning, saving, multi-device sessions, and offline event replay synchronization for Web, Android, iOS, and Desktop apps."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8000/api/v1",
+      "description": "Local Development Server"
+    },
+    {
+      "url": "https://jugajug.com/api/v1",
+      "description": "Production Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Sanctum Token"
+      }
+    },
+    "schemas": {
+      "StandardResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": { "type": "object" },
+          "message": { "type": "string", "example": "Operation completed successfully." },
+          "meta": { "type": "object" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string", "example": "Error message description." },
+          "errors": { "type": "object" }
+        }
+      },
+      "Call": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 101 },
+          "uuid": { "type": "string", "format": "uuid" },
+          "conversation_id": { "type": "integer", "example": 5 },
+          "call_type": { "type": "string", "enum": ["audio", "video", "group_audio", "group_video"] },
+          "status": { "type": "string", "enum": ["initiating", "ringing", "active", "ended", "rejected", "missed", "busy", "failed"] },
+          "room_id": { "type": "string", "example": "room_a8f9c10d2e" },
+          "started_at": { "type": "string", "format": "date-time" },
+          "ended_at": { "type": "string", "format": "date-time", "nullable": true },
+          "duration_seconds": { "type": "integer", "example": 128 },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "integer" },
+                "user": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "name": { "type": "string" },
+                    "username": { "type": "string" }
+                  }
+                },
+                "role": { "type": "string", "enum": ["caller", "callee", "participant"] },
+                "status": { "type": "string", "enum": ["ringing", "accepted", "rejected", "left", "missed", "busy"] },
+                "is_muted": { "type": "boolean" },
+                "is_camera_off": { "type": "boolean" },
+                "is_screen_sharing": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/calls": {
+      "post": {
+        "summary": "Initiate an audio or video call",
+        "description": "Starts an individual or group audio/video call session, creates participant records, and broadcasts call.incoming WebRTC event.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["conversation_id", "call_type"],
+                "properties": {
+                  "conversation_id": { "type": "integer", "example": 12 },
+                  "call_type": { "type": "string", "enum": ["audio", "video", "group_audio", "group_video"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Call successfully initiated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StandardResponse" }
+              }
+            }
+          },
+          "403": { "description": "User is not a conversation participant." }
+        }
+      }
+    },
+    "/calls/history": {
+      "get": {
+        "summary": "Get user call history",
+        "description": "Returns paginated list of calls where the user was caller or participant.",
+        "parameters": [
+          { "name": "per_page", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Call history retrieved successfully." }
+        }
+      }
+    },
+    "/calls/ice-servers": {
+      "get": {
+        "summary": "Get WebRTC STUN and TURN ICE servers",
+        "description": "Retrieves STUN servers and dynamically signed ephemeral HMAC-SHA1 TURN server credentials for NAT traversal.",
+        "responses": {
+          "200": {
+            "description": "ICE servers retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/app/version": {
+      "get": {
+        "summary": "Check app version compatibility",
+        "description": "Provides version policy (minimum supported, recommended, update availability, store URLs) for native clients (Android, iOS, macOS, Windows, Linux).",
+        "parameters": [
+          { "name": "platform", "in": "query", "schema": { "type": "string", "example": "android" } },
+          { "name": "version", "in": "query", "schema": { "type": "string", "example": "1.0.0" } }
+        ],
+        "responses": {
+          "200": { "description": "Version compatibility checked." }
+        }
+      }
+    },
+    "/calls/{id}/respond": {
+      "post": {
+        "summary": "Respond to incoming call",
+        "description": "Accepts, rejects, or reports busy state for an incoming audio/video call.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["accept", "reject", "busy"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Call state updated." }
+        }
+      }
+    },
+    "/calls/{id}/leave": {
+      "post": {
+        "summary": "Leave or hang up call",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Left the call successfully." }
+        }
+      }
+    },
+    "/calls/{id}/signal": {
+      "post": {
+        "summary": "Transmit WebRTC signaling data",
+        "description": "Transmits SDP offer, answer, ICE candidate, or screen share signals to call participants.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["signal_type", "payload"],
+                "properties": {
+                  "signal_type": { "type": "string", "enum": ["offer", "answer", "candidate", "screen_share", "renegotiate"] },
+                  "target_user_id": { "type": "integer", "nullable": true },
+                  "payload": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Signal transmitted." }
+        }
+      }
+    },
+    "/conversations/{id}/voice": {
+      "post": {
+        "summary": "Upload and send a voice audio message",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["audio", "duration"],
+                "properties": {
+                  "audio": { "type": "string", "format": "binary" },
+                  "duration": { "type": "integer", "description": "Duration in seconds" },
+                  "waveform": { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Voice message sent successfully." }
+        }
+      }
+    },
+    "/conversations/{id}/pins": {
+      "get": {
+        "summary": "List pinned messages in conversation",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "List of pinned messages." }
+        }
+      }
+    },
+    "/conversations/{id}/messages/{messageId}/pin": {
+      "post": {
+        "summary": "Pin a message in conversation",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "messageId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "201": { "description": "Message pinned successfully." }
+        }
+      },
+      "delete": {
+        "summary": "Unpin a message from conversation",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "messageId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Message unpinned successfully." }
+        }
+      }
+    },
+    "/saved-messages": {
+      "get": {
+        "summary": "List user's saved messages",
+        "parameters": [
+          { "name": "per_page", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": { "description": "List of saved messages." }
+        }
+      }
+    },
+    "/messages/{messageId}/save": {
+      "post": {
+        "summary": "Save a message for later",
+        "parameters": [
+          { "name": "messageId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "201": { "description": "Message saved successfully." }
+        }
+      },
+      "delete": {
+        "summary": "Remove message from saved",
+        "parameters": [
+          { "name": "messageId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Message removed from saved." }
+        }
+      }
+    },
+    "/messenger/sync": {
+      "get": {
+        "summary": "Offline sync and missed events replay",
+        "description": "Allows client to request all real-time events that occurred since a given event sequence ID. Critical for mobile apps returning from background or offline state.",
+        "parameters": [
+          { "name": "since_id", "in": "query", "required": false, "schema": { "type": "integer", "default": 0 } },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Missed events array and latest event sequence ID."
+          }
+        }
+      }
+    },
+    "/devices": {
+      "get": {
+        "summary": "List active device sessions",
+        "responses": {
+          "200": { "description": "List of user devices and active sessions." }
+        }
+      }
+    },
+    "/devices/register": {
+      "post": {
+        "summary": "Register or update current device session",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["device_id"],
+                "properties": {
+                  "device_id": { "type": "string" },
+                  "device_name": { "type": "string" },
+                  "platform": { "type": "string", "enum": ["web", "android", "ios", "desktop", "windows", "macos", "linux"] },
+                  "app_version": { "type": "string" },
+                  "push_token": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Device registered." }
+        }
+      }
+    },
+    "/devices/{id}": {
+      "delete": {
+        "summary": "Revoke a device session",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Session revoked." }
+        }
+      }
+    },
+    "/messenger/search": {
+      "get": {
+        "summary": "Search across messages, media, and files",
+        "parameters": [
+          { "name": "q", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "conversation_id", "in": "query", "required": false, "schema": { "type": "integer" } },
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["all", "media", "file", "voice"] } }
+        ],
+        "responses": {
+          "200": { "description": "Search results." }
+        }
+      }
+    }
+  }
+}

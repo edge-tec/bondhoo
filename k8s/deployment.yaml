@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jugajug-app
+  namespace: jugajug-prod
+  labels:
+    app: jugajug-app
+spec:
+  replicas: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: jugajug-app
+  template:
+    metadata:
+      labels:
+        app: jugajug-app
+    spec:
+      containers:
+        - name: app
+          image: jugajug/app:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          ports:
+            - containerPort: 9000
+          envFrom:
+            - configMapRef:
+                name: jugajug-config
+            - secretRef:
+                name: jugajug-secrets
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /up
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jugajug-horizon
+  namespace: jugajug-prod
+  labels:
+    app: jugajug-horizon
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: jugajug-horizon
+  template:
+    metadata:
+      labels:
+        app: jugajug-horizon
+    spec:
+      containers:
+        - name: horizon
+          image: jugajug/app:latest
+          command: ["php", "artisan", "horizon"]
+          envFrom:
+            - configMapRef:
+                name: jugajug-config
+            - secretRef:
+                name: jugajug-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jugajug-reverb
+  namespace: jugajug-prod
+  labels:
+    app: jugajug-reverb
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: jugajug-reverb
+  template:
+    metadata:
+      labels:
+        app: jugajug-reverb
+    spec:
+      containers:
+        - name: reverb
+          image: jugajug/app:latest
+          command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: jugajug-config
+            - secretRef:
+                name: jugajug-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"

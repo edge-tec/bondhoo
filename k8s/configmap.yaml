@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jugajug-config
+  namespace: jugajug-prod
+data:
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  APP_URL: "https://jugajug.com"
+  BROADCAST_CONNECTION: "reverb"
+  QUEUE_CONNECTION: "redis"
+  CACHE_STORE: "redis"
+  REVERB_PORT: "8080"
+  REVERB_SCHEME: "https"
+  CDN_URL: "https://cdn.jugajug.com"

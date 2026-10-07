@@ -1,0 +1,9 @@
+apiVersion: v2
+name: jugajug-platform
+description: Bangladesh Government Grade + Facebook Scale Social Networking Platform Helm Chart
+type: application
+version: 2.0.0
+appVersion: "2.0.0"
+maintainers:
+  - name: SRE Team
+    email: sre@jugajug.com
