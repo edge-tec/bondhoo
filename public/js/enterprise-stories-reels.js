@@ -1195,11 +1195,31 @@ const JugajugMediaSuite = {
         if (tab === 'photo') {
             photoTab?.classList.add('active');
             textTab?.classList.remove('active');
+            if (photoTab) {
+                photoTab.style.background = '#ffffff';
+                photoTab.style.color = '#1877f2';
+                photoTab.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+            }
+            if (textTab) {
+                textTab.style.background = 'transparent';
+                textTab.style.color = '#64748b';
+                textTab.style.boxShadow = 'none';
+            }
             if (photoSection) photoSection.style.display = 'block';
             if (textSection) textSection.style.display = 'none';
         } else {
             textTab?.classList.add('active');
             photoTab?.classList.remove('active');
+            if (textTab) {
+                textTab.style.background = '#ffffff';
+                textTab.style.color = '#1877f2';
+                textTab.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+            }
+            if (photoTab) {
+                photoTab.style.background = 'transparent';
+                photoTab.style.color = '#64748b';
+                photoTab.style.boxShadow = 'none';
+            }
             if (photoSection) photoSection.style.display = 'none';
             if (textSection) textSection.style.display = 'block';
             this.updateStoryTextPreview();
@@ -2591,6 +2611,7 @@ const JugajugMediaSuite = {
 
             const recordBtn = document.getElementById('reelCameraRecordBtn');
             if (recordBtn) recordBtn.style.display = 'inline-flex';
+            document.querySelector('.reel-studio-layout')?.classList.add('has-media');
         } catch (e) {
             alert('ক্যামেরা বা মাইক্রোফোন ব্যবহারের অনুমতি পাওয়া যায়নি: ' + e.message);
         }
@@ -2673,6 +2694,9 @@ const JugajugMediaSuite = {
         if (shutter) shutter.classList.remove('recording');
         const timerText = document.getElementById('reelCameraSecondsText');
         if (timerText) timerText.innerText = 'লাইভ ক্যামেরা (০:০০)';
+        if (!this.selectedReelFile) {
+            document.querySelector('.reel-studio-layout')?.classList.remove('has-media');
+        }
     },
 
     /* Video Editor Controls */
