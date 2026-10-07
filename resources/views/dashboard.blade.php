@@ -1050,26 +1050,39 @@
 
         /* Enterprise Reel Studio Layout & Responsive Overrides */
         .modal-box.reel-studio-modal {
-            max-width: 960px !important;
+            max-width: 860px !important;
             width: 95vw !important;
-            max-height: 92vh !important;
-            border-radius: 20px !important;
+            max-height: calc(100dvh - 24px) !important;
+            border-radius: 18px !important;
             box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35) !important;
             overflow-y: auto !important;
         }
         .reel-studio-layout {
             display: grid !important;
-            grid-template-columns: 340px 1fr !important;
-            gap: 24px !important;
+            grid-template-columns: 300px 1fr !important;
+            gap: 16px !important;
             align-items: start !important;
+        }
+        /* Hide preview box completely when no video or camera is active */
+        .reel-studio-layout:not(.has-media) .reel-studio-preview-box {
+            display: none !important;
+        }
+        .reel-studio-layout:not(.has-media) {
+            display: block !important;
+            max-width: 520px !important;
+            margin: 0 auto !important;
         }
         @media (max-width: 820px) {
             .reel-studio-layout {
-                grid-template-columns: 1fr !important;
-                gap: 16px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 12px !important;
             }
             .reel-studio-preview-box {
-                height: 380px !important;
+                height: 180px !important;
+                max-height: 25vh !important;
+                border-radius: 12px !important;
+                width: 100% !important;
             }
         }
 
