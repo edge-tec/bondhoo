@@ -106,6 +106,42 @@ class AppServiceProvider extends ServiceProvider
             });
         });
 
+        // ইমেইল ভেরিফিকেশন রিকোয়েস্ট রেট লিমিট (প্রতি মিনিটে ৫ টি)
+        RateLimiter::for('email-verification', function (Request $request) {
+            $key = ($request->user()?->id ?: $request->input('email', '')).'|'.$request->ip();
+
+            return Limit::perMinute(5)->by($key)->response(function () {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'খুব বেশি ইমেইল যাচাইকরণ অনুরোধ পাঠানো হয়েছে। অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করুন।',
+                ], 429);
+            });
+        });
+
+        // পাসওয়ার্ড রিসেট রিকোয়েস্ট রেট লিমিট (প্রতি মিনিটে ৫ টি)
+        RateLimiter::for('password-reset', function (Request $request) {
+            $key = strtolower(trim((string) ($request->input('identifier') ?: $request->input('email', '')))).'|'.$request->ip();
+
+            return Limit::perMinute(5)->by($key)->response(function () {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'খুব বেশি পাসওয়ার্ড রিসেট অনুরোধ পাঠানো হয়েছে। অনুগ্রহ করে কিছুক্ষণ পর চেষ্টা করুন।',
+                ], 429);
+            });
+        });
+
+        // SMTP টেস্ট ইমেইল রেট লিমিট (প্রতি মিনিটে ৫ টি)
+        RateLimiter::for('smtp-test', function (Request $request) {
+            $key = ($request->user()?->id ?: 'admin').'|'.$request->ip();
+
+            return Limit::perMinute(5)->by($key)->response(function () {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'খুব বেশি টেস্ট ইমেইল পাঠানোর চেষ্টা করা হয়েছে। অনুগ্রহ করে কিছুক্ষণ পর চেষ্টা করুন।',
+                ], 429);
+            });
+        });
+
         // ৩. ইউজারনেম ইনিউমারেশন প্রতিরোধে রেট লিমিট (প্রতি মিনিটে ২০ টি চেক)
         RateLimiter::for('username-check', function (Request $request) {
             $key = $request->user()?->id ?: $request->ip();

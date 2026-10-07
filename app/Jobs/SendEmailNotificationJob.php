@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Mail\SystemNotificationMail;
 use App\Services\Contracts\QueueServiceInterface;
+use App\Services\Email\SmtpConfigService;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -35,6 +36,8 @@ class SendEmailNotificationJob implements ShouldQueue
     public function handle(): void
     {
         try {
+            app(SmtpConfigService::class)->applyToMailer();
+
             Mail::to($this->toEmail)->send(new SystemNotificationMail(
                 notificationSubject: $this->subject,
                 notificationMessage: $this->messageBody

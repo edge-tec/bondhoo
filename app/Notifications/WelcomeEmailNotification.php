@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\EmailLog;
+use App\Services\Email\SmtpConfigService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -24,26 +25,27 @@ class WelcomeEmailNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        // Apply active database SMTP configuration
+        app(SmtpConfigService::class)->applyToMailer();
+
         try {
             EmailLog::create([
                 'user_id' => $notifiable->id ?? null,
                 'recipient' => $notifiable->email,
-                'subject' => 'যুগাজুগ প্ল্যাটফর্মে আপনাকে স্বাগতম!',
-                'message_id' => 'welcome-'.uniqid(),
+                'email_type' => 'welcome',
+                'subject' => 'Bondhoo প্ল্যাটফর্মে আপনাকে স্বাগতম!',
+                'mail_class' => self::class,
                 'status' => 'sent',
+                'sent_at' => now(),
             ]);
         } catch (Throwable $e) {
             // Ignore logging error in test or disconnected environment
         }
 
         return (new MailMessage)
-            ->subject('যুগাজুগ প্ল্যাটফর্মে আপনাকে স্বাগতম!')
-            ->greeting("প্রিয় {$this->name},")
-            ->line('বাংলাদেশের নিজস্ব সোশ্যাল নেটওয়ার্ক "যুগাজুগ"-এ যোগদানের জন্য আপনাকে ধন্যবাদ।')
-            ->line('আপনার বন্ধু ও পরিবারের সাথে যুক্ত থাকুন, নতুন কমিউনিটি আবিষ্কার করুন এবং নিরাপদভাবে ভাব বিনিময় করুন।')
-            ->action('আপনার প্রোফাইল দেখুন', url('/dashboard'))
-            ->line('যেকোনো প্রয়োজনে আমাদের সাপোর্ট টিম আপনার পাশে আছে।')
-            ->salutation('আন্তরিক শুভেচ্ছাসহ, যুগাজুগ টিম');
+            ->subject('Bondhoo প্ল্যাটফর্মে আপনাকে স্বাগতম!')
+            ->view('emails.welcome', ['user' => $notifiable])
+            ->text('emails.plain.welcome', ['user' => $notifiable]);
     }
 
     public function toArray(object $notifiable): array

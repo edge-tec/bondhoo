@@ -182,8 +182,15 @@ class NotificationController extends Controller
             'sms_notifications' => ['sometimes', 'boolean'],
             'push_notifications' => ['sometimes', 'boolean'],
             'friend_request_alerts' => ['sometimes', 'boolean'],
+            'friend_accepted_alerts' => ['sometimes', 'boolean'],
             'comment_alerts' => ['sometimes', 'boolean'],
             'mention_alerts' => ['sometimes', 'boolean'],
+            'message_alerts' => ['sometimes', 'boolean'],
+            'like_alerts' => ['sometimes', 'boolean'],
+            'share_alerts' => ['sometimes', 'boolean'],
+            'follower_alerts' => ['sometimes', 'boolean'],
+            'page_alerts' => ['sometimes', 'boolean'],
+            'group_alerts' => ['sometimes', 'boolean'],
             'security_alerts' => ['sometimes', 'boolean'],
         ]);
 

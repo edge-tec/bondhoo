@@ -3,12 +3,12 @@
 namespace App\Notifications;
 
 use App\Models\EmailLog;
+use App\Services\Email\SmtpConfigService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\HtmlString;
 
 class VerifyEmailNotification extends Notification implements ShouldQueue
 {
@@ -28,6 +28,9 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        // Apply active database SMTP configuration
+        app(SmtpConfigService::class)->applyToMailer();
+
         // Generate secure temporary signed URL valid for 60 minutes
         $verificationUrl = URL::temporarySignedRoute(
             'verification.verify',
@@ -46,31 +49,31 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
             EmailLog::create([
                 'user_id' => $notifiable->id,
                 'recipient' => $notifiable->email,
-                'subject' => 'আপনার যুগাজুগ অ্যাকাউন্ট ইমেইল নিশ্চিতকরণ',
-                'message_id' => 'verify-'.uniqid(),
+                'email_type' => 'verify_email',
+                'subject' => 'আপনার Bondhoo অ্যাকাউন্ট ইমেইল যাচাইকরণ',
+                'mail_class' => self::class,
+                'ip_address' => $this->ip ?: request()->ip(),
                 'status' => 'sent',
+                'sent_at' => now(),
             ]);
         } catch (\Throwable $e) {
             // Ignore logging error in test or disconnected environment
         }
 
         return (new MailMessage)
-            ->subject('আপনার যুগাজুগ অ্যাকাউন্ট ইমেইল নিশ্চিতকরণ')
-            ->greeting("আসসালামু আলাইকুম, {$name}!")
-            ->line('যুগাজুগ প্ল্যাটফর্মে আপনাকে স্বাগতম। আপনার অ্যাকাউন্টের সম্পূর্ণ নিরাপত্তা ও কার্যকারিতা নিশ্চিত করতে অনুগ্রহ করে নিচের যেকোনো একটি পদ্ধতিতে আপনার ইমেইলটি ভেরিফাই করুন:')
-            ->line(new HtmlString("
-                <div style='text-align: center; margin: 25px 0;'>
-                    <div style='display: inline-block; background: #e7f3ff; border: 2px dashed #1877f2; border-radius: 8px; padding: 12px 28px;'>
-                        <div style='font-size: 12px; color: #65676b; font-weight: 600; text-transform: uppercase;'>আপনার ৬-সংখ্যার ওটিপি (OTP)</div>
-                        <div style='font-size: 32px; font-weight: 800; color: #1877f2; letter-spacing: 6px; margin-top: 4px;'>{$this->otp}</div>
-                    </div>
-                </div>
-            "))
-            ->action('১-ক্লিক ইমেইল ভেরিফাই করুন', $verificationUrl)
-            ->line('এই ভেরিফিকেশন লিঙ্ক ও ওটিপি কোডটির মেয়াদ আগামী **৬০ মিনিট** পর্যন্ত কার্যকর থাকবে।')
-            ->line($this->ip ? "অনুরোধের আইপি: {$this->ip}" : '')
-            ->line('আপনি যদি এই অনুরোধ না করে থাকেন, তবে অবিলম্বে আমাদের সাপোর্ট টিমের সাথে যোগাযোগ করুন।')
-            ->salutation('ধন্যবাদান্তে, যুগাজুগ সিকিউরিটি টিম');
+            ->subject('আপনার Bondhoo অ্যাকাউন্ট ইমেইল যাচাইকরণ')
+            ->view('emails.verify-email', [
+                'user' => $notifiable,
+                'otp' => $this->otp,
+                'verificationUrl' => $verificationUrl,
+                'expiresMinutes' => 60,
+            ])
+            ->text('emails.plain.verify-email', [
+                'user' => $notifiable,
+                'otp' => $this->otp,
+                'verificationUrl' => $verificationUrl,
+                'expiresMinutes' => 60,
+            ]);
     }
 
     public function toArray(object $notifiable): array

@@ -32,6 +32,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -254,7 +255,11 @@ class AuthServiceV2
                     'ip_address' => $meta['ip'],
                     'user_agent' => $request->userAgent(),
                 ]);
-                $user->notify(new VerifyEmailNotification($emailOtp['plain_otp'], $token, $meta['ip'], $request->userAgent()));
+                try {
+                    $user->notify(new VerifyEmailNotification($emailOtp['plain_otp'], $token, $meta['ip'], $request->userAgent()));
+                } catch (\Throwable $e) {
+                    Log::warning("Initial email verification delivery error: {$e->getMessage()}");
+                }
             }
 
             if ($user->phone) {
@@ -644,6 +649,12 @@ class AuthServiceV2
                 ]);
             }
 
+            if ($record->verified_at !== null) {
+                throw ValidationException::withMessages([
+                    'token' => ['এই ভেরিফিকেশন লিঙ্কটি ইতিমধ্যে ব্যবহার করা হয়েছে।'],
+                ]);
+            }
+
             if ($record->expires_at < now()) {
                 throw ValidationException::withMessages([
                     'token' => ['ভেরিফিকেশন লিঙ্কের মেয়াদ শেষ হয়ে গেছে। অনুগ্রহ করে পুনরায় কোড পাঠান।'],
@@ -672,7 +683,11 @@ class AuthServiceV2
             'status' => 'active',
         ]);
 
-        $user->notify(new WelcomeEmailNotification($user->name ?: $user->username));
+        try {
+            $user->notify(new WelcomeEmailNotification($user->name ?: $user->username));
+        } catch (\Throwable $e) {
+            Log::warning("Welcome email delivery error: {$e->getMessage()}");
+        }
 
         AuditLog::create([
             'user_id' => $user->id,
@@ -710,7 +725,11 @@ class AuthServiceV2
                 ->whereNull('verified_at')
                 ->update(['verified_at' => now()]);
 
-            $user->notify(new WelcomeEmailNotification($user->name ?: $user->username));
+            try {
+                $user->notify(new WelcomeEmailNotification($user->name ?: $user->username));
+            } catch (\Throwable $e) {
+                Log::warning("Welcome email delivery error: {$e->getMessage()}");
+            }
 
             AuditLog::create([
                 'user_id' => $user->id,
@@ -747,7 +766,11 @@ class AuthServiceV2
             'user_agent' => $request->userAgent(),
         ]);
 
-        $user->notify(new VerifyEmailNotification($otp['plain_otp'], $token, $meta['ip'], $request->userAgent()));
+        try {
+            $user->notify(new VerifyEmailNotification($otp['plain_otp'], $token, $meta['ip'], $request->userAgent()));
+        } catch (\Throwable $e) {
+            Log::warning("Resend verification email delivery error: {$e->getMessage()}");
+        }
 
         return [
             'success' => true,
@@ -891,10 +914,14 @@ class AuthServiceV2
             $otp = $this->otpService->generateOtp($user->email, 'password_reset', $user, 15, $meta['ip']);
             Cache::put('pwd_reset_token_'.$resetToken, ['user_id' => $user->id, 'email' => $user->email], now()->addMinutes(15));
 
-            $user->notify(new PasswordResetOtpNotification($otp['plain_otp'], $resetUrl, [
-                'ip' => $meta['ip'],
-                'device' => $meta['user_agent'] ?? request()->userAgent(),
-            ]));
+            try {
+                $user->notify(new PasswordResetOtpNotification($otp['plain_otp'], $resetUrl, [
+                    'ip' => $meta['ip'],
+                    'device' => $meta['user_agent'] ?? request()->userAgent(),
+                ]));
+            } catch (\Throwable $e) {
+                Log::warning("Password reset email delivery error: {$e->getMessage()}");
+            }
 
             return [
                 'status' => 'success',

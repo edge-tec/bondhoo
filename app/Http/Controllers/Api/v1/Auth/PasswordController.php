@@ -10,6 +10,7 @@ use App\Services\PasswordHistoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 
 class PasswordController extends Controller
@@ -56,7 +57,11 @@ class PasswordController extends Controller
         $this->passwordHistoryService->recordPassword($user, $hashed);
 
         // 4. Send security notification
-        $user->notify(new PasswordChangedNotification);
+        try {
+            $user->notify(new PasswordChangedNotification);
+        } catch (\Throwable $e) {
+            Log::warning("Password changed notification error: {$e->getMessage()}");
+        }
 
         // 5. Create audit log
         AuditLog::create([

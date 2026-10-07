@@ -746,8 +746,15 @@ class ProfileV2Controller extends Controller
             'sms_notifications' => ['nullable', 'boolean'],
             'push_notifications' => ['nullable', 'boolean'],
             'friend_request_alerts' => ['nullable', 'boolean'],
+            'friend_accepted_alerts' => ['nullable', 'boolean'],
             'comment_alerts' => ['nullable', 'boolean'],
             'mention_alerts' => ['nullable', 'boolean'],
+            'message_alerts' => ['nullable', 'boolean'],
+            'like_alerts' => ['nullable', 'boolean'],
+            'share_alerts' => ['nullable', 'boolean'],
+            'follower_alerts' => ['nullable', 'boolean'],
+            'page_alerts' => ['nullable', 'boolean'],
+            'group_alerts' => ['nullable', 'boolean'],
             'security_alerts' => ['nullable', 'boolean'],
         ]);
 

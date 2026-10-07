@@ -199,10 +199,12 @@ class AuthController extends Controller
     {
         $result = $this->authService->sendPasswordResetOtp($request->input('identifier'), $request);
 
-        return $this->successResponse(
-            data: $result,
-            message: $result['message']
-        );
+        return response()->json(array_merge([
+            'success' => true,
+            'status' => 'success',
+            'message' => $result['message'],
+            'data' => $result,
+        ], $result));
     }
 
     /**

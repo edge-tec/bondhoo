@@ -222,6 +222,7 @@
             <button class="tab-btn" onclick="switchTab('analytics')">📊 লগইন অ্যানালিটিক্স</button>
             <button class="tab-btn" onclick="switchTab('audits')">📜 অডিট ট্রেইল</button>
             <button class="tab-btn" onclick="switchTab('media')">📹 মিডিয়া ও রিসোর্স কন্ট্রোল</button>
+            <button class="tab-btn" onclick="switchTab('smtp')">📧 SMTP ও ইমেইল ম্যানেজমেন্ট</button>
         </div>
 
         <!-- TAB 1: USERS -->
@@ -510,6 +511,207 @@
                 </div>
             </div>
         </div>
+
+        <!-- TAB 10: SMTP & EMAIL SYSTEM MANAGEMENT -->
+        <div id="tabSmtp" style="display: none;">
+            <!-- Live SMTP & Delivery Statistics -->
+            <div class="widgets-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
+                <div class="widget-card blue">
+                    <div class="widget-title">✉️ মোট প্রেরিত ইমেইল</div>
+                    <div id="smtpTotalSent" class="widget-val blue">--</div>
+                    <div id="smtpTotalSentSub" class="widget-sub">সর্বমোট সফল ডেলিভারি</div>
+                </div>
+                <div class="widget-card green">
+                    <div class="widget-title">📈 ডেলিভারি সফলতার হার</div>
+                    <div id="smtpDeliveryRate" class="widget-val green">--%</div>
+                    <div class="widget-sub">সফল বনাম ব্যর্থ অনুপাত</div>
+                </div>
+                <div class="widget-card red">
+                    <div class="widget-title">⚠️ ব্যর্থ ইমেইল (Failed)</div>
+                    <div id="smtpFailedCount" class="widget-val red">--</div>
+                    <div id="smtpFailedSub" class="widget-sub">গত ২৪ ঘণ্টায় ব্যর্থ: --</div>
+                </div>
+                <div class="widget-card yellow">
+                    <div class="widget-title">⏳ অপেক্ষমাণ কিউ (Queued)</div>
+                    <div id="smtpQueuedCount" class="widget-val yellow">--</div>
+                    <div id="smtpQueuedSub" class="widget-sub">সিস্টেম স্ট্যাটাস: চেক হচ্ছে...</div>
+                </div>
+            </div>
+
+            <!-- Configuration & Test Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                <!-- Card 1: SMTP Server Settings -->
+                <div class="table-card" style="padding: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="font-size: 16px; font-weight: 800; color: #1e293b;">⚙️ SMTP সার্ভার কনফিগারেশন</h3>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                            <input type="checkbox" id="smtpIsEnabled" style="width: 18px; height: 18px;"> ইমেইল সিস্টেম সক্রিয়
+                        </label>
+                    </div>
+
+                    <form id="smtpSettingsForm" onsubmit="event.preventDefault(); saveSmtpSettings();">
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">SMTP Host *</label>
+                                <input type="text" id="smtpHost" class="search-input" style="width: 100%;" placeholder="e.g. mail.bondhoo.com" required>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Port *</label>
+                                <input type="number" id="smtpPort" class="search-input" style="width: 100%;" placeholder="587" required>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Username</label>
+                                <input type="text" id="smtpUsername" class="search-input" style="width: 100%;" placeholder="SMTP Username">
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Password</label>
+                                <input type="password" id="smtpPassword" class="search-input" style="width: 100%;" placeholder="নতুন পাসওয়ার্ড দিন...">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Encryption</label>
+                                <select id="smtpEncryption" class="filter-select" style="width: 100%;">
+                                    <option value="tls">TLS (STARTTLS / 587)</option>
+                                    <option value="ssl">SSL (Port 465)</option>
+                                    <option value="none">None (Unencrypted)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Timeout (সেকেন্ড)</label>
+                                <input type="number" id="smtpTimeout" class="search-input" style="width: 100%;" value="30" min="5" max="120">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">From Email *</label>
+                                <input type="email" id="smtpFromAddress" class="search-input" style="width: 100%;" placeholder="noreply@bondhoo.com" required>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">From Name *</label>
+                                <input type="text" id="smtpFromName" class="search-input" style="width: 100%;" placeholder="Bondhoo" required>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Reply-To Email</label>
+                                <input type="email" id="smtpReplyTo" class="search-input" style="width: 100%;" placeholder="support@bondhoo.com">
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Rate Limit (প্রতি মিনিটে)</label>
+                                <input type="number" id="smtpRateLimit" class="search-input" style="width: 100%;" value="60" min="1" max="1000">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" id="smtpAuth" checked> SMTP Authentication
+                            </label>
+                            <button type="submit" id="btnSaveSmtp" class="btn-export">সংরক্ষণ ও কার্যকর করুন 💾</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Card 2: Live SMTP Connection & Test Email -->
+                <div class="table-card" style="padding: 24px; display: flex; flex-direction: column;">
+                    <h3 style="font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 8px;">🚀 SMTP কানেকশন ভেরিফিকেশন ও টেস্ট</h3>
+                    <p style="font-size: 13px; color: var(--fb-text-secondary); margin-bottom: 16px;">
+                        প্রোডাকশনে ইমেইল চালুর পূর্বে রিয়েল SMTP হ্যান্ডশেক এবং টেস্ট ইমেইল প্রেরণ করে কনফিগারেশন নিশ্চিত করুন।
+                    </p>
+
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">টেস্ট ইমেইল প্রাপক (Recipient):</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="email" id="smtpTestRecipient" class="search-input" style="flex: 1;" placeholder="admin@bondhoo.com">
+                            <button type="button" id="btnSendTestEmail" class="btn-export green" onclick="sendTestSmtpEmail()">টেস্ট পাঠান ✉️</button>
+                        </div>
+                    </div>
+
+                    <!-- Live Test Diagnostic Result Box -->
+                    <div id="smtpTestResultBox" style="display: none; padding: 14px; border-radius: 8px; font-size: 13px; margin-top: auto; border: 1px solid transparent;"></div>
+
+                    <div style="margin-top: 20px; padding: 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 12px; color: #475569;">
+                        🔒 <strong>নিরাপত্তা নীতি:</strong> সংবেদনশীল SMTP পাসওয়ার্ড ডেটাবেজে সম্পূর্ণ এনক্রিপ্ট করে রাখা হয় এবং কখনো API রেসপন্স বা লগ ফাইলে প্লেইনটেক্সট আকারে রাখা হয় না।
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Templates Section -->
+            <div class="table-card" style="padding: 24px; margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <h3 style="font-size: 16px; font-weight: 800; color: #1e293b;">🎨 সাপোর্টেড ইমেইল টেমপ্লেট ও প্রিভিউ</h3>
+                        <p style="font-size: 12px; color: var(--fb-text-secondary);">রেসপন্সিভ HTML ও প্লেইনটেক্সট সমৃদ্ধ সেন্ট্রালাইজড টেমপ্লেট গ্যালারি</p>
+                    </div>
+                </div>
+                <div id="smtpTemplatesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px;">
+                    <!-- Filled dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Live Email Delivery Logs Table -->
+            <div class="table-card">
+                <div style="padding: 16px 20px; border-bottom: 1px solid var(--fb-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h3 style="font-size: 15px; font-weight: 800; color: #1e293b;">📜 রিয়েলটাইম ইমেইল ডেলিভারি লগ</h3>
+                        <span id="smtpLogsTotalBadge" class="badge-gov">০ টি রেকর্ড</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <input type="text" id="smtpLogSearch" class="search-input" style="width: 220px;" placeholder="ইমেইল বা বিষয় খুঁজুন..." oninput="debounceSearchSmtpLogs()">
+                        <select id="smtpLogStatusFilter" class="filter-select" onchange="loadSmtpLogs()">
+                            <option value="">সকল স্ট্যাটাস</option>
+                            <option value="sent">Sent (সফল)</option>
+                            <option value="queued">Queued (কিউড)</option>
+                            <option value="failed">Failed (ব্যর্থ)</option>
+                        </select>
+                        <button type="button" class="btn-export secondary" onclick="loadSmtpLogs()">রিফ্রেশ 🔄</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">ID</th>
+                            <th>প্রাপক (Recipient)</th>
+                            <th>টাইপ</th>
+                            <th>বিষয় (Subject)</th>
+                            <th>স্ট্যাটাস</th>
+                            <th>প্রচেষ্টা</th>
+                            <th>সময়</th>
+                            <th style="text-align: right;">একশন</th>
+                        </tr>
+                    </thead>
+                    <tbody id="smtpLogsTableBody">
+                        <tr><td colspan="8" style="text-align: center; padding: 24px;">লগ লোড হচ্ছে...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TEMPLATE PREVIEW MODAL -->
+        <div id="templatePreviewModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+            <div style="background: white; border-radius: 12px; width: 100%; max-width: 780px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                <div style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h4 id="previewModalTitle" style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;">ইমেইল প্রিভিউ</h4>
+                        <span id="previewModalBadge" class="badge-gov">Responsive HTML</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" onclick="setPreviewWidth('100%')" class="btn-act" title="Desktop View">🖥️ ডেস্কটপ</button>
+                        <button type="button" onclick="setPreviewWidth('380px')" class="btn-act" title="Mobile View">📱 মোবাইল</button>
+                        <button type="button" onclick="closeTemplateModal()" style="border: none; background: none; font-size: 20px; cursor: pointer; color: #64748b; padding: 0 4px;">&times;</button>
+                    </div>
+                </div>
+                <div style="flex: 1; background: #f1f5f9; display: flex; justify-content: center; overflow: auto; padding: 20px;">
+                    <iframe id="templatePreviewIframe" style="width: 100%; height: 580px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; transition: width 0.3s ease;"></iframe>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
@@ -589,7 +791,7 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
 
-            ['users', 'sessions', 'failed', 'otps', 'emails', 'passwords', 'analytics', 'audits', 'media'].forEach(t => {
+            ['users', 'sessions', 'failed', 'otps', 'emails', 'passwords', 'analytics', 'audits', 'media', 'smtp'].forEach(t => {
                 const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
                 if (el) el.style.display = (t === tab) ? 'block' : 'none';
             });
@@ -603,6 +805,7 @@
             if (tab === 'analytics') renderAnalytics();
             if (tab === 'audits') loadAudits();
             if (tab === 'media') loadMediaMetrics();
+            if (tab === 'smtp') loadSmtpTab();
         }
 
         // --- USERS MANAGEMENT ---
@@ -1023,6 +1226,313 @@
             } catch (err) {
                 alert('অনুরোধ ব্যর্থ হয়েছে: ' + err.message);
             }
+        }
+
+        // --- SMTP & EMAIL MANAGEMENT SUBSYSTEM ---
+        let smtpLogSearchTimeout;
+        function debounceSearchSmtpLogs() {
+            clearTimeout(smtpLogSearchTimeout);
+            smtpLogSearchTimeout = setTimeout(loadSmtpLogs, 350);
+        }
+
+        async function loadSmtpTab() {
+            await Promise.all([
+                loadSmtpStats(),
+                loadSmtpSettings(),
+                loadSmtpTemplates(),
+                loadSmtpLogs()
+            ]);
+        }
+
+        async function loadSmtpStats() {
+            try {
+                const res = await fetch('/admin/smtp/stats', { headers: getAuthHeaders() });
+                const json = await res.json();
+                if (json.success && json.data) {
+                    const d = json.data;
+                    document.getElementById('smtpTotalSent').innerText = d.sent_count ?? 0;
+                    document.getElementById('smtpTotalSentSub').innerText = `মোট প্রচেষ্টা: ${d.total_attempts ?? 0}`;
+                    document.getElementById('smtpDeliveryRate').innerText = `${d.delivery_rate_percent ?? 100}%`;
+                    document.getElementById('smtpFailedCount').innerText = d.failed_count ?? 0;
+                    document.getElementById('smtpFailedSub').innerText = `২৪ ঘণ্টায় ব্যর্থ: ${d.last_24h?.failed ?? 0}`;
+                    document.getElementById('smtpQueuedCount').innerText = d.queued_count ?? 0;
+                    document.getElementById('smtpQueuedSub').innerText = d.is_system_enabled ? 'ইমেইল সিস্টেম সক্রিয় 🟢' : 'ইমেইল সিস্টেম নিষ্ক্রিয় 🔴';
+                }
+            } catch (err) {
+                console.error('Failed to load SMTP stats:', err);
+            }
+        }
+
+        async function loadSmtpSettings() {
+            try {
+                const res = await fetch('/admin/smtp/settings', { headers: getAuthHeaders() });
+                const json = await res.json();
+                if (json.success && json.data) {
+                    const s = json.data;
+                    document.getElementById('smtpHost').value = s.mail_host || '';
+                    document.getElementById('smtpPort').value = s.mail_port || 587;
+                    document.getElementById('smtpUsername').value = s.mail_username || '';
+                    document.getElementById('smtpPassword').placeholder = s.has_password ? '•••••••• (সংরক্ষিত)' : 'পাসওয়ার্ড লিখুন...';
+                    document.getElementById('smtpPassword').value = '';
+                    document.getElementById('smtpEncryption').value = s.mail_encryption || 'tls';
+                    document.getElementById('smtpFromAddress').value = s.mail_from_address || '';
+                    document.getElementById('smtpFromName').value = s.mail_from_name || 'Bondhoo';
+                    document.getElementById('smtpReplyTo').value = s.mail_reply_to || '';
+                    document.getElementById('smtpTimeout').value = s.timeout || 30;
+                    document.getElementById('smtpRateLimit').value = s.rate_limit_per_minute || 60;
+                    document.getElementById('smtpIsEnabled').checked = !!s.is_enabled;
+                    document.getElementById('smtpAuth').checked = s.smtp_auth !== false;
+                }
+            } catch (err) {
+                console.error('Failed to load SMTP settings:', err);
+            }
+        }
+
+        async function saveSmtpSettings() {
+            const btn = document.getElementById('btnSaveSmtp');
+            const originalText = btn.innerText;
+            btn.innerText = 'সংরক্ষণ হচ্ছে... ⏳';
+            btn.disabled = true;
+
+            const payload = {
+                mail_host: document.getElementById('smtpHost').value.trim(),
+                mail_port: parseInt(document.getElementById('smtpPort').value),
+                mail_username: document.getElementById('smtpUsername').value.trim(),
+                mail_encryption: document.getElementById('smtpEncryption').value,
+                mail_from_address: document.getElementById('smtpFromAddress').value.trim(),
+                mail_from_name: document.getElementById('smtpFromName').value.trim(),
+                mail_reply_to: document.getElementById('smtpReplyTo').value.trim(),
+                timeout: parseInt(document.getElementById('smtpTimeout').value) || 30,
+                rate_limit_per_minute: parseInt(document.getElementById('smtpRateLimit').value) || 60,
+                is_enabled: document.getElementById('smtpIsEnabled').checked,
+                smtp_auth: document.getElementById('smtpAuth').checked
+            };
+
+            const pwd = document.getElementById('smtpPassword').value;
+            if (pwd.length > 0) {
+                payload.mail_password = pwd;
+            }
+
+            try {
+                const res = await fetch('/admin/smtp/settings', {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert('SMTP সেটিংস সফলভাবে সংরক্ষিত ও কার্যকর করা হয়েছে! ✅');
+                    loadSmtpSettings();
+                    loadSmtpStats();
+                } else {
+                    alert('ত্রুটি: ' + (json.message || 'সংরক্ষণ ব্যর্থ হয়েছে।'));
+                }
+            } catch (err) {
+                alert('অনুরোধ ব্যর্থ হয়েছে: ' + err.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function sendTestSmtpEmail() {
+            const recipientInput = document.getElementById('smtpTestRecipient');
+            const recipient = recipientInput.value.trim();
+            const resultBox = document.getElementById('smtpTestResultBox');
+            const btn = document.getElementById('btnSendTestEmail');
+
+            if (!recipient) {
+                alert('অনুগ্রহ করে প্রাপকের ইমেইল ঠিকানা প্রদান করুন।');
+                recipientInput.focus();
+                return;
+            }
+
+            btn.innerText = 'পাঠানো হচ্ছে... ⏳';
+            btn.disabled = true;
+            resultBox.style.display = 'block';
+            resultBox.style.background = '#eff6ff';
+            resultBox.style.borderColor = '#93c5fd';
+            resultBox.style.color = '#1e40af';
+            resultBox.innerHTML = `<strong>সংযোগ পরীক্ষা চলছে...</strong><br>সার্ভার ${document.getElementById('smtpHost').value}:${document.getElementById('smtpPort').value}-এ টেস্ট ইমেইল প্রেরণ করা হচ্ছে...`;
+
+            const payload = {
+                to_email: recipient,
+                mail_host: document.getElementById('smtpHost').value.trim(),
+                mail_port: parseInt(document.getElementById('smtpPort').value),
+                mail_username: document.getElementById('smtpUsername').value.trim(),
+                mail_encryption: document.getElementById('smtpEncryption').value,
+                mail_from_address: document.getElementById('smtpFromAddress').value.trim(),
+                mail_from_name: document.getElementById('smtpFromName').value.trim()
+            };
+            const pwd = document.getElementById('smtpPassword').value;
+            if (pwd.length > 0) {
+                payload.mail_password = pwd;
+            }
+
+            try {
+                const res = await fetch('/admin/smtp/test', {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    resultBox.style.background = '#f0fdf4';
+                    resultBox.style.borderColor = '#86efac';
+                    resultBox.style.color = '#166534';
+                    resultBox.innerHTML = `
+                        <strong>✅ সফল! SMTP টেস্ট উত্তীর্ণ:</strong><br>
+                        ${json.message}<br>
+                        <small style="opacity: 0.85;">হোস্ট: ${json.details?.host}:${json.details?.port} | এনক্রিপশন: ${json.details?.encryption}</small>
+                    `;
+                } else {
+                    resultBox.style.background = '#fef2f2';
+                    resultBox.style.borderColor = '#fca5a5';
+                    resultBox.style.color = '#991b1b';
+                    resultBox.innerHTML = `
+                        <strong>❌ ব্যর্থ! SMTP সংযোগে সমস্যা:</strong><br>
+                        ${json.message}<br>
+                        <small style="opacity: 0.85;">অনুগ্রহ করে হোস্ট, পোর্ট, পাসওয়ার্ড বা এনক্রিপশন মোড যাচাই করুন।</small>
+                    `;
+                }
+                loadSmtpStats();
+                loadSmtpLogs();
+            } catch (err) {
+                resultBox.style.background = '#fef2f2';
+                resultBox.style.borderColor = '#fca5a5';
+                resultBox.style.color = '#991b1b';
+                resultBox.innerHTML = `<strong>নেটওয়ার্ক ত্রুটি:</strong> ${err.message}`;
+            } finally {
+                btn.innerText = 'টেস্ট পাঠান ✉️';
+                btn.disabled = false;
+            }
+        }
+
+        async function loadSmtpTemplates() {
+            const container = document.getElementById('smtpTemplatesGrid');
+            try {
+                const res = await fetch('/admin/smtp/templates', { headers: getAuthHeaders() });
+                const json = await res.json();
+                const list = json.data || [];
+
+                if (list.length === 0) {
+                    container.innerHTML = '<div style="color: #64748b;">কোনো টেমপ্লেট পাওয়া যায়নি।</div>';
+                    return;
+                }
+
+                container.innerHTML = list.map(t => `
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                                <strong style="font-size: 13px; color: #0f172a;">${t.name}</strong>
+                                <span class="status-badge ${t.is_mandatory ? 'status-suspended' : 'status-active'}" style="font-size: 10px;">
+                                    ${t.is_mandatory ? 'Mandatory' : 'Social'}
+                                </span>
+                            </div>
+                            <p style="font-size: 11px; color: #64748b; line-height: 1.5; margin-bottom: 12px;">${t.description}</p>
+                        </div>
+                        <button type="button" class="btn-act" onclick="openTemplateModal('${t.key}', '${t.name}')" style="width: 100%; text-align: center; background: white;">
+                            লাইভ প্রিভিউ দেখুন 👁️
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Failed to load templates:', err);
+            }
+        }
+
+        async function loadSmtpLogs() {
+            const tbody = document.getElementById('smtpLogsTableBody');
+            const search = document.getElementById('smtpLogSearch')?.value || '';
+            const status = document.getElementById('smtpLogStatusFilter')?.value || '';
+
+            try {
+                let url = `/admin/smtp/logs?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`;
+                const res = await fetch(url, { headers: getAuthHeaders() });
+                const json = await res.json();
+                const paginated = json.data || {};
+                const logs = paginated.data || [];
+
+                document.getElementById('smtpLogsTotalBadge').innerText = `${paginated.total || logs.length} টি রেকর্ড`;
+
+                if (logs.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: #64748b;">কোনো ইমেইল ডেলিভারি লগ পাওয়া যায়নি।</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = logs.map(l => {
+                    const statusClass = l.status === 'sent' ? 'status-active' : (l.status === 'failed' ? 'status-suspended' : 'status-pending');
+                    const time = l.sent_at || l.created_at || '--';
+                    const safeErr = l.error_message ? `<div style="font-size: 11px; color: #dc2626; margin-top: 4px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${l.error_message}">⚠️ ${l.error_message}</div>` : '';
+
+                    return `
+                        <tr>
+                            <td><strong>#${l.id}</strong></td>
+                            <td>
+                                <div style="font-weight: 600; color: #0f172a;">${l.recipient}</div>
+                                <div style="font-size: 11px; color: #64748b;">IP: ${l.ip_address || 'System'}</div>
+                            </td>
+                            <td><span style="font-size: 11px; font-weight: 700; color: #2563eb; background: #eff6ff; padding: 2px 6px; border-radius: 4px;">${l.email_type || 'system'}</span></td>
+                            <td>
+                                <div style="font-size: 13px; color: #1e293b; font-weight: 500;">${l.subject || '--'}</div>
+                                ${safeErr}
+                            </td>
+                            <td><span class="status-badge ${statusClass}">${l.status}</span></td>
+                            <td>${l.attempts || 1} বার</td>
+                            <td style="font-size: 12px; color: #64748b;">${new Date(time).toLocaleString('bn-BD')}</td>
+                            <td style="text-align: right;">
+                                ${l.status === 'failed' ? `<button type="button" class="btn-act" onclick="retryEmailLog(${l.id})" style="color: #dc2626;">রিট্রাই 🔄</button>` : `<span style="font-size: 11px; color: #16a34a;">সফল ✓</span>`}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Failed to load SMTP logs:', err);
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px; color: #dc2626;">লগ লোড করতে সমস্যা হয়েছে: ${err.message}</td></tr>`;
+            }
+        }
+
+        async function retryEmailLog(id) {
+            if (!confirm('আপনি কি নিশ্চিত যে এই ইমেইলটি পুনরায় পাঠাতে চান?')) return;
+            try {
+                const res = await fetch(`/admin/smtp/logs/${id}/retry`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert('ইমেইল সফলভাবে পুনরায় পাঠানো হয়েছে! ✅');
+                    loadSmtpStats();
+                    loadSmtpLogs();
+                } else {
+                    alert('রিট্রাই ব্যর্থ: ' + (json.message || 'অজানা ত্রুটি'));
+                }
+            } catch (err) {
+                alert('অনুরোধ ব্যর্থ হয়েছে: ' + err.message);
+            }
+        }
+
+        function openTemplateModal(key, title) {
+            document.getElementById('previewModalTitle').innerText = title + ' — লাইভ প্রিভিউ';
+            const iframe = document.getElementById('templatePreviewIframe');
+            iframe.src = `/admin/smtp/templates/${key}/preview`;
+            document.getElementById('templatePreviewModal').style.display = 'flex';
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('templatePreviewModal').style.display = 'none';
+            document.getElementById('templatePreviewIframe').src = 'about:blank';
+        }
+
+        function setPreviewWidth(w) {
+            document.getElementById('templatePreviewIframe').style.width = w;
         }
     </script>
 </body>

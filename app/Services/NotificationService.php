@@ -226,8 +226,15 @@ class NotificationService implements NotificationServiceInterface
                 'sms_notifications' => false,
                 'push_notifications' => true,
                 'friend_request_alerts' => true,
+                'friend_accepted_alerts' => true,
                 'comment_alerts' => true,
                 'mention_alerts' => true,
+                'message_alerts' => true,
+                'like_alerts' => true,
+                'share_alerts' => true,
+                'follower_alerts' => true,
+                'page_alerts' => true,
+                'group_alerts' => true,
                 'security_alerts' => true,
             ]
         );
@@ -249,8 +256,15 @@ class NotificationService implements NotificationServiceInterface
             'sms_notifications',
             'push_notifications',
             'friend_request_alerts',
+            'friend_accepted_alerts',
             'comment_alerts',
             'mention_alerts',
+            'message_alerts',
+            'like_alerts',
+            'share_alerts',
+            'follower_alerts',
+            'page_alerts',
+            'group_alerts',
             'security_alerts',
         ];
         $filtered = array_intersect_key($settings, array_flip($allowed));

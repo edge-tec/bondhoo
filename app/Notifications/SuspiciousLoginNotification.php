@@ -2,6 +2,8 @@
 
 namespace App\Notifications;
 
+use App\Models\EmailLog;
+use App\Services\Email\SmtpConfigService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -22,21 +24,53 @@ class SuspiciousLoginNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        // Apply active database SMTP configuration
+        app(SmtpConfigService::class)->applyToMailer();
+
         $ip = $this->incidentDetails['ip'] ?? 'Unknown';
         $location = $this->incidentDetails['location'] ?? 'Unknown';
         $reason = $this->incidentDetails['reason'] ?? 'সন্দেহজনক কার্যকলাপ';
 
+        try {
+            EmailLog::create([
+                'user_id' => $notifiable->id ?? null,
+                'recipient' => $notifiable->email,
+                'email_type' => 'security_alert',
+                'subject' => '⚠️ জরুরি সিকিউরিটি অ্যালার্ট: সন্দেহজনক লগইন প্রচেষ্টা!',
+                'mail_class' => self::class,
+                'ip_address' => $ip,
+                'status' => 'sent',
+                'sent_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            // Ignore logging error in test or disconnected environment
+        }
+
         return (new MailMessage)
-            ->error()
             ->subject('⚠️ জরুরি সিকিউরিটি অ্যালার্ট: সন্দেহজনক লগইন প্রচেষ্টা!')
-            ->greeting('জরুরি নিরাপত্তা সতর্কতা!')
-            ->line('আপনার যুগাজুগ অ্যাকাউন্টে একটি অপ্রত্যাশিত বা সন্দেহজনক লগইন প্রচেষ্টা শনাক্ত হয়েছে।')
-            ->line("**কারণ:** {$reason}")
-            ->line("**আইপি:** {$ip}")
-            ->line("**লোকেশন:** {$location}")
-            ->line('আমরা আপনার অ্যাকাউন্টের সুরক্ষায় টু-ফ্যাক্টর অথেন্টিকেশন কোড দাবি করেছি অথবা সেশন সাময়িক স্থগিত করেছি।')
-            ->action('অ্যাকাউন্ট লক করুন ও পাসওয়ার্ড বদলান', url('/forgot-password'))
-            ->line('যদি এই প্রচেষ্টাটি আপনার না হয়, তবে অবিলম্বে আমাদের সাথে যোগাযোগ করুন।');
+            ->view('emails.security-alert', [
+                'user' => $notifiable,
+                'alertTitle' => 'জরুরি নিরাপত্তা সতর্কতা: সন্দেহজনক লগইন প্রচেষ্টা',
+                'alertMessage' => "আপনার অ্যাকাউন্টে একটি অপ্রত্যাশিত বা সন্দেহজনক লগইন প্রচেষ্টা শনাক্ত হয়েছে। কারণ: {$reason}। সুরক্ষার স্বার্থে টু-ফ্যাক্টর অথেন্টিকেশন কোড দাবি করা হয়েছে।",
+                'details' => [
+                    'কারণ' => $reason,
+                    'আইপি এড্রেস' => $ip,
+                    'লোকেশন' => $location,
+                    'সময়' => now()->timezone('Asia/Dhaka')->format('d M Y, h:i A'),
+                ],
+                'actionUrl' => url('/forgot-password'),
+            ])
+            ->text('emails.plain.security-alert', [
+                'user' => $notifiable,
+                'alertTitle' => 'জরুরি নিরাপত্তা সতর্কতা: সন্দেহজনক লগইন প্রচেষ্টা',
+                'alertMessage' => "আপনার অ্যাকাউন্টে একটি অপ্রত্যাশিত বা সন্দেহজনক লগইন প্রচেষ্টা শনাক্ত হয়েছে। কারণ: {$reason}।",
+                'details' => [
+                    'কারণ' => $reason,
+                    'আইপি এড্রেস' => $ip,
+                    'লোকেশন' => $location,
+                ],
+                'actionUrl' => url('/forgot-password'),
+            ]);
     }
 
     public function toArray(object $notifiable): array

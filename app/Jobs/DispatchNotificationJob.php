@@ -2,10 +2,12 @@
 
 namespace App\Jobs;
 
+use App\Mail\SocialNotificationMail;
 use App\Models\User;
 use App\Services\Contracts\CacheServiceInterface;
 use App\Services\Contracts\QueueServiceInterface;
 use App\Services\Contracts\RealtimeServiceInterface;
+use App\Services\Email\EmailService;
 use App\Services\Notification\NotificationDto;
 use App\Services\Notification\NotificationTypeRegistry;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -132,12 +134,37 @@ class DispatchNotificationJob implements ShouldQueue
         if (in_array('email', $this->channels, true) && $wantsEmail && ! empty($recipient->email)) {
             $subject = $this->data['title'] ?? 'যুগাজুগে নতুন নোটিফিকেশন';
             $body = $this->data['message'] ?? 'আপনার অ্যাকাউন্টে একটি নতুন আপডেট রয়েছে।';
+            $category = $this->data['category'] ?? NotificationTypeRegistry::resolveCategory($this->type)->value;
+            $actionUrl = ! empty($this->data['action_url']) ? url($this->data['action_url']) : url('/dashboard');
 
-            $queueService->dispatch(new SendEmailNotificationJob(
-                toEmail: $recipient->email,
-                subject: $subject,
-                messageBody: $body
-            ));
+            try {
+                app(EmailService::class)->send(
+                    to: $recipient->email,
+                    mailable: new SocialNotificationMail(
+                        recipient: $recipient,
+                        notificationTitle: $subject,
+                        notificationMessage: $body,
+                        actionUrl: $actionUrl,
+                        actorName: $this->data['actor_name'] ?? $this->data['sender_name'] ?? null,
+                        actorAvatarUrl: $this->data['sender_avatar'] ?? null,
+                        notificationCategory: $category
+                    ),
+                    emailType: $category,
+                    user: $recipient,
+                    idempotencyKey: "social_email:{$recipient->id}:{$this->type}:".md5(json_encode($this->data)),
+                    metadata: [
+                        'recipient_id' => $recipient->id,
+                        'notification_type' => $this->type,
+                        'category' => $category,
+                    ]
+                );
+            } catch (\Throwable) {
+                $queueService->dispatch(new SendEmailNotificationJob(
+                    toEmail: $recipient->email,
+                    subject: $subject,
+                    messageBody: $body
+                ));
+            }
         }
     }
 }

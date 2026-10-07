@@ -2,6 +2,8 @@
 
 namespace App\Notifications;
 
+use App\Models\EmailLog;
+use App\Services\Email\SmtpConfigService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -22,23 +24,34 @@ class LoginAlertNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $device = $this->deviceInfo['browser'] ?? 'Unknown Browser';
-        $os = $this->deviceInfo['os'] ?? 'Unknown OS';
-        $ip = $this->deviceInfo['ip'] ?? 'Unknown IP';
-        $country = $this->deviceInfo['country'] ?? 'Unknown Location';
-        $time = now()->toDayDateTimeString();
+        // Apply active database SMTP configuration
+        app(SmtpConfigService::class)->applyToMailer();
+
+        try {
+            EmailLog::create([
+                'user_id' => $notifiable->id ?? null,
+                'recipient' => $notifiable->email,
+                'email_type' => 'new_login',
+                'subject' => 'Bondhoo — নতুন ডিভাইস থেকে লগইন সতর্কতা',
+                'mail_class' => self::class,
+                'ip_address' => $this->deviceInfo['ip'] ?? request()->ip(),
+                'status' => 'sent',
+                'sent_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            // Ignore logging error in test or disconnected environment
+        }
 
         return (new MailMessage)
-            ->subject('নতুন ডিভাইস থেকে যুগাজুগ লগইন সতর্কতা')
-            ->greeting('নিরাপত্তা সতর্কতা:')
-            ->line('একটি নতুন ডিভাইস থেকে আপনার অ্যাকাউন্টে সফলভাবে লগইন করা হয়েছে।')
-            ->line("**ডিভাইস ও ব্রাউজার:** {$device} on {$os}")
-            ->line("**আইপি এড্রেস:** {$ip}")
-            ->line("**স্থান:** {$country}")
-            ->line("**সময়:** {$time}")
-            ->line('এটি আপনি না হলে অবিলম্বে পাসওয়ার্ড পরিবর্তন করুন এবং সব সেশন থেকে লগআউট করুন।')
-            ->action('সেশন ম্যানেজমেন্ট দেখুন', url('/dashboard'))
-            ->salutation('যুগাজুগ সাইবার সিকিউরিটি সেল');
+            ->subject('Bondhoo — নতুন ডিভাইস থেকে লগইন সতর্কতা')
+            ->view('emails.new-login-alert', [
+                'user' => $notifiable,
+                'deviceInfo' => $this->deviceInfo,
+            ])
+            ->text('emails.plain.new-login-alert', [
+                'user' => $notifiable,
+                'deviceInfo' => $this->deviceInfo,
+            ]);
     }
 
     public function toArray(object $notifiable): array

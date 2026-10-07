@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthManagementController;
+use App\Http\Controllers\Admin\EmailManagementController;
 use App\Http\Controllers\Api\v1\Admin\AdminAuthController;
 use App\Http\Controllers\Api\v1\Admin\InfrastructureController;
 use App\Http\Controllers\Api\v1\AnalyticsController;
@@ -533,7 +534,9 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         Route::get('/verification-status', [AuthV2Controller::class, 'verificationStatus']);
         Route::post('/resend-otp', [AuthV2Controller::class, 'resendOtp']);
         Route::post('/forgot-password', [AuthV2Controller::class, 'forgotPassword']);
+        Route::post('/password/email', [AuthV2Controller::class, 'forgotPassword']);
         Route::post('/reset-password', [AuthV2Controller::class, 'resetPassword']);
+        Route::post('/password/reset', [AuthV2Controller::class, 'resetPassword']);
 
         // Authenticated Auth actions
         Route::middleware(['auth:sanctum'])->group(function () {
@@ -573,6 +576,18 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         Route::get('/audit-logs', [AuthManagementController::class, 'auditLogs']);
         Route::get('/failed-logins', [AuthManagementController::class, 'failedLogins']);
         Route::get('/export', [AuthManagementController::class, 'exportUsers']);
+    });
+
+    // Enterprise SMTP Email Management (RBAC protected)
+    Route::prefix('admin/smtp')->middleware(['auth:sanctum', 'role:ADMIN,SUPER_ADMIN'])->group(function () {
+        Route::get('/settings', [EmailManagementController::class, 'getSettings']);
+        Route::post('/settings', [EmailManagementController::class, 'updateSettings']);
+        Route::post('/test', [EmailManagementController::class, 'testConnection'])->middleware('throttle:smtp-test');
+        Route::get('/logs', [EmailManagementController::class, 'getLogs']);
+        Route::post('/logs/{id}/retry', [EmailManagementController::class, 'retryLog'])->whereNumber('id');
+        Route::get('/stats', [EmailManagementController::class, 'getStats']);
+        Route::get('/templates', [EmailManagementController::class, 'getTemplates']);
+        Route::get('/templates/{key}/preview', [EmailManagementController::class, 'previewTemplate']);
     });
 
     // Step 15: Admin Profile Verification Management (RBAC protected)

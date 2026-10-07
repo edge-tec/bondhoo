@@ -15,11 +15,15 @@ class EmailLog extends Model
     protected $fillable = [
         'user_id',
         'recipient',
+        'email_type',
         'subject',
         'mail_class',
         'ip_address',
         'status',
+        'attempts',
+        'idempotency_key',
         'error_message',
+        'metadata',
         'sent_at',
     ];
 
@@ -27,6 +31,8 @@ class EmailLog extends Model
     {
         return [
             'sent_at' => 'datetime',
+            'attempts' => 'integer',
+            'metadata' => 'array',
         ];
     }
 

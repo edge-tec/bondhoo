@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\EmailManagementController;
 use App\Http\Controllers\Api\v1\Admin\AdminAuthController;
 use App\Http\Controllers\Api\v1\VoiceMessageController;
 use App\Http\Controllers\Api\v2\FederationV2Controller;
@@ -82,6 +83,14 @@ Route::middleware(['auth:web'])->group(function () {
     Route::post('/settings/two-factor/setup', [TwoFactorWebController::class, 'setup'])->name('settings.two-factor.setup');
     Route::post('/settings/two-factor/enable', [TwoFactorWebController::class, 'enable'])->name('settings.two-factor.enable');
     Route::post('/settings/two-factor/disable', [TwoFactorWebController::class, 'disable'])->name('settings.two-factor.disable');
+
+    // Notification Preferences Settings
+    Route::get('/settings/notifications', function () {
+        $user = auth()->user();
+        $settings = $user ? $user->notificationSettings()->firstOrCreate(['user_id' => $user->id]) : null;
+
+        return view('settings.notifications', ['settings' => $settings]);
+    })->name('settings.notifications');
 });
 
 Route::get('/register', function () {
@@ -145,6 +154,18 @@ Route::middleware(['admin.web'])->group(function () {
 
     Route::get('/admin/system/dashboard', function () {
         return view('dashboard');
+    });
+
+    // Enterprise SMTP Email Management
+    Route::prefix('admin/smtp')->group(function () {
+        Route::get('/settings', [EmailManagementController::class, 'getSettings'])->name('admin.smtp.settings');
+        Route::post('/settings', [EmailManagementController::class, 'updateSettings'])->name('admin.smtp.update');
+        Route::post('/test', [EmailManagementController::class, 'testConnection'])->name('admin.smtp.test');
+        Route::get('/logs', [EmailManagementController::class, 'getLogs'])->name('admin.smtp.logs');
+        Route::post('/logs/{id}/retry', [EmailManagementController::class, 'retryLog'])->name('admin.smtp.retry')->whereNumber('id');
+        Route::get('/stats', [EmailManagementController::class, 'getStats'])->name('admin.smtp.stats');
+        Route::get('/templates', [EmailManagementController::class, 'getTemplates'])->name('admin.smtp.templates');
+        Route::get('/templates/{key}/preview', [EmailManagementController::class, 'previewTemplate'])->name('admin.smtp.preview');
     });
 });
 

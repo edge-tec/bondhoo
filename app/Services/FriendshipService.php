@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Mail\FriendRequestAcceptedMail;
+use App\Mail\FriendRequestMail;
 use App\Models\AuditLog;
 use App\Models\BlockedUser;
 use App\Models\FriendList;
@@ -12,11 +14,13 @@ use App\Models\UserFollower;
 use App\Services\Contracts\CacheServiceInterface;
 use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\Contracts\RealtimeServiceInterface;
+use App\Services\Email\EmailService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -224,6 +228,31 @@ class FriendshipService
                 'sender_avatar' => $user->profile?->avatar_url,
                 'action_url' => '/friends',
             ], ['database', 'broadcast']);
+
+            // Enterprise Email notification (Respects preferences, deduplication, retry queues)
+            if (! empty($friend->email)) {
+                try {
+                    app(EmailService::class)->send(
+                        to: $friend->email,
+                        mailable: new FriendRequestMail(
+                            sender: $user,
+                            recipient: $friend,
+                            requestUrl: url('/friends'),
+                            senderAvatarUrl: $user->profile?->avatar_url
+                        ),
+                        emailType: 'friend_request',
+                        user: $friend,
+                        idempotencyKey: "friend_request:{$user->id}:{$friend->id}:{$friendship->id}",
+                        metadata: [
+                            'sender_id' => $user->id,
+                            'recipient_id' => $friend->id,
+                            'friendship_id' => $friendship->id,
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning("Failed to dispatch friend request email: {$e->getMessage()}");
+                }
+            }
 
             // Audit log
             AuditLog::create([
@@ -1420,6 +1449,31 @@ class FriendshipService
             'sender_avatar' => $user->profile?->avatar_url,
             'action_url' => "/profile/{$user->username}",
         ], ['database', 'broadcast']);
+
+        // Enterprise Email notification to original requester
+        if (! empty($otherUser->email)) {
+            try {
+                app(EmailService::class)->send(
+                    to: $otherUser->email,
+                    mailable: new FriendRequestAcceptedMail(
+                        friend: $user,
+                        recipient: $otherUser,
+                        profileUrl: url("/profile/{$user->username}"),
+                        friendAvatarUrl: $user->profile?->avatar_url
+                    ),
+                    emailType: 'friend_accepted',
+                    user: $otherUser,
+                    idempotencyKey: "friend_accepted:{$user->id}:{$otherUser->id}:{$friendship->id}",
+                    metadata: [
+                        'accepter_id' => $user->id,
+                        'recipient_id' => $otherUser->id,
+                        'friendship_id' => $friendship->id,
+                    ]
+                );
+            } catch (\Throwable $e) {
+                Log::warning("Failed to dispatch friend accepted email: {$e->getMessage()}");
+            }
+        }
 
         // Audit log
         AuditLog::create([
