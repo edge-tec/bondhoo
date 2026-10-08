@@ -22,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 
 class EmailManagementController extends Controller
 {
@@ -89,23 +90,35 @@ class EmailManagementController extends Controller
      */
     public function testConnection(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'to_email' => ['required', 'email', 'max:255'],
-            'mail_host' => ['nullable', 'string', 'max:255'],
-            'mail_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
-            'mail_username' => ['nullable', 'string', 'max:255'],
-            'mail_password' => ['nullable', 'string', 'max:255'],
-            'mail_encryption' => ['nullable', 'string'],
-            'mail_from_address' => ['nullable', 'email', 'max:255'],
-            'mail_from_name' => ['nullable', 'string', 'max:255'],
-        ]);
+        try {
+            $validated = $request->validate([
+                'to_email' => ['required', 'email', 'max:255'],
+                'mail_host' => ['nullable', 'string', 'max:255'],
+                'mail_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
+                'mail_username' => ['nullable', 'string', 'max:255'],
+                'mail_password' => ['nullable', 'string', 'max:255'],
+                'mail_encryption' => ['nullable', 'string'],
+                'mail_from_address' => ['nullable', 'email', 'max:255'],
+                'mail_from_name' => ['nullable', 'string', 'max:255'],
+            ]);
 
-        $toEmail = $validated['to_email'];
-        unset($validated['to_email']);
+            $toEmail = $validated['to_email'];
+            unset($validated['to_email']);
 
-        $result = $this->smtpConfigService->testConnection($toEmail, $validated);
+            $result = $this->smtpConfigService->testConnection($toEmail, $validated);
 
-        return response()->json($result, $result['success'] ? 200 : 422);
+            return response()->json($result, $result['success'] ? 200 : 422);
+        } catch (ValidationException $ve) {
+            throw $ve;
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'SMTP সংযোগ ব্যর্থ: '.$e->getMessage(),
+                'details' => [
+                    'error' => $e->getMessage(),
+                ],
+            ], 422);
+        }
     }
 
     /**

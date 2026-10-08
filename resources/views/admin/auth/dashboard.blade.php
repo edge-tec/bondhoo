@@ -1464,10 +1464,22 @@
                     resultBox.style.background = '#fef2f2';
                     resultBox.style.borderColor = '#fca5a5';
                     resultBox.style.color = '#991b1b';
+
+                    const errorDetail = json.details?.error || (json.errors ? Object.values(json.errors).flat().join(', ') : '');
+                    let hint = 'অনুগ্রহ করে হোস্ট, পোর্ট, পাসওয়ার্ড বা এনক্রিপশন মোড যাচাই করুন।';
+                    if (errorDetail.includes('authentication failed') || errorDetail.includes('535') || errorDetail.includes('Username and Password not accepted')) {
+                        hint = '<strong>প্রমাণীকরণ ত্রুটি (Authentication Failed):</strong> ইউজারনেম এবং পাসওয়ার্ড সঠিক কিনা যাচাই করুন। পাসওয়ার্ড পরিবর্তন করলে আগে "সংরক্ষণ ও কার্যকর করুন 💾" বাটনে ক্লিক করে সংরক্ষণ করুন।';
+                    } else if (errorDetail.includes('Connection refused') || errorDetail.includes('Connection timed out') || errorDetail.includes('timed out')) {
+                        hint = '<strong>সার্ভার সংযোগ ত্রুটি:</strong> হোস্ট ও পোর্ট রিচ করা যাচ্ছে না বা ফায়ারওয়াল দ্বারা ব্লক রয়েছে।';
+                    } else if (errorDetail.includes('certificate') || errorDetail.includes('SSL')) {
+                        hint = '<strong>SSL/TLS হ্যান্ডশেক ত্রুটি:</strong> এনক্রিপশন মোড (TLS / SSL / None) ও পোর্ট কনফিগারেশন মিলিয়ে দেখুন।';
+                    }
+
                     resultBox.innerHTML = `
-                        <strong>❌ ব্যর্থ! SMTP সংযোগে সমস্যা:</strong><br>
-                        ${json.message || 'সংযোগ স্থাপন করা সম্ভব হয়নি।'}<br>
-                        <small style="opacity: 0.85;">অনুগ্রহ করে হোস্ট, পোর্ট, পাসওয়ার্ড বা এনক্রিপশন মোড যাচাই করুন।</small>
+                        <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">❌ ব্যর্থ! SMTP সংযোগে সমস্যা:</div>
+                        <div style="font-size: 13px;">${json.message || 'সংযোগ স্থাপন করা সম্ভব হয়নি।'}</div>
+                        ${errorDetail ? `<div style="margin-top: 8px; padding: 8px 10px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; font-family: monospace; font-size: 11px; word-break: break-all; color: #9f1239; max-height: 120px; overflow-y: auto;">${errorDetail}</div>` : ''}
+                        <div style="margin-top: 8px; font-size: 12px; line-height: 1.4; opacity: 0.95;">${hint}</div>
                     `;
                 }
                 loadSmtpStats();
@@ -1476,7 +1488,10 @@
                 resultBox.style.background = '#fef2f2';
                 resultBox.style.borderColor = '#fca5a5';
                 resultBox.style.color = '#991b1b';
-                resultBox.innerHTML = `<strong>নেটওয়ার্ক ত্রুটি:</strong> ${err.message}`;
+                resultBox.innerHTML = `
+                    <div style="font-weight: 700;">❌ নেটওয়ার্ক বা সার্ভার ত্রুটি:</div>
+                    <div style="font-size: 12px; margin-top: 4px;">${err.message}</div>
+                `;
             } finally {
                 btn.innerText = 'টেস্ট পাঠান ✉️';
                 btn.disabled = false;

@@ -507,4 +507,45 @@ class EnterpriseSmtpEmailSystemTest extends TestCase
         $response->assertStatus(201);
         $this->assertDatabaseHas('users', ['username' => 'resilience_user']);
     }
+
+    /**
+     * TEST 14: SMTP Test Connection Handles Failure Gracefully Returning 422 Instead of 500
+     */
+    public function test_admin_test_connection_handles_connection_failure_gracefully_without_500(): void
+    {
+        // Calling test connection with an unroutable port/host to trigger real failure without crashing 500
+        $response = $this->actingAs($this->admin, 'sanctum')->postJson('/api/v2/admin/smtp/test', [
+            'to_email' => 'fail_test@bondhoo.com',
+            'mail_host' => '127.0.0.1',
+            'mail_port' => 65432, // Non-existent port
+            'mail_username' => 'user@bondhoo.com',
+            'mail_password' => 'wrong_pass',
+            'mail_encryption' => 'tls',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+            ]);
+
+        $this->assertArrayHasKey('details', $response->json());
+        $this->assertDatabaseHas('email_logs', [
+            'recipient' => 'fail_test@bondhoo.com',
+            'status' => 'failed',
+        ]);
+    }
+
+    /**
+     * TEST 15: SmtpConfigService Recovers From Corrupted or Incomplete Cache Objects
+     */
+    public function test_smtp_config_recovers_from_corrupted_cache_cleanly(): void
+    {
+        Cache::put(SmtpConfigService::CACHE_KEY, 'invalid_serialized_string', 3600);
+
+        /** @var SmtpConfigService $service */
+        $service = app(SmtpConfigService::class);
+        $settings = $service->getActiveSettings();
+
+        $this->assertInstanceOf(SmtpSetting::class, $settings);
+    }
 }

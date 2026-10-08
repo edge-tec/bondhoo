@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -23,7 +24,10 @@ class SmtpTestMail extends Mailable
 
     public function envelope(): Envelope
     {
+        $from = $this->fromAddress ? new Address($this->fromAddress, $this->fromName ?: 'Bondhoo') : null;
+
         return new Envelope(
+            from: $from,
             subject: 'Bondhoo Enterprise SMTP কনফিগারেশন টেস্ট',
         );
     }

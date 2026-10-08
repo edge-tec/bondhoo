@@ -5,7 +5,6 @@ namespace App\Services\Email;
 use App\Mail\SmtpTestMail;
 use App\Models\EmailLog;
 use App\Models\SmtpSetting;
-use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
@@ -20,30 +19,44 @@ class SmtpConfigService
      */
     public function getActiveSettings(): SmtpSetting
     {
-        return Cache::remember(self::CACHE_KEY, 3600, function () {
-            $setting = SmtpSetting::first();
-
-            if (! $setting) {
-                // Initialize default record from current Laravel mail configuration
-                $setting = SmtpSetting::create([
-                    'mail_mailer' => config('mail.default', 'smtp'),
-                    'mail_host' => config('mail.mailers.smtp.host', '127.0.0.1'),
-                    'mail_port' => (int) config('mail.mailers.smtp.port', 587),
-                    'mail_username' => config('mail.mailers.smtp.username'),
-                    'mail_password' => config('mail.mailers.smtp.password'),
-                    'mail_encryption' => config('mail.mailers.smtp.encryption', 'tls') ?: 'tls',
-                    'mail_from_address' => config('mail.from.address', 'noreply@bondhoo.com'),
-                    'mail_from_name' => config('mail.from.name', 'Bondhoo'),
-                    'mail_reply_to' => config('mail.from.address', 'support@bondhoo.com'),
-                    'smtp_auth' => true,
-                    'timeout' => 30,
-                    'rate_limit_per_minute' => 60,
-                    'is_enabled' => true,
-                ]);
+        try {
+            $cached = Cache::get(self::CACHE_KEY);
+            if ($cached instanceof SmtpSetting) {
+                return $cached;
             }
+        } catch (\Throwable) {
+            // Ignore cache read failures
+        }
 
-            return $setting;
-        });
+        Cache::forget(self::CACHE_KEY);
+
+        $setting = SmtpSetting::first();
+
+        if (! $setting) {
+            // Initialize default record from current Laravel mail configuration
+            $setting = SmtpSetting::create([
+                'mail_mailer' => config('mail.default', 'smtp'),
+                'mail_host' => config('mail.mailers.smtp.host', '127.0.0.1'),
+                'mail_port' => (int) config('mail.mailers.smtp.port', 587),
+                'mail_username' => config('mail.mailers.smtp.username'),
+                'mail_password' => config('mail.mailers.smtp.password'),
+                'mail_encryption' => config('mail.mailers.smtp.encryption', 'tls') ?: 'tls',
+                'mail_from_address' => config('mail.from.address', 'noreply@bondhoo.com'),
+                'mail_from_name' => config('mail.from.name', 'Bondhoo'),
+                'mail_reply_to' => config('mail.from.address', 'support@bondhoo.com'),
+                'smtp_auth' => true,
+                'timeout' => 30,
+                'rate_limit_per_minute' => 60,
+                'is_enabled' => true,
+            ]);
+        }
+
+        try {
+            Cache::put(self::CACHE_KEY, $setting, 3600);
+        } catch (\Throwable) {
+        }
+
+        return $setting;
     }
 
     /**
@@ -109,6 +122,7 @@ class SmtpConfigService
         Config::set('mail.mailers.smtp.username', $setting->mail_username);
         Config::set('mail.mailers.smtp.password', $setting->getDecryptedPassword());
         Config::set('mail.mailers.smtp.timeout', $setting->timeout);
+        Config::set('mail.mailers.smtp.verify_peer', false);
 
         if (! empty($setting->mail_from_address)) {
             Config::set('mail.from.address', $setting->mail_from_address);
@@ -148,6 +162,7 @@ class SmtpConfigService
             'username' => $username,
             'password' => $password,
             'timeout' => 15,
+            'verify_peer' => false,
         ]);
 
         $log = EmailLog::create([
@@ -190,17 +205,19 @@ class SmtpConfigService
                     'log_id' => $log->id,
                 ],
             ];
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $safeError = $e->getMessage();
             // Sanitize: never expose passwords in error messages
             if (! empty($password)) {
                 $safeError = str_replace($password, '********', $safeError);
             }
 
-            $log->update([
-                'status' => 'failed',
-                'error_message' => $safeError,
-            ]);
+            if (isset($log) && $log instanceof EmailLog) {
+                $log->update([
+                    'status' => 'failed',
+                    'error_message' => $safeError,
+                ]);
+            }
 
             Log::error('SMTP Test connection failed: '.$safeError);
 
@@ -212,7 +229,7 @@ class SmtpConfigService
                     'port' => $port,
                     'encryption' => $encryption ?: 'None',
                     'error' => $safeError,
-                    'log_id' => $log->id,
+                    'log_id' => $log->id ?? null,
                 ],
             ];
         }
