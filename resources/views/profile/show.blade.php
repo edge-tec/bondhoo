@@ -1147,6 +1147,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             background: rgba(17, 24, 39, 0.6);
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
@@ -1170,8 +1171,17 @@
             overflow: hidden;
             animation: modalPop 0.3s var(--ease-out-expo);
             max-height: 90vh;
+            max-height: 92dvh;
             display: flex;
             flex-direction: column;
+        }
+
+        .fb-modal-card > form {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
         }
 
         @keyframes modalPop {
@@ -1185,6 +1195,7 @@
             justify-content: space-between;
             padding: 16px 20px;
             border-bottom: 1px solid var(--fb-divider);
+            flex-shrink: 0;
         }
 
         .modal-title {
@@ -1214,6 +1225,10 @@
         .modal-body {
             padding: 20px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            flex: 1;
+            min-height: 0;
         }
 
         .modal-footer {
@@ -1224,6 +1239,7 @@
             justify-content: flex-end;
             gap: 10px;
             background: var(--fb-hover);
+            flex-shrink: 0;
         }
 
         .form-group {
@@ -7258,29 +7274,69 @@
 
     <!-- COVER PHOTO UPLOAD MODAL (Advanced: drag & drop, paste, gallery, live preview, reposition, progress) -->
     <style>
-        #coverModal .cvm-card { max-width: 680px; width: 100%; }
-        #coverModal .cvm-tabs { display:flex; gap:6px; padding:4px; background:var(--fb-hover, #f0f2f5); border-radius:12px; margin-bottom:16px; }
+        #coverModal .cvm-card {
+            max-width: 640px;
+            width: 100%;
+            max-height: 90vh;
+            max-height: 90dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #coverModal form#coverUploadForm {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+        #coverModal .modal-header {
+            flex-shrink: 0;
+            padding: 14px 20px;
+        }
+        #coverModal .modal-body {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            padding: 16px 20px;
+        }
+        #coverModal .modal-footer.cvm-footer {
+            flex-shrink: 0;
+            background: var(--fb-card, #fff);
+            border-top: 1px solid var(--fb-divider);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+            z-index: 10;
+        }
+        #coverModal .cvm-tabs { display:flex; gap:6px; padding:4px; background:var(--fb-hover, #f0f2f5); border-radius:12px; margin-bottom:14px; }
         #coverModal .cvm-tab { flex:1; border:0; background:transparent; padding:9px 12px; border-radius:9px; font-weight:600; font-size:13px; color:var(--fb-text-secondary, #65676b); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all .2s ease; }
         #coverModal .cvm-tab.active { background:var(--fb-card, #fff); color:var(--fb-blue, #1877f2); box-shadow:0 1px 4px rgba(0,0,0,.12); }
         #coverModal .cvm-pane { display:none; animation:cvmFade .25s ease; }
         #coverModal .cvm-pane.active { display:block; }
         @keyframes cvmFade { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
-        #coverModal .cvm-drop { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; aspect-ratio: 820 / 312; min-height:170px; border:2px dashed #c7cdd6; border-radius:14px; background:linear-gradient(135deg, rgba(24,119,242,.04), rgba(124,58,237,.05)); cursor:pointer; transition:all .2s ease; padding:16px; }
+        #coverModal .cvm-drop { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; aspect-ratio: 820 / 312; min-height:160px; border:2px dashed #c7cdd6; border-radius:14px; background:linear-gradient(135deg, rgba(24,119,242,.04), rgba(124,58,237,.05)); cursor:pointer; transition:all .2s ease; padding:16px; }
         #coverModal .cvm-drop:hover, #coverModal .cvm-drop.dragover { border-color:#1877f2; background:linear-gradient(135deg, rgba(24,119,242,.10), rgba(124,58,237,.10)); transform:scale(1.005); }
-        #coverModal .cvm-drop-icon { width:54px; height:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#1877f2,#7c3aed); color:#fff; box-shadow:0 6px 18px rgba(24,119,242,.35); }
-        #coverModal .cvm-drop-title { font-weight:700; font-size:15px; color:var(--fb-text-primary, #050505); }
+        #coverModal .cvm-drop-icon { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#1877f2,#7c3aed); color:#fff; box-shadow:0 6px 18px rgba(24,119,242,.35); flex-shrink:0; }
+        #coverModal .cvm-drop-title { font-weight:700; font-size:14px; color:var(--fb-text-primary, #050505); }
         #coverModal .cvm-drop-sub { font-size:12px; color:var(--fb-text-secondary, #65676b); }
         #coverModal .cvm-badges { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
-        #coverModal .cvm-badge { font-size:11px; font-weight:600; padding:3px 8px; border-radius:999px; background:rgba(24,119,242,.1); color:#1877f2; }
+        #coverModal .cvm-badge { font-size:11px; font-weight:600; padding:2px 7px; border-radius:999px; background:rgba(24,119,242,.1); color:#1877f2; }
         #coverModal .cvm-stage { position:relative; aspect-ratio: 820 / 312; border-radius:14px; overflow:hidden; background:#111; cursor:grab; touch-action:none; user-select:none; box-shadow:inset 0 0 0 1px rgba(0,0,0,.08); }
         #coverModal .cvm-stage.grabbing { cursor:grabbing; }
         #coverModal .cvm-stage img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; transition:object-position .05s linear; }
-        #coverModal .cvm-stage-hint { position:absolute; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.6); color:#fff; font-size:12px; font-weight:600; padding:6px 12px; border-radius:999px; display:flex; align-items:center; gap:6px; backdrop-filter:blur(6px); pointer-events:none; white-space:nowrap; }
+        #coverModal .cvm-stage-hint { position:absolute; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.6); color:#fff; font-size:12px; font-weight:600; padding:5px 12px; border-radius:999px; display:flex; align-items:center; gap:6px; backdrop-filter:blur(6px); pointer-events:none; white-space:nowrap; }
         #coverModal .cvm-stage-actions { position:absolute; bottom:10px; right:10px; display:flex; gap:6px; }
-        #coverModal .cvm-chip-btn { border:0; background:rgba(255,255,255,.92); color:#111; font-size:12px; font-weight:600; padding:6px 10px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 2px 6px rgba(0,0,0,.2); }
+        #coverModal .cvm-chip-btn { border:0; background:rgba(255,255,255,.92); color:#111; font-size:12px; font-weight:600; padding:5px 10px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 2px 6px rgba(0,0,0,.2); }
         #coverModal .cvm-chip-btn:hover { background:#fff; }
         #coverModal .cvm-avatar-ghost { position:absolute; left:16px; bottom:-34px; width:84px; height:84px; border-radius:50%; border:4px solid #fff; background:rgba(255,255,255,.35); backdrop-filter:blur(2px); pointer-events:none; }
         #coverModal .cvm-row { display:flex; align-items:center; gap:10px; margin-top:12px; }
+        #coverModal .cvm-pos-control { margin-top: 40px; }
         #coverModal .cvm-row input[type=range] { flex:1; accent-color:#1877f2; cursor:pointer; }
         #coverModal .cvm-pos-label { font-weight:700; font-size:12px; min-width:40px; text-align:right; color:var(--fb-text-secondary, #65676b); }
         #coverModal .cvm-fileinfo { display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12px; color:var(--fb-text-secondary, #65676b); flex-wrap:wrap; }
@@ -7290,14 +7346,14 @@
         #coverModal .cvm-progress-track { height:8px; border-radius:999px; background:var(--fb-hover, #e4e6eb); overflow:hidden; }
         #coverModal .cvm-progress-fill { height:100%; width:0%; background:linear-gradient(90deg,#1877f2,#7c3aed); border-radius:999px; transition:width .15s ease; }
         #coverModal .cvm-progress-text { display:flex; justify-content:space-between; font-size:12px; font-weight:600; color:var(--fb-text-secondary, #65676b); margin-top:6px; }
-        #coverModal .cvm-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px; max-height:46vh; overflow-y:auto; padding:2px; }
+        #coverModal .cvm-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; max-height:42vh; overflow-y:auto; padding:2px; }
         #coverModal .cvm-gallery-item { position:relative; aspect-ratio: 16 / 9; border-radius:10px; overflow:hidden; cursor:pointer; border:2px solid transparent; transition:all .2s ease; background:#eee; padding:0; }
         #coverModal .cvm-gallery-item img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s ease; }
         #coverModal .cvm-gallery-item:hover img { transform:scale(1.06); }
         #coverModal .cvm-gallery-item:hover { border-color:#1877f2; box-shadow:0 4px 12px rgba(24,119,242,.25); }
         #coverModal .cvm-gallery-item .cvm-tag { position:absolute; top:6px; left:6px; font-size:10px; font-weight:700; padding:2px 6px; border-radius:6px; background:#059669; color:#fff; }
         #coverModal .cvm-gallery-heading { font-size:13px; font-weight:700; margin:4px 0 8px; color:var(--fb-text-primary, #050505); }
-        #coverModal .cvm-empty { grid-column:1/-1; text-align:center; padding:28px; color:var(--fb-text-secondary, #65676b); font-size:13px; }
+        #coverModal .cvm-empty { grid-column:1/-1; text-align:center; padding:24px; color:var(--fb-text-secondary, #65676b); font-size:13px; }
         #coverModal .cvm-footer { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
         #coverModal .cvm-delete-btn { color:#e41e3f !important; border-color:#fbd5d5 !important; background:#fef2f2 !important; }
         #coverModal .cvm-spinner { width:14px; height:14px; border:2px solid rgba(255,255,255,.5); border-top-color:#fff; border-radius:50%; display:inline-block; animation:cvmSpin .7s linear infinite; vertical-align:-2px; margin-right:6px; }
@@ -7305,10 +7361,138 @@
         .cover-photo-img.cover-fade-in { animation:coverFadeIn .6s ease; }
         @keyframes coverFadeIn { from { opacity:0; filter:blur(8px); transform:scale(1.02); } to { opacity:1; filter:none; transform:none; } }
         .cover-uploading-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); color:#fff; font-weight:700; font-size:14px; z-index:5; backdrop-filter:blur(2px); gap:8px; }
-        @media (max-width: 560px) {
-            #coverModal .cvm-drop { aspect-ratio:auto; min-height:180px; }
-            #coverModal .cvm-avatar-ghost { width:60px; height:60px; bottom:-24px; }
-            #coverModal .cvm-gallery { grid-template-columns:repeat(2, 1fr); }
+
+        /* Dedicated Mobile Responsive Styles for Cover Modal */
+        @media (max-width: 640px) {
+            #coverModal.fb-modal-overlay {
+                padding: 0;
+                align-items: flex-end; /* Mobile Bottom Sheet */
+            }
+            #coverModal .cvm-card {
+                max-width: 100% !important;
+                width: 100% !important;
+                max-height: 88vh;
+                max-height: 88dvh;
+                border-bottom-left-radius: 0 !important;
+                border-bottom-right-radius: 0 !important;
+                border-top-left-radius: 20px !important;
+                border-top-right-radius: 20px !important;
+                margin: 0 !important;
+            }
+            #coverModal .modal-header {
+                padding: 12px 16px;
+            }
+            #coverModal .modal-title {
+                font-size: 16px;
+            }
+            #coverModal .modal-close-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 15px;
+            }
+            #coverModal .modal-body {
+                padding: 12px 14px;
+            }
+            #coverModal .cvm-tabs {
+                margin-bottom: 10px;
+                padding: 3px;
+                gap: 4px;
+            }
+            #coverModal .cvm-tab {
+                padding: 7px 8px;
+                font-size: 12px;
+                gap: 4px;
+            }
+            #coverModal .cvm-tab svg {
+                width: 13px;
+                height: 13px;
+            }
+            #coverModal .cvm-drop {
+                aspect-ratio: auto;
+                min-height: 110px;
+                padding: 12px 10px;
+                gap: 6px;
+                border-radius: 12px;
+            }
+            #coverModal .cvm-drop-icon {
+                width: 38px;
+                height: 38px;
+            }
+            #coverModal .cvm-drop-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+            #coverModal .cvm-drop-title {
+                font-size: 13px;
+                line-height: 1.3;
+            }
+            #coverModal .cvm-drop-sub {
+                font-size: 11px;
+            }
+            #coverModal .cvm-badges {
+                gap: 4px;
+            }
+            #coverModal .cvm-badge {
+                font-size: 10px;
+                padding: 2px 6px;
+            }
+            #coverModal .cvm-stage {
+                aspect-ratio: 16 / 8;
+                max-height: 170px;
+                border-radius: 12px;
+            }
+            #coverModal .cvm-stage-hint {
+                font-size: 11px;
+                padding: 4px 10px;
+                top: 6px;
+            }
+            #coverModal .cvm-avatar-ghost {
+                display: none !important;
+            }
+            #coverModal .cvm-pos-control {
+                margin-top: 10px !important;
+            }
+            #coverModal .cvm-gallery {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                max-height: 34vh;
+            }
+            #coverModal .cvm-gallery-heading {
+                font-size: 12px;
+                margin: 4px 0 6px;
+            }
+            #coverModal .cvm-fileinfo {
+                font-size: 11px;
+                gap: 6px;
+                margin-top: 6px;
+            }
+            #coverModal .form-group {
+                margin-bottom: 8px;
+                margin-top: 8px !important;
+            }
+            #coverModal .form-label {
+                font-size: 12px;
+                margin-bottom: 4px;
+            }
+            #coverModal .form-control {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            #coverModal .modal-footer.cvm-footer {
+                padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) 14px;
+                gap: 8px;
+                flex-wrap: nowrap;
+            }
+            #coverModal .cvm-footer .fb-btn {
+                height: 36px;
+                padding: 0 12px;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+            #coverModal .cvm-delete-btn {
+                padding: 0 8px !important;
+                font-size: 12px !important;
+            }
         }
     </style>
     <div class="fb-modal-overlay" id="coverModal">
@@ -7371,7 +7555,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="cvm-row" style="margin-top:44px;">
+                            <div class="cvm-row cvm-pos-control">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 12 2 15 5"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="12" y1="2" x2="12" y2="22"></line></svg>
                                 <input type="range" id="cvmPosSlider" min="0" max="100" value="50" oninput="setCoverPreviewPos(this.value)" aria-label="কভারের উল্লম্ব অবস্থান">
                                 <span class="cvm-pos-label" id="cvmPosLabel">50%</span>
