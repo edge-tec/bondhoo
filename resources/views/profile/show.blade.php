@@ -566,6 +566,30 @@
             display: flex;
         }
 
+        .profile-action-more-wrap {
+            position: relative;
+            display: inline-block;
+        }
+
+        .profile-action-more-wrap .profile-nav-more-dropdown {
+            right: 0;
+            left: auto;
+            min-width: 280px;
+        }
+
+        .sheet-drag-handle {
+            display: none;
+        }
+
+        .sheet-mobile-header {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px 4px 10px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid var(--fb-border);
+        }
+
         @keyframes navDropdownFade {
             from { opacity: 0; transform: translateY(-8px); }
             to { opacity: 1; transform: translateY(0); }
@@ -3265,6 +3289,19 @@
                 font-weight: 600 !important;
                 gap: 12px !important;
             }
+            .sheet-drag-handle {
+                display: block !important;
+                width: 44px !important;
+                height: 4px !important;
+                background: var(--fb-border) !important;
+                border-radius: 2px !important;
+                margin: 0 auto 12px !important;
+                flex-shrink: 0 !important;
+            }
+            .sheet-mobile-header {
+                display: flex !important;
+                flex-shrink: 0 !important;
+            }
 
             /* Story Highlights Bar on Mobile */
             .story-highlights-container {
@@ -3756,7 +3793,12 @@
                                     •••
                                 </button>
                                 <div class="profile-nav-more-dropdown" id="profileActionMoreDropdown">
-                                    <a href="{{ getUserProfileUrl($user) }}?view_as=public" class="more-tab-link">
+                                    <div class="sheet-drag-handle"></div>
+                                    <div class="sheet-mobile-header">
+                                        <span style="font-size:15px;font-weight:700;color:var(--fb-text-primary);">প্রোফাইল সেটিংস ও বিকল্প</span>
+                                        <button type="button" onclick="closeProfileActionMoreMenu()" style="border:none;background:var(--fb-hover);width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--fb-text-secondary);font-size:14px;font-weight:bold;">✕</button>
+                                    </div>
+                                    <a href="{{ getUserProfileUrl($user) }}?view_as=public" class="more-tab-link" onclick="closeProfileActionMoreMenu()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         <span>ভিউ অ্যাজ (পাবলিক ভিউ)</span>
                                     </a>
@@ -3867,30 +3909,104 @@
 
                             <!-- Visitor More (•••) Dropdown -->
                             <div class="profile-action-more-wrap" id="visitorActionMoreWrapper">
-                                <button class="fb-btn fb-btn-secondary btn-action-more" onclick="toggleVisitorActionMoreMenu(event)" title="আরও বিকল্প">
+                                <button type="button" class="fb-btn fb-btn-secondary btn-action-more" onclick="toggleVisitorActionMoreMenu(event)" title="আরও বিকল্প">
                                     •••
                                 </button>
                                 <div class="profile-nav-more-dropdown" id="visitorActionMoreDropdown">
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="copyProfileLink()">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <!-- Mobile Drag Handle & Header -->
+                                    <div class="sheet-drag-handle"></div>
+                                    <div class="sheet-mobile-header">
+                                        <span style="font-size:15px;font-weight:700;color:var(--fb-text-primary);">বিকল্প ও অ্যাকশন</span>
+                                        <button type="button" onclick="closeVisitorActionMoreMenu()" style="border:none;background:var(--fb-hover);width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--fb-text-secondary);font-size:14px;font-weight:bold;">✕</button>
+                                    </div>
+
+                                    <!-- 1. Send Message -->
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeVisitorActionMoreMenu(); openDirectChatWithUser({{ $user->id }}, '{{ addslashes($user->name) }}', '{{ $user->username }}', '{{ $profile['avatar_url'] ?? '' }}')">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                        <span>বার্তা পাঠান</span>
+                                    </button>
+
+                                    <!-- 2. Call (Audio/Video) via Chat -->
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeVisitorActionMoreMenu(); openDirectChatWithUser({{ $user->id }}, '{{ addslashes($user->name) }}', '{{ $user->username }}', '{{ $profile['avatar_url'] ?? '' }}')">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                        <span>কল করুন (অডিও / ভিডিও)</span>
+                                    </button>
+
+                                    <!-- 3. Friendship Status & Actions -->
+                                    @if(($profile['friendship_status'] ?? '') === 'friends')
+                                        <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeVisitorActionMoreMenu(); switchTab('friends')">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                            <span>বন্ধুত্ব ও মিউচুয়াল ফ্রেন্ডস দেখুন</span>
+                                        </button>
+                                        <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;color:var(--fb-red);" onclick="closeVisitorActionMoreMenu(); confirmUnfriend({{ $user->id }}, '{{ addslashes($profile['name']) }}')">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>
+                                            <span>ফ্রেন্ডলিস্ট থেকে সরান (Unfriend)</span>
+                                        </button>
+                                    @elseif(($profile['friendship_status'] ?? '') === 'request_sent')
+                                        <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;color:#e11d48;" onclick="closeVisitorActionMoreMenu(); handleCancelFriendRequest({{ $user->id }})">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                            <span>বন্ধুত্বের অনুরোধ প্রত্যাহার করুন</span>
+                                        </button>
+                                    @elseif(($profile['friendship_status'] ?? '') === 'request_received')
+                                        <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;color:var(--fb-primary);" onclick="closeVisitorActionMoreMenu(); handleAcceptFriendRequest({{ $user->id }})">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            <span>বন্ধুত্বের অনুরোধ গ্রহণ করুন</span>
+                                        </button>
+                                    @else
+                                        <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;color:var(--fb-primary);" onclick="closeVisitorActionMoreMenu(); handleSendFriendRequest({{ $user->id }})">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                                            <span>বন্ধু যোগ করুন</span>
+                                        </button>
+                                    @endif
+
+                                    <!-- 4. Follow / Unfollow -->
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeVisitorActionMoreMenu(); toggleFollowUser({{ $user->id }})">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                                        <span>{{ ($profile['is_following'] ?? false) ? 'আনফলো করুন' : 'ফলো করুন' }}</span>
+                                    </button>
+
+                                    <!-- 5. Search / Filter Timeline Posts -->
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="scrollToProfilePostsSearch()">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                        <span>টাইমলাইনে পোস্ট খুঁজুন ও ফিল্টার</span>
+                                    </button>
+
+                                    <!-- 6. View Photos & Albums -->
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeVisitorActionMoreMenu(); switchTab('photos')">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                        <span>ছবি ও অ্যালবাম ব্রাউজ করুন</span>
+                                    </button>
+
+                                    <!-- 7. Copy Profile Link -->
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeVisitorActionMoreMenu(); copyProfileLink()">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                         <span>প্রোফাইল লিংক কপি করুন</span>
                                     </button>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="openProfileShareModal()">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                                        <span>কিউআর কোড দেখুন</span>
+
+                                    <!-- 8. Share Profile & QR Code -->
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeVisitorActionMoreMenu(); openProfileShareModal()">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                                        <span>শেয়ার ও কিউআর কোড দেখুন</span>
                                     </button>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="handleRestrictUser('{{ $user->username }}')">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                                        <span>রেস্ট্রিক্ট করুন</span>
-                                    </button>
+
                                     <div class="more-dropdown-divider"></div>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;color:var(--fb-red);" onclick="handleBlockUser({{ $user->id }}, '{{ addslashes($profile['name']) }}')">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-                                        <span>ব্লক করুন</span>
+
+                                    <!-- 9. Restrict User -->
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeVisitorActionMoreMenu(); handleRestrictUser('{{ $user->username }}')">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                        <span>প্রোফাইল রেস্ট্রিক্ট করুন</span>
                                     </button>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;color:var(--fb-red);" onclick="openReportUserModal({{ $user->id }}, '{{ addslashes($profile['name']) }}')">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
-                                        <span>রিপোর্ট করুন</span>
+
+                                    <!-- 10. Block User -->
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;color:var(--fb-red);" onclick="closeVisitorActionMoreMenu(); handleBlockUser({{ $user->id }}, '{{ addslashes($profile['name']) }}')">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                                        <span>ব্যবহারকারীকে ব্লক করুন</span>
+                                    </button>
+
+                                    <!-- 11. Find Support or Report Profile -->
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;color:var(--fb-red);" onclick="closeVisitorActionMoreMenu(); openReportUserModal({{ $user->id }}, '{{ addslashes($profile['name']) }}')">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                                        <span>রিপোর্ট বা সহায়তা নিন</span>
                                     </button>
                                 </div>
                             </div>
@@ -10288,16 +10404,71 @@
             }
         }
 
-        // Action Bar More Menu Dropdown
+        // Action Bar More Menu Dropdowns (Owner & Visitor/Friend)
         function toggleProfileActionMoreMenu(event) {
-            if (event) event.stopPropagation();
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            closeVisitorActionMoreMenu();
             const dd = document.getElementById('profileActionMoreDropdown');
             if (dd) dd.classList.toggle('show');
         }
-        document.addEventListener('click', function(e) {
+
+        function closeProfileActionMoreMenu() {
             const dd = document.getElementById('profileActionMoreDropdown');
-            if (dd && !e.target.closest('#profileActionMoreWrapper')) {
-                dd.classList.remove('show');
+            if (dd) dd.classList.remove('show');
+        }
+
+        function toggleVisitorActionMoreMenu(event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            closeProfileActionMoreMenu();
+            const dd = document.getElementById('visitorActionMoreDropdown');
+            if (dd) dd.classList.toggle('show');
+        }
+
+        function closeVisitorActionMoreMenu() {
+            const dd = document.getElementById('visitorActionMoreDropdown');
+            if (dd) dd.classList.remove('show');
+        }
+
+        function scrollToProfilePostsSearch() {
+            closeVisitorActionMoreMenu();
+            switchTab('posts');
+            const filterBar = document.getElementById('timelineFilterBar');
+            if (filterBar && (filterBar.style.display === 'none' || !filterBar.style.display)) {
+                if (typeof toggleTimelineFilterBar === 'function') {
+                    toggleTimelineFilterBar();
+                } else {
+                    filterBar.style.display = 'block';
+                }
+            }
+            const target = document.querySelector('.timeline-manage-bar') || document.getElementById('tabContent-posts');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Close dropdowns on outside click
+        document.addEventListener('click', function(e) {
+            const profileDd = document.getElementById('profileActionMoreDropdown');
+            if (profileDd && !e.target.closest('#profileActionMoreWrapper')) {
+                profileDd.classList.remove('show');
+            }
+            const visitorDd = document.getElementById('visitorActionMoreDropdown');
+            if (visitorDd && !e.target.closest('#visitorActionMoreWrapper')) {
+                visitorDd.classList.remove('show');
+            }
+        });
+
+        // Close dropdowns on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeProfileActionMoreMenu();
+                closeVisitorActionMoreMenu();
             }
         });
 
@@ -11367,12 +11538,7 @@
             }
         }
 
-        // Visitor More Menu Toggle
-        function toggleVisitorActionMoreMenu(e) {
-            e.stopPropagation();
-            const dd = document.getElementById('visitorActionMoreDropdown');
-            if (dd) dd.classList.toggle('active');
-        }
+
 
         // Notification Settings Modal (Requirement 20)
         function openNotificationSettingsModal() {
