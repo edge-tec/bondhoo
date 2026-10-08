@@ -583,6 +583,7 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         Route::get('/settings', [EmailManagementController::class, 'getSettings']);
         Route::post('/settings', [EmailManagementController::class, 'updateSettings']);
         Route::post('/test', [EmailManagementController::class, 'testConnection'])->middleware('throttle:smtp-test');
+        Route::post('/verify-connection', [EmailManagementController::class, 'verifyConnection'])->middleware('throttle:smtp-test');
         Route::get('/logs', [EmailManagementController::class, 'getLogs']);
         Route::post('/logs/{id}/retry', [EmailManagementController::class, 'retryLog'])->whereNumber('id');
         Route::get('/stats', [EmailManagementController::class, 'getStats']);

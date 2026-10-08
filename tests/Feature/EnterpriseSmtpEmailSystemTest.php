@@ -548,4 +548,44 @@ class EnterpriseSmtpEmailSystemTest extends TestCase
 
         $this->assertInstanceOf(SmtpSetting::class, $settings);
     }
+
+    /**
+     * TEST 16: Admin Can Verify SMTP Connection Directly (Socket Handshake & Auth)
+     */
+    public function test_admin_can_verify_smtp_connection_directly(): void
+    {
+        // Non-admin cannot verify SMTP connection
+        $forbiddenResponse = $this->actingAs($this->userA, 'sanctum')->postJson('/api/v2/admin/smtp/verify-connection', [
+            'mail_host' => '127.0.0.1',
+            'mail_port' => 2525,
+        ]);
+        $forbiddenResponse->assertStatus(403);
+
+        // Admin can call verify-connection endpoint
+        $response = $this->actingAs($this->admin, 'sanctum')->postJson('/api/v2/admin/smtp/verify-connection', [
+            'mail_host' => '127.0.0.1',
+            'mail_port' => 2525,
+            'mail_username' => 'testuser',
+            'mail_password' => 'testpass',
+            'mail_encryption' => 'none',
+            'timeout' => 2,
+        ]);
+
+        // The response structure must be valid JSON with success and details
+        $this->assertContains($response->status(), [200, 422]);
+        $this->assertArrayHasKey('success', $response->json());
+        $this->assertArrayHasKey('message', $response->json());
+        $this->assertArrayHasKey('details', $response->json());
+        $this->assertEquals('127.0.0.1', $response->json('details.host'));
+        $this->assertEquals(2525, $response->json('details.port'));
+
+        // Admin can also verify connection via Web session route
+        $webResponse = $this->actingAs($this->admin, 'web')->postJson('/admin/smtp/verify-connection', [
+            'mail_host' => '127.0.0.1',
+            'mail_port' => 2525,
+            'timeout' => 2,
+        ]);
+        $this->assertContains($webResponse->status(), [200, 422]);
+        $this->assertArrayHasKey('details', $webResponse->json());
+    }
 }

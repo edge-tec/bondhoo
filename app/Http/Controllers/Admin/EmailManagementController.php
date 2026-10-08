@@ -122,6 +122,38 @@ class EmailManagementController extends Controller
     }
 
     /**
+     * POST /api/v1/admin/smtp/verify-connection
+     * Direct SMTP Socket, TLS Handshake & Authentication test without dispatching an email.
+     */
+    public function verifyConnection(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'mail_host' => ['nullable', 'string', 'max:255'],
+                'mail_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
+                'mail_username' => ['nullable', 'string', 'max:255'],
+                'mail_password' => ['nullable', 'string', 'max:255'],
+                'mail_encryption' => ['nullable', 'string'],
+                'timeout' => ['nullable', 'integer', 'min:1', 'max:120'],
+            ]);
+
+            $result = $this->smtpConfigService->verifyConnection($validated);
+
+            return response()->json($result, $result['success'] ? 200 : 422);
+        } catch (ValidationException $ve) {
+            throw $ve;
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'SMTP সংযোগ ত্রুটি: '.$e->getMessage(),
+                'details' => [
+                    'error' => $e->getMessage(),
+                ],
+            ], 422);
+        }
+    }
+
+    /**
      * GET /api/v1/admin/smtp/logs
      * Paginated email delivery logs with multi-field search and filters.
      */

@@ -236,6 +236,80 @@ class SmtpConfigService
     }
 
     /**
+     * Direct SMTP Connection & Handshake Verification (without sending an email).
+     * Tests socket connection, TLS/STARTTLS handshake, EHLO greeting, and authentication.
+     *
+     * @return array{success: bool, message: string, details?: array}
+     */
+    public function verifyConnection(?array $overrideConfig = null): array
+    {
+        $settings = $this->getActiveSettings();
+
+        $host = $overrideConfig['mail_host'] ?? $settings->mail_host;
+        $port = isset($overrideConfig['mail_port']) ? (int) $overrideConfig['mail_port'] : $settings->mail_port;
+        $username = $overrideConfig['mail_username'] ?? $settings->mail_username;
+        $password = ! empty($overrideConfig['mail_password']) ? $overrideConfig['mail_password'] : $settings->getDecryptedPassword();
+        $encryption = $overrideConfig['mail_encryption'] ?? $settings->mail_encryption;
+        $timeout = isset($overrideConfig['timeout']) ? (int) $overrideConfig['timeout'] : ($settings->timeout ?: 15);
+
+        if (in_array(strtolower((string) $encryption), ['none', 'null', ''], true)) {
+            $encryption = null;
+        }
+
+        $startTime = microtime(true);
+
+        try {
+            Config::set('mail.mailers.test_smtp_verify', [
+                'transport' => 'smtp',
+                'host' => $host,
+                'port' => $port,
+                'encryption' => $encryption,
+                'username' => $username,
+                'password' => $password,
+                'timeout' => $timeout,
+                'verify_peer' => false,
+            ]);
+
+            $transport = Mail::mailer('test_smtp_verify')->getSymfonyTransport();
+            $transport->start();
+            $latencyMs = round((microtime(true) - $startTime) * 1000);
+            $transport->stop();
+
+            return [
+                'success' => true,
+                'message' => "SMTP সার্ভার সংযোগ ও প্রমাণীকরণ সম্পূর্ণ সফল! (লেটেন্সি: {$latencyMs}ms)",
+                'details' => [
+                    'host' => $host,
+                    'port' => $port,
+                    'encryption' => $encryption ?: 'None',
+                    'latency_ms' => $latencyMs,
+                    'auth_verified' => ! empty($username),
+                ],
+            ];
+        } catch (\Throwable $e) {
+            $latencyMs = round((microtime(true) - $startTime) * 1000);
+            $safeError = $e->getMessage();
+            if (! empty($password)) {
+                $safeError = str_replace($password, '********', $safeError);
+            }
+
+            Log::warning('SMTP quick connection verification failed: '.$safeError);
+
+            return [
+                'success' => false,
+                'message' => "SMTP সংযোগে ত্রুটি: {$safeError}",
+                'details' => [
+                    'host' => $host,
+                    'port' => $port,
+                    'encryption' => $encryption ?: 'None',
+                    'latency_ms' => $latencyMs,
+                    'error' => $safeError,
+                ],
+            ];
+        }
+    }
+
+    /**
      * Get safe sanitized representation of SMTP settings for API/UI.
      */
     public function getSafeSettings(): array

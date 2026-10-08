@@ -609,11 +609,14 @@
                             </div>
                         </div>
 
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
                             <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
                                 <input type="checkbox" id="smtpAuth" {{ ($smtpSettings['smtp_auth'] ?? true) ? 'checked' : '' }}> SMTP Authentication
                             </label>
-                            <button type="submit" id="btnSaveSmtp" class="btn-export">সংরক্ষণ ও কার্যকর করুন 💾</button>
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                <button type="button" id="btnVerifyConnCard1" class="btn-export secondary" onclick="verifySmtpQuickConnection()" title="সার্ভারের সাথে সরাসরি সকেট, TLS ও লগইন হ্যান্ডশেক পরীক্ষা করুন">কানেকশন টেস্ট 🔌</button>
+                                <button type="submit" id="btnSaveSmtp" class="btn-export">সংরক্ষণ ও কার্যকর করুন 💾</button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -622,11 +625,24 @@
                 <div class="table-card" style="padding: 24px; display: flex; flex-direction: column;">
                     <h3 style="font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 8px;">🚀 SMTP কানেকশন ভেরিফিকেশন ও টেস্ট</h3>
                     <p style="font-size: 13px; color: var(--fb-text-secondary); margin-bottom: 16px;">
-                        প্রোডাকশনে ইমেইল চালুর পূর্বে রিয়েল SMTP হ্যান্ডশেক এবং টেস্ট ইমেইল প্রেরণ করে কনফিগারেশন নিশ্চিত করুন।
+                        প্রোডাকশনে ইমেইল চালুর পূর্বে সরাসরি সকেট হ্যান্ডশেক অথবা রিয়েল টেস্ট ইমেইল প্রেরণ করে কনফিগারেশন নিশ্চিত করুন।
                     </p>
 
+                    <!-- Section 1: Quick Connection & Handshake Test -->
+                    <div style="margin-bottom: 18px; padding: 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <div>
+                                <strong style="font-size: 13px; color: #1e293b; display: block;">১. দ্রুত কানেকশন ও হ্যান্ডশেক টেস্ট 🔌</strong>
+                                <span style="font-size: 12px; color: #64748b;">কোনো ইমেইল না পাঠিয়ে সরাসরি সকেট, TLS ও প্রমাণীকরণ (Auth) পরীক্ষা করুন।</span>
+                            </div>
+                            <button type="button" id="btnVerifyConnCard2" class="btn-export secondary" onclick="verifySmtpQuickConnection()">কানেকশন টেস্ট 🔌</button>
+                        </div>
+                        <div id="smtpConnResultBox" style="display: none; padding: 12px; border-radius: 8px; font-size: 12px; border: 1px solid transparent; margin-top: 8px;"></div>
+                    </div>
+
+                    <!-- Section 2: Real Test Email Dispatch -->
                     <div style="margin-bottom: 16px;">
-                        <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">টেস্ট ইমেইল প্রাপক (Recipient):</label>
+                        <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">২. টেস্ট ইমেইল প্রাপক (Recipient):</label>
                         <div style="display: flex; gap: 8px;">
                             <input type="email" id="smtpTestRecipient" class="search-input" style="flex: 1;" placeholder="admin@bondhoo.com">
                             <button type="button" id="btnSendTestEmail" class="btn-export green" onclick="sendTestSmtpEmail()">টেস্ট পাঠান ✉️</button>
@@ -1405,6 +1421,122 @@
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
+            }
+        }
+
+        async function verifySmtpQuickConnection() {
+            const btn1 = document.getElementById('btnVerifyConnCard1');
+            const btn2 = document.getElementById('btnVerifyConnCard2');
+            const resultBox = document.getElementById('smtpConnResultBox');
+
+            const host = document.getElementById('smtpHost').value.trim();
+            const port = parseInt(document.getElementById('smtpPort').value);
+            const username = document.getElementById('smtpUsername').value.trim();
+            const encryption = document.getElementById('smtpEncryption').value;
+            const timeout = parseInt(document.getElementById('smtpTimeout').value) || 15;
+
+            if (!host) {
+                alert('অনুগ্রহ করে SMTP Host উল্লেখ করুন।');
+                document.getElementById('smtpHost').focus();
+                return;
+            }
+            if (!port) {
+                alert('অনুগ্রহ করে Port উল্লেখ করুন।');
+                document.getElementById('smtpPort').focus();
+                return;
+            }
+
+            const btns = [btn1, btn2].filter(Boolean);
+            btns.forEach(b => {
+                b.dataset.prevText = b.innerText;
+                b.innerText = 'কানেক্ট হচ্ছে... ⏳';
+                b.disabled = true;
+            });
+
+            if (resultBox) {
+                resultBox.style.display = 'block';
+                resultBox.style.background = '#eff6ff';
+                resultBox.style.borderColor = '#93c5fd';
+                resultBox.style.color = '#1e40af';
+                resultBox.innerHTML = `<strong>সার্ভারের সাথে সরাসরি যোগাযোগ পরীক্ষা চলছে...</strong><br>সকেট সংযোগ, TLS হ্যান্ডশেক ও প্রমাণীকরণ যাচাই হচ্ছে (${host}:${port})...`;
+            }
+
+            const payload = {
+                mail_host: host,
+                mail_port: port,
+                mail_username: username ? username : null,
+                mail_encryption: encryption,
+                timeout: timeout
+            };
+            const pwd = document.getElementById('smtpPassword').value;
+            if (pwd.length > 0) {
+                payload.mail_password = pwd;
+            }
+
+            try {
+                const res = await fetchAdminSmtp('/smtp/verify-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+
+                if (resultBox) {
+                    if (res.ok && json.success) {
+                        resultBox.style.background = '#f0fdf4';
+                        resultBox.style.borderColor = '#86efac';
+                        resultBox.style.color = '#166534';
+                        resultBox.innerHTML = `
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                <strong style="font-size: 13px;">✅ কানেকশন সম্পূর্ণ সফল!</strong>
+                                <span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 999px; font-weight: 700; font-size: 11px;">${json.details?.latency_ms || 0} ms</span>
+                            </div>
+                            <div style="margin-top: 4px; font-size: 12px;">${json.message}</div>
+                            <div style="margin-top: 6px; font-size: 11px; opacity: 0.85;">
+                                হোস্ট: <code>${json.details?.host}:${json.details?.port}</code> | এনক্রিপশন: <code>${json.details?.encryption}</code> | প্রমাণীকরণ: <strong>${json.details?.auth_verified ? 'সফল (Authenticated)' : 'সফল (Anonymous)'}</strong>
+                            </div>
+                        `;
+                    } else {
+                        resultBox.style.background = '#fef2f2';
+                        resultBox.style.borderColor = '#fca5a5';
+                        resultBox.style.color = '#991b1b';
+
+                        const errText = json.details?.error || json.message || 'অজানা ত্রুটি';
+                        let hint = 'হোস্ট এবং পোর্ট সঠিক কিনা পরীক্ষা করুন।';
+                        if (errText.includes('authentication failed') || errText.includes('535') || errText.includes('Username and Password not accepted')) {
+                            hint = '<strong>প্রমাণীকরণ ত্রুটি (535):</strong> ইউজারনেম এবং পাসওয়ার্ড সঠিক নয়। Password ফিল্ডে নতুন পাসওয়ার্ড প্রদান করে টেস্ট করুন।';
+                        } else if (errText.includes('Connection refused') || errText.includes('timed out')) {
+                            hint = '<strong>সার্ভার অনুপুস্থিত:</strong> পোর্ট খোলা নেই বা সার্ভার ফায়ারওয়াল দ্বারা আউটবাউন্ড সংযোগ ব্লক রয়েছে।';
+                        } else if (errText.includes('SSL') || errText.includes('TLS') || errText.includes('certificate')) {
+                            hint = '<strong>SSL/TLS হ্যান্ডশেক ত্রুটি:</strong> Port 587 হলে TLS, Port 465 হলে SSL সিলেক্ট করুন।';
+                        }
+
+                        resultBox.innerHTML = `
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                <strong style="font-size: 13px;">❌ কানেকশন ব্যর্থ হয়েছে</strong>
+                                ${json.details?.latency_ms ? `<span style="background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 999px; font-weight: 700; font-size: 11px;">${json.details.latency_ms} ms</span>` : ''}
+                            </div>
+                            <div style="margin-top: 4px; font-size: 12px;">${json.message || 'SMTP সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি।'}</div>
+                            <div style="margin-top: 6px; padding: 6px 8px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; font-family: monospace; font-size: 11px; word-break: break-all;">${errText}</div>
+                            <div style="margin-top: 6px; font-size: 11px; opacity: 0.9;">${hint}</div>
+                        `;
+                    }
+                }
+            } catch (err) {
+                if (resultBox) {
+                    resultBox.style.background = '#fef2f2';
+                    resultBox.style.borderColor = '#fca5a5';
+                    resultBox.style.color = '#991b1b';
+                    resultBox.innerHTML = `
+                        <strong style="font-size: 13px;">❌ নেটওয়ার্ক বা সার্ভার ত্রুটি</strong>
+                        <div style="margin-top: 4px; font-size: 12px;">${err.message}</div>
+                    `;
+                }
+            } finally {
+                btns.forEach(b => {
+                    b.innerText = b.dataset.prevText || 'কানেকশন টেস্ট 🔌';
+                    b.disabled = false;
+                });
             }
         }
 

@@ -164,6 +164,7 @@ Route::middleware(['admin.web'])->group(function () {
         Route::get('/settings', [EmailManagementController::class, 'getSettings'])->name('admin.smtp.settings');
         Route::post('/settings', [EmailManagementController::class, 'updateSettings'])->name('admin.smtp.update');
         Route::post('/test', [EmailManagementController::class, 'testConnection'])->name('admin.smtp.test');
+        Route::post('/verify-connection', [EmailManagementController::class, 'verifyConnection'])->name('admin.smtp.verify_connection');
         Route::get('/logs', [EmailManagementController::class, 'getLogs'])->name('admin.smtp.logs');
         Route::post('/logs/{id}/retry', [EmailManagementController::class, 'retryLog'])->name('admin.smtp.retry')->whereNumber('id');
         Route::get('/stats', [EmailManagementController::class, 'getStats'])->name('admin.smtp.stats');
