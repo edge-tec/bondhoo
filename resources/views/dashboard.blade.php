@@ -4482,6 +4482,12 @@
                 .replace(/'/g, '&#039;');
         }
 
+        function normalizeMediaUrl(url) {
+            if (!url || typeof url !== 'string') return '';
+            const match = url.match(/^(?:https?:\/\/[^\/]+)?(\/storage\/.*)$/i);
+            return match ? match[1] : url;
+        }
+
         function formatDuration(sec) {
             sec = Math.round(sec) || 0;
             const m = Math.floor(sec / 60);
@@ -4587,7 +4593,7 @@
             const author = authorObj.name || 'Bondhoo মেম্বার';
             const username = authorObj.username || 'user';
             const authorProfileUrl = window.getUserProfileUrl ? window.getUserProfileUrl(authorObj) : `/u/${encodeURIComponent(username)}`;
-            const postAvatarUrl = authorObj.avatar_url || authorObj.profile?.avatar_url || '/images/default-avatar.svg';
+            const postAvatarUrl = normalizeMediaUrl(authorObj.avatar_url || authorObj.profile?.avatar_url || '') || '/images/default-avatar.svg';
             const isVerified = authorObj.is_verified || p.user?.is_verified || false;
             const timeAgo = formatTimeAgo(p.created_at);
             const audienceIcon = p.audience === 'friends' ? 
@@ -4647,38 +4653,43 @@
             if (mediaList.length > 0) {
                 if (mediaList.length === 1) {
                     const m = mediaList[0];
-                    if (m.type === 'video' || (m.url && m.url.match(/\.(mp4|webm|mov)$/i))) {
+                    const mUrl = normalizeMediaUrl(m.url);
+                    if (m.type === 'video' || (mUrl && mUrl.match(/\.(mp4|webm|mov)$/i))) {
                         mediaHtml = `
                             <div style="margin-top: 12px; border-radius: 8px; overflow: hidden; background: #000;">
-                                <video src="${m.url}" controls playsinline style="width: 100%; max-height: 480px; display: block;"></video>
+                                <video src="${mUrl}" controls playsinline style="width: 100%; max-height: 480px; display: block;"></video>
                             </div>`;
                     } else {
                         mediaHtml = `
-                            <div style="margin-top: 12px; border-radius: 8px; overflow: hidden; cursor: pointer;" onclick="openImageLightbox('${m.url}')">
-                                <img src="${m.url}" style="width: 100%; max-height: 500px; object-fit: cover; display: block;" onerror="this.parentElement.style.display='none'">
+                            <div style="margin-top: 12px; border-radius: 8px; overflow: hidden; cursor: pointer;" onclick="openImageLightbox('${mUrl}')">
+                                <img src="${mUrl}" style="width: 100%; max-height: 500px; object-fit: cover; display: block;" onerror="this.parentElement.style.display='none'">
                             </div>`;
                     }
                 } else if (mediaList.length === 2) {
                     mediaHtml = `
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 12px; border-radius: 8px; overflow: hidden;">
-                            ${mediaList.map(m => `
-                                <div style="height: 240px; overflow: hidden; cursor: pointer; background: #000;" onclick="openImageLightbox('${m.url}')">
-                                    <img src="${m.url}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.style.display='none'">
-                                </div>
-                            `).join('')}
+                            ${mediaList.map(m => {
+                                const mUrl = normalizeMediaUrl(m.url);
+                                return `
+                                <div style="height: 240px; overflow: hidden; cursor: pointer; background: #000;" onclick="openImageLightbox('${mUrl}')">
+                                    <img src="${mUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.style.display='none'">
+                                </div>`;
+                            }).join('')}
                         </div>`;
                 } else {
                     mediaHtml = `
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin-top: 12px; border-radius: 8px; overflow: hidden;">
-                            ${mediaList.slice(0, 4).map((m, idx) => `
-                                <div style="height: 180px; position: relative; overflow: hidden; cursor: pointer; background: #000;" onclick="openImageLightbox('${m.url}')">
-                                    <img src="${m.url}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.style.display='none'">
+                            ${mediaList.slice(0, 4).map((m, idx) => {
+                                const mUrl = normalizeMediaUrl(m.url);
+                                return `
+                                <div style="height: 180px; position: relative; overflow: hidden; cursor: pointer; background: #000;" onclick="openImageLightbox('${mUrl}')">
+                                    <img src="${mUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.style.display='none'">
                                     ${idx === 3 && mediaList.length > 4 ? `
                                         <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 800;">
                                             +${mediaList.length - 4}
                                         </div>` : ''}
-                                </div>
-                            `).join('')}
+                                </div>`;
+                            }).join('')}
                         </div>`;
                 }
             } else if (postContent && (postContent.includes('http://') || postContent.includes('https://'))) {

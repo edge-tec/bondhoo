@@ -8,6 +8,7 @@ use App\Models\Story;
 use App\Models\User;
 use App\Models\UserFollower;
 use App\Models\UsernameHistory;
+use App\Models\UserProfile;
 use App\Services\ProfileAnalyticsService;
 use App\Services\ProfileCompletionService;
 use App\Services\ProfileEnterpriseService;
@@ -97,7 +98,7 @@ class ProfileWebController extends Controller
         $privacySettings = $isOwnerForView ? $targetUser->privacySettings()->firstOrCreate(['user_id' => $targetUser->id]) : null;
         $notificationSettings = $isOwnerForView ? $targetUser->notificationSettings()->firstOrCreate(['user_id' => $targetUser->id]) : null;
 
-        $avatarUrl = $rawProfile['profile']['avatar_url'] ?? null;
+        $avatarUrl = UserProfile::normalizeStorageUrl($rawProfile['profile']['avatar_url'] ?? null);
         if ($avatarUrl) {
             $parsedPath = parse_url($avatarUrl, PHP_URL_PATH) ?: $avatarUrl;
             if (str_starts_with($parsedPath, '/storage/')) {
@@ -115,7 +116,7 @@ class ProfileWebController extends Controller
             }
         }
 
-        $coverUrl = $rawProfile['profile']['cover_url'] ?? null;
+        $coverUrl = UserProfile::normalizeStorageUrl($rawProfile['profile']['cover_url'] ?? null);
         if ($coverUrl) {
             $parsedPath = parse_url($coverUrl, PHP_URL_PATH) ?: $coverUrl;
             if (str_starts_with($parsedPath, '/storage/')) {

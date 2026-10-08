@@ -618,7 +618,7 @@ class ProfileService
         if ($targetUser->profile?->avatar_url) {
             $photos[] = [
                 'type' => 'avatar',
-                'url' => $targetUser->profile->avatar_url,
+                'url' => UserProfile::normalizeStorageUrl($targetUser->profile->avatar_url),
                 'created_at' => $targetUser->profile->updated_at,
             ];
         }
@@ -626,7 +626,7 @@ class ProfileService
         if ($targetUser->profile?->cover_url) {
             $photos[] = [
                 'type' => 'cover',
-                'url' => $targetUser->profile->cover_url,
+                'url' => UserProfile::normalizeStorageUrl($targetUser->profile->cover_url),
                 'created_at' => $targetUser->profile->updated_at,
             ];
         }
@@ -641,7 +641,7 @@ class ProfileService
             $photos[] = [
                 'id' => $m->id,
                 'type' => $m->collection,
-                'url' => Storage::disk($m->disk)->url($m->original_path),
+                'url' => UserProfile::normalizeStorageUrl(Storage::disk($m->disk)->url($m->original_path)),
                 'created_at' => $m->created_at,
             ];
         }
@@ -876,8 +876,8 @@ class ProfileService
             $videos[] = [
                 'id' => $m->id,
                 'type' => $m->collection,
-                'url' => Storage::disk($m->disk)->url($m->original_path),
-                'thumbnail_url' => $m->thumbnail_path ? Storage::disk($m->disk)->url($m->thumbnail_path) : null,
+                'url' => UserProfile::normalizeStorageUrl(Storage::disk($m->disk)->url($m->original_path)),
+                'thumbnail_url' => $m->thumbnail_path ? UserProfile::normalizeStorageUrl(Storage::disk($m->disk)->url($m->thumbnail_path)) : null,
                 'created_at' => $m->created_at,
             ];
         }

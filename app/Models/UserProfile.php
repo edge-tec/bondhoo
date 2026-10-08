@@ -92,6 +92,43 @@ class UserProfile extends Model
         'city',
     ];
 
+    /**
+     * Normalize storage URLs by stripping any foreign or stale domain (e.g. hostvra.com, localhost)
+     * so public storage assets reliably load relative to the active request origin.
+     */
+    public static function normalizeStorageUrl(?string $url): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        if (preg_match('#^(?:https?://[^/]+)?(/storage/.*)$#i', $url, $matches)) {
+            return $matches[1];
+        }
+
+        return $url;
+    }
+
+    public function getAvatarUrlAttribute(?string $value): ?string
+    {
+        return self::normalizeStorageUrl($value);
+    }
+
+    public function setAvatarUrlAttribute(?string $value): void
+    {
+        $this->attributes['avatar_url'] = self::normalizeStorageUrl($value);
+    }
+
+    public function getCoverUrlAttribute(?string $value): ?string
+    {
+        return self::normalizeStorageUrl($value);
+    }
+
+    public function setCoverUrlAttribute(?string $value): void
+    {
+        $this->attributes['cover_url'] = self::normalizeStorageUrl($value);
+    }
+
     public function getCityAttribute(): ?string
     {
         return $this->attributes['city'] ?? $this->location;

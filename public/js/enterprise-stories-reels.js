@@ -402,6 +402,11 @@ const JugajugMusicSuite = {
 // 5. MASTER JUGAJUG MEDIA SUITE (REELS & STORIES CONTROLLER)
 // =========================================================================
 const JugajugMediaSuite = {
+    normalizeUrl(url) {
+        if (!url || typeof url !== 'string') return '';
+        const match = url.match(/^(?:https?:\/\/[^\/]+)?(\/storage\/.*)$/i);
+        return match ? match[1] : url;
+    },
     activeTab: 'stories',
     storiesFeed: [],
     reelsFeed: [],
@@ -721,7 +726,7 @@ const JugajugMediaSuite = {
 
             const currentUser = window.currentUser || {};
             const userInitial = (currentUser.name || 'ইউ').charAt(0);
-            const userAvatar = currentUser.avatar_url || currentUser.profile?.avatar_url || '';
+            const userAvatar = this.normalizeUrl(currentUser.avatar_url || currentUser.profile?.avatar_url || '');
 
             let html = `
                 <div class="fb-story-card fb-create-story-card" onclick="JugajugMediaSuite.openCreateStoryModal()">
@@ -737,7 +742,7 @@ const JugajugMediaSuite = {
 
             this.storiesFeed.forEach((userGroup, uIdx) => {
                 const author = userGroup.user?.name || 'ব্যবহারকারী';
-                const avatar = userGroup.user?.avatar_url || '';
+                const avatar = this.normalizeUrl(userGroup.user?.avatar_url || '');
                 const initial = author.charAt(0);
                 const allViewed = userGroup.all_viewed;
                 const firstStory = userGroup.stories?.[0] || {};
@@ -747,7 +752,7 @@ const JugajugMediaSuite = {
 
                 if (firstStory.media && firstStory.media.length > 0) {
                     const m = firstStory.media[0];
-                    const thumbUrl = m.urls?.thumbnail || m.urls?.original || '';
+                    const thumbUrl = this.normalizeUrl(m.urls?.thumbnail || m.urls?.original || m.url || '');
                     bgStyle = `background-image: url('${thumbUrl}'); background-size: cover;`;
                 } else {
                     bgStyle = `background: ${firstStory.background_color || 'linear-gradient(135deg, #1877f2, #00c6ff)'};`;
@@ -760,7 +765,7 @@ const JugajugMediaSuite = {
                             <div class="fb-story-overlay"></div>
                             ${textPreview}
                             <div class="fb-story-ring ${allViewed ? 'viewed' : ''}">
-                                ${avatar ? `<img src="${avatar}" alt="${author}">` : `<div class="initial-avatar">${initial}</div>`}
+                                ${avatar ? `<img src="${avatar}" alt="${author}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">` : `<div class="initial-avatar">${initial}</div>`}
                             </div>
                             <div class="fb-story-footer-name">${author}</div>
                         </div>
@@ -831,7 +836,7 @@ const JugajugMediaSuite = {
                 }
             };
             authorAvatar.innerHTML = userGroup.user?.avatar_url
-                ? `<img src="${userGroup.user.avatar_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`
+                ? `<img src="${this.normalizeUrl(userGroup.user.avatar_url)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">`
                 : author.charAt(0);
         }
 
@@ -875,7 +880,7 @@ const JugajugMediaSuite = {
 
         if (story.type === 'media' && story.media && story.media.length > 0) {
             const currentMedia = story.media[this.currentStoryMediaIndex] || story.media[0];
-            const mediaUrl = currentMedia.urls?.original || '';
+            const mediaUrl = this.normalizeUrl(currentMedia.urls?.original || currentMedia.url || '');
 
             if (currentMedia.type === 'video') {
                 const vid = document.createElement('video');
@@ -1574,10 +1579,10 @@ const JugajugMediaSuite = {
 
             this.reelsFeed.forEach((reel, rIdx) => {
                 const author = reel.user?.name || 'ক্রিয়েটর';
-                const authorAvatar = reel.user?.avatar_url || '';
+                const authorAvatar = this.normalizeUrl(reel.user?.avatar_url || '');
                 const authorInitial = author.charAt(0);
                 const isVerified = Boolean(reel.user?.is_verified);
-                const thumb = reel.cover_image_url || reel.thumbnail_url || 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=400&q=80';
+                const thumb = this.normalizeUrl(reel.cover_image_url || reel.thumbnail_url || '') || 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=400&q=80';
                 const views = reel.views_count || 0;
                 const likes = reel.likes_count || 0;
                 const caption = reel.caption || '';
@@ -1586,7 +1591,7 @@ const JugajugMediaSuite = {
                 html += `
                     <div class="fb-reel-card" onclick="JugajugMediaSuite.openReelViewerByIndex(${rIdx})">
                         <img src="${thumb}" class="fb-reel-card-thumb" alt="${author}" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';">
-                        <video class="fb-reel-card-thumb" src="${reel.video_url || ''}#t=0.5" preload="metadata" muted playsinline style="display: none;"></video>
+                        <video class="fb-reel-card-thumb" src="${this.normalizeUrl(reel.video_url || '')}#t=0.5" preload="metadata" muted playsinline style="display: none;"></video>
                         <div class="fb-reel-top-badges">
                             <div class="fb-reel-badge-views">
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
@@ -1654,7 +1659,7 @@ const JugajugMediaSuite = {
 
         if (modal) modal.style.display = 'flex';
         if (video) {
-            video.src = reel.video_url || '';
+            video.src = this.normalizeUrl(reel.video_url || '');
             video.muted = this.isMuted;
             video.currentTime = reel.trim_start || 0;
             video.play().catch(() => {});

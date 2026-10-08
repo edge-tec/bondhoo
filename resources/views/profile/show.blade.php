@@ -4152,7 +4152,7 @@
                 <div class="preview-grid-3x3">
                     @forelse(array_slice($photos, 0, 9) as $photo)
                         <div class="preview-photo-item" style="cursor:pointer;" onclick="openPhotoTheater('{{ $photo['url'] ?? '' }}', '{{ addslashes($profile['name']) }}', 'প্রোফাইল ফটো গ্যালারি', 'সম্প্রতি')">
-                            <img src="{{ $photo['url'] ?? '' }}" alt="User photo">
+                            <img src="{{ $photo['url'] ?? '' }}" alt="User photo" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
                         </div>
                     @empty
                         <div style="grid-column:span 3;text-align:center;padding:16px;color:var(--fb-text-secondary);font-size:13px;">
@@ -5514,7 +5514,7 @@
                         <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:10px;">
                             @forelse($photos as $photo)
                                 <div style="aspect-ratio:1/1;border-radius:var(--radius-sm);overflow:hidden;background:#eee;position:relative;cursor:pointer;" onclick="openPhotoTheater('{{ $photo['url'] ?? '' }}', '{{ addslashes($profile['name']) }}', 'ফটো গ্যালারি', 'সম্প্রতি')">
-                                    <img src="{{ $photo['url'] ?? '' }}" alt="Photo" style="width:100%;height:100%;object-fit:cover;display:block;">
+                                    <img src="{{ $photo['url'] ?? '' }}" alt="Photo" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
                                 </div>
                             @empty
                                 <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--fb-text-secondary);">
@@ -6690,7 +6690,8 @@
                                          alt="Photo thumbnail"
                                          class="selectable-cover-thumb"
                                          onclick="selectHighlightCover('{{ $ph['url'] ?? '' }}', this)"
-                                         title="কভার হিসেবে নির্বাচন করুন">
+                                         title="কভার হিসেবে নির্বাচন করুন"
+                                         onerror="this.onerror=null; this.style.display='none';">
                                 @endforeach
                             </div>
                         </div>
@@ -8498,6 +8499,12 @@
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
+        }
+
+        function normalizeMediaUrl(url) {
+            if (!url || typeof url !== 'string') return '';
+            const match = url.match(/^(?:https?:\/\/[^\/]+)?(\/storage\/.*)$/i);
+            return match ? match[1] : url;
         }
 
         function getAuthHeaders(extra = {}) {
@@ -11223,7 +11230,8 @@
                 imgEl.style.display = 'none';
             }
 
-            const mediaUrl = story.media_url || (story.media && story.media[0] ? story.media[0].urls?.original || story.media[0].url : '');
+            const rawMediaUrl = story.media_url || (story.media && story.media[0] ? story.media[0].urls?.original || story.media[0].url : '');
+            const mediaUrl = normalizeMediaUrl(rawMediaUrl);
             const isVideo = story.media_type === 'video' || (mediaUrl && (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm')));
 
             if (isVideo) {
@@ -12538,7 +12546,7 @@
             theaterIsProtected = !!isProtected;
             theaterCurrentPostId = postId;
 
-            if (img) img.src = imageUrl;
+            if (img) img.src = normalizeMediaUrl(imageUrl);
             if (author) author.innerText = authorName || 'ব্যবহারকারী';
             if (date) date.innerText = dateStr || 'সম্প্রতি';
             if (cap) {

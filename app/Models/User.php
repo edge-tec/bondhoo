@@ -635,4 +635,9 @@ class User extends Authenticatable
 
         return ProfileVerification::STATUS_UNVERIFIED;
     }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->profile?->avatar_url;
+    }
 }

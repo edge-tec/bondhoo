@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\UserProfile;
 use App\Services\Contracts\MediaStorageServiceInterface;
 use Aws\S3\S3Client;
 use Illuminate\Support\Facades\Storage;
@@ -104,7 +105,9 @@ class MediaStorageService implements MediaStorageServiceInterface
             return rtrim($this->cdnUrl, '/').'/'.ltrim($path, '/');
         }
 
-        return Storage::disk($this->getDisk())->url($path);
+        $url = Storage::disk($this->getDisk())->url($path);
+
+        return UserProfile::normalizeStorageUrl($url) ?? $url;
     }
 
     public function getTemporaryUrl(string $path, int $expiryMinutes = 30): string
