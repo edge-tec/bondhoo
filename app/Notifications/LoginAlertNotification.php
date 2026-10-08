@@ -2,14 +2,12 @@
 
 namespace App\Notifications;
 
-use App\Models\EmailLog;
 use App\Services\Email\SmtpConfigService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class LoginAlertNotification extends Notification implements ShouldQueue
+class LoginAlertNotification extends Notification
 {
     use Queueable;
 
@@ -26,21 +24,6 @@ class LoginAlertNotification extends Notification implements ShouldQueue
     {
         // Apply active database SMTP configuration
         app(SmtpConfigService::class)->applyToMailer();
-
-        try {
-            EmailLog::create([
-                'user_id' => $notifiable->id ?? null,
-                'recipient' => $notifiable->email,
-                'email_type' => 'new_login',
-                'subject' => 'Bondhoo — নতুন ডিভাইস থেকে লগইন সতর্কতা',
-                'mail_class' => self::class,
-                'ip_address' => $this->deviceInfo['ip'] ?? request()->ip(),
-                'status' => 'sent',
-                'sent_at' => now(),
-            ]);
-        } catch (\Throwable $e) {
-            // Ignore logging error in test or disconnected environment
-        }
 
         return (new MailMessage)
             ->subject('Bondhoo — নতুন ডিভাইস থেকে লগইন সতর্কতা')

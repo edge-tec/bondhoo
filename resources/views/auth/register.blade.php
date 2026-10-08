@@ -865,11 +865,16 @@
                     sessionStorage.setItem('verify_email_target', payload.email);
                     sessionStorage.setItem('verify_phone_target', payload.phone);
 
-                    showSuccess('নিবন্ধন সফল হয়েছে! ভেরিফিকেশন পাতায় নিয়ে যাওয়া হচ্ছে...');
+                    const emailSent = data.email_sent !== false && (data.data?.email_delivery?.sent !== false);
+                    if (emailSent) {
+                        showSuccess(data.message || 'নিবন্ধন সফল হয়েছে! ভেরিফিকেশন ইমেইল পাঠানো হয়েছে। ইনবক্স চেক করুন...');
+                    } else {
+                        showError('আপনার অ্যাকাউন্ট তৈরি হয়েছে, কিন্তু ভেরিফিকেশন ইমেইল পাঠানো যায়নি। ভেরিফিকেশন পাতায় গিয়ে পুনরায় কোড পাঠান।');
+                    }
 
                     setTimeout(() => {
                         window.location.href = '/verify-email';
-                    }, 800);
+                    }, 1200);
                 } else {
                     let errMsg = data.message || 'নিবন্ধনে সমস্যা হয়েছে।';
                     if (data.errors) {

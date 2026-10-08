@@ -39,11 +39,19 @@ class AuthController extends Controller
     {
         $result = $this->authService->register($request->validated(), $request);
 
-        return $this->successResponse(
-            data: $result,
-            message: 'নিবন্ধন সফল হয়েছে। আপনার ইমেইল বা মোবাইল যাচাই করতে ওটিপি কোড চেক করুন।',
-            statusCode: 201
-        );
+        $emailDelivery = $result['email_delivery'] ?? null;
+        $emailSent = $emailDelivery ? (bool) ($emailDelivery['sent'] ?? false) : true;
+
+        $message = $emailSent
+            ? 'নিবন্ধন সফল হয়েছে। আপনার ইমেইল বা মোবাইল যাচাই করতে ওটিপি কোড চেক করুন।'
+            : 'আপনার অ্যাকাউন্ট তৈরি হয়েছে, কিন্তু ভেরিফিকেশন ইমেইল পাঠানো সম্ভব হয়নি। অনুগ্রহ করে ভেরিফিকেশন পাতায় গিয়ে পুনরায় চেষ্টা করুন।';
+
+        return response()->json([
+            'success' => true,
+            'email_sent' => $emailSent,
+            'message' => $message,
+            'data' => $result,
+        ], 201);
     }
 
     /**
@@ -171,6 +179,17 @@ class AuthController extends Controller
         $request->validate(['email' => ['required', 'email']]);
         $result = $this->authService->resendEmailVerification($request->input('email'), $request);
 
+        if (! ($result['success'] ?? false)) {
+            return response()->json([
+                'success' => false,
+                'sent' => false,
+                'message' => $result['message'] ?? 'ভেরিফিকেশন ইমেইল পাঠানো সম্ভব হয়নি।',
+                'errors' => [
+                    'email' => [$result['message'] ?? 'ইমেইল ডেলিভারি ব্যর্থ হয়েছে।'],
+                ],
+            ], 503);
+        }
+
         return $this->successResponse(
             data: $result,
             message: $result['message'] ?? 'নতুন ভেরিফিকেশন ওটিপি কোড আপনার ইমেইলে পাঠানো হয়েছে।'
@@ -198,6 +217,17 @@ class AuthController extends Controller
     public function forgotPassword(ForgotPasswordV2Request $request): JsonResponse
     {
         $result = $this->authService->sendPasswordResetOtp($request->input('identifier'), $request);
+
+        if (($result['status'] ?? '') === 'error' || ! ($result['success'] ?? true)) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $result['message'] ?? 'পাসওয়ার্ড রিসেট ওটিপি পাঠানো সম্ভব হয়নি।',
+                'errors' => [
+                    'identifier' => [$result['message'] ?? 'ইমেইল ডেলিভারি ব্যর্থ হয়েছে।'],
+                ],
+            ], 503);
+        }
 
         return response()->json(array_merge([
             'success' => true,

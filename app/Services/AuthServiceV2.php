@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use App\Mail\PasswordChangedMail;
+use App\Mail\PasswordResetMail;
+use App\Mail\VerifyEmailMail;
+use App\Mail\WelcomeMail;
 use App\Models\AuditLog;
 use App\Models\BlockedUser;
 use App\Models\EmailVerification;
@@ -18,12 +22,12 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\UserSetting;
 use App\Models\Wallet;
-use App\Notifications\PasswordChangedNotification;
 use App\Notifications\PasswordResetOtpNotification;
 use App\Notifications\SmsOtpNotification;
 use App\Notifications\SuspiciousLoginNotification;
 use App\Notifications\VerifyEmailNotification;
 use App\Notifications\WelcomeEmailNotification;
+use App\Services\Email\EmailService;
 use App\Services\Security\CaptchaService;
 use App\Services\Security\EnterpriseSecurityService;
 use App\Services\Sms\SmsGatewayManager;
@@ -33,6 +37,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -243,9 +248,18 @@ class AuthServiceV2
             ]);
 
             // Dispatch OTPs & Verification links
+            $emailSent = false;
+            $emailError = null;
+
             if ($user->email) {
+                // Invalidate older unused verification records for this email
+                EmailVerification::where('email', strtolower($user->email))
+                    ->whereNull('verified_at')
+                    ->update(['expires_at' => now()]);
+
                 $emailOtp = $this->otpService->generateOtp($user->email, 'verify_email', $user, 60, $meta['ip']);
                 $token = Str::random(64);
+
                 EmailVerification::create([
                     'user_id' => $user->id,
                     'email' => $user->email,
@@ -255,10 +269,46 @@ class AuthServiceV2
                     'ip_address' => $meta['ip'],
                     'user_agent' => $request->userAgent(),
                 ]);
+
+                // Generate secure temporary signed URL valid for 60 minutes
+                $verificationUrl = URL::temporarySignedRoute(
+                    'verification.verify',
+                    now()->addMinutes(60),
+                    [
+                        'id' => $user->id,
+                        'hash' => sha1($user->getEmailForVerification()),
+                        'token' => $token,
+                    ]
+                );
+
+                $mailable = new VerifyEmailMail(
+                    user: $user,
+                    otp: $emailOtp['plain_otp'],
+                    verificationUrl: $verificationUrl,
+                    expiresMinutes: 60
+                );
+
+                $emailResult = app(EmailService::class)->sendWithResult(
+                    to: $user->email,
+                    mailable: $mailable,
+                    emailType: 'verify_email',
+                    user: $user,
+                    idempotencyKey: "verify_email:{$user->id}:{$token}",
+                    metadata: [
+                        'user_id' => $user->id,
+                        'action' => 'register_verification',
+                        'ip' => $meta['ip'],
+                    ],
+                    forceSync: true
+                );
+
+                $emailSent = (bool) ($emailResult['success'] ?? false);
+                $emailError = $emailResult['error'] ?? null;
+
                 try {
                     $user->notify(new VerifyEmailNotification($emailOtp['plain_otp'], $token, $meta['ip'], $request->userAgent()));
                 } catch (\Throwable $e) {
-                    Log::warning("Initial email verification delivery error: {$e->getMessage()}");
+                    // Ignore in-app notification failure
                 }
             }
 
@@ -294,6 +344,14 @@ class AuthServiceV2
                 'user' => $user->fresh(['profile', 'settings', 'privacySettings', 'notificationSettings', 'wallet', 'referral', 'roles']),
                 'token' => null,
                 'requires_verification' => true,
+                'email_delivery' => [
+                    'sent' => $emailSent,
+                    'recipient' => $user->email,
+                    'error' => $emailSent ? null : ($emailError ?: 'ইমেইল সার্ভারে সংযোগ ব্যর্থ হয়েছে।'),
+                    'message' => $emailSent
+                        ? 'ভেরিফিকেশন ইমেইল সফলভাবে পাঠানো হয়েছে। অনুগ্রহ করে আপনার ইনবক্স চেক করুন।'
+                        : 'আপনার অ্যাকাউন্ট তৈরি হয়েছে, কিন্তু ভেরিফিকেশন ইমেইল পাঠানো যায়নি। অনুগ্রহ করে ভেরিফিকেশন পাতায় গিয়ে পুনরায় চেষ্টা করুন।',
+                ],
             ];
         });
     }
@@ -683,10 +741,24 @@ class AuthServiceV2
             'status' => 'active',
         ]);
 
+        if (! empty($user->email)) {
+            try {
+                app(EmailService::class)->send(
+                    to: $user->email,
+                    mailable: new WelcomeMail($user),
+                    emailType: 'welcome',
+                    user: $user,
+                    idempotencyKey: "welcome:{$user->id}"
+                );
+            } catch (\Throwable $e) {
+                Log::warning("Welcome email delivery error: {$e->getMessage()}");
+            }
+        }
+
         try {
             $user->notify(new WelcomeEmailNotification($user->name ?: $user->username));
         } catch (\Throwable $e) {
-            Log::warning("Welcome email delivery error: {$e->getMessage()}");
+            // Ignore notification failure
         }
 
         AuditLog::create([
@@ -725,10 +797,24 @@ class AuthServiceV2
                 ->whereNull('verified_at')
                 ->update(['verified_at' => now()]);
 
+            if (! empty($user->email)) {
+                try {
+                    app(EmailService::class)->send(
+                        to: $user->email,
+                        mailable: new WelcomeMail($user),
+                        emailType: 'welcome',
+                        user: $user,
+                        idempotencyKey: "welcome:{$user->id}"
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning("Welcome email delivery error: {$e->getMessage()}");
+                }
+            }
+
             try {
                 $user->notify(new WelcomeEmailNotification($user->name ?: $user->username));
             } catch (\Throwable $e) {
-                Log::warning("Welcome email delivery error: {$e->getMessage()}");
+                // Ignore notification failure
             }
 
             AuditLog::create([
@@ -750,11 +836,28 @@ class AuthServiceV2
      */
     public function resendEmailVerification(string $email, Request $request): array
     {
-        $user = User::where('email', strtolower($email))->first();
+        $cleanEmail = strtolower(trim($email));
+        $user = User::where('email', $cleanEmail)->first();
+
+        // 1. Account Enumeration Protection: Return generic message if user doesn't exist
+        if (! $user) {
+            return [
+                'success' => true,
+                'sent' => true,
+                'message' => 'যদি এই ইমেইলটি নিবন্ধিত থাকে, তবে নতুন ভেরিফিকেশন লিঙ্ক ও ওটিপি পাঠানো হয়েছে।',
+            ];
+        }
 
         $meta = $this->deviceSessionService->parseRequest($request);
-        $otp = $this->otpService->generateOtp($email, 'verify_email', $user, 60, $meta['ip']);
+
+        // 3. Generate OTP (enforces 60-second cooldown rate limit & invalidates older codes)
+        $otp = $this->otpService->generateOtp($cleanEmail, 'verify_email', $user, 60, $meta['ip']);
         $token = Str::random(64);
+
+        // 4. Invalidate older unused email verification records
+        EmailVerification::where('user_id', $user->id)
+            ->whereNull('verified_at')
+            ->update(['expires_at' => now()]);
 
         EmailVerification::create([
             'user_id' => $user->id,
@@ -766,16 +869,61 @@ class AuthServiceV2
             'user_agent' => $request->userAgent(),
         ]);
 
+        // 5. Generate secure temporary signed URL valid for 60 minutes
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            [
+                'id' => $user->id,
+                'hash' => sha1($user->getEmailForVerification()),
+                'token' => $token,
+            ]
+        );
+
+        $mailable = new VerifyEmailMail(
+            user: $user,
+            otp: $otp['plain_otp'],
+            verificationUrl: $verificationUrl,
+            expiresMinutes: 60
+        );
+
+        // 6. Synchronous submission to real SMTP transport via EmailService
+        $emailResult = app(EmailService::class)->sendWithResult(
+            to: $user->email,
+            mailable: $mailable,
+            emailType: 'verify_email',
+            user: $user,
+            idempotencyKey: "resend_verify:{$user->id}:{$token}",
+            metadata: [
+                'user_id' => $user->id,
+                'action' => 'resend_verification',
+                'ip' => $meta['ip'],
+            ],
+            forceSync: true
+        );
+
+        if (! ($emailResult['success'] ?? false)) {
+            $safeError = $emailResult['error'] ?? 'ইমেইল ডেলিভারি ব্যর্থ হয়েছে।';
+            Log::warning("Resend verification email failed for user {$user->id}: {$safeError}");
+
+            return [
+                'success' => false,
+                'sent' => false,
+                'message' => 'ভেরিফিকেশন ইমেইল পাঠানো সম্ভব হয়নি। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।',
+                'error' => $safeError,
+            ];
+        }
+
         try {
             $user->notify(new VerifyEmailNotification($otp['plain_otp'], $token, $meta['ip'], $request->userAgent()));
         } catch (\Throwable $e) {
-            Log::warning("Resend verification email delivery error: {$e->getMessage()}");
+            // Ignore in-app notification failure
         }
 
         return [
             'success' => true,
             'sent' => true,
-            'message' => 'নতুন ভেরিফিকেশন লিঙ্ক ও ওটিপি আপনার ইমেইলে পাঠানো হয়েছে।',
+            'message' => 'নতুন ভেরিফিকেশন লিঙ্ক ও ওটিপি আপনার ইমেইলে সফলভাবে পাঠানো হয়েছে।',
         ];
     }
 
@@ -914,17 +1062,52 @@ class AuthServiceV2
             $otp = $this->otpService->generateOtp($user->email, 'password_reset', $user, 15, $meta['ip']);
             Cache::put('pwd_reset_token_'.$resetToken, ['user_id' => $user->id, 'email' => $user->email], now()->addMinutes(15));
 
+            $mailable = new PasswordResetMail(
+                user: $user,
+                resetUrl: $resetUrl,
+                otp: $otp['plain_otp'],
+                expiresMinutes: 15
+            );
+
+            $emailResult = app(EmailService::class)->sendWithResult(
+                to: $user->email,
+                mailable: $mailable,
+                emailType: 'password_reset',
+                user: $user,
+                idempotencyKey: "password_reset:{$user->id}:{$resetToken}",
+                metadata: [
+                    'user_id' => $user->id,
+                    'action' => 'password_reset',
+                    'ip' => $meta['ip'],
+                ],
+                forceSync: true
+            );
+
+            if (! ($emailResult['success'] ?? false)) {
+                $safeError = $emailResult['error'] ?? 'ইমেইল ডেলিভারি ব্যর্থ হয়েছে।';
+                Log::warning("Password reset email failed for user {$user->id}: {$safeError}");
+
+                return [
+                    'status' => 'error',
+                    'success' => false,
+                    'channel' => 'email',
+                    'message' => 'পাসওয়ার্ড রিসেট ইমেইল পাঠানো সম্ভব হয়নি। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।',
+                    'error' => $safeError,
+                ];
+            }
+
             try {
                 $user->notify(new PasswordResetOtpNotification($otp['plain_otp'], $resetUrl, [
                     'ip' => $meta['ip'],
                     'device' => $meta['user_agent'] ?? request()->userAgent(),
                 ]));
             } catch (\Throwable $e) {
-                Log::warning("Password reset email delivery error: {$e->getMessage()}");
+                // Ignore in-app notification failure
             }
 
             return [
                 'status' => 'success',
+                'success' => true,
                 'channel' => 'email',
                 'reset_token' => $resetToken,
                 'reset_url' => $resetUrl,
@@ -1011,10 +1194,18 @@ class AuthServiceV2
         $user->tokens()->delete();
 
         // 5. Notify user
-        try {
-            $user->notify(new PasswordChangedNotification);
-        } catch (\Throwable $e) {
-            // Ignore notification failure
+        if (! empty($user->email)) {
+            try {
+                app(EmailService::class)->send(
+                    to: $user->email,
+                    mailable: new PasswordChangedMail($user),
+                    emailType: 'password_changed',
+                    user: $user,
+                    forceSync: true
+                );
+            } catch (\Throwable $e) {
+                Log::warning("Password changed notification error: {$e->getMessage()}");
+            }
         }
 
         // 6. Audit log

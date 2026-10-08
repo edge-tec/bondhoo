@@ -2,12 +2,12 @@
 
 namespace App\Notifications;
 
+use App\Services\Email\SmtpConfigService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class EmailVerificationOtpNotification extends Notification implements ShouldQueue
+class EmailVerificationOtpNotification extends Notification
 {
     use Queueable;
 
@@ -23,6 +23,9 @@ class EmailVerificationOtpNotification extends Notification implements ShouldQue
 
     public function toMail(object $notifiable): MailMessage
     {
+        // Apply active database SMTP configuration
+        app(SmtpConfigService::class)->applyToMailer();
+
         return (new MailMessage)
             ->subject("আপনার যুগাজুগ ওটিপি (OTP) কোড: {$this->otp}")
             ->greeting('আসসালামু আলাইকুম,')

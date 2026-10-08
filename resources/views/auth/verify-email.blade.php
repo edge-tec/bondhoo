@@ -229,6 +229,9 @@
 
         async function handleResend() {
             const alertBox = document.getElementById('alertBox');
+            resendBtn.disabled = true;
+            resendBtn.innerText = 'পাঠানো হচ্ছে...';
+
             try {
                 const res = await fetch('/api/v2/auth/resend-email', {
                     method: 'POST',
@@ -242,15 +245,35 @@
                 const data = await res.json();
                 if (res.ok && data.success) {
                     alertBox.className = 'alert-box alert-success';
-                    alertBox.innerText = 'নতুন ওটিপি কোড পাঠানো হয়েছে।';
+                    alertBox.innerText = data.message || 'নতুন ভেরিফিকেশন ওটিপি ও লিঙ্ক আপনার ইমেইলে সফলভাবে পাঠানো হয়েছে।';
                     alertBox.style.display = 'block';
-                    resendBtn.disabled = true;
-                    resendBtn.innerText = 'পাঠানো হয়েছে';
+
+                    // Restart 60s cooldown
+                    countdown = 60;
+                    resendBtn.innerText = `পুনরায় কোড পাঠান (${countdown}s)`;
+                    const resendInterval = setInterval(() => {
+                        countdown--;
+                        if (countdown <= 0) {
+                            clearInterval(resendInterval);
+                            resendBtn.disabled = false;
+                            resendBtn.innerText = 'এখনই পুনরায় কোড পাঠান';
+                        } else {
+                            resendBtn.innerText = `পুনরায় কোড পাঠান (${countdown}s)`;
+                        }
+                    }, 1000);
+                } else {
+                    alertBox.className = 'alert-box alert-error';
+                    alertBox.innerText = data.errors?.email?.[0] || data.message || 'ভেরিফিকেশন ইমেইল পাঠানো সম্ভব হয়নি। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।';
+                    alertBox.style.display = 'block';
+                    resendBtn.disabled = false;
+                    resendBtn.innerText = 'আবার চেষ্টা করুন';
                 }
             } catch (err) {
                 alertBox.className = 'alert-box alert-error';
-                alertBox.innerText = 'কোড পাঠানো সম্ভব হয়নি।';
+                alertBox.innerText = 'সার্ভার সংযোগে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।';
                 alertBox.style.display = 'block';
+                resendBtn.disabled = false;
+                resendBtn.innerText = 'আবার চেষ্টা করুন';
             }
         }
     </script>

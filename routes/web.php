@@ -105,15 +105,27 @@ Route::get('/register', function () {
 Route::post('/register', function (RegisterV2Request $request, AuthServiceV2 $authService) {
     $result = $authService->register($request->validated(), $request);
 
+    $emailDelivery = $result['email_delivery'] ?? null;
+    $emailSent = $emailDelivery ? (bool) ($emailDelivery['sent'] ?? false) : true;
+
+    $message = $emailSent
+        ? 'নিবন্ধন সফল হয়েছে। আপনার ইমেইল বা মোবাইল যাচাই করতে ওটিপি কোড চেক করুন।'
+        : 'আপনার অ্যাকাউন্ট তৈরি হয়েছে, কিন্তু ভেরিফিকেশন ইমেইল পাঠানো সম্ভব হয়নি। অনুগ্রহ করে ভেরিফিকেশন পাতায় গিয়ে পুনরায় চেষ্টা করুন।';
+
     if ($request->wantsJson()) {
         return response()->json([
             'success' => true,
-            'message' => 'নিবন্ধন সফল হয়েছে। আপনার ইমেইল বা মোবাইল যাচাই করতে ওটিপি কোড চেক করুন।',
+            'email_sent' => $emailSent,
+            'message' => $message,
             'data' => $result,
         ], 201);
     }
 
-    return redirect()->route('verify.email')->with('success', 'নিবন্ধন সফল হয়েছে।');
+    if (! $emailSent) {
+        return redirect()->route('verify.email')->with('warning', $message);
+    }
+
+    return redirect()->route('verify.email')->with('success', 'নিবন্ধন সফল হয়েছে। ইনবক্স চেক করুন।');
 });
 
 Route::get('/verify-email', function () {

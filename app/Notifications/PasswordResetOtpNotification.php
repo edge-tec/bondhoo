@@ -2,14 +2,12 @@
 
 namespace App\Notifications;
 
-use App\Models\EmailLog;
 use App\Services\Email\SmtpConfigService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class PasswordResetOtpNotification extends Notification implements ShouldQueue
+class PasswordResetOtpNotification extends Notification
 {
     use Queueable;
 
@@ -21,31 +19,13 @@ class PasswordResetOtpNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['database'];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
-        $ip = $this->meta['ip'] ?? request()->ip();
-
         // Apply active database SMTP configuration
         app(SmtpConfigService::class)->applyToMailer();
-
-        // Record in email_logs
-        try {
-            EmailLog::create([
-                'user_id' => $notifiable->id ?? null,
-                'recipient' => $notifiable->email ?? 'unknown',
-                'email_type' => 'password_reset',
-                'subject' => 'আপনার Bondhoo অ্যাকাউন্টের পাসওয়ার্ড রিসেট লিংক',
-                'mail_class' => self::class,
-                'ip_address' => $ip,
-                'status' => 'sent',
-                'sent_at' => now(),
-            ]);
-        } catch (\Throwable $e) {
-            // Ignore log persistence failure in tests
-        }
 
         return (new MailMessage)
             ->subject('আপনার Bondhoo অ্যাকাউন্টের পাসওয়ার্ড রিসেট লিংক')

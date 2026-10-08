@@ -2,14 +2,12 @@
 
 namespace App\Notifications;
 
-use App\Models\EmailLog;
 use App\Services\Email\SmtpConfigService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class SuspiciousLoginNotification extends Notification implements ShouldQueue
+class SuspiciousLoginNotification extends Notification
 {
     use Queueable;
 
@@ -30,21 +28,6 @@ class SuspiciousLoginNotification extends Notification implements ShouldQueue
         $ip = $this->incidentDetails['ip'] ?? 'Unknown';
         $location = $this->incidentDetails['location'] ?? 'Unknown';
         $reason = $this->incidentDetails['reason'] ?? 'সন্দেহজনক কার্যকলাপ';
-
-        try {
-            EmailLog::create([
-                'user_id' => $notifiable->id ?? null,
-                'recipient' => $notifiable->email,
-                'email_type' => 'security_alert',
-                'subject' => '⚠️ জরুরি সিকিউরিটি অ্যালার্ট: সন্দেহজনক লগইন প্রচেষ্টা!',
-                'mail_class' => self::class,
-                'ip_address' => $ip,
-                'status' => 'sent',
-                'sent_at' => now(),
-            ]);
-        } catch (\Throwable $e) {
-            // Ignore logging error in test or disconnected environment
-        }
 
         return (new MailMessage)
             ->subject('⚠️ জরুরি সিকিউরিটি অ্যালার্ট: সন্দেহজনক লগইন প্রচেষ্টা!')
