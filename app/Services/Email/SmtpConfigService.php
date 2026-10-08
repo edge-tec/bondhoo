@@ -194,6 +194,12 @@ class SmtpConfigService
                 'sent_at' => now(),
             ]);
 
+            $dns = $this->checkDnsDeliverability($fromAddress);
+            $deliveryHint = null;
+            if (! $dns['is_healthy']) {
+                $deliveryHint = 'সতর্কতা: আপনার প্রেরক ডোমেইনের ('.$dns['domain'].') SPF বা DMARC রেকর্ড অনুপস্থিত/ত্রুটিপূর্ণ। গুগল জিমেইল (Gmail) পলিসি অনুযায়ী এটি ইনবক্সে না গিয়ে Spam ফোল্ডারে জমা হতে পারে। অনুগ্রহ করে রিসিভারের Spam/Junk ফোল্ডার চেক করুন।';
+            }
+
             return [
                 'success' => true,
                 'message' => "টেস্ট ইমেইল সফলভাবে পাঠানো হয়েছে ({$toEmail})। SMTP সংযোগ সম্পূর্ণ সক্রিয়।",
@@ -203,6 +209,8 @@ class SmtpConfigService
                     'encryption' => $encryption ?: 'None',
                     'recipient' => $toEmail,
                     'log_id' => $log->id,
+                    'dns_warning' => $deliveryHint,
+                    'dns_status' => $dns,
                 ],
             ];
         } catch (\Throwable $e) {
@@ -307,6 +315,85 @@ class SmtpConfigService
                 ],
             ];
         }
+    }
+
+    /**
+     * Check DNS records (SPF, DMARC, MX) for email deliverability diagnostics.
+     *
+     * @return array{domain: string, spf: array, dmarc: array, mx: array, is_healthy: bool}
+     */
+    public function checkDnsDeliverability(?string $fromAddress = null): array
+    {
+        $domain = 'bondhoo.com';
+        if ($fromAddress && str_contains($fromAddress, '@')) {
+            $domain = substr(strrchr($fromAddress, '@'), 1);
+        } else {
+            $settings = $this->getActiveSettings();
+            if (! empty($settings->mail_from_address) && str_contains($settings->mail_from_address, '@')) {
+                $domain = substr(strrchr($settings->mail_from_address, '@'), 1);
+            }
+        }
+
+        $domain = strtolower(trim($domain));
+
+        // 1. SPF Check
+        $spfFound = false;
+        $spfRecord = null;
+        $txtRecords = @dns_get_record($domain, DNS_TXT) ?: [];
+        foreach ($txtRecords as $rec) {
+            $txt = $rec['txt'] ?? ($rec['entries'][0] ?? '');
+            if (str_starts_with($txt, 'v=spf1')) {
+                $spfFound = true;
+                $spfRecord = $txt;
+                break;
+            }
+        }
+
+        // 2. DMARC Check
+        $dmarcFound = false;
+        $dmarcValid = false;
+        $dmarcRecord = null;
+        $dmarcRecords = @dns_get_record('_dmarc.'.$domain, DNS_TXT) ?: [];
+        foreach ($dmarcRecords as $rec) {
+            $txt = $rec['txt'] ?? ($rec['entries'][0] ?? '');
+            if (! empty($txt)) {
+                $dmarcFound = true;
+                $dmarcRecord = $txt;
+                if (str_starts_with($txt, 'v=DMARC1')) {
+                    $dmarcValid = true;
+                }
+                break;
+            }
+        }
+
+        // 3. MX Check
+        $mxRecords = @dns_get_record($domain, DNS_MX) ?: [];
+        $mxFound = ! empty($mxRecords);
+        $mxHosts = [];
+        foreach ($mxRecords as $mx) {
+            $mxHosts[] = ($mx['target'] ?? '').' (Prio: '.($mx['pri'] ?? 10).')';
+        }
+
+        return [
+            'domain' => $domain,
+            'spf' => [
+                'status' => $spfFound ? 'ok' : 'missing',
+                'record' => $spfRecord,
+                'recommended' => 'v=spf1 ip4:109.199.110.101 ~all',
+            ],
+            'dmarc' => [
+                'status' => $dmarcValid ? 'ok' : ($dmarcFound ? 'invalid' : 'missing'),
+                'record' => $dmarcRecord,
+                'recommended' => 'v=DMARC1; p=none; sp=none;',
+            ],
+            'mx' => [
+                'status' => $mxFound ? 'ok' : 'missing',
+                'count' => count($mxRecords),
+                'hosts' => $mxHosts,
+                'recommended' => 'mail.'.$domain.' (Priority 10)',
+            ],
+            'is_healthy' => $spfFound && $dmarcValid && $mxFound,
+        ];
     }
 
     /**

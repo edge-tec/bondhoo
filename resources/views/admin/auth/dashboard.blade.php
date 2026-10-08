@@ -650,9 +650,21 @@
                     </div>
 
                     <!-- Live Test Diagnostic Result Box -->
-                    <div id="smtpTestResultBox" style="display: none; padding: 14px; border-radius: 8px; font-size: 13px; margin-top: auto; border: 1px solid transparent;"></div>
+                    <div id="smtpTestResultBox" style="display: none; padding: 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; border: 1px solid transparent;"></div>
 
-                    <div style="margin-top: 20px; padding: 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 12px; color: #475569;">
+                    <!-- Section 3: Domain DNS Deliverability (SPF, DMARC, MX) -->
+                    <div style="margin-top: 16px; padding: 14px; background: #fffbeb; border-radius: 8px; border: 1px solid #fef3c7;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
+                            <div>
+                                <strong style="font-size: 13px; color: #92400e; display: block;">৩. ডোমেইন ডেলিভারিবিলিটি (SPF, DMARC, MX) 🛡️</strong>
+                                <span style="font-size: 12px; color: #b45309;">গুগল জিমেইল (Gmail) বা ইয়াহু ইনবক্সে ইমেইল পৌঁছানোর জন্য প্রয়োজনীয় DNS রেকর্ড চেক করুন।</span>
+                            </div>
+                            <button type="button" id="btnCheckDns" class="btn-export secondary" onclick="checkDomainDnsDeliverability()" style="background: #f59e0b; color: #ffffff; border: none;">DNS স্বাস্থ্য চেক 🔍</button>
+                        </div>
+                        <div id="smtpDnsResultBox" style="display: none; padding: 12px; border-radius: 8px; font-size: 12px; background: #ffffff; border: 1px solid #fde68a; margin-top: 8px;"></div>
+                    </div>
+
+                    <div style="margin-top: 16px; padding: 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 12px; color: #475569;">
                         🔒 <strong>নিরাপত্তা নীতি:</strong> সংবেদনশীল SMTP পাসওয়ার্ড ডেটাবেজে সম্পূর্ণ এনক্রিপ্ট করে রাখা হয় এবং কখনো API রেসপন্স বা লগ ফাইলে প্লেইনটেক্সট আকারে রাখা হয় না।
                     </div>
                 </div>
@@ -1591,6 +1603,15 @@
                         <strong>✅ সফল! SMTP টেস্ট উত্তীর্ণ:</strong><br>
                         ${json.message}<br>
                         <small style="opacity: 0.85;">হোস্ট: ${json.details?.host}:${json.details?.port} | এনক্রিপশন: ${json.details?.encryption}</small>
+                        ${json.details?.dns_warning ? `
+                            <div style="margin-top: 10px; padding: 10px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; color: #92400e; font-size: 12px; line-height: 1.4;">
+                                ⚠️ <strong>ইনবক্স ডেলিভারি সতর্কতা:</strong><br>
+                                ${json.details.dns_warning}
+                                <div style="margin-top: 6px;">
+                                    <button type="button" class="btn-export secondary" style="font-size: 11px; padding: 3px 8px; background: #f59e0b; color: #fff; border:none;" onclick="checkDomainDnsDeliverability()">DNS স্বাস্থ্য রিপোর্ট দেখুন 🔍</button>
+                                </div>
+                            </div>
+                        ` : ''}
                     `;
                 } else {
                     resultBox.style.background = '#fef2f2';
@@ -1627,6 +1648,81 @@
             } finally {
                 btn.innerText = 'টেস্ট পাঠান ✉️';
                 btn.disabled = false;
+            }
+        }
+
+        async function checkDomainDnsDeliverability() {
+            const btn = document.getElementById('btnCheckDns');
+            const resultBox = document.getElementById('smtpDnsResultBox');
+            const fromAddr = document.getElementById('smtpFromAddress')?.value || '';
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'চেক হচ্ছে... ⏳';
+            }
+            if (resultBox) {
+                resultBox.style.display = 'block';
+                resultBox.innerHTML = 'DNS রেকর্ড (SPF, DMARC, MX) বিশ্লেষণ করা হচ্ছে...';
+            }
+
+            try {
+                const res = await fetchAdminSmtp('/smtp/dns-check' + (fromAddr ? '?from_address=' + encodeURIComponent(fromAddr) : ''));
+                const json = await res.json();
+                if (res.ok && json.success && json.data) {
+                    const d = json.data;
+                    const spfOk = d.spf?.status === 'ok';
+                    const dmarcOk = d.dmarc?.status === 'ok';
+                    const mxOk = d.mx?.status === 'ok';
+
+                    resultBox.innerHTML = `
+                        <div style="font-weight: 700; color: #1e293b; margin-bottom: 8px; font-size: 13px;">ডোমেইন: <code>${d.domain}</code> এর লাইভ DNS স্ট্যাটাস:</div>
+                        <div style="display: grid; gap: 8px;">
+                            <div style="padding: 8px; background: ${spfOk ? '#f0fdf4' : '#fef2f2'}; border: 1px solid ${spfOk ? '#bbf7d0' : '#fecdd3'}; border-radius: 6px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong>SPF রেকর্ড:</strong>
+                                    <span style="font-size: 11px; font-weight: 700; color: ${spfOk ? '#15803d' : '#b91c1c'};">${spfOk ? '✅ সক্রিয়' : '❌ অনুপস্থিত (Missing)'}</span>
+                                </div>
+                                <div style="font-size: 11px; margin-top: 4px; color: #475569;">
+                                    ${spfOk ? `বর্তমান: <code>${d.spf.record}</code>` : `প্রস্তাবিত TXT রেকর্ড (@): <code style="background:#fff; padding:2px 4px; border:1px solid #ccc; border-radius:3px;">${d.spf.recommended}</code>`}
+                                </div>
+                            </div>
+
+                            <div style="padding: 8px; background: ${dmarcOk ? '#f0fdf4' : '#fffbeb'}; border: 1px solid ${dmarcOk ? '#bbf7d0' : '#fef3c7'}; border-radius: 6px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong>DMARC রেকর্ড:</strong>
+                                    <span style="font-size: 11px; font-weight: 700; color: ${dmarcOk ? '#15803d' : '#b45309'};">${dmarcOk ? '✅ সক্রিয়' : (d.dmarc.status === 'invalid' ? '⚠️ ভুল সিনট্যাক্স' : '❌ অনুপস্থিত')}</span>
+                                </div>
+                                <div style="font-size: 11px; margin-top: 4px; color: #475569;">
+                                    ${dmarcOk ? `বর্তমান: <code>${d.dmarc.record}</code>` : `প্রস্তাবিত TXT রেকর্ড (_dmarc): <code style="background:#fff; padding:2px 4px; border:1px solid #ccc; border-radius:3px;">${d.dmarc.recommended}</code>`}
+                                </div>
+                            </div>
+
+                            <div style="padding: 8px; background: ${mxOk ? '#f0fdf4' : '#fef2f2'}; border: 1px solid ${mxOk ? '#bbf7d0' : '#fecdd3'}; border-radius: 6px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong>MX রেকর্ড:</strong>
+                                    <span style="font-size: 11px; font-weight: 700; color: ${mxOk ? '#15803d' : '#b91c1c'};">${mxOk ? '✅ সক্রিয় (' + d.mx.count + ' টি)' : '❌ অনুপস্থিত'}</span>
+                                </div>
+                                <div style="font-size: 11px; margin-top: 4px; color: #475569;">
+                                    ${mxOk ? `বর্তমান: ${d.mx.hosts?.join(', ')}` : `প্রস্তাবিত MX রেকর্ড: <code style="background:#fff; padding:2px 4px; border:1px solid #ccc; border-radius:3px;">${d.mx.recommended}</code>`}
+                                </div>
+                            </div>
+                        </div>
+                        ${!d.is_healthy ? `
+                            <div style="margin-top: 10px; font-size: 11px; color: #b45309; line-height: 1.4;">
+                                💡 <strong>করণীয়:</strong> আপনার ডোমেইন কন্ট্রোল প্যানেলে (cPanel / Cloudflare / DNS Provider) গিয়ে উপরের প্রস্তাবিত SPF ও DMARC TXT রেকর্ডগুলো যোগ করুন। তাহলে জিমেইল আর মেইল ব্লক করবে না এবং স্প্যামে যাবে না।
+                            </div>
+                        ` : ''}
+                    `;
+                } else {
+                    resultBox.innerHTML = '<span style="color:#b91c1c;">DNS তথ্য রিট্রিভ করতে ব্যর্থ হয়েছে।</span>';
+                }
+            } catch (err) {
+                resultBox.innerHTML = '<span style="color:#b91c1c;">ত্রুটি: ' + err.message + '</span>';
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'DNS স্বাস্থ্য চেক 🔍';
+                }
             }
         }
 

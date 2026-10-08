@@ -588,4 +588,31 @@ class EnterpriseSmtpEmailSystemTest extends TestCase
         $this->assertContains($webResponse->status(), [200, 422]);
         $this->assertArrayHasKey('details', $webResponse->json());
     }
+
+    /**
+     * TEST 17: Admin Can Check Domain DNS Deliverability (SPF, DMARC, MX)
+     */
+    public function test_admin_can_check_domain_dns_deliverability(): void
+    {
+        $response = $this->actingAs($this->admin, 'sanctum')->getJson('/api/v2/admin/smtp/dns-check?from_address=no_reply@bondhoo.com');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'success',
+                'data' => [
+                    'domain',
+                    'spf' => ['status', 'recommended'],
+                    'dmarc' => ['status', 'recommended'],
+                    'mx' => ['status', 'recommended'],
+                    'is_healthy',
+                ],
+            ]);
+
+        $this->assertEquals('bondhoo.com', $response->json('data.domain'));
+
+        // Web route test
+        $webResponse = $this->actingAs($this->admin, 'web')->getJson('/admin/smtp/dns-check');
+        $webResponse->assertStatus(200)
+            ->assertJson(['success' => true]);
+    }
 }

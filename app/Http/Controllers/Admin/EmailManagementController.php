@@ -154,6 +154,21 @@ class EmailManagementController extends Controller
     }
 
     /**
+     * GET /api/v1/admin/smtp/dns-check
+     * Live DNS (SPF, DMARC, MX) Deliverability status.
+     */
+    public function checkDns(Request $request): JsonResponse
+    {
+        $from = $request->query('from_address');
+        $result = $this->smtpConfigService->checkDnsDeliverability($from);
+
+        return response()->json([
+            'success' => true,
+            'data' => $result,
+        ]);
+    }
+
+    /**
      * GET /api/v1/admin/smtp/logs
      * Paginated email delivery logs with multi-field search and filters.
      */
