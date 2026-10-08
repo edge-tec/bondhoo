@@ -36,7 +36,13 @@
         ✓ এখন আপনার প্ল্যাটফর্ম থেকে ব্যবহারকারীদের অ্যাকাউন্ট ভেরিফিকেশন, পাসওয়ার্ড রিসেট, ফ্রেন্ড রিকোয়েস্ট এবং সিকিউরিটি নোটিফিকেশন স্বয়ংক্রিয়ভাবে পৌঁছাবে।
     </div>
 
+    @php
+        $safeUrl = config('app.url', 'https://bondhoo.com');
+        if (empty($safeUrl) || str_contains($safeUrl, 'localhost') || str_contains($safeUrl, '127.0.0.1')) {
+            $safeUrl = 'https://bondhoo.com';
+        }
+    @endphp
     <div class="btn-container">
-        <a href="{{ config('app.url') }}/admin/auth-management" class="btn-primary">অ্যাডমিন কনসোলে ফিরে যান</a>
+        <a href="{{ $safeUrl }}/admin/auth-management" class="btn-primary">অ্যাডমিন কনসোলে ফিরে যান</a>
     </div>
 @endsection

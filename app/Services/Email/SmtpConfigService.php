@@ -124,6 +124,12 @@ class SmtpConfigService
         Config::set('mail.mailers.smtp.timeout', $setting->timeout);
         Config::set('mail.mailers.smtp.verify_peer', false);
 
+        $ehloDomain = 'bondhoo.com';
+        if (! empty($setting->mail_from_address) && str_contains($setting->mail_from_address, '@')) {
+            $ehloDomain = substr(strrchr($setting->mail_from_address, '@'), 1);
+        }
+        Config::set('mail.mailers.smtp.local_domain', $ehloDomain);
+
         if (! empty($setting->mail_from_address)) {
             Config::set('mail.from.address', $setting->mail_from_address);
         }
@@ -153,6 +159,11 @@ class SmtpConfigService
             $encryption = null;
         }
 
+        $ehloDomain = 'bondhoo.com';
+        if ($fromAddress && str_contains($fromAddress, '@')) {
+            $ehloDomain = substr(strrchr($fromAddress, '@'), 1);
+        }
+
         // Temporarily configure test smtp mailer
         Config::set('mail.mailers.test_smtp', [
             'transport' => 'smtp',
@@ -163,6 +174,7 @@ class SmtpConfigService
             'password' => $password,
             'timeout' => 15,
             'verify_peer' => false,
+            'local_domain' => $ehloDomain,
         ]);
 
         $log = EmailLog::create([
@@ -267,6 +279,11 @@ class SmtpConfigService
         $startTime = microtime(true);
 
         try {
+            $ehloDomain = 'bondhoo.com';
+            if ($username && str_contains($username, '@')) {
+                $ehloDomain = substr(strrchr($username, '@'), 1);
+            }
+
             Config::set('mail.mailers.test_smtp_verify', [
                 'transport' => 'smtp',
                 'host' => $host,
@@ -276,6 +293,7 @@ class SmtpConfigService
                 'password' => $password,
                 'timeout' => $timeout,
                 'verify_peer' => false,
+                'local_domain' => $ehloDomain,
             ]);
 
             $transport = Mail::mailer('test_smtp_verify')->getSymfonyTransport();

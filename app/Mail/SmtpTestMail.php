@@ -7,6 +7,7 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class SmtpTestMail extends Mailable
@@ -28,7 +29,19 @@ class SmtpTestMail extends Mailable
 
         return new Envelope(
             from: $from,
+            replyTo: $from ? [$from] : [],
             subject: 'Bondhoo Enterprise SMTP কনফিগারেশন টেস্ট',
+        );
+    }
+
+    public function headers(): Headers
+    {
+        $domain = ($this->fromAddress && str_contains($this->fromAddress, '@'))
+            ? substr(strrchr($this->fromAddress, '@'), 1)
+            : 'bondhoo.com';
+
+        return new Headers(
+            messageId: bin2hex(random_bytes(16)).'@'.$domain,
         );
     }
 

@@ -73,14 +73,20 @@
                         </div>
 
                         <!-- Footer -->
+                        @php
+                            $safeBaseUrl = config('app.url', 'https://bondhoo.com');
+                            if (empty($safeBaseUrl) || str_contains($safeBaseUrl, 'localhost') || str_contains($safeBaseUrl, '127.0.0.1')) {
+                                $safeBaseUrl = 'https://bondhoo.com';
+                            }
+                        @endphp
                         <div class="email-footer">
                             <p style="margin: 0 0 10px 0;">
                                 এই ইমেইলটি <strong>Bondhoo সোশ্যাল নেটওয়ার্ক</strong> থেকে আপনার অ্যাকাউন্টের সুরক্ষার জন্য স্বয়ংক্রিয়ভাবে পাঠানো হয়েছে।
                             </p>
                             <div class="footer-links" style="margin-bottom: 12px;">
-                                <a href="{{ config('app.url') }}/settings/notifications">নোটিফিকেশন সেটিংস</a> &bull;
-                                <a href="{{ config('app.url') }}/privacy">প্রাইভেসি পলিসি</a> &bull;
-                                <a href="{{ config('app.url') }}/help">সাহায্য কেন্দ্র</a>
+                                <a href="{{ $safeBaseUrl }}/settings/notifications">নোটিফিকেশন সেটিংস</a> &bull;
+                                <a href="{{ $safeBaseUrl }}/privacy">প্রাইভেসি পলিসি</a> &bull;
+                                <a href="{{ $safeBaseUrl }}/help">সাহায্য কেন্দ্র</a>
                             </div>
                             <p style="margin: 0; color: #94a3b8; font-size: 11px;">
                                 &copy; {{ date('Y') }} Bondhoo Inc. সর্বস্বত্ব সংরক্ষিত। ঢাকা, বাংলাদেশ।
