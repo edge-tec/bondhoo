@@ -3222,7 +3222,7 @@
                          style="object-position: center {{ $user->profile->cover_position_y ?? 50 }}%; cursor:pointer;"
                          onclick="handleCoverClick(event)">
                 @else
-                    <div style="width:100%;height:100%;background: var(--fb-cover-gradient);display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:700;letter-spacing:1px;">
+                    <div id="coverFallback" style="width:100%;height:100%;background: var(--fb-cover-gradient);display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:700;letter-spacing:1px;">
                         {{ $profile['name'] }}
                     </div>
                 @endif
@@ -3251,8 +3251,7 @@
 
                         <!-- Cover Options Dropdown (Facebook Style) -->
                         <div class="cover-menu-dropdown" id="coverMenuDropdown">
-                            @if(!empty($profile['cover_photo']))
-                                <button type="button" class="avatar-menu-item" onclick="openPhotoTheater('{{ $profile['cover_photo'] }}', '{{ addslashes($profile['name']) }}', 'কভার ফটো', 'সম্প্রতি')">
+                                <button type="button" class="avatar-menu-item cover-menu-has-photo" onclick="handleCoverClick(event)" style="{{ empty($profile['cover_photo']) ? 'display:none;' : '' }}">
                                     <span class="menu-icon">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                                     </span>
@@ -3261,7 +3260,7 @@
                                         <div style="font-size:11px;color:var(--fb-text-secondary);font-weight:normal;">ফুল স্ক্রিনে কভার ফটো দেখুন</div>
                                     </div>
                                 </button>
-                                <button type="button" class="avatar-menu-item" onclick="startLiveCoverReposition()">
+                                <button type="button" class="avatar-menu-item cover-menu-has-photo" onclick="startLiveCoverReposition()" style="{{ empty($profile['cover_photo']) ? 'display:none;' : '' }}">
                                     <span class="menu-icon">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="19 9 22 12 19 15"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
                                     </span>
@@ -3270,7 +3269,6 @@
                                         <div style="font-size:11px;color:var(--fb-text-secondary);font-weight:normal;">টেনে পছন্দের পজিশনে বসান</div>
                                     </div>
                                 </button>
-                            @endif
                             <button type="button" class="avatar-menu-item" onclick="openCoverModal()">
                                 <span class="menu-icon">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -7220,36 +7218,184 @@
         </div>
     </div>
 
-    <!-- COVER PHOTO UPLOAD MODAL -->
+    <!-- COVER PHOTO UPLOAD MODAL (Advanced: drag & drop, paste, gallery, live preview, reposition, progress) -->
+    <style>
+        #coverModal .cvm-card { max-width: 680px; width: 100%; }
+        #coverModal .cvm-tabs { display:flex; gap:6px; padding:4px; background:var(--fb-hover, #f0f2f5); border-radius:12px; margin-bottom:16px; }
+        #coverModal .cvm-tab { flex:1; border:0; background:transparent; padding:9px 12px; border-radius:9px; font-weight:600; font-size:13px; color:var(--fb-text-secondary, #65676b); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all .2s ease; }
+        #coverModal .cvm-tab.active { background:var(--fb-card, #fff); color:var(--fb-blue, #1877f2); box-shadow:0 1px 4px rgba(0,0,0,.12); }
+        #coverModal .cvm-pane { display:none; animation:cvmFade .25s ease; }
+        #coverModal .cvm-pane.active { display:block; }
+        @keyframes cvmFade { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+        #coverModal .cvm-drop { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; aspect-ratio: 820 / 312; min-height:170px; border:2px dashed #c7cdd6; border-radius:14px; background:linear-gradient(135deg, rgba(24,119,242,.04), rgba(124,58,237,.05)); cursor:pointer; transition:all .2s ease; padding:16px; }
+        #coverModal .cvm-drop:hover, #coverModal .cvm-drop.dragover { border-color:#1877f2; background:linear-gradient(135deg, rgba(24,119,242,.10), rgba(124,58,237,.10)); transform:scale(1.005); }
+        #coverModal .cvm-drop-icon { width:54px; height:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#1877f2,#7c3aed); color:#fff; box-shadow:0 6px 18px rgba(24,119,242,.35); }
+        #coverModal .cvm-drop-title { font-weight:700; font-size:15px; color:var(--fb-text-primary, #050505); }
+        #coverModal .cvm-drop-sub { font-size:12px; color:var(--fb-text-secondary, #65676b); }
+        #coverModal .cvm-badges { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+        #coverModal .cvm-badge { font-size:11px; font-weight:600; padding:3px 8px; border-radius:999px; background:rgba(24,119,242,.1); color:#1877f2; }
+        #coverModal .cvm-stage { position:relative; aspect-ratio: 820 / 312; border-radius:14px; overflow:hidden; background:#111; cursor:grab; touch-action:none; user-select:none; box-shadow:inset 0 0 0 1px rgba(0,0,0,.08); }
+        #coverModal .cvm-stage.grabbing { cursor:grabbing; }
+        #coverModal .cvm-stage img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; transition:object-position .05s linear; }
+        #coverModal .cvm-stage-hint { position:absolute; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.6); color:#fff; font-size:12px; font-weight:600; padding:6px 12px; border-radius:999px; display:flex; align-items:center; gap:6px; backdrop-filter:blur(6px); pointer-events:none; white-space:nowrap; }
+        #coverModal .cvm-stage-actions { position:absolute; bottom:10px; right:10px; display:flex; gap:6px; }
+        #coverModal .cvm-chip-btn { border:0; background:rgba(255,255,255,.92); color:#111; font-size:12px; font-weight:600; padding:6px 10px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 2px 6px rgba(0,0,0,.2); }
+        #coverModal .cvm-chip-btn:hover { background:#fff; }
+        #coverModal .cvm-avatar-ghost { position:absolute; left:16px; bottom:-34px; width:84px; height:84px; border-radius:50%; border:4px solid #fff; background:rgba(255,255,255,.35); backdrop-filter:blur(2px); pointer-events:none; }
+        #coverModal .cvm-row { display:flex; align-items:center; gap:10px; margin-top:12px; }
+        #coverModal .cvm-row input[type=range] { flex:1; accent-color:#1877f2; cursor:pointer; }
+        #coverModal .cvm-pos-label { font-weight:700; font-size:12px; min-width:40px; text-align:right; color:var(--fb-text-secondary, #65676b); }
+        #coverModal .cvm-fileinfo { display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12px; color:var(--fb-text-secondary, #65676b); flex-wrap:wrap; }
+        #coverModal .cvm-fileinfo strong { color:var(--fb-text-primary, #050505); max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        #coverModal .cvm-error { display:none; margin-top:10px; padding:10px 12px; border-radius:10px; background:#fef2f2; color:#b91c1c; font-size:13px; font-weight:600; border:1px solid #fecaca; }
+        #coverModal .cvm-progress { display:none; margin-top:14px; }
+        #coverModal .cvm-progress-track { height:8px; border-radius:999px; background:var(--fb-hover, #e4e6eb); overflow:hidden; }
+        #coverModal .cvm-progress-fill { height:100%; width:0%; background:linear-gradient(90deg,#1877f2,#7c3aed); border-radius:999px; transition:width .15s ease; }
+        #coverModal .cvm-progress-text { display:flex; justify-content:space-between; font-size:12px; font-weight:600; color:var(--fb-text-secondary, #65676b); margin-top:6px; }
+        #coverModal .cvm-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px; max-height:46vh; overflow-y:auto; padding:2px; }
+        #coverModal .cvm-gallery-item { position:relative; aspect-ratio: 16 / 9; border-radius:10px; overflow:hidden; cursor:pointer; border:2px solid transparent; transition:all .2s ease; background:#eee; padding:0; }
+        #coverModal .cvm-gallery-item img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .3s ease; }
+        #coverModal .cvm-gallery-item:hover img { transform:scale(1.06); }
+        #coverModal .cvm-gallery-item:hover { border-color:#1877f2; box-shadow:0 4px 12px rgba(24,119,242,.25); }
+        #coverModal .cvm-gallery-item .cvm-tag { position:absolute; top:6px; left:6px; font-size:10px; font-weight:700; padding:2px 6px; border-radius:6px; background:#059669; color:#fff; }
+        #coverModal .cvm-gallery-heading { font-size:13px; font-weight:700; margin:4px 0 8px; color:var(--fb-text-primary, #050505); }
+        #coverModal .cvm-empty { grid-column:1/-1; text-align:center; padding:28px; color:var(--fb-text-secondary, #65676b); font-size:13px; }
+        #coverModal .cvm-footer { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+        #coverModal .cvm-delete-btn { color:#e41e3f !important; border-color:#fbd5d5 !important; background:#fef2f2 !important; }
+        #coverModal .cvm-spinner { width:14px; height:14px; border:2px solid rgba(255,255,255,.5); border-top-color:#fff; border-radius:50%; display:inline-block; animation:cvmSpin .7s linear infinite; vertical-align:-2px; margin-right:6px; }
+        @keyframes cvmSpin { to { transform:rotate(360deg); } }
+        .cover-photo-img.cover-fade-in { animation:coverFadeIn .6s ease; }
+        @keyframes coverFadeIn { from { opacity:0; filter:blur(8px); transform:scale(1.02); } to { opacity:1; filter:none; transform:none; } }
+        .cover-uploading-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); color:#fff; font-weight:700; font-size:14px; z-index:5; backdrop-filter:blur(2px); gap:8px; }
+        @media (max-width: 560px) {
+            #coverModal .cvm-drop { aspect-ratio:auto; min-height:180px; }
+            #coverModal .cvm-avatar-ghost { width:60px; height:60px; bottom:-24px; }
+            #coverModal .cvm-gallery { grid-template-columns:repeat(2, 1fr); }
+        }
+    </style>
     <div class="fb-modal-overlay" id="coverModal">
-        <div class="fb-modal-card">
+        <div class="fb-modal-card cvm-card">
             <div class="modal-header">
-                <span class="modal-title">কভার ফটো পরিবর্তন করুন</span>
-                <button class="modal-close-btn" onclick="closeModal('coverModal')">✕</button>
+                <span class="modal-title" style="display:flex;align-items:center;gap:8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    <span>কভার ফটো পরিবর্তন করুন</span>
+                </span>
+                <button type="button" class="modal-close-btn" onclick="closeCoverModal()">✕</button>
             </div>
             <form id="coverUploadForm" onsubmit="submitCoverUpload(event)">
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label class="form-label">কভার ছবি নির্বাচন করুন (JPG, PNG, WebP — সর্বোচ্চ 10MB)</label>
-                        <input type="file" name="file" id="coverFileInput" accept="image/*" class="form-control" required onchange="previewCover(event)">
+                    <div class="cvm-tabs" role="tablist">
+                        <button type="button" class="cvm-tab active" id="cvmTabUpload" onclick="switchCoverTab('upload')">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            নতুন ছবি আপলোড
+                        </button>
+                        <button type="button" class="cvm-tab" id="cvmTabGallery" onclick="switchCoverTab('gallery')">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            গ্যালারি থেকে বেছে নিন
+                        </button>
                     </div>
-                    <div style="text-align:center;margin-top:16px;">
-                        <img id="coverPreviewImg" src="" alt="Preview" style="display:none;width:100%;height:160px;object-fit:cover;border-radius:var(--radius-sm);border:2px solid var(--fb-border);">
+
+                    <!-- Upload pane -->
+                    <div class="cvm-pane active" id="cvmPaneUpload">
+                        <input type="file" id="coverFileInput" accept="image/jpeg,image/png,image/webp" hidden onchange="previewCover(event)">
+
+                        <div class="cvm-drop" id="cvmDropzone" tabindex="0" role="button" aria-label="কভার ছবি নির্বাচন করুন" onclick="document.getElementById('coverFileInput').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+                            <div class="cvm-drop-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            </div>
+                            <div class="cvm-drop-title">ছবি এখানে টেনে আনুন অথবা ক্লিক করে নির্বাচন করুন</div>
+                            <div class="cvm-drop-sub">Ctrl/⌘ + V দিয়ে ক্লিপবোর্ড থেকেও পেস্ট করতে পারবেন</div>
+                            <div class="cvm-badges">
+                                <span class="cvm-badge">JPG</span>
+                                <span class="cvm-badge">PNG</span>
+                                <span class="cvm-badge">WebP</span>
+                                <span class="cvm-badge">সর্বোচ্চ 10MB</span>
+                                <span class="cvm-badge">প্রস্তাবিত 1640×624</span>
+                            </div>
+                        </div>
+
+                        <div id="cvmPreviewWrap" style="display:none;">
+                            <div class="cvm-stage" id="cvmStage">
+                                <img id="coverPreviewImg" src="" alt="কভার প্রিভিউ">
+                                <div class="cvm-stage-hint">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 12 2 15 5"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="12" y1="2" x2="12" y2="22"></line></svg>
+                                    টেনে অবস্থান ঠিক করুন
+                                </div>
+                                <div class="cvm-avatar-ghost"></div>
+                                <div class="cvm-stage-actions">
+                                    <button type="button" class="cvm-chip-btn" onclick="event.stopPropagation(); document.getElementById('coverFileInput').click()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                        পরিবর্তন
+                                    </button>
+                                    <button type="button" class="cvm-chip-btn" onclick="event.stopPropagation(); resetCoverSelection()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        সরান
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="cvm-row" style="margin-top:44px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 12 2 15 5"></polyline><polyline points="9 19 12 22 15 19"></polyline><line x1="12" y1="2" x2="12" y2="22"></line></svg>
+                                <input type="range" id="cvmPosSlider" min="0" max="100" value="50" oninput="setCoverPreviewPos(this.value)" aria-label="কভারের উল্লম্ব অবস্থান">
+                                <span class="cvm-pos-label" id="cvmPosLabel">50%</span>
+                                <button type="button" class="fb-btn fb-btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="setCoverPreviewPos(50)">কেন্দ্রে</button>
+                            </div>
+                            <div class="cvm-fileinfo" id="cvmFileInfo"></div>
+                        </div>
+
+                        <div class="form-group" style="margin-top:14px;">
+                            <label class="form-label" for="coverCaptionInput">ক্যাপশন (ঐচ্ছিক)</label>
+                            <input type="text" name="caption" id="coverCaptionInput" maxlength="500" class="form-control" placeholder="কভার ছবি সম্পর্কিত কিছু লিখুন...">
+                        </div>
                     </div>
-                    <div class="form-group" style="margin-top:16px;">
-                        <label class="form-label">ক্যাপশন (ঐচ্ছিক)</label>
-                        <input type="text" name="caption" class="form-control" placeholder="কভার ছবি সম্পর্কিত কিছু লিখুন...">
+
+                    <!-- Gallery pane -->
+                    <div class="cvm-pane" id="cvmPaneGallery">
+                        @php
+                            $coverGalleryHistory = collect($coverHistory ?? [])->filter(fn ($c) => !empty($c->photo_path ?? $c->cover_url ?? null));
+                            $coverGalleryPhotos = collect($photos ?? [])->filter(fn ($p) => !empty($p['url'] ?? null))->take(24);
+                        @endphp
+                        @if($coverGalleryHistory->isNotEmpty())
+                            <div class="cvm-gallery-heading">পূর্ববর্তী কভার ছবি</div>
+                            <div class="cvm-gallery" style="margin-bottom:14px;">
+                                @foreach($coverGalleryHistory as $cphoto)
+                                    @php $cUrl = $cphoto->photo_path ?? $cphoto->cover_url; @endphp
+                                    <button type="button" class="cvm-gallery-item" onclick="selectCoverFromGallery(@js($cUrl))" title="কভার হিসেবে বেছে নিন">
+                                        <img src="{{ $cUrl }}" alt="পূর্ববর্তী কভার" loading="lazy" onerror="this.closest('.cvm-gallery-item').style.display='none';">
+                                        @if($cphoto->is_current)
+                                            <span class="cvm-tag">বর্তমান</span>
+                                        @endif
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+                        <div class="cvm-gallery-heading">আপনার ছবিসমূহ</div>
+                        <div class="cvm-gallery">
+                            @forelse($coverGalleryPhotos as $gph)
+                                <button type="button" class="cvm-gallery-item" onclick="selectCoverFromGallery(@js($gph['url']))" title="কভার হিসেবে বেছে নিন">
+                                    <img src="{{ $gph['url'] }}" alt="ছবি" loading="lazy" onerror="this.closest('.cvm-gallery-item').style.display='none';">
+                                </button>
+                            @empty
+                                <div class="cvm-empty">এখনো কোনো ছবি নেই। "নতুন ছবি আপলোড" ট্যাব থেকে আপলোড করুন।</div>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    <div class="cvm-error" id="cvmError" role="alert"></div>
+
+                    <div class="cvm-progress" id="cvmProgress">
+                        <div class="cvm-progress-track"><div class="cvm-progress-fill" id="cvmProgressFill"></div></div>
+                        <div class="cvm-progress-text"><span id="cvmProgressLabel">আপলোড হচ্ছে...</span><span id="cvmProgressPct">0%</span></div>
                     </div>
                 </div>
-                <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                <div class="modal-footer cvm-footer">
                     <div>
-                        @if(!empty($profile['cover_photo']))
-                            <button type="button" class="fb-btn fb-btn-secondary" style="color:#e41e3f;border-color:#fbd5d5;background:#fef2f2;" onclick="handleDeleteCover()">কভার ছবি মুছুন</button>
-                        @endif
+                        <button type="button" class="fb-btn fb-btn-secondary cvm-delete-btn" id="coverDeleteBtn" onclick="handleDeleteCover()" style="{{ empty($profile['cover_photo']) ? 'display:none;' : '' }}">
+                            কভার ছবি মুছুন
+                        </button>
                     </div>
                     <div style="display:flex;gap:8px;">
-                        <button type="button" class="fb-btn fb-btn-secondary" onclick="closeModal('coverModal')">বাতিল</button>
-                        <button type="submit" class="fb-btn fb-btn-primary" id="coverUploadBtn">আপলোড করুন</button>
+                        <button type="button" class="fb-btn fb-btn-secondary" id="coverCancelBtn" onclick="closeCoverModal()">বাতিল</button>
+                        <button type="submit" class="fb-btn fb-btn-primary" id="coverUploadBtn" disabled>সংরক্ষণ করুন</button>
                     </div>
                 </div>
             </form>
@@ -9954,6 +10100,10 @@
         }
 
         function openCoverModal() {
+            const dd = document.getElementById('coverMenuDropdown');
+            if (dd) dd.classList.remove('show');
+            resetCoverSelection();
+            switchCoverTab('upload');
             document.getElementById('coverModal').classList.add('active');
         }
 
@@ -10076,9 +10226,12 @@
 
         function handleCoverClick(e) {
             if (isRepositioningCover) return;
-            @if(!empty($profile['cover_photo']))
-                openPhotoTheater('{{ $profile['cover_photo'] }}', '{{ addslashes($profile['name']) }}', 'কভার ফটো', 'সম্প্রতি');
-            @endif
+            const dd = document.getElementById('coverMenuDropdown');
+            if (dd) dd.classList.remove('show');
+            const img = document.getElementById('coverPhotoImg');
+            if (img && img.getAttribute('src')) {
+                openPhotoTheater(img.getAttribute('src'), @js($profile['name'] ?? ''), 'কভার ফটো', 'সম্প্রতি');
+            }
         }
 
         function startLiveCoverReposition() {
@@ -10165,10 +10318,10 @@
                 const data = await res.json();
                 if (res.ok && (data.success || data.status === 'success')) {
                     coverInitialPosY = coverCurrentPosY;
-                    alert('কভার ছবির অবস্থান সফলভাবে সংরক্ষিত হয়েছে!');
+                    showToast("✓ কভার ছবির অবস্থান সংরক্ষিত হয়েছে"); if (btn) { btn.disabled = false; btn.innerText = "✓ সংরক্ষণ করুন"; }
                     cancelCoverReposition();
                 } else {
-                    alert(data.message || 'সংরক্ষণ ব্যর্থ হয়েছে।');
+                    showToast(data.message || 'সংরক্ষণ ব্যর্থ হয়েছে।');
                     if (btn) {
                         btn.disabled = false;
                         btn.innerText = '✓ সংরক্ষণ করুন';
@@ -10176,7 +10329,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert('সার্ভার যোগাযোগ সমস্যা।');
+                showToast('সার্ভার যোগাযোগ সমস্যা।');
                 if (btn) {
                     btn.disabled = false;
                     btn.innerText = '✓ সংরক্ষণ করুন';
@@ -12432,14 +12585,310 @@
             }
         }
 
+        /* ------------------------------------------------------------- */
+        /* ADVANCED REAL-TIME COVER PHOTO EDITOR                          */
+        /* ------------------------------------------------------------- */
+        const COVER_MAX_BYTES = 10 * 1024 * 1024;
+        const COVER_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+        const coverEditorState = { file: null, objectUrl: null, posY: 50, uploading: false, dragBound: false };
+
+        function switchCoverTab(tab) {
+            const isUpload = tab === 'upload';
+            document.getElementById('cvmTabUpload')?.classList.toggle('active', isUpload);
+            document.getElementById('cvmTabGallery')?.classList.toggle('active', !isUpload);
+            document.getElementById('cvmPaneUpload')?.classList.toggle('active', isUpload);
+            document.getElementById('cvmPaneGallery')?.classList.toggle('active', !isUpload);
+        }
+
+        function showCoverError(msg) {
+            const el = document.getElementById('cvmError');
+            if (!el) return;
+            el.textContent = msg || '';
+            el.style.display = msg ? 'block' : 'none';
+        }
+
+        function formatCoverBytes(bytes) {
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function resetCoverSelection() {
+            if (coverEditorState.uploading) return;
+            if (coverEditorState.objectUrl) URL.revokeObjectURL(coverEditorState.objectUrl);
+            coverEditorState.file = null;
+            coverEditorState.objectUrl = null;
+            const input = document.getElementById('coverFileInput');
+            if (input) input.value = '';
+            const wrap = document.getElementById('cvmPreviewWrap');
+            const drop = document.getElementById('cvmDropzone');
+            if (wrap) wrap.style.display = 'none';
+            if (drop) drop.style.display = '';
+            const img = document.getElementById('coverPreviewImg');
+            if (img) img.removeAttribute('src');
+            const btn = document.getElementById('coverUploadBtn');
+            if (btn) { btn.disabled = true; btn.innerHTML = 'সংরক্ষণ করুন'; }
+            setCoverProgress(null);
+            showCoverError('');
+            setCoverPreviewPos(typeof coverInitialPosY !== 'undefined' ? coverInitialPosY : 50);
+        }
+
+        function closeCoverModal() {
+            if (coverEditorState.uploading) {
+                showToast('আপলোড চলছে, অনুগ্রহ করে অপেক্ষা করুন...');
+                return;
+            }
+            closeModal('coverModal');
+            resetCoverSelection();
+        }
+
+        function setCoverPreviewPos(val) {
+            const pos = Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
+            coverEditorState.posY = pos;
+            const img = document.getElementById('coverPreviewImg');
+            if (img) img.style.objectPosition = `center ${pos}%`;
+            const slider = document.getElementById('cvmPosSlider');
+            if (slider && Number(slider.value) !== pos) slider.value = pos;
+            const lbl = document.getElementById('cvmPosLabel');
+            if (lbl) lbl.textContent = pos + '%';
+        }
+
+        function setCoverProgress(pct, label) {
+            const wrap = document.getElementById('cvmProgress');
+            if (!wrap) return;
+            if (pct === null) { wrap.style.display = 'none'; return; }
+            wrap.style.display = 'block';
+            document.getElementById('cvmProgressFill').style.width = pct + '%';
+            document.getElementById('cvmProgressPct').textContent = pct + '%';
+            if (label) document.getElementById('cvmProgressLabel').textContent = label;
+        }
+
+        function readImageDimensions(url) {
+            return new Promise((resolve, reject) => {
+                const probe = new Image();
+                probe.onload = () => resolve({ width: probe.naturalWidth, height: probe.naturalHeight });
+                probe.onerror = () => reject(new Error('invalid image'));
+                probe.src = url;
+            });
+        }
+
+        async function handleCoverFile(file) {
+            showCoverError('');
+            if (!file) return;
+            if (!COVER_ALLOWED_TYPES.includes(file.type)) {
+                showCoverError('শুধুমাত্র JPG, PNG অথবা WebP ফরম্যাটের ছবি গ্রহণযোগ্য।');
+                return;
+            }
+            if (file.size > COVER_MAX_BYTES) {
+                showCoverError(`ফাইলটি অনেক বড় (${formatCoverBytes(file.size)})। সর্বোচ্চ 10MB অনুমোদিত।`);
+                return;
+            }
+
+            const url = URL.createObjectURL(file);
+            let dims;
+            try {
+                dims = await readImageDimensions(url);
+            } catch (e) {
+                URL.revokeObjectURL(url);
+                showCoverError('ফাইলটি একটি বৈধ ছবি নয় অথবা করাপ্টেড।');
+                return;
+            }
+            if (dims.width < 400 || dims.height < 150) {
+                URL.revokeObjectURL(url);
+                showCoverError(`ছবিটি খুব ছোট (${dims.width}×${dims.height})। সর্বনিম্ন ৪০০×১৫০ পিক্সেল প্রয়োজন।`);
+                return;
+            }
+
+            if (coverEditorState.objectUrl) URL.revokeObjectURL(coverEditorState.objectUrl);
+            coverEditorState.file = file;
+            coverEditorState.objectUrl = url;
+
+            const img = document.getElementById('coverPreviewImg');
+            img.src = url;
+            document.getElementById('cvmDropzone').style.display = 'none';
+            document.getElementById('cvmPreviewWrap').style.display = 'block';
+            setCoverPreviewPos(50);
+
+            const lowRes = dims.width < 820;
+            document.getElementById('cvmFileInfo').innerHTML =
+                `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                 <strong>${escapeChatHtml(file.name || 'clipboard-image')}</strong>
+                 <span>• ${formatCoverBytes(file.size)}</span>
+                 <span>• ${dims.width}×${dims.height}px</span>
+                 ${lowRes ? '<span style="color:#d97706;font-weight:600;">• কম রেজোলিউশন, ঝাপসা দেখাতে পারে</span>' : '<span style="color:#059669;font-weight:600;">• চমৎকার মান ✓</span>'}`;
+
+            const btn = document.getElementById('coverUploadBtn');
+            btn.disabled = false;
+            btn.innerHTML = 'সংরক্ষণ করুন';
+            switchCoverTab('upload');
+            bindCoverStageDrag();
+        }
+
         function previewCover(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const img = document.getElementById('coverPreviewImg');
-                img.src = URL.createObjectURL(file);
-                img.style.display = 'block';
+            const file = event.target.files && event.target.files[0];
+            handleCoverFile(file);
+        }
+
+        async function selectCoverFromGallery(url) {
+            if (!url || coverEditorState.uploading) return;
+            showCoverError('');
+            switchCoverTab('upload');
+            setCoverProgress(0, 'ছবি লোড হচ্ছে...');
+            try {
+                const res = await fetch(url, { credentials: 'same-origin' });
+                if (!res.ok) throw new Error('fetch failed');
+                const blob = await res.blob();
+                setCoverProgress(null);
+                const type = COVER_ALLOWED_TYPES.includes(blob.type) ? blob.type : 'image/jpeg';
+                const ext = type.split('/')[1].replace('jpeg', 'jpg');
+                const name = (url.split('/').pop() || 'cover').split('?')[0] || ('cover.' + ext);
+                await handleCoverFile(new File([blob], name, { type }));
+            } catch (e) {
+                console.error(e);
+                setCoverProgress(null);
+                showCoverError('ছবিটি লোড করা যায়নি। অনুগ্রহ করে অন্য একটি ছবি বেছে নিন।');
             }
         }
+
+        function bindCoverStageDrag() {
+            if (coverEditorState.dragBound) return;
+            const stage = document.getElementById('cvmStage');
+            if (!stage) return;
+            coverEditorState.dragBound = true;
+            let dragging = false;
+            let startY = 0;
+            let startPos = 50;
+
+            stage.addEventListener('pointerdown', (e) => {
+                if (e.target.closest('.cvm-chip-btn')) return;
+                dragging = true;
+                startY = e.clientY;
+                startPos = coverEditorState.posY;
+                stage.classList.add('grabbing');
+                stage.setPointerCapture(e.pointerId);
+            });
+            stage.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+                const delta = e.clientY - startY;
+                const h = stage.offsetHeight || 250;
+                setCoverPreviewPos(startPos - (delta / h) * 100);
+            });
+            const stop = (e) => {
+                dragging = false;
+                stage.classList.remove('grabbing');
+                if (e && e.pointerId !== undefined && stage.hasPointerCapture(e.pointerId)) {
+                    stage.releasePointerCapture(e.pointerId);
+                }
+            };
+            stage.addEventListener('pointerup', stop);
+            stage.addEventListener('pointercancel', stop);
+            stage.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                setCoverPreviewPos(coverEditorState.posY + (e.deltaY > 0 ? 2 : -2));
+            }, { passive: false });
+        }
+
+        /** Swap the profile banner to the given cover URL immediately (no page reload). */
+        function applyCoverToBanner(url, posY) {
+            const container = document.getElementById('coverContainer');
+            if (!container) return;
+            let img = document.getElementById('coverPhotoImg');
+            if (!img) {
+                document.getElementById('coverFallback')?.remove();
+                img = document.createElement('img');
+                img.id = 'coverPhotoImg';
+                img.className = 'cover-photo-img';
+                img.alt = 'Cover Photo';
+                img.style.cursor = 'pointer';
+                img.onclick = handleCoverClick;
+                container.insertBefore(img, container.firstChild);
+            }
+            img.onerror = function () { this.onerror = null; this.src = '/images/default-cover.svg'; };
+            img.style.objectPosition = `center ${posY}%`;
+            img.classList.remove('cover-fade-in');
+            void img.offsetWidth;
+            img.src = url;
+            img.classList.add('cover-fade-in');
+
+            coverInitialPosY = posY;
+            coverCurrentPosY = posY;
+            toggleCoverOwnerControls(true);
+        }
+
+        /** Reset the profile banner to the default gradient immediately. */
+        function removeCoverFromBanner() {
+            const container = document.getElementById('coverContainer');
+            const img = document.getElementById('coverPhotoImg');
+            if (img) img.remove();
+            if (container && !document.getElementById('coverFallback')) {
+                const fb = document.createElement('div');
+                fb.id = 'coverFallback';
+                fb.style.cssText = 'width:100%;height:100%;background: var(--fb-cover-gradient);display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:700;letter-spacing:1px;';
+                fb.textContent = @js($profile['name'] ?? '');
+                container.insertBefore(fb, container.firstChild);
+            }
+            coverInitialPosY = 50;
+            coverCurrentPosY = 50;
+            toggleCoverOwnerControls(false);
+        }
+
+        function toggleCoverOwnerControls(hasCover) {
+            document.querySelectorAll('.cover-menu-has-photo').forEach(el => { el.style.display = hasCover ? '' : 'none'; });
+            const del = document.getElementById('coverDeleteBtn');
+            if (del) del.style.display = hasCover ? '' : 'none';
+        }
+
+        function showCoverBannerOverlay(show, text) {
+            const container = document.getElementById('coverContainer');
+            if (!container) return;
+            let ov = document.getElementById('coverUploadingOverlay');
+            if (!show) { ov?.remove(); return; }
+            if (!ov) {
+                ov = document.createElement('div');
+                ov.id = 'coverUploadingOverlay';
+                ov.className = 'cover-uploading-overlay';
+                container.appendChild(ov);
+            }
+            ov.innerHTML = `<span class="cvm-spinner"></span>${escapeChatHtml(text || 'আপডেট হচ্ছে...')}`;
+        }
+
+        // Drag & drop + paste wiring for the cover modal
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = document.getElementById('coverModal');
+            const drop = document.getElementById('cvmDropzone');
+            if (!modal || !drop) return;
+
+            ['dragenter', 'dragover'].forEach(evt => modal.addEventListener(evt, (e) => {
+                if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return;
+                e.preventDefault();
+                drop.classList.add('dragover');
+            }));
+            ['dragleave', 'dragend'].forEach(evt => modal.addEventListener(evt, (e) => {
+                if (e.target === modal || e.target === drop) drop.classList.remove('dragover');
+            }));
+            modal.addEventListener('drop', (e) => {
+                if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+                e.preventDefault();
+                drop.classList.remove('dragover');
+                if (!coverEditorState.uploading) handleCoverFile(e.dataTransfer.files[0]);
+            });
+
+            document.addEventListener('paste', (e) => {
+                if (!modal.classList.contains('active') || coverEditorState.uploading) return;
+                const item = Array.from(e.clipboardData?.items || []).find(i => i.type.startsWith('image/'));
+                if (!item) return;
+                e.preventDefault();
+                const blob = item.getAsFile();
+                if (blob) handleCoverFile(new File([blob], 'clipboard-cover.' + (blob.type.split('/')[1] || 'png'), { type: blob.type }));
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (!modal.classList.contains('active')) return;
+                if (e.key === 'Escape') { closeCoverModal(); return; }
+                if (!coverEditorState.file || ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+                if (e.key === 'ArrowUp') { e.preventDefault(); setCoverPreviewPos(coverEditorState.posY - 2); }
+                if (e.key === 'ArrowDown') { e.preventDefault(); setCoverPreviewPos(coverEditorState.posY + 2); }
+            });
+        });
 
         function openProfileLockModal() {
             document.getElementById('profileLockModal').classList.add('active');
@@ -12859,52 +13308,121 @@
             }
         }
 
-        // Cover Upload Submit
+        // Real-Time Cover Upload Submit (XHR with live progress, real-time DOM banner update, no page reload)
         async function submitCoverUpload(e) {
             e.preventDefault();
-            const btn = document.getElementById('coverUploadBtn');
-            btn.disabled = true;
-            btn.innerText = 'আপলোড হচ্ছে...';
+            if (coverEditorState.uploading) return;
 
-            const form = document.getElementById('coverUploadForm');
-            const formData = new FormData(form);
-
-            try {
-                const res = await fetch('/api/v2/profile/cover', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: getAuthHeaders(),
-                    body: formData
-                });
-                const data = await res.json();
-                if (res.ok && (data.success || data.status === 'success')) {
-                    if (data.data && data.data.cover_url) {
-                        const coverImg = document.getElementById('coverPhotoImg');
-                        if (coverImg) {
-                            coverImg.src = data.data.cover_url + '?v=' + Date.now();
-                        }
-                    }
-                    alert(data.message || 'কভার ছবি সফলভাবে আপডেট করা হয়েছে।');
-                    window.location.reload();
-                } else {
-                    const errorMsg = data.errors?.file?.[0] || data.message || 'কভার ছবি আপলোড ব্যর্থ হয়েছে।';
-                    alert(errorMsg);
-                    btn.disabled = false;
-                    btn.innerText = 'আপলোড করুন';
-                }
-            } catch (err) {
-                console.error(err);
-                alert('কভার ছবি আপলোড ত্রুটি।');
-                btn.disabled = false;
-                btn.innerText = 'আপলোড করুন';
+            const file = coverEditorState.file;
+            if (!file) {
+                showCoverError('অনুগ্রহ করে একটি ছবি নির্বাচন করুন।');
+                switchCoverTab('upload');
+                return;
             }
+
+            const btn = document.getElementById('coverUploadBtn');
+            const cancelBtn = document.getElementById('coverCancelBtn');
+            coverEditorState.uploading = true;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="cvm-spinner"></span>আপলোড হচ্ছে...';
+            }
+            if (cancelBtn) cancelBtn.disabled = true;
+            showCoverError('');
+            setCoverProgress(0, 'আপলোড শুরু হচ্ছে...');
+            showCoverBannerOverlay(true, 'কভার ছবি আপডেট হচ্ছে...');
+
+            const formData = new FormData();
+            formData.append('file', file);
+            const caption = document.getElementById('coverCaptionInput')?.value?.trim() || '';
+            if (caption) {
+                formData.append('caption', caption);
+            }
+            formData.append('cover_position_y', coverEditorState.posY);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/v2/profile/cover', true);
+            xhr.withCredentials = true;
+
+            const authHeaders = getAuthHeaders();
+            for (const key in authHeaders) {
+                if (key.toLowerCase() !== 'content-type') {
+                    xhr.setRequestHeader(key, authHeaders[key]);
+                }
+            }
+
+            xhr.upload.onprogress = function (event) {
+                if (event.lengthComputable) {
+                    const pct = Math.min(98, Math.round((event.loaded / event.total) * 100));
+                    setCoverProgress(pct, pct >= 95 ? 'প্রসেসিং হচ্ছে...' : `আপলোড হচ্ছে (${pct}%)...`);
+                }
+            };
+
+            xhr.onload = function () {
+                coverEditorState.uploading = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'সংরক্ষণ করুন';
+                }
+                if (cancelBtn) cancelBtn.disabled = false;
+                showCoverBannerOverlay(false);
+
+                let data;
+                try {
+                    data = JSON.parse(xhr.responseText);
+                } catch (parseErr) {
+                    data = {};
+                }
+
+                if (xhr.status >= 200 && xhr.status < 300 && (data.success || data.status === 'success')) {
+                    setCoverProgress(100, 'সম্পন্ন হয়েছে ✓');
+                    const coverUrl = (data.data && data.data.cover_url) ? (data.data.cover_url + '?v=' + Date.now()) : '';
+                    if (coverUrl) {
+                        applyCoverToBanner(coverUrl, coverEditorState.posY);
+                    }
+                    showToast('✓ কভার ছবি সফলভাবে আপডেট হয়েছে!');
+                    closeModal('coverModal');
+                    resetCoverSelection();
+                } else {
+                    setCoverProgress(null);
+                    const errorMsg = data.errors?.file?.[0]
+                        || data.errors?.caption?.[0]
+                        || data.message
+                        || 'কভার ছবি আপলোড ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+                    showCoverError(errorMsg);
+                    showToast(errorMsg);
+                }
+            };
+
+            xhr.onerror = function () {
+                coverEditorState.uploading = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'সংরক্ষণ করুন';
+                }
+                if (cancelBtn) cancelBtn.disabled = false;
+                showCoverBannerOverlay(false);
+                setCoverProgress(null);
+                showCoverError('সার্ভারের সাথে যোগাযোগে ত্রুটি ঘটেছে। ইন্টারনেট সংযোগ পরীক্ষা করুন।');
+                showToast('সার্ভার যোগাযোগ ত্রুটি।');
+            };
+
+            xhr.send(formData);
         }
 
-        // Delete Cover Submit
+        // Real-Time Delete Cover Submit (No page reload)
         async function handleDeleteCover() {
             if (!confirm('আপনি কি নিশ্চিত যে বর্তমান কভার ছবিটি মুছে ফেলতে চান?')) {
                 return;
             }
+
+            const delBtn = document.getElementById('coverDeleteBtn');
+            const origText = delBtn ? delBtn.innerText : '';
+            if (delBtn) {
+                delBtn.disabled = true;
+                delBtn.innerText = 'মুছে ফেলা হচ্ছে...';
+            }
+            showCoverBannerOverlay(true, 'কভার ছবি মুছে ফেলা হচ্ছে...');
 
             try {
                 const res = await fetch('/api/v2/profile/cover', {
@@ -12913,15 +13431,28 @@
                     headers: getAuthHeaders({ 'Content-Type': 'application/json' })
                 });
                 const data = await res.json();
+                showCoverBannerOverlay(false);
+
                 if (res.ok && (data.success || data.status === 'success')) {
-                    alert(data.message);
-                    window.location.reload();
+                    removeCoverFromBanner();
+                    closeModal('coverModal');
+                    resetCoverSelection();
+                    showToast('✓ কভার ছবি সফলভাবে মুছে ফেলা হয়েছে');
                 } else {
-                    alert(data.message || 'কভার ছবি মুছতে সমস্যা হয়েছে।');
+                    if (delBtn) {
+                        delBtn.disabled = false;
+                        delBtn.innerText = origText;
+                    }
+                    showToast(data.message || 'কভার ছবি মুছতে সমস্যা হয়েছে।');
                 }
             } catch (err) {
                 console.error(err);
-                alert('সার্ভার যোগাযোগ ত্রুটি।');
+                showCoverBannerOverlay(false);
+                if (delBtn) {
+                    delBtn.disabled = false;
+                    delBtn.innerText = origText;
+                }
+                showToast('সার্ভার যোগাযোগ ত্রুটি।');
             }
         }
 

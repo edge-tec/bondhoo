@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Events\ProfileUpdatedEvent;
 use App\Jobs\ProcessCoverJob;
 use App\Models\AuditLog;
+use App\Models\CoverPhoto;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\User;
@@ -104,6 +105,17 @@ class CoverService
 
         $profile->update($profileUpdates);
 
+        CoverPhoto::where('user_id', $user->id)->update(['is_current' => false]);
+        CoverPhoto::create([
+            'user_id' => $user->id,
+            'media_id' => $media->id,
+            'cover_url' => $coverUrl,
+            'position_y' => $profile->cover_position_y ?? 50,
+            'is_current' => true,
+            'caption' => $caption,
+            'privacy' => 'public',
+        ]);
+
         // 5. Create timeline announcement post
         $postContent = $caption ?: ($user->name ?: $user->username).' কভার ছবি আপডেট করেছেন।';
         $post = Post::create([
@@ -195,6 +207,8 @@ class CoverService
                 'cover_position_y' => 50,
             ]);
 
+            CoverPhoto::where('user_id', $user->id)->update(['is_current' => false]);
+
             AuditLog::create([
                 'user_id' => $user->id,
                 'action' => 'PROFILE_COVER_DELETED',
@@ -282,6 +296,7 @@ class CoverService
         $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
         $oldPosition = $profile->cover_position_y;
         $profile->update(['cover_position_y' => $positionY]);
+        CoverPhoto::where('user_id', $user->id)->where('is_current', true)->update(['position_y' => $positionY]);
 
         AuditLog::create([
             'user_id' => $user->id,
