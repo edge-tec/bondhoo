@@ -1908,28 +1908,31 @@
             background: var(--fb-card);
         }
         .about-sidebar-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 800;
             color: var(--fb-text-primary);
             padding: 4px 12px 14px;
             border-bottom: 1px solid var(--fb-divider);
             margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .about-subtab-btn {
             display: flex;
             align-items: center;
             gap: 12px;
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 14px;
             font-weight: 600;
             color: var(--fb-text-secondary);
             background: transparent;
-            border: none;
+            border: 1px solid transparent;
             cursor: pointer;
             text-align: left;
             width: 100%;
-            transition: all 0.15s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             font-family: inherit;
         }
         .about-subtab-btn:hover {
@@ -1937,22 +1940,58 @@
             color: var(--fb-text-primary);
         }
         .about-subtab-btn.active {
-            background: var(--fb-primary-light);
-            color: var(--fb-primary);
+            background: var(--fb-primary-light, #e7f3ff);
+            color: var(--fb-primary, #1877f2);
+            border-color: rgba(24, 119, 242, 0.2);
             font-weight: 700;
         }
         .about-subtab-icon {
-            font-size: 18px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 22px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--fb-hover, rgba(0,0,0,0.04));
+            color: var(--fb-text-secondary);
             flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .about-subtab-btn:hover .about-subtab-icon {
+            color: var(--fb-text-primary);
+            background: rgba(0,0,0,0.08);
+        }
+        .about-subtab-btn.active .about-subtab-icon {
+            color: var(--fb-primary, #1877f2);
+            background: rgba(24, 119, 242, 0.15);
+        }
+        .about-subtab-svg {
+            display: block;
+            width: 18px;
+            height: 18px;
+            stroke-width: 2.2;
+            transition: transform 0.2s ease;
+        }
+        .about-subtab-btn:hover .about-subtab-svg {
+            transform: scale(1.08);
         }
         .about-content-panel {
             flex: 1;
             padding: 24px 28px;
             overflow-y: auto;
+        }
+        .about-content-panel > div {
+            animation: aboutPanelFade 0.25s ease-out;
+        }
+        @keyframes aboutPanelFade {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .about-section-header {
             display: flex;
@@ -2043,32 +2082,96 @@
         @media (max-width: 768px) {
             .about-card-container {
                 flex-direction: column;
+                overflow: visible;
+                min-height: auto;
             }
             .about-sidebar {
                 width: 100%;
                 border-right: none;
                 border-bottom: 1px solid var(--fb-divider);
+                display: flex;
                 flex-direction: row;
-                overflow-x: auto;
-                padding: 10px;
-                white-space: nowrap;
-                scrollbar-width: none;
-            }
-            .about-sidebar::-webkit-scrollbar {
-                display: none;
+                flex-wrap: wrap; /* CRITICAL: Enables all items to wrap naturally */
+                gap: 8px;
+                padding: 12px 14px;
+                background: var(--fb-card);
+                overflow: visible;
+                white-space: normal;
             }
             .about-sidebar-title {
-                display: none;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                width: 100%;
+                font-size: 13px;
+                font-weight: 700;
+                color: var(--fb-text-secondary);
+                padding: 0 0 6px 2px;
+                border-bottom: 1px dashed var(--fb-divider);
+                margin-bottom: 2px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
             .about-subtab-btn {
                 width: auto;
+                flex: 0 1 auto;
+                max-width: 100%;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
                 padding: 8px 14px;
-                border-radius: 20px;
+                border-radius: 9999px; /* Modern pill badge */
                 font-size: 13px;
-                flex-shrink: 0;
+                font-weight: 600;
+                line-height: 1.25;
+                color: var(--fb-text-secondary);
+                background: var(--fb-bg, #f0f2f5);
+                border: 1px solid var(--fb-divider, #e4e6eb);
+                white-space: nowrap;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            }
+            .about-subtab-btn:hover {
+                background: var(--fb-hover);
+                color: var(--fb-text-primary);
+                border-color: rgba(0, 0, 0, 0.15);
+            }
+            .about-subtab-btn.active {
+                background: #e7f3ff;
+                border-color: var(--fb-primary, #1877f2);
+                color: var(--fb-primary, #1877f2);
+                font-weight: 700;
+                box-shadow: 0 2px 6px rgba(24, 119, 242, 0.18);
+            }
+            .about-subtab-btn .about-subtab-icon {
+                width: 20px;
+                height: 20px;
+                background: transparent;
+                border-radius: 0;
+            }
+            .about-subtab-btn .about-subtab-svg {
+                width: 16px;
+                height: 16px;
             }
             .about-content-panel {
-                padding: 16px;
+                padding: 16px 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .about-sidebar {
+                padding: 10px 8px;
+                gap: 6px;
+            }
+            .about-subtab-btn {
+                padding: 7px 11px;
+                font-size: 12.5px;
+                gap: 6px;
+                border-radius: 18px;
+            }
+            .about-subtab-btn .about-subtab-svg {
+                width: 15px;
+                height: 15px;
             }
         }
 
@@ -4859,33 +4962,77 @@
                 <div class="about-card-container">
                     <!-- Left Sub-Tabs Navigation -->
                     <div class="about-sidebar">
-                        <div class="about-sidebar-title">পরিচিতি</div>
+                        <div class="about-sidebar-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--fb-primary);flex-shrink:0;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <span>পরিচিতি ক্যাটাগরি</span>
+                        </div>
                         <button type="button" class="about-subtab-btn active" onclick="switchAboutSubtab('overview', this)">
-                            <span class="about-subtab-icon">📌</span>
+                            <span class="about-subtab-icon">
+                                <svg class="about-subtab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </span>
                             <span>ওভারভিউ</span>
                         </button>
                         <button type="button" class="about-subtab-btn" onclick="switchAboutSubtab('work_edu', this)">
-                            <span class="about-subtab-icon">💼</span>
+                            <span class="about-subtab-icon">
+                                <svg class="about-subtab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                </svg>
+                            </span>
                             <span>কর্ম ও শিক্ষা</span>
                         </button>
                         <button type="button" class="about-subtab-btn" onclick="switchAboutSubtab('places', this)">
-                            <span class="about-subtab-icon">📍</span>
+                            <span class="about-subtab-icon">
+                                <svg class="about-subtab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                            </span>
                             <span>বসবাসের স্থান</span>
                         </button>
                         <button type="button" class="about-subtab-btn" onclick="switchAboutSubtab('contact_basic', this)">
-                            <span class="about-subtab-icon">📞</span>
+                            <span class="about-subtab-icon">
+                                <svg class="about-subtab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                            </span>
                             <span>যোগাযোগ ও মৌলিক তথ্য</span>
                         </button>
                         <button type="button" class="about-subtab-btn" onclick="switchAboutSubtab('family', this)">
-                            <span class="about-subtab-icon">❤️</span>
+                            <span class="about-subtab-icon">
+                                <svg class="about-subtab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                            </span>
                             <span>পরিবার ও সম্পর্ক</span>
                         </button>
                         <button type="button" class="about-subtab-btn" onclick="switchAboutSubtab('hobbies', this)">
-                            <span class="about-subtab-icon">🎨</span>
+                            <span class="about-subtab-icon">
+                                <svg class="about-subtab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.12a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.56-2.5 5.56-5.55C22 6.01 17.5 2 12 2z"></path>
+                                    <circle cx="7.5" cy="11.5" r="1.5" fill="currentColor"></circle>
+                                    <circle cx="12" cy="7.5" r="1.5" fill="currentColor"></circle>
+                                    <circle cx="16.5" cy="11.5" r="1.5" fill="currentColor"></circle>
+                                </svg>
+                            </span>
                             <span>শখ ও প্রিয় বিষয়</span>
                         </button>
                         <button type="button" class="about-subtab-btn" onclick="switchAboutSubtab('skills', this)">
-                            <span class="about-subtab-icon">🏆</span>
+                            <span class="about-subtab-icon">
+                                <svg class="about-subtab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="8" r="6"></circle>
+                                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                                </svg>
+                            </span>
                             <span>দক্ষতা ও পারদর্শিতা</span>
                         </button>
                     </div>
@@ -10670,7 +10817,12 @@
         // Subtab Switchers
         function switchAboutSubtab(subtabKey, btn) {
             document.querySelectorAll('.about-subtab-btn').forEach(b => b.classList.remove('active'));
-            if (btn) btn.classList.add('active');
+            if (btn) {
+                btn.classList.add('active');
+            } else {
+                const targetBtn = document.querySelector(`.about-subtab-btn[onclick*="'${subtabKey}'"]`);
+                if (targetBtn) targetBtn.classList.add('active');
+            }
             const subtabs = ['overview', 'work_edu', 'places', 'contact_basic', 'family', 'hobbies', 'skills'];
             subtabs.forEach(key => {
                 const panel = document.getElementById(`about-panel-${key}`);
