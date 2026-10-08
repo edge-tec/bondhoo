@@ -282,7 +282,7 @@ class EmailManagementController extends Controller
             Mail::to($log->recipient)->send($mailable);
 
             $log->update([
-                'status' => 'sent',
+                'status' => 'smtp_accepted',
                 'sent_at' => now(),
             ]);
 
@@ -318,14 +318,14 @@ class EmailManagementController extends Controller
     public function getStats(): JsonResponse
     {
         $total = EmailLog::count();
-        $sent = EmailLog::where('status', 'sent')->count();
+        $sent = EmailLog::whereIn('status', ['sent', 'smtp_accepted'])->count();
         $failed = EmailLog::where('status', 'failed')->count();
         $queued = EmailLog::where('status', 'queued')->count();
         $totalAttempts = (int) EmailLog::sum('attempts');
 
         $deliveryRate = ($sent + $failed) > 0 ? round(($sent / ($sent + $failed)) * 100, 2) : 100.0;
 
-        $last24hSent = EmailLog::where('status', 'sent')->where('created_at', '>=', now()->subDay())->count();
+        $last24hSent = EmailLog::whereIn('status', ['sent', 'smtp_accepted'])->where('created_at', '>=', now()->subDay())->count();
         $last24hFailed = EmailLog::where('status', 'failed')->where('created_at', '>=', now()->subDay())->count();
 
         $activeSettings = $this->smtpConfigService->getActiveSettings();

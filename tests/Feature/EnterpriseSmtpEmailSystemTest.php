@@ -160,7 +160,7 @@ class EnterpriseSmtpEmailSystemTest extends TestCase
         $this->assertDatabaseHas('email_logs', [
             'recipient' => 'qa@bondhoo.com',
             'email_type' => 'smtp_test',
-            'status' => 'sent',
+            'status' => 'smtp_accepted',
         ]);
     }
 

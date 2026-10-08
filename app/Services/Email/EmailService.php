@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Mailer\SentMessage;
 
 class EmailService
 {
@@ -18,6 +19,9 @@ class EmailService
 
     /**
      * Dispatch an email with full idempotency, user preferences, logging, and error resilience.
+     * Status lifecycle: queued → smtp_accepted (SMTP server accepted) → sent (confirmed delivery).
+     * Note: 'smtp_accepted' means the SMTP server accepted the message for relay — it does NOT
+     * guarantee inbox delivery, which depends on SPF/DKIM/DMARC and recipient server policies.
      */
     public function send(
         string $to,
@@ -56,6 +60,7 @@ class EmailService
         $log = EmailLog::create([
             'user_id' => $user?->id,
             'recipient' => $to,
+            'from_address' => $smtpSettings->mail_from_address,
             'email_type' => $emailType,
             'subject' => method_exists($mailable, 'envelope') ? ($mailable->envelope()->subject ?? 'Bondhoo Notification') : 'Bondhoo Notification',
             'mail_class' => get_class($mailable),
@@ -74,9 +79,21 @@ class EmailService
                     'status' => 'queued',
                 ]);
             } else {
-                Mail::to($to)->send($mailable);
+                /** @var SentMessage|null $sentMessage */
+                $sentMessage = Mail::to($to)->send($mailable);
+
+                // Extract SMTP Message-ID for delivery tracing
+                $messageId = null;
+                $smtpResponse = null;
+                if ($sentMessage instanceof SentMessage) {
+                    $messageId = $sentMessage->getMessageId();
+                    $smtpResponse = $sentMessage->getDebug();
+                }
+
                 $log->update([
-                    'status' => 'sent',
+                    'status' => 'smtp_accepted',
+                    'smtp_message_id' => $messageId,
+                    'smtp_response' => $smtpResponse ? mb_substr($smtpResponse, 0, 500) : null,
                     'sent_at' => now(),
                 ]);
             }

@@ -15,9 +15,12 @@ class EmailLog extends Model
     protected $fillable = [
         'user_id',
         'recipient',
+        'from_address',
         'email_type',
         'subject',
         'mail_class',
+        'smtp_message_id',
+        'smtp_response',
         'ip_address',
         'status',
         'attempts',
