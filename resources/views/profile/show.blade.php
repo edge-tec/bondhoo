@@ -7706,36 +7706,810 @@
         </div>
     </div>
 
-    <!-- AVATAR UPLOAD MODAL -->
-    <div class="fb-modal-overlay" id="avatarModal">
-        <div class="fb-modal-card">
+    <!-- AVATAR UPLOAD MODAL (Advanced Studio: Live Circular Cropper, Pan & Zoom, 90° Rotate, Camera Capture, Drag & Drop, Paste, Progress Bar) -->
+    <style>
+        #avatarModal .avm-card {
+            max-width: 520px;
+            width: 100%;
+            max-height: 92vh;
+            max-height: 92dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 20px;
+            background: var(--fb-card, #ffffff);
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.28), 0 0 1px rgba(0,0,0,0.1);
+        }
+        #avatarModal form#avatarUploadForm {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+        #avatarModal .modal-header {
+            flex-shrink: 0;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--fb-divider, #e4e6eb);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #avatarModal .avm-header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--fb-text-primary, #050505);
+        }
+        #avatarModal .avm-header-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1877f2, #7c3aed);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(24, 119, 242, 0.3);
+            flex-shrink: 0;
+        }
+        #avatarModal .modal-body {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            padding: 16px 20px;
+        }
+        #avatarModal .modal-footer.avm-footer {
+            flex-shrink: 0;
+            background: var(--fb-card, #ffffff);
+            border-top: 1px solid var(--fb-divider, #e4e6eb);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+            z-index: 10;
+        }
+        #avatarModal .avm-drag-handle {
+            display: none;
+            width: 44px;
+            height: 5px;
+            background: #cbd5e1;
+            border-radius: 999px;
+            margin: 8px auto 2px;
+        }
+        #avatarModal .avm-tabs {
+            display: flex;
+            gap: 6px;
+            padding: 4px;
+            background: var(--fb-hover, #f0f2f5);
+            border-radius: 12px;
+            margin-bottom: 14px;
+        }
+        #avatarModal .avm-tab {
+            flex: 1;
+            border: 0;
+            background: transparent;
+            padding: 8px 10px;
+            border-radius: 9px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--fb-text-secondary, #65676b);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        #avatarModal .avm-tab.active {
+            background: var(--fb-card, #ffffff);
+            color: #1877f2;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        }
+        #avatarModal .avm-pane {
+            display: none;
+            animation: avmFadeIn 0.25s ease;
+        }
+        #avatarModal .avm-pane.active {
+            display: block;
+        }
+        @keyframes avmFadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        /* DROPZONE */
+        #avatarModal .avm-drop {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-align: center;
+            min-height: 220px;
+            border: 2px dashed #93c5fd;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(24,119,242,0.03), rgba(124,58,237,0.05));
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 24px 16px;
+        }
+        #avatarModal .avm-drop:hover, #avatarModal .avm-drop.dragover {
+            border-color: #2563eb;
+            background: linear-gradient(135deg, rgba(24,119,242,0.08), rgba(124,58,237,0.09));
+            transform: scale(1.005);
+        }
+        #avatarModal .avm-drop-icon {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1877f2, #7c3aed);
+            color: #ffffff;
+            box-shadow: 0 8px 20px rgba(24,119,242,0.35);
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+        #avatarModal .avm-drop:hover .avm-drop-icon {
+            transform: scale(1.06);
+        }
+        #avatarModal .avm-drop-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--fb-text-primary, #050505);
+        }
+        #avatarModal .avm-drop-sub {
+            font-size: 12px;
+            color: var(--fb-text-secondary, #65676b);
+            max-width: 320px;
+            line-height: 1.4;
+        }
+        #avatarModal .avm-quick-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 4px;
+        }
+        #avatarModal .avm-btn-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #ffffff;
+            color: #1877f2;
+            border: 1px solid #bfdbfe;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #avatarModal .avm-btn-pill:hover {
+            background: #eff6ff;
+            border-color: #93c5fd;
+        }
+        #avatarModal .avm-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 4px;
+        }
+        #avatarModal .avm-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(24,119,242,0.08);
+            color: #1877f2;
+        }
+
+        /* INTERACTIVE CIRCULAR STUDIO STAGE */
+        #avatarModal .avm-stage-container {
+            position: relative;
+            width: 100%;
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 16px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+        #avatarModal .avm-stage-hint {
+            color: rgba(255,255,255,0.85);
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 12px;
+            border-radius: 999px;
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        #avatarModal .avm-circle-viewport {
+            position: relative;
+            width: 230px;
+            height: 230px;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.72), 0 0 0 3px #3b82f6, 0 8px 24px rgba(0,0,0,0.5);
+            cursor: grab;
+            touch-action: none;
+            background: #1e293b;
+        }
+        #avatarModal .avm-circle-viewport.grabbing {
+            cursor: grabbing;
+        }
+        #avatarModal .avm-stage-img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+            pointer-events: none;
+            max-width: none;
+            max-height: none;
+            will-change: transform;
+        }
+        #avatarModal .avm-viewport-crosshair {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border-radius: 50%;
+            border: 1px dashed rgba(255,255,255,0.35);
+        }
+
+        /* CONTROLS TOOLBAR */
+        #avatarModal .avm-stage-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        #avatarModal .avm-tool-btn {
+            background: rgba(255,255,255,0.12);
+            color: #ffffff;
+            border: 1px solid rgba(255,255,255,0.18);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 11px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+        }
+        #avatarModal .avm-tool-btn:hover {
+            background: rgba(255,255,255,0.24);
+        }
+
+        /* ZOOM BAR */
+        #avatarModal .avm-zoom-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+            padding: 10px 14px;
+            background: var(--fb-hover, #f0f2f5);
+            border-radius: 12px;
+        }
+        #avatarModal .avm-zoom-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 0;
+            background: #ffffff;
+            color: #1e293b;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            transition: all 0.15s ease;
+        }
+        #avatarModal .avm-zoom-btn:hover {
+            background: #eff6ff;
+            color: #1877f2;
+        }
+        #avatarModal .avm-zoom-slider {
+            flex: 1;
+            accent-color: #1877f2;
+            cursor: pointer;
+            height: 6px;
+        }
+        #avatarModal .avm-zoom-badge {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--fb-text-secondary, #65676b);
+            min-width: 42px;
+            text-align: right;
+        }
+
+        /* FILE INFO & CAPTION */
+        #avatarModal .avm-file-chip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--fb-text-secondary, #65676b);
+            margin-top: 10px;
+        }
+        #avatarModal .avm-caption-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+            padding: 8px 12px;
+            border: 1px solid var(--fb-divider, #e4e6eb);
+            border-radius: 12px;
+            background: var(--fb-card, #ffffff);
+            transition: border-color 0.2s ease;
+        }
+        #avatarModal .avm-caption-box:focus-within {
+            border-color: #1877f2;
+            box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.15);
+        }
+        #avatarModal .avm-mini-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 1px solid #cbd5e1;
+        }
+        #avatarModal .avm-caption-input {
+            flex: 1;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            font-size: 13px;
+            color: var(--fb-text-primary, #050505);
+        }
+
+        /* FEED SHARE TOGGLE */
+        #avatarModal .avm-share-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--fb-text-secondary, #65676b);
+            cursor: pointer;
+            user-select: none;
+        }
+        #avatarModal .avm-share-toggle input {
+            accent-color: #1877f2;
+            cursor: pointer;
+        }
+
+        /* PROGRESS & ERROR */
+        #avatarModal .avm-progress {
+            display: none;
+            margin-top: 12px;
+        }
+        #avatarModal .avm-progress-track {
+            height: 8px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+        #avatarModal .avm-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #1877f2, #7c3aed);
+            border-radius: 999px;
+            transition: width 0.15s ease;
+        }
+        #avatarModal .avm-progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--fb-text-secondary, #65676b);
+            margin-top: 4px;
+        }
+        #avatarModal .avm-error {
+            display: none;
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: #fef2f2;
+            color: #b91c1c;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid #fecaca;
+        }
+
+        /* CURRENT TAB STYLES */
+        #avatarModal .avm-current-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px 10px;
+            gap: 12px;
+        }
+        #avatarModal .avm-current-avatar-ring {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            padding: 4px;
+            background: linear-gradient(135deg, #1877f2, #7c3aed);
+            box-shadow: 0 10px 25px rgba(24, 119, 242, 0.25);
+        }
+        #avatarModal .avm-current-avatar-ring img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #ffffff;
+            display: block;
+        }
+        #avatarModal .avm-current-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--fb-text-primary, #050505);
+        }
+        #avatarModal .avm-current-sub {
+            font-size: 12px;
+            color: var(--fb-text-secondary, #65676b);
+            margin-top: -8px;
+        }
+        #avatarModal .avm-current-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 6px;
+        }
+
+        /* DEFAULT / SYSTEM AVATARS */
+        #avatarModal .avm-presets-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 10px 2px;
+        }
+        #avatarModal .avm-preset-btn {
+            border: 2px solid transparent;
+            background: var(--fb-hover, #f0f2f5);
+            border-radius: 14px;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        #avatarModal .avm-preset-btn:hover {
+            border-color: #1877f2;
+            background: #eff6ff;
+            transform: translateY(-2px);
+        }
+        #avatarModal .avm-preset-btn img,
+        #avatarModal .avm-preset-btn .avm-preset-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        #avatarModal .avm-preset-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--fb-text-primary, #050505);
+        }
+
+        /* SPINNER */
+        #avatarModal .avm-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            display: inline-block;
+            animation: avmSpin 0.7s linear infinite;
+            vertical-align: -2px;
+            margin-right: 6px;
+        }
+        @keyframes avmSpin { to { transform: rotate(360deg); } }
+
+        /* DEDICATED MOBILE RESPONSIVE STYLES (Bottom Sheet) */
+        @media (max-width: 640px) {
+            #avatarModal.fb-modal-overlay {
+                padding: 0;
+                align-items: flex-end; /* Mobile Bottom Sheet */
+            }
+            #avatarModal .avm-card {
+                max-width: 100% !important;
+                width: 100% !important;
+                max-height: 90vh;
+                max-height: 90dvh;
+                border-bottom-left-radius: 0 !important;
+                border-bottom-right-radius: 0 !important;
+                border-top-left-radius: 22px !important;
+                border-top-right-radius: 22px !important;
+                margin: 0 !important;
+            }
+            #avatarModal .avm-drag-handle {
+                display: block;
+            }
+            #avatarModal .modal-header {
+                padding: 10px 16px;
+            }
+            #avatarModal .avm-header-title {
+                font-size: 15px;
+            }
+            #avatarModal .modal-body {
+                padding: 12px 14px;
+            }
+            #avatarModal .avm-drop {
+                min-height: 160px;
+                padding: 16px 10px;
+                gap: 8px;
+            }
+            #avatarModal .avm-drop-icon {
+                width: 46px;
+                height: 46px;
+            }
+            #avatarModal .avm-drop-title {
+                font-size: 13px;
+            }
+            #avatarModal .avm-drop-sub {
+                font-size: 11px;
+            }
+            #avatarModal .avm-circle-viewport {
+                width: 190px;
+                height: 190px;
+            }
+            #avatarModal .avm-stage-container {
+                padding: 12px 0;
+            }
+            #avatarModal .avm-tool-btn {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+            #avatarModal .avm-zoom-wrap {
+                padding: 8px 10px;
+                gap: 6px;
+            }
+            #avatarModal .modal-footer.avm-footer {
+                padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) 14px;
+                gap: 8px;
+            }
+            #avatarModal .avm-footer .fb-btn {
+                height: 38px;
+                padding: 0 12px;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+            #avatarModal .avm-presets-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+        }
+    </style>
+    <div class="fb-modal-overlay" id="avatarModal" onclick="if(event.target===this) closeAvatarModal()">
+        <div class="fb-modal-card avm-card">
+            <div class="avm-drag-handle"></div>
             <div class="modal-header">
-                <span class="modal-title">প্রোফাইল ছবি পরিবর্তন করুন</span>
-                <button class="modal-close-btn" onclick="closeModal('avatarModal')">✕</button>
+                <div class="avm-header-title">
+                    <div class="avm-header-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </div>
+                    <span>প্রোফাইল ছবি পরিবর্তন করুন</span>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeAvatarModal()" title="বন্ধ করুন">✕</button>
             </div>
+
             <form id="avatarUploadForm" onsubmit="submitAvatarUpload(event)">
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label class="form-label">নতুন ছবি নির্বাচন করুন (JPG, PNG, WebP — সর্বোচ্চ 10MB)</label>
-                        <input type="file" name="file" id="avatarFileInput" accept="image/*" class="form-control" required onchange="previewAvatar(event)">
+                    <!-- Navigation Tabs -->
+                    <div class="avm-tabs" role="tablist">
+                        <button type="button" class="avm-tab active" id="avmTabUpload" onclick="switchAvatarTab('upload')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            নতুন ছবি আপলোড
+                        </button>
+                        <button type="button" class="avm-tab" id="avmTabCurrent" onclick="switchAvatarTab('current')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg>
+                            বর্তমান ছবি
+                        </button>
+                        <button type="button" class="avm-tab" id="avmTabPresets" onclick="switchAvatarTab('presets')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                            ডিফল্ট অবতার
+                        </button>
                     </div>
-                    <div style="text-align:center;margin-top:16px;">
-                        <img id="avatarPreviewImg" src="" alt="Preview" style="display:none;width:140px;height:140px;border-radius:50%;object-fit:cover;margin:0 auto;border:3px solid var(--fb-primary);">
+
+                    <!-- TAB 1: UPLOAD PANE -->
+                    <div class="avm-pane active" id="avmPaneUpload">
+                        <!-- Hidden inputs: File & Camera -->
+                        <input type="file" id="avatarFileInput" accept="image/jpeg,image/png,image/webp" hidden onchange="handleAvatarFileSelect(event)">
+                        <input type="file" id="avatarCameraInput" accept="image/*" capture="user" hidden onchange="handleAvatarFileSelect(event)">
+
+                        <!-- DROPZONE (when no image selected) -->
+                        <div class="avm-drop" id="avmDropzone" tabindex="0" role="button" aria-label="প্রোফাইল ছবি নির্বাচন করুন" onclick="document.getElementById('avatarFileInput').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+                            <div class="avm-drop-icon">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                            </div>
+                            <div class="avm-drop-title">ছবি এখানে টেনে এনে ছাড়ুন অথবা বাছুন</div>
+                            <div class="avm-drop-sub">কম্পিউটার বা ফোনের গ্যালারি থেকে ছবি আপলোড করুন অথবা ক্লিপবোর্ড (Ctrl+V) পেস্ট করুন</div>
+                            <div class="avm-quick-btns" onclick="event.stopPropagation()">
+                                <button type="button" class="avm-btn-pill" onclick="document.getElementById('avatarFileInput').click()">
+                                    <span>📁</span> গ্যালারি বা ফাইল
+                                </button>
+                                <button type="button" class="avm-btn-pill" onclick="document.getElementById('avatarCameraInput').click()">
+                                    <span>📸</span> ক্যামেরা দিয়ে তুলুন
+                                </button>
+                            </div>
+                            <div class="avm-badges">
+                                <span class="avm-badge">JPG / PNG / WebP</span>
+                                <span class="avm-badge">সর্বোচ্চ 10MB</span>
+                                <span class="avm-badge">স্মার্ট প্যান ও জুম ক্রপ</span>
+                            </div>
+                        </div>
+
+                        <!-- INTERACTIVE CROP STUDIO (when image selected) -->
+                        <div id="avmEditorWrap" style="display:none;">
+                            <div class="avm-stage-container">
+                                <div class="avm-stage-hint">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
+                                    টেনে মুখমণ্ডল মাঝে আনুন
+                                </div>
+                                <div class="avm-circle-viewport" id="avmCircleViewport">
+                                    <img id="avmStageImg" class="avm-stage-img" src="" alt="প্রোফাইল ছবি প্রিভিউ">
+                                    <div class="avm-viewport-crosshair"></div>
+                                </div>
+                                <div class="avm-stage-toolbar">
+                                    <button type="button" class="avm-tool-btn" onclick="rotateAvatarStage()" title="৯০ ডিগ্রি ঘোরান">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                        ৯০° ঘোরান
+                                    </button>
+                                    <button type="button" class="avm-tool-btn" onclick="resetAvatarTransform()" title="সেন্টার ও জুম রিসেট">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                                        রিসেট
+                                    </button>
+                                    <button type="button" class="avm-tool-btn" onclick="document.getElementById('avatarFileInput').click()" title="অন্য ছবি পছন্দ করুন">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                        অন্য ছবি
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Zoom Slider Bar -->
+                            <div class="avm-zoom-wrap">
+                                <button type="button" class="avm-zoom-btn" onclick="adjustAvatarZoom(-0.1)" title="জুম আউট">−</button>
+                                <input type="range" class="avm-zoom-slider" id="avmZoomSlider" min="100" max="300" value="100" oninput="setAvatarZoomFromSlider(this.value)">
+                                <button type="button" class="avm-zoom-btn" onclick="adjustAvatarZoom(0.1)" title="জুম ইন">+</button>
+                                <span class="avm-zoom-badge" id="avmZoomBadge">100%</span>
+                            </div>
+
+                            <!-- File Details Chip -->
+                            <div class="avm-file-chip" id="avmFileChip">
+                                <span id="avmFileName" style="font-weight:600;color:var(--fb-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;">ছবি</span>
+                                <span id="avmFileSize" style="opacity:0.85;">0 KB</span>
+                            </div>
+
+                            <!-- Caption Box -->
+                            <div class="avm-caption-box">
+                                <img src="{{ $profile['avatar'] ?: '/images/default-avatar.svg' }}" alt="Avatar" class="avm-mini-avatar" id="avmMiniAvatarThumb">
+                                <input type="text" name="caption" id="avatarCaptionInput" class="avm-caption-input" placeholder="প্রোফাইল ছবি সম্পর্কিত কিছু লিখুন... (ঐচ্ছিক)" maxlength="500">
+                            </div>
+
+                            <!-- Share to Feed Checkbox -->
+                            <label class="avm-share-toggle">
+                                <input type="checkbox" id="avatarShareTimeline" checked>
+                                <span>টাইমলাইনে এই আপডেটটি পোস্ট করুন</span>
+                            </label>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="avm-progress" id="avmProgress">
+                            <div class="avm-progress-track">
+                                <div class="avm-progress-fill" id="avmProgressFill"></div>
+                            </div>
+                            <div class="avm-progress-text">
+                                <span id="avmProgressLabel">আপলোড হচ্ছে...</span>
+                                <span id="avmProgressPct">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Error Message -->
+                        <div class="avm-error" id="avmError"></div>
                     </div>
-                    <div class="form-group" style="margin-top:16px;">
-                        <label class="form-label">ক্যাপশন (ঐচ্ছিক)</label>
-                        <input type="text" name="caption" class="form-control" placeholder="প্রোফাইল ছবি সম্পর্কিত কিছু লিখুন...">
+
+                    <!-- TAB 2: CURRENT AVATAR PANE -->
+                    <div class="avm-pane" id="avmPaneCurrent">
+                        <div class="avm-current-card">
+                            <div class="avm-current-avatar-ring">
+                                <img src="{{ $profile['avatar'] ?: '/images/default-avatar.svg' }}" alt="{{ $profile['name'] }}" id="avmCurrentPreview">
+                            </div>
+                            <div class="avm-current-name">{{ $profile['name'] }}</div>
+                            <div class="avm-current-sub">&#64;{{ $profile['username'] ?? '' }}</div>
+                            @if(!empty($profile['avatar']))
+                                <div class="avm-current-actions">
+                                    <button type="button" class="fb-btn fb-btn-secondary" onclick="openPhotoTheater('{{ $profile['avatar'] ?? '' }}', '{{ addslashes($profile['name']) }}', 'প্রোফাইল ছবি')">
+                                        👁️ বড় করে দেখুন
+                                    </button>
+                                    <a href="{{ $profile['avatar'] }}" download="avatar.jpg" class="fb-btn fb-btn-secondary" style="text-decoration:none;">
+                                        📥 ডাউনলোড
+                                    </a>
+                                </div>
+                            @else
+                                <div style="font-size:13px;color:var(--fb-text-secondary);margin-top:8px;">
+                                    বর্তমানে কোনো প্রোফাইল ছবি যুক্ত নেই।
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: DEFAULT AVATARS PANE -->
+                    <div class="avm-pane" id="avmPanePresets">
+                        <div style="font-size:13px;font-weight:600;color:var(--fb-text-secondary);margin-bottom:8px;">
+                            সিস্টেম ডিফল্ট অবতার নির্বাচন করুন:
+                        </div>
+                        <div class="avm-presets-grid">
+                            <button type="button" class="avm-preset-btn" onclick="applySystemAvatar('default')">
+                                <img src="/images/default-avatar.svg" alt="Default Avatar">
+                                <span class="avm-preset-label">স্ট্যান্ডার্ড</span>
+                            </button>
+                            <button type="button" class="avm-preset-btn" onclick="applySystemAvatar('male')">
+                                <div class="avm-preset-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;">👨</div>
+                                <span class="avm-preset-label">পুরুষ</span>
+                            </button>
+                            <button type="button" class="avm-preset-btn" onclick="applySystemAvatar('female')">
+                                <div class="avm-preset-icon" style="background:linear-gradient(135deg,#ec4899,#be185d);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;">👩</div>
+                                <span class="avm-preset-label">মহিলা</span>
+                            </button>
+                            <button type="button" class="avm-preset-btn" onclick="applySystemAvatar('neutral')">
+                                <div class="avm-preset-icon" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;">✨</div>
+                                <span class="avm-preset-label">মিনিমাল</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer" style="justify-content:space-between;">
+
+                <!-- MODAL FOOTER -->
+                <div class="modal-footer avm-footer">
                     @if(!empty($profile['avatar']))
-                        <button type="button" class="fb-btn" style="background:#fee2e2;color:#dc2626;" onclick="handleDeleteAvatar()">ছবি মুছুন</button>
+                        <button type="button" class="fb-btn" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;" onclick="handleDeleteAvatar()">
+                            ছবি মুছুন 🗑️
+                        </button>
                     @else
                         <div></div>
                     @endif
                     <div style="display:flex;gap:8px;">
-                        <button type="button" class="fb-btn fb-btn-secondary" onclick="closeModal('avatarModal')">বাতিল</button>
-                        <button type="submit" class="fb-btn fb-btn-primary" id="avatarUploadBtn">আপলোড করুন</button>
+                        <button type="button" class="fb-btn fb-btn-secondary" onclick="closeAvatarModal()">বাতিল</button>
+                        <button type="submit" class="fb-btn fb-btn-primary" id="avatarUploadBtn" style="background:linear-gradient(135deg,#1877f2,#7c3aed);color:#fff;border:0;">
+                            আপলোড ও সংরক্ষণ করুন ✨
+                        </button>
                     </div>
                 </div>
             </form>
@@ -10862,7 +11636,21 @@
         }
 
         function openAvatarModal() {
-            document.getElementById('avatarModal').classList.add('active');
+            const dd = document.getElementById('avatarMenuDropdown');
+            if (dd) dd.classList.remove('show');
+            if (typeof resetAvatarSelection === 'function') resetAvatarSelection();
+            if (typeof switchAvatarTab === 'function') switchAvatarTab('upload');
+            const el = document.getElementById('avatarModal');
+            if (el) el.classList.add('active');
+        }
+
+        function closeAvatarModal() {
+            if (typeof avatarEditorState !== 'undefined' && avatarEditorState.uploading) {
+                if (typeof showToast === 'function') showToast('আপলোড চলছে, অনুগ্রহ করে অপেক্ষা করুন...');
+                return;
+            }
+            closeModal('avatarModal');
+            if (typeof resetAvatarSelection === 'function') resetAvatarSelection();
         }
 
         function openCoverModal() {
@@ -13336,13 +14124,417 @@
             window.location.reload();
         }
 
-        // Image Previews
-        function previewAvatar(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const img = document.getElementById('avatarPreviewImg');
-                img.src = URL.createObjectURL(file);
-                img.style.display = 'block';
+        /* ------------------------------------------------------------- */
+        /* ADVANCED REAL-TIME AVATAR STUDIO & CIRCULAR CROP EDITOR       */
+        /* ------------------------------------------------------------- */
+        const AVATAR_MAX_BYTES = 10 * 1024 * 1024;
+        const AVATAR_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+        const avatarEditorState = {
+            file: null,
+            objectUrl: null,
+            img: null,
+            naturalWidth: 0,
+            naturalHeight: 0,
+            scale: 1.0,
+            rotation: 0,
+            posX: 0,
+            posY: 0,
+            uploading: false,
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0,
+            startPosX: 0,
+            startPosY: 0
+        };
+
+        function switchAvatarTab(tab) {
+            const isUpload = tab === 'upload';
+            const isCurrent = tab === 'current';
+            const isPresets = tab === 'presets';
+
+            document.getElementById('avmTabUpload')?.classList.toggle('active', isUpload);
+            document.getElementById('avmTabCurrent')?.classList.toggle('active', isCurrent);
+            document.getElementById('avmTabPresets')?.classList.toggle('active', isPresets);
+
+            document.getElementById('avmPaneUpload')?.classList.toggle('active', isUpload);
+            document.getElementById('avmPaneCurrent')?.classList.toggle('active', isCurrent);
+            document.getElementById('avmPanePresets')?.classList.toggle('active', isPresets);
+
+            const uploadBtn = document.getElementById('avatarUploadBtn');
+            if (uploadBtn) {
+                uploadBtn.style.display = isUpload ? '' : 'none';
+            }
+        }
+
+        function showAvatarError(msg) {
+            const el = document.getElementById('avmError');
+            if (!el) return;
+            el.textContent = msg || '';
+            el.style.display = msg ? 'block' : 'none';
+        }
+
+        function formatAvatarBytes(bytes) {
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function setAvatarProgress(pct, label) {
+            const wrap = document.getElementById('avmProgress');
+            if (!wrap) return;
+            if (pct === null) {
+                wrap.style.display = 'none';
+                return;
+            }
+            wrap.style.display = 'block';
+            const fill = document.getElementById('avmProgressFill');
+            const pctText = document.getElementById('avmProgressPct');
+            const lblText = document.getElementById('avmProgressLabel');
+            if (fill) fill.style.width = pct + '%';
+            if (pctText) pctText.textContent = pct + '%';
+            if (lblText && label) lblText.textContent = label;
+        }
+
+        function resetAvatarSelection() {
+            if (avatarEditorState.uploading) return;
+            if (avatarEditorState.objectUrl) {
+                try { URL.revokeObjectURL(avatarEditorState.objectUrl); } catch (_) {}
+            }
+            avatarEditorState.file = null;
+            avatarEditorState.objectUrl = null;
+            avatarEditorState.img = null;
+            avatarEditorState.naturalWidth = 0;
+            avatarEditorState.naturalHeight = 0;
+            avatarEditorState.scale = 1.0;
+            avatarEditorState.rotation = 0;
+            avatarEditorState.posX = 0;
+            avatarEditorState.posY = 0;
+
+            const fileInput = document.getElementById('avatarFileInput');
+            if (fileInput) fileInput.value = '';
+            const camInput = document.getElementById('avatarCameraInput');
+            if (camInput) camInput.value = '';
+
+            const dropzone = document.getElementById('avmDropzone');
+            const editorWrap = document.getElementById('avmEditorWrap');
+            if (dropzone) dropzone.style.display = '';
+            if (editorWrap) editorWrap.style.display = 'none';
+
+            const stageImg = document.getElementById('avmStageImg');
+            if (stageImg) stageImg.removeAttribute('src');
+
+            const slider = document.getElementById('avmZoomSlider');
+            if (slider) slider.value = 100;
+            const badge = document.getElementById('avmZoomBadge');
+            if (badge) badge.textContent = '100%';
+
+            setAvatarProgress(null);
+            showAvatarError('');
+        }
+
+        function clampAndApplyAvatarTransform() {
+            const img = document.getElementById('avmStageImg');
+            if (!img || !avatarEditorState.file || !avatarEditorState.naturalWidth) return;
+
+            const vp = document.getElementById('avmCircleViewport');
+            const D = vp ? (vp.clientWidth || 230) : 230;
+
+            const nw = avatarEditorState.naturalWidth;
+            const nh = avatarEditorState.naturalHeight;
+            const baseFit = Math.max(D / nw, D / nh);
+
+            const scale = avatarEditorState.scale;
+            const curW = nw * baseFit * scale;
+            const curH = nh * baseFit * scale;
+
+            const isRotated90 = (avatarEditorState.rotation % 180 !== 0);
+            const effW = isRotated90 ? curH : curW;
+            const effH = isRotated90 ? curW : curH;
+
+            const maxDeltaX = Math.max(0, (effW - D) / 2);
+            const maxDeltaY = Math.max(0, (effH - D) / 2);
+
+            avatarEditorState.posX = Math.max(-maxDeltaX, Math.min(maxDeltaX, avatarEditorState.posX));
+            avatarEditorState.posY = Math.max(-maxDeltaY, Math.min(maxDeltaY, avatarEditorState.posY));
+
+            img.style.width = (nw * baseFit) + 'px';
+            img.style.height = (nh * baseFit) + 'px';
+            img.style.transform = `translate(calc(-50% + ${avatarEditorState.posX}px), calc(-50% + ${avatarEditorState.posY}px)) rotate(${avatarEditorState.rotation}deg) scale(${scale})`;
+        }
+
+        function setAvatarZoomFromSlider(val) {
+            const num = Math.max(100, Math.min(300, parseInt(val) || 100));
+            avatarEditorState.scale = num / 100;
+            const badge = document.getElementById('avmZoomBadge');
+            if (badge) badge.textContent = num + '%';
+            clampAndApplyAvatarTransform();
+        }
+
+        function adjustAvatarZoom(delta) {
+            const newScale = Math.max(1.0, Math.min(3.0, avatarEditorState.scale + delta));
+            avatarEditorState.scale = Math.round(newScale * 100) / 100;
+            const slider = document.getElementById('avmZoomSlider');
+            if (slider) slider.value = Math.round(avatarEditorState.scale * 100);
+            const badge = document.getElementById('avmZoomBadge');
+            if (badge) badge.textContent = Math.round(avatarEditorState.scale * 100) + '%';
+            clampAndApplyAvatarTransform();
+        }
+
+        function rotateAvatarStage() {
+            avatarEditorState.rotation = (avatarEditorState.rotation + 90) % 360;
+            clampAndApplyAvatarTransform();
+        }
+
+        function resetAvatarTransform() {
+            avatarEditorState.scale = 1.0;
+            avatarEditorState.rotation = 0;
+            avatarEditorState.posX = 0;
+            avatarEditorState.posY = 0;
+            const slider = document.getElementById('avmZoomSlider');
+            if (slider) slider.value = 100;
+            const badge = document.getElementById('avmZoomBadge');
+            if (badge) badge.textContent = '100%';
+            clampAndApplyAvatarTransform();
+        }
+
+        async function handleAvatarFile(file) {
+            showAvatarError('');
+            if (!file) return;
+
+            if (!AVATAR_ALLOWED_TYPES.includes(file.type)) {
+                showAvatarError('শুধুমাত্র JPG, PNG অথবা WebP ফরম্যাটের ছবি গ্রহণযোগ্য।');
+                return;
+            }
+            if (file.size > AVATAR_MAX_BYTES) {
+                showAvatarError(`ফাইল সাইজ অনেক বড় (${formatAvatarBytes(file.size)})। সর্বোচ্চ 10MB অনুমোদিত।`);
+                return;
+            }
+
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = function () {
+                if (img.naturalWidth < 100 || img.naturalHeight < 100) {
+                    showAvatarError('ছবির মাপ সর্বনিম্ন ১০০x১০০ পিক্সেল হতে হবে।');
+                    URL.revokeObjectURL(url);
+                    return;
+                }
+
+                avatarEditorState.file = file;
+                avatarEditorState.objectUrl = url;
+                avatarEditorState.img = img;
+                avatarEditorState.naturalWidth = img.naturalWidth;
+                avatarEditorState.naturalHeight = img.naturalHeight;
+                avatarEditorState.scale = 1.0;
+                avatarEditorState.rotation = 0;
+                avatarEditorState.posX = 0;
+                avatarEditorState.posY = 0;
+
+                const dropzone = document.getElementById('avmDropzone');
+                const editorWrap = document.getElementById('avmEditorWrap');
+                if (dropzone) dropzone.style.display = 'none';
+                if (editorWrap) editorWrap.style.display = 'block';
+
+                const stageImg = document.getElementById('avmStageImg');
+                if (stageImg) {
+                    stageImg.src = url;
+                }
+
+                const fileNameEl = document.getElementById('avmFileName');
+                const fileSizeEl = document.getElementById('avmFileSize');
+                if (fileNameEl) fileNameEl.textContent = file.name;
+                if (fileSizeEl) fileSizeEl.textContent = `${formatAvatarBytes(file.size)} • ${img.naturalWidth}×${img.naturalHeight}px`;
+
+                const miniThumb = document.getElementById('avmMiniAvatarThumb');
+                if (miniThumb) miniThumb.src = url;
+
+                const slider = document.getElementById('avmZoomSlider');
+                if (slider) slider.value = 100;
+                const badge = document.getElementById('avmZoomBadge');
+                if (badge) badge.textContent = '100%';
+
+                clampAndApplyAvatarTransform();
+            };
+            img.onerror = function () {
+                showAvatarError('ছবিটি লোড করা সম্ভব হয়নি। অনুগ্রহ করে অন্য ছবি নির্বাচন করুন।');
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        }
+
+        function handleAvatarFileSelect(event) {
+            const file = event.target.files && event.target.files[0];
+            if (file) handleAvatarFile(file);
+        }
+
+        // Setup Drag & Drop and Pan pointer listeners
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropzone = document.getElementById('avmDropzone');
+            if (dropzone) {
+                ['dragenter', 'dragover'].forEach(name => {
+                    dropzone.addEventListener(name, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropzone.classList.add('dragover');
+                    });
+                });
+                ['dragleave', 'drop'].forEach(name => {
+                    dropzone.addEventListener(name, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropzone.classList.remove('dragover');
+                    });
+                });
+                dropzone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    if (dt && dt.files && dt.files[0]) {
+                        handleAvatarFile(dt.files[0]);
+                    }
+                });
+            }
+
+            // Global paste support when avatarModal is open
+            window.addEventListener('paste', (e) => {
+                const modal = document.getElementById('avatarModal');
+                if (!modal || !modal.classList.contains('active')) return;
+                const items = e.clipboardData && e.clipboardData.items;
+                if (!items) return;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        if (file) {
+                            switchAvatarTab('upload');
+                            handleAvatarFile(file);
+                            break;
+                        }
+                    }
+                }
+            });
+
+            // Pointer drag on Circular Viewport
+            const vp = document.getElementById('avmCircleViewport');
+            if (vp) {
+                vp.addEventListener('pointerdown', (e) => {
+                    if (!avatarEditorState.file) return;
+                    avatarEditorState.isDragging = true;
+                    avatarEditorState.dragStartX = e.clientX;
+                    avatarEditorState.dragStartY = e.clientY;
+                    avatarEditorState.startPosX = avatarEditorState.posX;
+                    avatarEditorState.startPosY = avatarEditorState.posY;
+                    vp.classList.add('grabbing');
+                    try { vp.setPointerCapture(e.pointerId); } catch (_) {}
+                });
+
+                vp.addEventListener('pointermove', (e) => {
+                    if (!avatarEditorState.isDragging) return;
+                    const dx = e.clientX - avatarEditorState.dragStartX;
+                    const dy = e.clientY - avatarEditorState.dragStartY;
+                    avatarEditorState.posX = avatarEditorState.startPosX + dx;
+                    avatarEditorState.posY = avatarEditorState.startPosY + dy;
+                    clampAndApplyAvatarTransform();
+                });
+
+                const endDrag = (e) => {
+                    if (!avatarEditorState.isDragging) return;
+                    avatarEditorState.isDragging = false;
+                    vp.classList.remove('grabbing');
+                    try { vp.releasePointerCapture(e.pointerId); } catch (_) {}
+                };
+                vp.addEventListener('pointerup', endDrag);
+                vp.addEventListener('pointercancel', endDrag);
+
+                // Mouse wheel zoom
+                vp.addEventListener('wheel', (e) => {
+                    if (!avatarEditorState.file) return;
+                    e.preventDefault();
+                    const delta = e.deltaY < 0 ? 0.08 : -0.08;
+                    adjustAvatarZoom(delta);
+                }, { passive: false });
+            }
+        });
+
+        // Generate high-definition cropped canvas blob
+        function getAvatarCroppedBlob() {
+            return new Promise((resolve) => {
+                if (!avatarEditorState.file || !avatarEditorState.img) {
+                    resolve(null);
+                    return;
+                }
+
+                try {
+                    const canvas = document.createElement('canvas');
+                    const outputSize = 600; // High resolution 600x600 square
+                    canvas.width = outputSize;
+                    canvas.height = outputSize;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        resolve(avatarEditorState.file);
+                        return;
+                    }
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, outputSize, outputSize);
+
+                    const vp = document.getElementById('avmCircleViewport');
+                    const D = vp ? (vp.clientWidth || 230) : 230;
+                    const scaleRatio = outputSize / D;
+
+                    ctx.save();
+                    ctx.translate(outputSize / 2, outputSize / 2);
+                    ctx.translate(avatarEditorState.posX * scaleRatio, avatarEditorState.posY * scaleRatio);
+                    ctx.rotate((avatarEditorState.rotation * Math.PI) / 180);
+
+                    const nw = avatarEditorState.naturalWidth;
+                    const nh = avatarEditorState.naturalHeight;
+                    const baseFit = Math.max(D / nw, D / nh);
+                    const w = nw * baseFit * avatarEditorState.scale * scaleRatio;
+                    const h = nh * baseFit * avatarEditorState.scale * scaleRatio;
+
+                    ctx.drawImage(avatarEditorState.img, -w / 2, -h / 2, w, h);
+                    ctx.restore();
+
+                    const mime = avatarEditorState.file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const name = (avatarEditorState.file.name || 'avatar.jpg').replace(/\.[^/.]+$/, '') + (mime === 'image/png' ? '.png' : '.jpg');
+                            const file = new File([blob], name, { type: mime });
+                            resolve(file);
+                        } else {
+                            resolve(avatarEditorState.file);
+                        }
+                    }, mime, 0.92);
+                } catch (err) {
+                    console.error('Canvas crop error, fallback to raw file:', err);
+                    resolve(avatarEditorState.file);
+                }
+            });
+        }
+
+        // Apply System Default Avatar
+        async function applySystemAvatar(type) {
+            if (!confirm('আপনি কি ডিফল্ট সিস্টেম অবতার ব্যবহার করতে চান?')) return;
+            try {
+                const res = await fetch('/api/v2/profile/avatar/default', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: getAuthHeaders({ 'Content-Type': 'application/json' })
+                });
+                const data = await res.json();
+                if (res.ok && (data.success || data.status === 'success')) {
+                    if (typeof showToast === 'function') {
+                        showToast(data.message || 'ডিফল্ট অবতার সেট করা হয়েছে!');
+                    } else {
+                        alert(data.message);
+                    }
+                    const avatarImg = document.getElementById('profileAvatarImg');
+                    if (avatarImg) avatarImg.src = '/images/default-avatar.svg?v=' + Date.now();
+                    closeAvatarModal();
+                    setTimeout(() => window.location.reload(), 400);
+                } else {
+                    alert(data.message || 'ডিফল্ট অবতার সেট করতে সমস্যা হয়েছে।');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('সার্ভার যোগাযোগ ত্রুটি।');
             }
         }
 
@@ -14002,44 +15194,125 @@
             }
         }
 
-        // Avatar Upload Submit
+        // Avatar Upload Submit (High-Definition Canvas Cropped, Real-time XHR Progress)
         async function submitAvatarUpload(e) {
             e.preventDefault();
-            const btn = document.getElementById('avatarUploadBtn');
-            btn.disabled = true;
-            btn.innerText = 'আপলোড হচ্ছে...';
+            if (avatarEditorState.uploading) return;
 
-            const form = document.getElementById('avatarUploadForm');
-            const formData = new FormData(form);
+            if (!avatarEditorState.file) {
+                showAvatarError('অনুগ্রহ করে একটি ছবি নির্বাচন করুন।');
+                switchAvatarTab('upload');
+                return;
+            }
+
+            const btn = document.getElementById('avatarUploadBtn');
+            avatarEditorState.uploading = true;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="avm-spinner"></span>আপলোড হচ্ছে...';
+            }
+            showAvatarError('');
+            setAvatarProgress(0, 'ছবি প্রসেসিং হচ্ছে...');
 
             try {
-                const res = await fetch('/api/v2/profile/avatar', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: getAuthHeaders(),
-                    body: formData
-                });
-                const data = await res.json();
-                if (res.ok && (data.success || data.status === 'success')) {
-                    if (data.data && data.data.avatar_url) {
-                        const avatarImg = document.getElementById('profileAvatarImg');
-                        if (avatarImg) {
-                            avatarImg.src = data.data.avatar_url + '?v=' + Date.now();
-                        }
-                    }
-                    alert(data.message || 'প্রোফাইল ছবি সফলভাবে আপডেট করা হয়েছে।');
-                    window.location.reload();
-                } else {
-                    const errorMsg = data.errors?.file?.[0] || data.message || 'ছবি আপলোড সফল হয়নি।';
-                    alert(errorMsg);
-                    btn.disabled = false;
-                    btn.innerText = 'আপলোড করুন';
+                // Get precisely cropped client-side canvas file
+                const croppedFile = await getAvatarCroppedBlob();
+                const fileToUpload = croppedFile || avatarEditorState.file;
+
+                const formData = new FormData();
+                formData.append('file', fileToUpload);
+
+                const caption = document.getElementById('avatarCaptionInput')?.value?.trim();
+                if (caption) {
+                    formData.append('caption', caption);
                 }
+
+                setAvatarProgress(20, 'আপলোড শুরু হচ্ছে...');
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/v2/profile/avatar', true);
+                xhr.withCredentials = true;
+
+                const authHeaders = getAuthHeaders();
+                for (const key in authHeaders) {
+                    if (key.toLowerCase() !== 'content-type') {
+                        xhr.setRequestHeader(key, authHeaders[key]);
+                    }
+                }
+
+                xhr.upload.onprogress = function (event) {
+                    if (event.lengthComputable) {
+                        const pct = Math.min(95, Math.round((event.loaded / event.total) * 100));
+                        setAvatarProgress(pct, pct >= 90 ? 'সার্ভারে সংরক্ষণ হচ্ছে...' : `আপলোড হচ্ছে (${pct}%)...`);
+                    }
+                };
+
+                xhr.onload = function () {
+                    avatarEditorState.uploading = false;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = 'আপলোড ও সংরক্ষণ করুন ✨';
+                    }
+
+                    let data;
+                    try {
+                        data = JSON.parse(xhr.responseText);
+                    } catch (parseErr) {
+                        data = {};
+                    }
+
+                    if (xhr.status >= 200 && xhr.status < 300 && (data.success || data.status === 'success')) {
+                        setAvatarProgress(100, 'সম্পন্ন হয়েছে ✓');
+                        const newAvatarUrl = (data.data && data.data.avatar_url) ? (data.data.avatar_url + '?v=' + Date.now()) : '';
+                        if (newAvatarUrl) {
+                            const avatarImg = document.getElementById('profileAvatarImg');
+                            if (avatarImg) avatarImg.src = newAvatarUrl;
+                            const miniThumb = document.getElementById('avmMiniAvatarThumb');
+                            if (miniThumb) miniThumb.src = newAvatarUrl;
+                            const currPreview = document.getElementById('avmCurrentPreview');
+                            if (currPreview) currPreview.src = newAvatarUrl;
+                            document.querySelectorAll('.user-avatar, .nav-avatar, img.avatar-img').forEach(el => el.src = newAvatarUrl);
+                        }
+
+                        if (typeof showToast === 'function') {
+                            showToast('✓ প্রোফাইল ছবি সফলভাবে আপডেট হয়েছে!');
+                        } else {
+                            alert(data.message || 'প্রোফাইল ছবি সফলভাবে আপডেট করা হয়েছে।');
+                        }
+
+                        closeAvatarModal();
+                        setTimeout(() => window.location.reload(), 450);
+                    } else {
+                        setAvatarProgress(null);
+                        const errorMsg = data.errors?.file?.[0]
+                            || data.errors?.caption?.[0]
+                            || data.message
+                            || 'ছবি আপলোড সফল হয়নি। আবার চেষ্টা করুন।';
+                        showAvatarError(errorMsg);
+                        if (typeof showToast === 'function') showToast(errorMsg);
+                    }
+                };
+
+                xhr.onerror = function () {
+                    avatarEditorState.uploading = false;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = 'আপলোড ও সংরক্ষণ করুন ✨';
+                    }
+                    setAvatarProgress(null);
+                    showAvatarError('সার্ভার যোগাযোগ ত্রুটি। অনুগ্রহ করে ইন্টারনেট সংযোগ চেক করুন।');
+                };
+
+                xhr.send(formData);
             } catch (err) {
                 console.error(err);
-                alert('ছবি আপলোড ত্রুটি।');
-                btn.disabled = false;
-                btn.innerText = 'আপলোড করুন';
+                avatarEditorState.uploading = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'আপলোড ও সংরক্ষণ করুন ✨';
+                }
+                setAvatarProgress(null);
+                showAvatarError('ছবি প্রসেসিংয়ে সমস্যা হয়েছে: ' + err.message);
             }
         }
 
@@ -14057,8 +15330,15 @@
                 });
                 const data = await res.json();
                 if (res.ok && (data.success || data.status === 'success')) {
-                    alert(data.message);
-                    window.location.reload();
+                    if (typeof showToast === 'function') {
+                        showToast(data.message || 'প্রোফাইল ছবি সফলভাবে মুছে ফেলা হয়েছে।');
+                    } else {
+                        alert(data.message);
+                    }
+                    const avatarImg = document.getElementById('profileAvatarImg');
+                    if (avatarImg) avatarImg.src = '/images/default-avatar.svg?v=' + Date.now();
+                    closeAvatarModal();
+                    setTimeout(() => window.location.reload(), 400);
                 } else {
                     alert(data.message || 'ছবি মুছতে সমস্যা হয়েছে।');
                 }
