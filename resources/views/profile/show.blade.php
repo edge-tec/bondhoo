@@ -302,7 +302,7 @@
         /* Profile Info Bar (Avatar + Info + Buttons) */
         .profile-main-bar {
             display: flex;
-            align-items: flex-end;
+            align-items: flex-start;
             justify-content: space-between;
             padding-bottom: 16px;
             border-bottom: 1px solid var(--fb-divider);
@@ -313,25 +313,29 @@
 
         .profile-avatar-and-names {
             display: flex;
-            align-items: flex-end;
+            align-items: flex-start;
             gap: 24px;
-            margin-top: -32px;
+            margin-top: 0;
+            flex: 1;
+            min-width: 0;
         }
 
         .avatar-wrapper {
             position: relative;
-            width: 172px;
-            height: 172px;
+            width: 168px;
+            height: 168px;
             border-radius: 50%;
             border: 5px solid var(--fb-card);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(79, 70, 229, 0.1);
             background: #ffffff;
             flex-shrink: 0;
+            margin-top: -84px;
+            z-index: 4;
             transition: box-shadow var(--transition-smooth);
         }
 
         .avatar-wrapper:hover {
-            box-shadow: 0 4px 24px rgba(79, 70, 229, 0.2), 0 0 0 2px rgba(79, 70, 229, 0.15);
+            box-shadow: 0 4px 24px rgba(79, 70, 229, 0.25), 0 0 0 2px rgba(79, 70, 229, 0.2);
         }
 
         .avatar-img {
@@ -365,7 +369,10 @@
         }
 
         .profile-names-block {
+            margin-top: 14px;
             margin-bottom: 12px;
+            flex: 1;
+            min-width: 0;
         }
 
         .profile-fullname {
@@ -412,8 +419,10 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            margin-top: 18px;
             margin-bottom: 16px;
             flex-wrap: wrap;
+            align-self: flex-start;
         }
 
         .fb-btn {
@@ -1298,19 +1307,44 @@
                 height: 240px;
             }
             .avatar-wrapper {
-                width: 120px;
-                height: 120px;
-                margin-top: -24px;
+                width: 136px;
+                height: 136px;
+                margin-top: -68px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .profile-avatar-and-names {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 8px;
+                width: 100%;
+            }
+            .profile-names-block {
+                margin-top: 4px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                width: 100%;
+            }
+            .profile-names-block > div {
+                justify-content: center;
             }
             .profile-fullname {
-                font-size: 22px;
+                font-size: 24px;
+                justify-content: center;
             }
             .profile-main-bar {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: center;
+                text-align: center;
             }
             .profile-actions-bar {
                 width: 100%;
+                justify-content: center;
+                margin-top: 12px;
+                margin-bottom: 12px;
             }
         }
 
@@ -3029,19 +3063,25 @@
                 border-bottom-right-radius: 0;
             }
             .avatar-wrapper {
-                width: 128px;
-                height: 128px;
+                width: 136px;
+                height: 136px;
+                margin-top: -68px;
+                margin-left: auto;
+                margin-right: auto;
                 border-width: 4px;
             }
             .profile-fullname {
                 font-size: 24px;
+                justify-content: center;
             }
             .profile-main-bar {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: center;
+                text-align: center;
             }
             .profile-actions-bar {
                 width: 100%;
+                justify-content: center;
             }
             header {
                 height: 56px;
@@ -3222,9 +3262,7 @@
                          style="object-position: center {{ $user->profile->cover_position_y ?? 50 }}%; cursor:pointer;"
                          onclick="handleCoverClick(event)">
                 @else
-                    <div id="coverFallback" style="width:100%;height:100%;background: var(--fb-cover-gradient);display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:700;letter-spacing:1px;">
-                        {{ $profile['name'] }}
-                    </div>
+                    <div id="coverFallback" style="width:100%;height:100%;background: var(--fb-cover-gradient);"></div>
                 @endif
 
                 <!-- Live Cover Repositioning Floating Top Bar -->
@@ -12822,8 +12860,7 @@
             if (container && !document.getElementById('coverFallback')) {
                 const fb = document.createElement('div');
                 fb.id = 'coverFallback';
-                fb.style.cssText = 'width:100%;height:100%;background: var(--fb-cover-gradient);display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:700;letter-spacing:1px;';
-                fb.textContent = @js($profile['name'] ?? '');
+                fb.style.cssText = 'width:100%;height:100%;background: var(--fb-cover-gradient);';
                 container.insertBefore(fb, container.firstChild);
             }
             coverInitialPosY = 50;
