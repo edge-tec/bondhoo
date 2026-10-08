@@ -213,16 +213,16 @@
 
         <!-- Navigation Tabs -->
         <div class="tabs-header">
-            <button class="tab-btn active" onclick="switchTab('users')">👥 ব্যবহারকারী তালিকা</button>
-            <button class="tab-btn" onclick="switchTab('sessions')">💻 সক্রিয় সেশন (Revoke)</button>
-            <button class="tab-btn" onclick="switchTab('failed')">🛡️ ব্যর্থ লগইন মনিটর</button>
-            <button class="tab-btn" onclick="switchTab('otps')">📱 ওটিপি অডিট লগ</button>
-            <button class="tab-btn" onclick="switchTab('emails')">✉️ ইমেইল ভেরিফিকেশন লগ</button>
-            <button class="tab-btn" onclick="switchTab('passwords')">🔑 পাসওয়ার্ড রিসেট লগ</button>
-            <button class="tab-btn" onclick="switchTab('analytics')">📊 লগইন অ্যানালিটিক্স</button>
-            <button class="tab-btn" onclick="switchTab('audits')">📜 অডিট ট্রেইল</button>
-            <button class="tab-btn" onclick="switchTab('media')">📹 মিডিয়া ও রিসোর্স কন্ট্রোল</button>
-            <button class="tab-btn" onclick="switchTab('smtp')">📧 SMTP ও ইমেইল ম্যানেজমেন্ট</button>
+            <button class="tab-btn active" data-tab="users" onclick="switchTab('users')">👥 ব্যবহারকারী তালিকা</button>
+            <button class="tab-btn" data-tab="sessions" onclick="switchTab('sessions')">💻 সক্রিয় সেশন (Revoke)</button>
+            <button class="tab-btn" data-tab="failed" onclick="switchTab('failed')">🛡️ ব্যর্থ লগইন মনিটর</button>
+            <button class="tab-btn" data-tab="otps" onclick="switchTab('otps')">📱 ওটিপি অডিট লগ</button>
+            <button class="tab-btn" data-tab="emails" onclick="switchTab('emails')">✉️ ইমেইল ভেরিফিকেশন লগ</button>
+            <button class="tab-btn" data-tab="passwords" onclick="switchTab('passwords')">🔑 পাসওয়ার্ড রিসেট লগ</button>
+            <button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics')">📊 লগইন অ্যানালিটিক্স</button>
+            <button class="tab-btn" data-tab="audits" onclick="switchTab('audits')">📜 অডিট ট্রেইল</button>
+            <button class="tab-btn" data-tab="media" onclick="switchTab('media')">📹 মিডিয়া ও রিসোর্স কন্ট্রোল</button>
+            <button class="tab-btn" data-tab="smtp" onclick="switchTab('smtp')">📧 SMTP ও ইমেইল ম্যানেজমেন্ট</button>
         </div>
 
         <!-- TAB 1: USERS -->
@@ -545,7 +545,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                         <h3 style="font-size: 16px; font-weight: 800; color: #1e293b;">⚙️ SMTP সার্ভার কনফিগারেশন</h3>
                         <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer;">
-                            <input type="checkbox" id="smtpIsEnabled" style="width: 18px; height: 18px;"> ইমেইল সিস্টেম সক্রিয়
+                            <input type="checkbox" id="smtpIsEnabled" style="width: 18px; height: 18px;" {{ !empty($smtpSettings['is_enabled']) ? 'checked' : '' }}> ইমেইল সিস্টেম সক্রিয়
                         </label>
                     </div>
 
@@ -553,22 +553,22 @@
                         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">SMTP Host *</label>
-                                <input type="text" id="smtpHost" class="search-input" style="width: 100%;" placeholder="e.g. mail.bondhoo.com" required>
+                                <input type="text" id="smtpHost" class="search-input" style="width: 100%;" placeholder="e.g. mail.bondhoo.com" value="{{ $smtpSettings['mail_host'] ?? '' }}" required>
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Port *</label>
-                                <input type="number" id="smtpPort" class="search-input" style="width: 100%;" placeholder="587" required>
+                                <input type="number" id="smtpPort" class="search-input" style="width: 100%;" placeholder="587" value="{{ $smtpSettings['mail_port'] ?? 587 }}" required>
                             </div>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Username</label>
-                                <input type="text" id="smtpUsername" class="search-input" style="width: 100%;" placeholder="SMTP Username">
+                                <input type="text" id="smtpUsername" class="search-input" style="width: 100%;" placeholder="SMTP Username" value="{{ $smtpSettings['mail_username'] ?? '' }}">
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Password</label>
-                                <input type="password" id="smtpPassword" class="search-input" style="width: 100%;" placeholder="নতুন পাসওয়ার্ড দিন...">
+                                <input type="password" id="smtpPassword" class="search-input" style="width: 100%;" placeholder="{{ !empty($smtpSettings['has_password']) ? '•••••••• (সংরক্ষিত - পরিবর্তন করতে নতুন দিন)' : 'নতুন পাসওয়ার্ড দিন...' }}">
                             </div>
                         </div>
 
@@ -576,42 +576,42 @@
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Encryption</label>
                                 <select id="smtpEncryption" class="filter-select" style="width: 100%;">
-                                    <option value="tls">TLS (STARTTLS / 587)</option>
-                                    <option value="ssl">SSL (Port 465)</option>
-                                    <option value="none">None (Unencrypted)</option>
+                                    <option value="tls" {{ ($smtpSettings['mail_encryption'] ?? 'tls') === 'tls' ? 'selected' : '' }}>TLS (STARTTLS / 587)</option>
+                                    <option value="ssl" {{ ($smtpSettings['mail_encryption'] ?? '') === 'ssl' ? 'selected' : '' }}>SSL (Port 465)</option>
+                                    <option value="none" {{ ($smtpSettings['mail_encryption'] ?? '') === 'none' ? 'selected' : '' }}>None (Unencrypted)</option>
                                 </select>
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Timeout (সেকেন্ড)</label>
-                                <input type="number" id="smtpTimeout" class="search-input" style="width: 100%;" value="30" min="5" max="120">
+                                <input type="number" id="smtpTimeout" class="search-input" style="width: 100%;" value="{{ $smtpSettings['timeout'] ?? 30 }}" min="5" max="120">
                             </div>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">From Email *</label>
-                                <input type="email" id="smtpFromAddress" class="search-input" style="width: 100%;" placeholder="noreply@bondhoo.com" required>
+                                <input type="email" id="smtpFromAddress" class="search-input" style="width: 100%;" placeholder="noreply@bondhoo.com" value="{{ $smtpSettings['mail_from_address'] ?? '' }}" required>
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">From Name *</label>
-                                <input type="text" id="smtpFromName" class="search-input" style="width: 100%;" placeholder="Bondhoo" required>
+                                <input type="text" id="smtpFromName" class="search-input" style="width: 100%;" placeholder="Bondhoo" value="{{ $smtpSettings['mail_from_name'] ?? 'Bondhoo' }}" required>
                             </div>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Reply-To Email</label>
-                                <input type="email" id="smtpReplyTo" class="search-input" style="width: 100%;" placeholder="support@bondhoo.com">
+                                <input type="email" id="smtpReplyTo" class="search-input" style="width: 100%;" placeholder="support@bondhoo.com" value="{{ $smtpSettings['mail_reply_to'] ?? '' }}">
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Rate Limit (প্রতি মিনিটে)</label>
-                                <input type="number" id="smtpRateLimit" class="search-input" style="width: 100%;" value="60" min="1" max="1000">
+                                <input type="number" id="smtpRateLimit" class="search-input" style="width: 100%;" value="{{ $smtpSettings['rate_limit_per_minute'] ?? 60 }}" min="1" max="1000">
                             </div>
                         </div>
 
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
-                                <input type="checkbox" id="smtpAuth" checked> SMTP Authentication
+                                <input type="checkbox" id="smtpAuth" {{ ($smtpSettings['smtp_auth'] ?? true) ? 'checked' : '' }}> SMTP Authentication
                             </label>
                             <button type="submit" id="btnSaveSmtp" class="btn-export">সংরক্ষণ ও কার্যকর করুন 💾</button>
                         </div>
@@ -730,13 +730,25 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadAll();
-        });
-
-        function loadAll() {
             loadStats();
-            loadUsers();
-        }
+
+            let initialTab = 'users';
+            const hash = window.location.hash ? window.location.hash.replace('#', '').toLowerCase() : '';
+            const validTabs = ['users', 'sessions', 'failed', 'otps', 'emails', 'passwords', 'analytics', 'audits', 'media', 'smtp'];
+
+            if (hash && validTabs.includes(hash)) {
+                initialTab = hash;
+            } else {
+                try {
+                    const saved = localStorage.getItem('admin_active_tab');
+                    if (saved && validTabs.includes(saved)) {
+                        initialTab = saved;
+                    }
+                } catch (e) {}
+            }
+
+            switchTab(initialTab);
+        });
 
         let globalStatsData = null;
 
@@ -788,10 +800,24 @@
 
         // --- TAB SWITCHING ---
         function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+            const validTabs = ['users', 'sessions', 'failed', 'otps', 'emails', 'passwords', 'analytics', 'audits', 'media', 'smtp'];
+            if (!validTabs.includes(tab)) {
+                tab = 'users';
+            }
 
-            ['users', 'sessions', 'failed', 'otps', 'emails', 'passwords', 'analytics', 'audits', 'media', 'smtp'].forEach(t => {
+            try {
+                localStorage.setItem('admin_active_tab', tab);
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, null, '#' + tab);
+                }
+            } catch (e) {}
+
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                const matches = b.dataset.tab === tab || b.getAttribute('onclick')?.includes(`'${tab}'`);
+                b.classList.toggle('active', !!matches);
+            });
+
+            validTabs.forEach(t => {
                 const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
                 if (el) el.style.display = (t === tab) ? 'block' : 'none';
             });
@@ -1235,6 +1261,19 @@
             smtpLogSearchTimeout = setTimeout(loadSmtpLogs, 350);
         }
 
+        async function fetchAdminSmtp(path, options = {}) {
+            const headers = {
+                ...getAuthHeaders(),
+                ...(options.headers || {})
+            };
+            const fetchOpts = { ...options, headers };
+            let res = await fetch('/admin' + path, fetchOpts);
+            if ((res.status === 401 || res.status === 404) && !path.startsWith('/api/')) {
+                res = await fetch('/api/v2/admin' + path, fetchOpts);
+            }
+            return res;
+        }
+
         async function loadSmtpTab() {
             await Promise.all([
                 loadSmtpStats(),
@@ -1246,7 +1285,7 @@
 
         async function loadSmtpStats() {
             try {
-                const res = await fetch('/admin/smtp/stats', { headers: getAuthHeaders() });
+                const res = await fetchAdminSmtp('/smtp/stats');
                 const json = await res.json();
                 if (json.success && json.data) {
                     const d = json.data;
@@ -1265,23 +1304,27 @@
 
         async function loadSmtpSettings() {
             try {
-                const res = await fetch('/admin/smtp/settings', { headers: getAuthHeaders() });
+                const res = await fetchAdminSmtp('/smtp/settings');
                 const json = await res.json();
                 if (json.success && json.data) {
                     const s = json.data;
-                    document.getElementById('smtpHost').value = s.mail_host || '';
-                    document.getElementById('smtpPort').value = s.mail_port || 587;
-                    document.getElementById('smtpUsername').value = s.mail_username || '';
-                    document.getElementById('smtpPassword').placeholder = s.has_password ? '•••••••• (সংরক্ষিত)' : 'পাসওয়ার্ড লিখুন...';
+                    if (s.mail_host !== undefined && s.mail_host !== null) document.getElementById('smtpHost').value = s.mail_host;
+                    if (s.mail_port !== undefined && s.mail_port !== null) document.getElementById('smtpPort').value = s.mail_port;
+                    if (s.mail_username !== undefined) document.getElementById('smtpUsername').value = s.mail_username || '';
+                    if (s.has_password) {
+                        document.getElementById('smtpPassword').placeholder = '•••••••• (সংরক্ষিত - পরিবর্তন করতে নতুন দিন)';
+                    } else {
+                        document.getElementById('smtpPassword').placeholder = 'নতুন পাসওয়ার্ড দিন...';
+                    }
                     document.getElementById('smtpPassword').value = '';
-                    document.getElementById('smtpEncryption').value = s.mail_encryption || 'tls';
-                    document.getElementById('smtpFromAddress').value = s.mail_from_address || '';
-                    document.getElementById('smtpFromName').value = s.mail_from_name || 'Bondhoo';
-                    document.getElementById('smtpReplyTo').value = s.mail_reply_to || '';
-                    document.getElementById('smtpTimeout').value = s.timeout || 30;
-                    document.getElementById('smtpRateLimit').value = s.rate_limit_per_minute || 60;
-                    document.getElementById('smtpIsEnabled').checked = !!s.is_enabled;
-                    document.getElementById('smtpAuth').checked = s.smtp_auth !== false;
+                    if (s.mail_encryption) document.getElementById('smtpEncryption').value = s.mail_encryption;
+                    if (s.mail_from_address !== undefined && s.mail_from_address !== null) document.getElementById('smtpFromAddress').value = s.mail_from_address;
+                    if (s.mail_from_name !== undefined && s.mail_from_name !== null) document.getElementById('smtpFromName').value = s.mail_from_name;
+                    if (s.mail_reply_to !== undefined) document.getElementById('smtpReplyTo').value = s.mail_reply_to || '';
+                    if (s.timeout) document.getElementById('smtpTimeout').value = s.timeout;
+                    if (s.rate_limit_per_minute) document.getElementById('smtpRateLimit').value = s.rate_limit_per_minute;
+                    if (s.is_enabled !== undefined) document.getElementById('smtpIsEnabled').checked = !!s.is_enabled;
+                    if (s.smtp_auth !== undefined) document.getElementById('smtpAuth').checked = s.smtp_auth !== false;
                 }
             } catch (err) {
                 console.error('Failed to load SMTP settings:', err);
@@ -1294,14 +1337,40 @@
             btn.innerText = 'সংরক্ষণ হচ্ছে... ⏳';
             btn.disabled = true;
 
+            const host = document.getElementById('smtpHost').value.trim();
+            const port = parseInt(document.getElementById('smtpPort').value);
+            const fromAddr = document.getElementById('smtpFromAddress').value.trim();
+            const fromName = document.getElementById('smtpFromName').value.trim();
+            const username = document.getElementById('smtpUsername').value.trim();
+            const replyTo = document.getElementById('smtpReplyTo').value.trim();
+
+            if (!host) {
+                alert('SMTP Host আবশ্যক।');
+                btn.innerText = originalText;
+                btn.disabled = false;
+                return;
+            }
+            if (!port) {
+                alert('Port আবশ্যক।');
+                btn.innerText = originalText;
+                btn.disabled = false;
+                return;
+            }
+            if (!fromAddr) {
+                alert('From Email আবশ্যক।');
+                btn.innerText = originalText;
+                btn.disabled = false;
+                return;
+            }
+
             const payload = {
-                mail_host: document.getElementById('smtpHost').value.trim(),
-                mail_port: parseInt(document.getElementById('smtpPort').value),
-                mail_username: document.getElementById('smtpUsername').value.trim(),
+                mail_host: host,
+                mail_port: port,
+                mail_username: username ? username : null,
                 mail_encryption: document.getElementById('smtpEncryption').value,
-                mail_from_address: document.getElementById('smtpFromAddress').value.trim(),
-                mail_from_name: document.getElementById('smtpFromName').value.trim(),
-                mail_reply_to: document.getElementById('smtpReplyTo').value.trim(),
+                mail_from_address: fromAddr,
+                mail_from_name: fromName || 'Bondhoo',
+                mail_reply_to: replyTo ? replyTo : null,
                 timeout: parseInt(document.getElementById('smtpTimeout').value) || 30,
                 rate_limit_per_minute: parseInt(document.getElementById('smtpRateLimit').value) || 60,
                 is_enabled: document.getElementById('smtpIsEnabled').checked,
@@ -1314,21 +1383,22 @@
             }
 
             try {
-                const res = await fetch('/admin/smtp/settings', {
+                const res = await fetchAdminSmtp('/smtp/settings', {
                     method: 'POST',
-                    headers: {
-                        ...getAuthHeaders(),
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 const json = await res.json();
-                if (json.success) {
+                if (res.ok && json.success) {
                     alert('SMTP সেটিংস সফলভাবে সংরক্ষিত ও কার্যকর করা হয়েছে! ✅');
-                    loadSmtpSettings();
-                    loadSmtpStats();
+                    await loadSmtpSettings();
+                    await loadSmtpStats();
                 } else {
-                    alert('ত্রুটি: ' + (json.message || 'সংরক্ষণ ব্যর্থ হয়েছে।'));
+                    let errMsg = json.message || 'সংরক্ষণ ব্যর্থ হয়েছে।';
+                    if (json.errors) {
+                        errMsg += '\n' + Object.values(json.errors).flat().join('\n');
+                    }
+                    alert('ত্রুটি: ' + errMsg);
                 }
             } catch (err) {
                 alert('অনুরোধ ব্যর্থ হয়েছে: ' + err.message);
@@ -1358,11 +1428,12 @@
             resultBox.style.color = '#1e40af';
             resultBox.innerHTML = `<strong>সংযোগ পরীক্ষা চলছে...</strong><br>সার্ভার ${document.getElementById('smtpHost').value}:${document.getElementById('smtpPort').value}-এ টেস্ট ইমেইল প্রেরণ করা হচ্ছে...`;
 
+            const username = document.getElementById('smtpUsername').value.trim();
             const payload = {
                 to_email: recipient,
                 mail_host: document.getElementById('smtpHost').value.trim(),
                 mail_port: parseInt(document.getElementById('smtpPort').value),
-                mail_username: document.getElementById('smtpUsername').value.trim(),
+                mail_username: username ? username : null,
                 mail_encryption: document.getElementById('smtpEncryption').value,
                 mail_from_address: document.getElementById('smtpFromAddress').value.trim(),
                 mail_from_name: document.getElementById('smtpFromName').value.trim()
@@ -1373,17 +1444,14 @@
             }
 
             try {
-                const res = await fetch('/admin/smtp/test', {
+                const res = await fetchAdminSmtp('/smtp/test', {
                     method: 'POST',
-                    headers: {
-                        ...getAuthHeaders(),
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 const json = await res.json();
 
-                if (json.success) {
+                if (res.ok && json.success) {
                     resultBox.style.background = '#f0fdf4';
                     resultBox.style.borderColor = '#86efac';
                     resultBox.style.color = '#166534';
@@ -1398,7 +1466,7 @@
                     resultBox.style.color = '#991b1b';
                     resultBox.innerHTML = `
                         <strong>❌ ব্যর্থ! SMTP সংযোগে সমস্যা:</strong><br>
-                        ${json.message}<br>
+                        ${json.message || 'সংযোগ স্থাপন করা সম্ভব হয়নি।'}<br>
                         <small style="opacity: 0.85;">অনুগ্রহ করে হোস্ট, পোর্ট, পাসওয়ার্ড বা এনক্রিপশন মোড যাচাই করুন।</small>
                     `;
                 }
@@ -1418,7 +1486,7 @@
         async function loadSmtpTemplates() {
             const container = document.getElementById('smtpTemplatesGrid');
             try {
-                const res = await fetch('/admin/smtp/templates', { headers: getAuthHeaders() });
+                const res = await fetchAdminSmtp('/smtp/templates');
                 const json = await res.json();
                 const list = json.data || [];
 
@@ -1454,8 +1522,8 @@
             const status = document.getElementById('smtpLogStatusFilter')?.value || '';
 
             try {
-                let url = `/admin/smtp/logs?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`;
-                const res = await fetch(url, { headers: getAuthHeaders() });
+                let url = `/smtp/logs?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`;
+                const res = await fetchAdminSmtp(url);
                 const json = await res.json();
                 const paginated = json.data || {};
                 const logs = paginated.data || [];
@@ -1502,12 +1570,11 @@
         async function retryEmailLog(id) {
             if (!confirm('আপনি কি নিশ্চিত যে এই ইমেইলটি পুনরায় পাঠাতে চান?')) return;
             try {
-                const res = await fetch(`/admin/smtp/logs/${id}/retry`, {
-                    method: 'POST',
-                    headers: getAuthHeaders()
+                const res = await fetchAdminSmtp(`/smtp/logs/${id}/retry`, {
+                    method: 'POST'
                 });
                 const json = await res.json();
-                if (json.success) {
+                if (res.ok && json.success) {
                     alert('ইমেইল সফলভাবে পুনরায় পাঠানো হয়েছে! ✅');
                     loadSmtpStats();
                     loadSmtpLogs();

@@ -48,6 +48,16 @@ class EmailManagementController extends Controller
      */
     public function updateSettings(Request $request): JsonResponse
     {
+        if ($request->has('mail_encryption') && is_string($request->input('mail_encryption'))) {
+            $request->merge(['mail_encryption' => strtolower(trim($request->input('mail_encryption')))]);
+        }
+        if ($request->has('mail_reply_to') && trim((string) $request->input('mail_reply_to')) === '') {
+            $request->merge(['mail_reply_to' => null]);
+        }
+        if ($request->has('mail_username') && trim((string) $request->input('mail_username')) === '') {
+            $request->merge(['mail_username' => null]);
+        }
+
         $validated = $request->validate([
             'mail_mailer' => ['nullable', 'string', 'max:50'],
             'mail_host' => ['required', 'string', 'max:255'],

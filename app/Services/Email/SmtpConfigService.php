@@ -56,15 +56,15 @@ class SmtpConfigService
         $updateData = [
             'mail_mailer' => $data['mail_mailer'] ?? 'smtp',
             'mail_host' => $data['mail_host'] ?? $setting->mail_host,
-            'mail_port' => isset($data['mail_port']) ? (int) $data['mail_port'] : $setting->mail_port,
-            'mail_username' => $data['mail_username'] ?? $setting->mail_username,
-            'mail_encryption' => $data['mail_encryption'] ?? $setting->mail_encryption ?? 'tls',
+            'mail_port' => isset($data['mail_port']) ? (int) $data['mail_port'] : ($setting->mail_port ?? 587),
+            'mail_username' => array_key_exists('mail_username', $data) ? $data['mail_username'] : $setting->mail_username,
+            'mail_encryption' => $data['mail_encryption'] ?? ($setting->mail_encryption ?: 'tls'),
             'mail_from_address' => $data['mail_from_address'] ?? $setting->mail_from_address,
-            'mail_from_name' => $data['mail_from_name'] ?? $setting->mail_from_name,
-            'mail_reply_to' => $data['mail_reply_to'] ?? $setting->mail_reply_to,
+            'mail_from_name' => $data['mail_from_name'] ?? ($setting->mail_from_name ?: 'Bondhoo'),
+            'mail_reply_to' => array_key_exists('mail_reply_to', $data) ? $data['mail_reply_to'] : $setting->mail_reply_to,
             'smtp_auth' => isset($data['smtp_auth']) ? (bool) $data['smtp_auth'] : true,
-            'timeout' => isset($data['timeout']) ? (int) $data['timeout'] : 30,
-            'rate_limit_per_minute' => isset($data['rate_limit_per_minute']) ? (int) $data['rate_limit_per_minute'] : 60,
+            'timeout' => isset($data['timeout']) ? (int) $data['timeout'] : ($setting->timeout ?? 30),
+            'rate_limit_per_minute' => isset($data['rate_limit_per_minute']) ? (int) $data['rate_limit_per_minute'] : ($setting->rate_limit_per_minute ?? 60),
             'is_enabled' => isset($data['is_enabled']) ? (bool) $data['is_enabled'] : true,
         ];
 
@@ -78,6 +78,7 @@ class SmtpConfigService
 
         Cache::forget(self::CACHE_KEY);
         $this->applyToMailer($setting);
+        $this->syncToEnvFile($setting);
 
         return $setting;
     }
@@ -242,5 +243,57 @@ class SmtpConfigService
             'is_enabled' => $setting->is_enabled,
             'updated_at' => $setting->updated_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Safely synchronize SMTP settings to the .env file if writable.
+     */
+    protected function syncToEnvFile(SmtpSetting $setting): void
+    {
+        try {
+            $envPath = base_path('.env');
+            if (! file_exists($envPath) || ! is_writable($envPath)) {
+                return;
+            }
+
+            $content = file_get_contents($envPath);
+            if ($content === false) {
+                return;
+            }
+
+            $encryption = $setting->mail_encryption;
+            if (in_array(strtolower((string) $encryption), ['none', 'null', ''], true)) {
+                $encryption = 'null';
+            }
+
+            $decryptedPassword = $setting->getDecryptedPassword();
+
+            $envUpdates = [
+                'MAIL_MAILER' => $setting->is_enabled ? 'smtp' : 'log',
+                'MAIL_HOST' => $setting->mail_host ?? '127.0.0.1',
+                'MAIL_PORT' => (string) ($setting->mail_port ?? 587),
+                'MAIL_USERNAME' => $setting->mail_username ?: 'null',
+                'MAIL_ENCRYPTION' => $encryption ?: 'null',
+                'MAIL_FROM_ADDRESS' => '"'.($setting->mail_from_address ?: 'noreply@bondhoo.com').'"',
+                'MAIL_FROM_NAME' => '"'.($setting->mail_from_name ?: 'Bondhoo').'"',
+            ];
+
+            if (! empty($decryptedPassword)) {
+                $envUpdates['MAIL_PASSWORD'] = '"'.addcslashes($decryptedPassword, '"$').'"';
+            }
+
+            foreach ($envUpdates as $key => $val) {
+                $pattern = "/^{$key}=.*/m";
+                if (preg_match($pattern, $content)) {
+                    $content = preg_replace($pattern, "{$key}={$val}", $content);
+                } else {
+                    $content .= PHP_EOL."{$key}={$val}";
+                }
+            }
+
+            file_put_contents($envPath, $content, LOCK_EX);
+        } catch (\Throwable $e) {
+            Log::warning('SMTP settings .env file sync skipped: '.$e->getMessage());
+        }
     }
 }

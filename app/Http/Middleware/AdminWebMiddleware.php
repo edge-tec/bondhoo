@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Admin;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +22,18 @@ class AdminWebMiddleware
         $webUser = Auth::guard('web')->user();
         $isWebAdmin = $webUser && method_exists($webUser, 'isAdmin') && $webUser->isAdmin();
 
-        if ($isAdminGuard || $isWebAdmin) {
+        // Also recognize Sanctum authenticated administrator if Bearer token is provided
+        $sanctumUser = null;
+        if (! $isAdminGuard && ! $isWebAdmin && $request->bearerToken()) {
+            $sanctumUser = Auth::guard('sanctum')->user();
+        }
+        $isAdminSanctum = $sanctumUser && (
+            $sanctumUser instanceof Admin
+            || (method_exists($sanctumUser, 'isAdmin') && $sanctumUser->isAdmin())
+            || (method_exists($sanctumUser, 'hasRole') && ($sanctumUser->hasRole('ADMIN') || $sanctumUser->hasRole('SUPER_ADMIN')))
+        );
+
+        if ($isAdminGuard || $isWebAdmin || $isAdminSanctum) {
             return $next($request);
         }
 

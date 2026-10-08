@@ -19,6 +19,7 @@ use App\Http\Controllers\Web\WatchWebController;
 use App\Http\Requests\Auth\RegisterV2Request;
 use App\Models\User;
 use App\Services\AuthServiceV2;
+use App\Services\Email\SmtpConfigService;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -148,8 +149,10 @@ Route::get('/suspicious-login', function () {
 
 // Admin Authentication & System Management Console (Strict RBAC Protected)
 Route::middleware(['admin.web'])->group(function () {
-    Route::get('/admin/auth-management', function () {
-        return view('admin.auth.dashboard');
+    Route::get('/admin/auth-management', function (SmtpConfigService $smtpConfigService) {
+        $smtpSettings = $smtpConfigService->getSafeSettings();
+
+        return view('admin.auth.dashboard', compact('smtpSettings'));
     })->name('admin.auth.dashboard');
 
     Route::get('/admin/system/dashboard', function () {
