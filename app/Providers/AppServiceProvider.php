@@ -25,6 +25,7 @@ use App\Services\Contracts\MessengerServiceInterface;
 use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\Contracts\QueueServiceInterface;
 use App\Services\Contracts\RealtimeServiceInterface;
+use App\Services\Email\SmtpConfigService;
 use App\Services\MediaProcessingService;
 use App\Services\MediaStorageService;
 use App\Services\MessengerService;
@@ -64,6 +65,12 @@ class AppServiceProvider extends ServiceProvider
         if (class_exists(DevCommands::class) && config('queue.default') !== 'redis') {
             DevCommands::except('horizon');
             DevCommands::artisan('queue:listen --tries=1 --timeout=0', 'queue');
+        }
+
+        try {
+            app(SmtpConfigService::class)->applyToMailer();
+        } catch (\Throwable) {
+            // Failsafe during initial install, migrations, or CLI cache commands
         }
 
         Gate::policy(Page::class, PagePolicy::class);
