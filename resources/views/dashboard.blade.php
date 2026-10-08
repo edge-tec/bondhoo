@@ -85,16 +85,14 @@
         .fb-logo {
             width: 40px;
             height: 40px;
-            border-radius: 50%;
-            background: var(--fb-primary);
+            border-radius: 10px;
+            background: transparent !important;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: 800;
-            font-size: 24px;
+            color: inherit;
             text-decoration: none;
-            box-shadow: 0 2px 6px rgba(24, 119, 242, 0.3);
+            box-shadow: none !important;
             flex-shrink: 0;
         }
 

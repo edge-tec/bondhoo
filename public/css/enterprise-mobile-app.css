@@ -962,8 +962,16 @@ button, a, input, select, textarea, [role="button"] {
 
     .profile-actions-bar {
         width: 100% !important;
-        justify-content: center !important;
-        flex-wrap: wrap !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .profile-actions-row {
+        display: flex !important;
+        width: 100% !important;
+        gap: 8px !important;
+        align-items: stretch !important;
     }
 
     .profile-nav-tabs {

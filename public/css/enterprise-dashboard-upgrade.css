@@ -116,18 +116,18 @@ header {
 .fb-logo {
     width: 42px !important;
     height: 42px !important;
-    border-radius: 12px !important;
-    background: var(--jj-primary-gradient) !important;
-    box-shadow: 0 4px 14px rgba(24, 119, 242, 0.35) !important;
+    border-radius: 10px !important;
+    background: transparent !important;
+    box-shadow: none !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    color: white !important;
+    color: inherit !important;
     transition: transform 0.2s ease !important;
 }
 
 .fb-logo:hover {
-    transform: scale(1.05) rotate(-2deg);
+    transform: scale(1.05);
 }
 
 .search-box {
