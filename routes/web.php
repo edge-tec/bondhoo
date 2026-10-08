@@ -17,9 +17,11 @@ use App\Http\Controllers\Web\ProfileWebController;
 use App\Http\Controllers\Web\TwoFactorWebController;
 use App\Http\Controllers\Web\WatchWebController;
 use App\Http\Requests\Auth\RegisterV2Request;
+use App\Models\Admin;
 use App\Models\User;
 use App\Services\AuthServiceV2;
 use App\Services\Email\SmtpConfigService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -164,7 +166,17 @@ Route::middleware(['admin.web'])->group(function () {
     Route::get('/admin/auth-management', function (SmtpConfigService $smtpConfigService) {
         $smtpSettings = $smtpConfigService->getSafeSettings();
 
-        return view('admin.auth.dashboard', compact('smtpSettings'));
+        /** @var Admin|User|null $admin */
+        $admin = Auth::guard('admin')->user()
+            ?? Auth::guard('web')->user();
+
+        $adminToken = null;
+        if ($admin && method_exists($admin, 'createToken')) {
+            $adminToken = $admin->createToken('admin_web_console', ['admin', 'manage.users', 'auth.admin'])->plainTextToken;
+            session(['admin_api_token' => $adminToken]);
+        }
+
+        return view('admin.auth.dashboard', compact('smtpSettings', 'adminToken'));
     })->name('admin.auth.dashboard');
 
     Route::get('/admin/system/dashboard', function () {

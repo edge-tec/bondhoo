@@ -34,11 +34,16 @@ class AdminWebMiddleware
         );
 
         if ($isAdminGuard || $isWebAdmin || $isAdminSanctum) {
+            $effectiveUser = Auth::guard('admin')->user() ?? $webUser ?? $sanctumUser;
+            if ($effectiveUser) {
+                $request->setUserResolver(fn () => $effectiveUser);
+            }
+
             return $next($request);
         }
 
         // If authenticated as a normal user but NOT an administrator -> 403 Forbidden
-        if ($webUser) {
+        if ($webUser || ($sanctumUser && ! $isAdminSanctum)) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'success' => false,

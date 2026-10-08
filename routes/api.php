@@ -552,7 +552,7 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
     });
 
     // Phase 7 & Step 14: Admin Authentication Management Endpoints
-    Route::prefix('admin/auth')->middleware(['auth:sanctum', 'permission:manage.users,auth.admin'])->group(function () {
+    Route::prefix('admin/auth')->middleware(['auth:sanctum,admin,web', 'permission:manage.users,auth.admin'])->group(function () {
         Route::get('/stats', [AuthManagementController::class, 'dashboardStats']);
         Route::get('/users', [AuthManagementController::class, 'users']);
         Route::get('/sessions', [AuthManagementController::class, 'sessions']);
@@ -579,7 +579,7 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
     });
 
     // Enterprise SMTP Email Management (RBAC protected)
-    Route::prefix('admin/smtp')->middleware(['auth:sanctum', 'role:ADMIN,SUPER_ADMIN'])->group(function () {
+    Route::prefix('admin/smtp')->middleware(['auth:sanctum,admin,web', 'role:ADMIN,SUPER_ADMIN'])->group(function () {
         Route::get('/settings', [EmailManagementController::class, 'getSettings']);
         Route::post('/settings', [EmailManagementController::class, 'updateSettings']);
         Route::post('/test', [EmailManagementController::class, 'testConnection'])->middleware('throttle:smtp-test');
@@ -593,7 +593,7 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
     });
 
     // Step 15: Admin Profile Verification Management (RBAC protected)
-    Route::prefix('admin/verifications')->middleware(['auth:sanctum', 'role:ADMIN,SUPER_ADMIN'])->group(function () {
+    Route::prefix('admin/verifications')->middleware(['auth:sanctum,admin,web', 'role:ADMIN,SUPER_ADMIN'])->group(function () {
         Route::get('/', [AdminVerificationV2Controller::class, 'index']);
         Route::get('/{id}', [AdminVerificationV2Controller::class, 'show'])->whereNumber('id');
         Route::post('/{id}/approve', [AdminVerificationV2Controller::class, 'approve'])->whereNumber('id');
@@ -792,7 +792,7 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
     });
 
     // Authenticated API v2 Actions
-    Route::middleware(['auth:sanctum,web'])->group(function () {
+    Route::middleware(['auth:sanctum,admin,web'])->group(function () {
         // Live Streaming actions
         Route::post('/live/channels', [LiveStreamingV2Controller::class, 'store']);
         Route::post('/live/streams', [LiveStreamingV2Controller::class, 'store']);

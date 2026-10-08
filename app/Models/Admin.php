@@ -100,7 +100,12 @@ class Admin extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'super_admin';
+        return strtolower((string) $this->role) === 'super_admin';
+    }
+
+    public function isAdmin(): bool
+    {
+        return in_array(strtolower((string) $this->role), ['super_admin', 'admin'], true);
     }
 
     public function hasRole(string|array $roles): bool
@@ -110,13 +115,14 @@ class Admin extends Authenticatable
         }
 
         $roles = is_array($roles) ? $roles : [$roles];
+        $lowerRoles = array_map('strtolower', $roles);
 
-        return in_array($this->role, $roles, true);
+        return in_array(strtolower((string) $this->role), $lowerRoles, true);
     }
 
     public function hasPermission(string $permissionName): bool
     {
-        if ($this->isSuperAdmin()) {
+        if ($this->isSuperAdmin() || strtolower((string) $this->role) === 'admin') {
             return true;
         }
 

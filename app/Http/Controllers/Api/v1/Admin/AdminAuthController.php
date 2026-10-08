@@ -475,6 +475,9 @@ class AdminAuthController extends Controller
         Auth::guard('admin')->login($admin, (bool) ($validated['remember'] ?? false));
         $request->session()->regenerate();
 
+        $apiToken = $admin->createToken('admin_web_session', ['admin', 'manage.users', 'auth.admin'])->plainTextToken;
+        $request->session()->put('admin_api_token', $apiToken);
+
         $sessionId = Str::uuid()->toString();
         AdminSession::create([
             'id' => $sessionId,

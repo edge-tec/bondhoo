@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
@@ -15,7 +16,10 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        $user = $request->user();
+        $user = $request->user()
+            ?? Auth::guard('admin')->user()
+            ?? Auth::guard('sanctum')->user()
+            ?? Auth::guard('web')->user();
 
         if (! $user) {
             if ($request->expectsJson() || $request->is('api/*')) {

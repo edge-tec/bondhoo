@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class PermissionMiddleware
@@ -15,7 +16,10 @@ class PermissionMiddleware
      */
     public function handle(Request $request, Closure $next, string ...$permissions): Response
     {
-        $user = $request->user();
+        $user = $request->user()
+            ?? Auth::guard('admin')->user()
+            ?? Auth::guard('sanctum')->user()
+            ?? Auth::guard('web')->user();
 
         if (! $user) {
             if ($request->expectsJson() || $request->is('api/*')) {
@@ -28,8 +32,15 @@ class PermissionMiddleware
             return redirect()->route('login');
         }
 
-        // Super Admin bypasses all individual permission checks
-        if ($user->hasRole('SUPER_ADMIN')) {
+        // Super Admin or Admin bypasses all individual permission checks
+        if (
+            $user->hasRole('SUPER_ADMIN')
+            || $user->hasRole('super_admin')
+            || $user->hasRole('ADMIN')
+            || $user->hasRole('admin')
+            || (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
+            || (method_exists($user, 'isAdmin') && $user->isAdmin())
+        ) {
             return $next($request);
         }
 

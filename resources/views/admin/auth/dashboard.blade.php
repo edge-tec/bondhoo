@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
     <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="admin-token" content="{{ $adminToken ?? session('admin_api_token') ?? '' }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -743,18 +744,52 @@
     </main>
 
     <script>
-        const token = localStorage.getItem('jugajug_token') || localStorage.getItem('admin_token') || '';
+        const serverAdminToken = document.querySelector('meta[name="admin-token"]')?.getAttribute('content') || @json($adminToken ?? session('admin_api_token') ?? '');
+        if (serverAdminToken) {
+            try {
+                localStorage.setItem('admin_token', serverAdminToken);
+                localStorage.setItem('jugajug_token', serverAdminToken);
+            } catch (e) {}
+        }
+        let token = serverAdminToken || localStorage.getItem('admin_token') || localStorage.getItem('jugajug_token') || '';
 
         function getAuthHeaders() {
             const h = { 'Accept': 'application/json' };
-            if (token) {
-                h['Authorization'] = 'Bearer ' + token;
+            const curToken = token || localStorage.getItem('admin_token') || localStorage.getItem('jugajug_token') || '';
+            if (curToken) {
+                h['Authorization'] = 'Bearer ' + curToken;
             }
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             if (csrf) {
                 h['X-CSRF-TOKEN'] = csrf;
             }
             return h;
+        }
+
+        async function adminFetch(url, options = {}) {
+            const headers = Object.assign({}, getAuthHeaders(), options.headers || {});
+            const opts = Object.assign({
+                credentials: 'same-origin',
+            }, options, { headers });
+            return fetch(url, opts);
+        }
+
+        async function loadAll() {
+            const refreshBtn = document.querySelector('button[onclick="loadAll()"]');
+            if (refreshBtn) {
+                refreshBtn.innerText = '⌛ রিফ্রেশ হচ্ছে...';
+                refreshBtn.disabled = true;
+            }
+            try {
+                await loadStats();
+                const activeTab = localStorage.getItem('admin_active_tab') || 'users';
+                switchTab(activeTab);
+            } finally {
+                if (refreshBtn) {
+                    refreshBtn.innerText = '🔄 রিফ্রেশ ডাটা';
+                    refreshBtn.disabled = false;
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -782,7 +817,7 @@
 
         async function loadStats() {
             try {
-                const res = await fetch('/api/v2/admin/auth/stats', { headers: getAuthHeaders() });
+                const res = await adminFetch('/api/v2/admin/auth/stats');
                 const json = await res.json();
                 if (json.success && json.data) {
                     const d = json.data;
@@ -820,6 +855,11 @@
 
                     // 8. Login Analytics
                     document.getElementById('statTotalLogins').innerText = d.login_analytics?.total ?? 0;
+
+                    const curTab = localStorage.getItem('admin_active_tab');
+                    if (curTab === 'analytics') {
+                        renderAnalytics();
+                    }
                 }
             } catch (err) {
                 console.error('Stats loading error:', err);
@@ -876,15 +916,23 @@
             const tbody = document.getElementById('usersTableBody');
 
             try {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--fb-text-secondary);">ব্যবহারকারী তালিকা লোড হচ্ছে...</td></tr>`;
+
                 let url = `/api/v2/admin/auth/users?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`;
                 if (locked) url += '&locked_only=true';
 
-                const res = await fetch(url, { headers: getAuthHeaders() });
+                const res = await adminFetch(url);
                 const json = await res.json();
-                const users = json.data?.data || [];
 
-                if (users.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px;">কোনো ব্যবহারকারী পাওয়া যায়নি।</td></tr>`;
+                if (!res.ok || json.success === false) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="color: red; text-align: center; padding: 24px; font-weight: 600;">ডাটা লোড ত্রুটি: ${json.message || res.statusText} (${res.status})</td></tr>`;
+                    return;
+                }
+
+                const users = json.data?.data || (Array.isArray(json.data) ? json.data : []);
+
+                if (!Array.isArray(users) || users.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: #64748b;">কোনো ব্যবহারকারী পাওয়া যায়নি।</td></tr>`;
                     return;
                 }
 
@@ -893,7 +941,7 @@
                         <td>#${u.id}</td>
                         <td>
                             <div class="user-cell">
-                                <div class="avatar">${(u.name || u.username).charAt(0).toUpperCase()}</div>
+                                <div class="avatar">${(u.name || u.username || 'U').charAt(0).toUpperCase()}</div>
                                 <div>
                                     <div style="font-weight: 700;">${u.name || u.username}</div>
                                     <div style="color: var(--fb-text-secondary); font-size: 11px;">@${u.username}</div>
@@ -924,16 +972,15 @@
                     </tr>
                 `).join('');
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="7" style="color: red; text-align: center; padding: 20px;">ডাটা লোড ত্রুটি: ${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="color: red; text-align: center; padding: 24px;">ডাটা লোড ত্রুটি: ${err.message}</td></tr>`;
             }
         }
 
         async function performAction(action, id) {
-            if (!confirm(`আপনি কি এই অপারেশনটি (${action}) নিশ্চিত করতে চান?`)) return;
+            if (!confirm(`আপনি কি এই операцияটি (${action}) নিশ্চিত করতে চান?`)) return;
             try {
-                const res = await fetch(`/api/v2/admin/auth/users/${id}/${action}`, {
-                    method: 'POST',
-                    headers: getAuthHeaders()
+                const res = await adminFetch(`/api/v2/admin/auth/users/${id}/${action}`, {
+                    method: 'POST'
                 });
                 const data = await res.json();
                 alert(data.message || 'অপারেশন সফল হয়েছে!');
@@ -957,14 +1004,14 @@
             const tbody = document.getElementById('sessionsTableBody');
 
             try {
-                const res = await fetch(`/api/v2/admin/auth/sessions?search=${encodeURIComponent(search)}&os=${encodeURIComponent(os)}`, {
-                    headers: getAuthHeaders()
-                });
-                const json = await res.json();
-                const list = json.data?.data || [];
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--fb-text-secondary);">সেশন তালিকা লোড হচ্ছে...</td></tr>`;
 
-                if (list.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px;">কোনো সক্রিয় সেশন নেই</td></tr>`;
+                const res = await adminFetch(`/api/v2/admin/auth/sessions?search=${encodeURIComponent(search)}&os=${encodeURIComponent(os)}`);
+                const json = await res.json();
+                const list = json.data?.data || (Array.isArray(json.data) ? json.data : []);
+
+                if (!Array.isArray(list) || list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px; color: #64748b;">কোনো সক্রিয় সেশন নেই</td></tr>`;
                     return;
                 }
 
@@ -986,7 +1033,7 @@
                     </tr>
                 `).join('');
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="8" style="color: red; text-align: center;">ত্রুটি: ${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="color: red; text-align: center; padding: 20px;">ত্রুটি: ${err.message}</td></tr>`;
             }
         }
 
@@ -994,9 +1041,8 @@
             if (!confirm(`আপনি কি এই সেশনটি (#${sessionId}) বাতিল করতে চান? ব্যবহারকারী উক্ত ডিভাইস থেকে তাৎক্ষণিকভাবে লগআউট হয়ে যাবেন।`)) return;
 
             try {
-                const res = await fetch(`/api/v2/admin/auth/sessions/${sessionId}`, {
-                    method: 'DELETE',
-                    headers: getAuthHeaders()
+                const res = await adminFetch(`/api/v2/admin/auth/sessions/${sessionId}`, {
+                    method: 'DELETE'
                 });
                 const data = await res.json();
                 alert(data.message || 'সেশন সফলভাবে বাতিল করা হয়েছে!');
@@ -1011,11 +1057,12 @@
         async function loadFailedLogins() {
             const tbody = document.getElementById('failedTableBody');
             try {
-                const res = await fetch('/api/v2/admin/auth/failed-logins', { headers: getAuthHeaders() });
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--fb-text-secondary);">লোড হচ্ছে...</td></tr>`;
+                const res = await adminFetch('/api/v2/admin/auth/failed-logins');
                 const json = await res.json();
-                const list = json.data || [];
-                if (list.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">কোনো ব্যর্থ লগইন রেকর্ড নেই</td></tr>`;
+                const list = json.data?.data || (Array.isArray(json.data) ? json.data : []);
+                if (!Array.isArray(list) || list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">কোনো ব্যর্থ লগইন রেকর্ড নেই</td></tr>`;
                     return;
                 }
                 tbody.innerHTML = list.map(f => `
@@ -1029,7 +1076,7 @@
                     </tr>
                 `).join('');
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="6" style="color: red; text-align: center;">ত্রুটি</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="color: red; text-align: center; padding: 20px;">ত্রুটি: ${err.message}</td></tr>`;
             }
         }
 
@@ -1046,13 +1093,12 @@
             const purpose = document.getElementById('otpPurposeFilter')?.value || '';
 
             try {
-                const res = await fetch(`/api/v2/admin/auth/otp-logs?search=${encodeURIComponent(search)}&purpose=${encodeURIComponent(purpose)}`, {
-                    headers: getAuthHeaders()
-                });
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--fb-text-secondary);">লোড হচ্ছে...</td></tr>`;
+                const res = await adminFetch(`/api/v2/admin/auth/otp-logs?search=${encodeURIComponent(search)}&purpose=${encodeURIComponent(purpose)}`);
                 const json = await res.json();
-                const list = json.data?.data || [];
-                if (list.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">কোনো ওটিপি রেকর্ড পাওয়া যায়নি</td></tr>`;
+                const list = json.data?.data || (Array.isArray(json.data) ? json.data : []);
+                if (!Array.isArray(list) || list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">কোনো ওটিপি রেকর্ড পাওয়া যায়নি</td></tr>`;
                     return;
                 }
                 tbody.innerHTML = list.map(o => `
@@ -1066,7 +1112,7 @@
                     </tr>
                 `).join('');
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="6" style="color: red; text-align: center;">ত্রুটি</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="color: red; text-align: center; padding: 20px;">ত্রুটি: ${err.message}</td></tr>`;
             }
         }
 
@@ -1083,13 +1129,12 @@
             const status = document.getElementById('emailStatusFilter')?.value || '';
 
             try {
-                const res = await fetch(`/api/v2/admin/auth/email-verifications?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`, {
-                    headers: getAuthHeaders()
-                });
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--fb-text-secondary);">লোড হচ্ছে...</td></tr>`;
+                const res = await adminFetch(`/api/v2/admin/auth/email-verifications?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`);
                 const json = await res.json();
-                const list = json.data?.data || [];
-                if (list.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">কোনো ইমেইল ভেরিফিকেশন রেকর্ড পাওয়া যায়নি</td></tr>`;
+                const list = json.data?.data || (Array.isArray(json.data) ? json.data : []);
+                if (!Array.isArray(list) || list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">কোনো ইমেইল ভেরিফিকেশন রেকর্ড পাওয়া যায়নি</td></tr>`;
                     return;
                 }
                 tbody.innerHTML = list.map(e => `
@@ -1103,7 +1148,7 @@
                     </tr>
                 `).join('');
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="6" style="color: red; text-align: center;">ত্রুটি</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="color: red; text-align: center; padding: 20px;">ত্রুটি: ${err.message}</td></tr>`;
             }
         }
 
@@ -1111,11 +1156,12 @@
         async function loadPasswords() {
             const tbody = document.getElementById('passwordsTableBody');
             try {
-                const res = await fetch('/api/v2/admin/auth/password-resets', { headers: getAuthHeaders() });
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--fb-text-secondary);">লোড হচ্ছে...</td></tr>`;
+                const res = await adminFetch('/api/v2/admin/auth/password-resets');
                 const json = await res.json();
-                const list = json.data?.data || [];
-                if (list.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">কোনো পাসওয়ার্ড পরিবর্তন রেকর্ড নেই</td></tr>`;
+                const list = json.data?.data || (Array.isArray(json.data) ? json.data : []);
+                if (!Array.isArray(list) || list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">কোনো পাসওয়ার্ড পরিবর্তন রেকর্ড নেই</td></tr>`;
                     return;
                 }
                 tbody.innerHTML = list.map(p => `
@@ -1127,87 +1173,105 @@
                     </tr>
                 `).join('');
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="4" style="color: red; text-align: center;">ত্রুটি</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="color: red; text-align: center; padding: 20px;">ত্রুটি: ${err.message}</td></tr>`;
             }
         }
 
         // --- LOGIN ANALYTICS RENDERING ---
-        function renderAnalytics() {
-            if (!globalStatsData || !globalStatsData.login_analytics) return;
+        async function renderAnalytics() {
+            if (!globalStatsData || !globalStatsData.login_analytics) {
+                await loadStats();
+            }
+            if (!globalStatsData || !globalStatsData.login_analytics) {
+                const sBox = document.getElementById('analyticsStatusBox');
+                if (sBox) sBox.innerHTML = '<span style="color:#64748b;">অ্যানালিটিক্স ডাটা লোড করা যায়নি</span>';
+                return;
+            }
             const a = globalStatsData.login_analytics;
 
             // 1. Status
             const sBox = document.getElementById('analyticsStatusBox');
             const total = a.total || 1;
-            sBox.innerHTML = Object.entries(a.by_status || {}).map(([k, v]) => {
-                const pct = Math.round((v / total) * 100);
-                return `
-                    <div class="stat-bar-row">
-                        <span style="font-weight:600; text-transform:capitalize;">${k}</span>
-                        <span>${v} (${pct}%)</span>
-                    </div>
-                    <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%; background:${k === 'failed' ? 'var(--fb-red)' : 'var(--fb-green)'}"></div></div>
-                `;
-            }).join('') || 'কোনো ডাটা নেই';
+            if (sBox) {
+                sBox.innerHTML = Object.entries(a.by_status || {}).map(([k, v]) => {
+                    const pct = Math.round((v / total) * 100);
+                    return `
+                        <div class="stat-bar-row">
+                            <span style="font-weight:600; text-transform:capitalize;">${k}</span>
+                            <span>${v} (${pct}%)</span>
+                        </div>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%; background:${k === 'failed' ? 'var(--fb-red)' : 'var(--fb-green)'}"></div></div>
+                    `;
+                }).join('') || 'কোনো ডাটা নেই';
+            }
 
             // 2. Browsers
             const bBox = document.getElementById('analyticsBrowserBox');
-            bBox.innerHTML = Object.entries(a.by_browser || {}).map(([k, v]) => {
-                const pct = Math.round((v / total) * 100);
-                return `
-                    <div class="stat-bar-row">
-                        <span style="font-weight:600;">${k}</span>
-                        <span>${v} (${pct}%)</span>
-                    </div>
-                    <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%;"></div></div>
-                `;
-            }).join('') || 'কোনো ব্রাউজার ডাটা নেই';
+            if (bBox) {
+                bBox.innerHTML = Object.entries(a.by_browser || {}).map(([k, v]) => {
+                    const pct = Math.round((v / total) * 100);
+                    return `
+                        <div class="stat-bar-row">
+                            <span style="font-weight:600;">${k}</span>
+                            <span>${v} (${pct}%)</span>
+                        </div>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%;"></div></div>
+                    `;
+                }).join('') || 'কোনো ব্রাউজার ডাটা নেই';
+            }
 
             // 3. OS
             const oBox = document.getElementById('analyticsOsBox');
-            oBox.innerHTML = Object.entries(a.by_os || {}).map(([k, v]) => {
-                const pct = Math.round((v / total) * 100);
-                return `
-                    <div class="stat-bar-row">
-                        <span style="font-weight:600;">${k}</span>
-                        <span>${v} (${pct}%)</span>
-                    </div>
-                    <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%; background:var(--fb-purple);"></div></div>
-                `;
-            }).join('') || 'কোনো ওএস ডাটা নেই';
+            if (oBox) {
+                oBox.innerHTML = Object.entries(a.by_os || {}).map(([k, v]) => {
+                    const pct = Math.round((v / total) * 100);
+                    return `
+                        <div class="stat-bar-row">
+                            <span style="font-weight:600;">${k}</span>
+                            <span>${v} (${pct}%)</span>
+                        </div>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%; background:var(--fb-purple);"></div></div>
+                    `;
+                }).join('') || 'কোনো ওএস ডাটা নেই';
+            }
 
             // 4. Device
             const dBox = document.getElementById('analyticsDeviceBox');
-            dBox.innerHTML = Object.entries(a.by_device || {}).map(([k, v]) => {
-                const pct = Math.round((v / total) * 100);
-                return `
-                    <div class="stat-bar-row">
-                        <span style="font-weight:600; text-transform:capitalize;">${k}</span>
-                        <span>${v} (${pct}%)</span>
-                    </div>
-                    <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%; background:var(--fb-yellow);"></div></div>
-                `;
-            }).join('') || 'কোনো ডিভাইস ডাটা নেই';
+            if (dBox) {
+                dBox.innerHTML = Object.entries(a.by_device || {}).map(([k, v]) => {
+                    const pct = Math.round((v / total) * 100);
+                    return `
+                        <div class="stat-bar-row">
+                            <span style="font-weight:600; text-transform:capitalize;">${k}</span>
+                            <span>${v} (${pct}%)</span>
+                        </div>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%; background:var(--fb-yellow);"></div></div>
+                    `;
+                }).join('') || 'কোনো ডিভাইস ডাটা নেই';
+            }
 
             // 5. 7-Day Trend Table
             const dTable = document.getElementById('analyticsDaysTableBody');
-            dTable.innerHTML = Object.entries(a.last_7_days || {}).map(([date, count]) => `
-                <tr>
-                    <td style="font-weight:700;">${date}</td>
-                    <td><span class="status-badge" style="background:#eafbe7; color:var(--fb-green);">${count} টি লগইন</span></td>
-                </tr>
-            `).join('') || '<tr><td colspan="2" style="text-align:center;">কোনো ট্রেন্ড ডাটা নেই</td></tr>';
+            if (dTable) {
+                dTable.innerHTML = Object.entries(a.last_7_days || {}).map(([date, count]) => `
+                    <tr>
+                        <td style="font-weight:700;">${date}</td>
+                        <td><span class="status-badge" style="background:#eafbe7; color:var(--fb-green);">${count} টি লগইন</span></td>
+                    </tr>
+                `).join('') || '<tr><td colspan="2" style="text-align:center;">কোনো ট্রেন্ড ডাটা নেই</td></tr>';
+            }
         }
 
         // --- AUDIT TRAIL ---
         async function loadAudits() {
             const tbody = document.getElementById('auditsTableBody');
             try {
-                const res = await fetch('/api/v2/admin/auth/audit-logs', { headers: getAuthHeaders() });
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--fb-text-secondary);">লোড হচ্ছে...</td></tr>`;
+                const res = await adminFetch('/api/v2/admin/auth/audit-logs');
                 const json = await res.json();
-                const list = json.data?.data || [];
-                if (list.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">কোনো অডিট রেকর্ড নেই</td></tr>`;
+                const list = json.data?.data || (Array.isArray(json.data) ? json.data : []);
+                if (!Array.isArray(list) || list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">কোনো অডিট রেকর্ড নেই</td></tr>`;
                     return;
                 }
                 tbody.innerHTML = list.map(a => `
@@ -1221,14 +1285,14 @@
                     </tr>
                 `).join('');
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="6" style="color: red; text-align: center;">ত্রুটি</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="color: red; text-align: center; padding: 20px;">ত্রুটি: ${err.message}</td></tr>`;
             }
         }
 
         // --- MEDIA & RESOURCE CONTROLS ---
         async function loadMediaMetrics() {
             try {
-                const res = await fetch('/api/v2/admin/media/metrics', { headers: getAuthHeaders() });
+                const res = await adminFetch('/api/v2/admin/media/metrics');
                 const json = await res.json();
                 if (json.success && json.data) {
                     const d = json.data;
@@ -1261,10 +1325,9 @@
                     min_free_disk_mb: parseInt(document.getElementById('settingMinFreeDisk').value)
                 };
 
-                const res = await fetch('/api/v2/admin/media/settings', {
+                const res = await adminFetch('/api/v2/admin/media/settings', {
                     method: 'PUT',
                     headers: {
-                        ...getAuthHeaders(),
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(payload)
@@ -1294,7 +1357,7 @@
                 ...getAuthHeaders(),
                 ...(options.headers || {})
             };
-            const fetchOpts = { ...options, headers };
+            const fetchOpts = { credentials: 'same-origin', ...options, headers };
             let res = await fetch('/admin' + path, fetchOpts);
             if ((res.status === 401 || res.status === 404) && !path.startsWith('/api/')) {
                 res = await fetch('/api/v2/admin' + path, fetchOpts);
