@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Call;
+use App\Models\CallParticipant;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\User;
@@ -111,5 +113,31 @@ class WebRTCCallingWebTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonPath('success', true);
         $response->assertJsonPath('data.signal_type', 'offer');
+    }
+
+    public function test_callee_can_open_video_call_room_with_answer_parameter(): void
+    {
+        $call = Call::create([
+            'conversation_id' => $this->conversation->id,
+            'caller_id' => $this->user1->id,
+            'call_type' => 'video',
+            'status' => Call::STATUS_RINGING,
+            'started_at' => now(),
+        ]);
+
+        CallParticipant::create([
+            'call_id' => $call->id,
+            'user_id' => $this->user2->id,
+            'role' => 'callee',
+            'status' => 'ringing',
+        ]);
+
+        $response = $this->actingAs($this->user2)->get("/call/{$this->conversation->id}?type=video&answer=1&call_id={$call->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('মমিনুল হক');
+        $response->assertSee('ভিডিও কল');
+        $response->assertSee('remoteVideo', false);
+        $response->assertSee('localVideo', false);
     }
 }

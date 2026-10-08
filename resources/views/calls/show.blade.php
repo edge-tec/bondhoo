@@ -178,6 +178,42 @@
             transform: scaleX(-1); /* Mirror local video */
         }
 
+        .pip-label {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(6px);
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #ffffff;
+            z-index: 2;
+        }
+
+        .pip-flip-btn {
+            background: rgba(255, 255, 255, 0.25);
+            border: none;
+            color: #ffffff;
+            border-radius: 4px;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .pip-flip-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
         /* Audio Mode Visualizer */
         .audio-visualizer-container {
             display: flex;
@@ -407,15 +443,21 @@
 
         <!-- Central Viewport -->
         <div class="call-viewport">
-            <!-- Remote Video Stream -->
-            <video id="remoteVideo" class="remote-video" autoplay playsinline></video>
+            <!-- Remote Video Stream (muted to guarantee autoplay without browser policy restrictions; audio is handled by remoteAudio) -->
+            <video id="remoteVideo" class="remote-video" autoplay playsinline muted></video>
 
             <!-- Local Video PIP -->
             <div id="localVideoContainer" class="local-video-pip">
                 <video id="localVideo" autoplay playsinline muted></video>
+                <div class="pip-label">
+                    <span>আপনি</span>
+                    <button type="button" id="btnFlipCam" class="pip-flip-btn" onclick="flipCamera(event)" title="ক্যামেরা পরিবর্তন" style="display: none;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0-4.4-3.6-8-8-8s-8 3.6-8 8h3l-4 5-4-5h3c0-5.5 4.5-10 10-10s10 4.5 10 10h-2Z"/></svg>
+                    </button>
+                </div>
             </div>
 
-            <!-- Audio Mode Visualizer -->
+            <!-- Audio Mode Visualizer / Ringing Placeholder -->
             <div id="audioVisualizer" class="audio-visualizer-container">
                 <div class="audio-pulse-avatar-wrapper">
                     <div class="audio-pulse-ring"></div>
@@ -435,6 +477,8 @@
                     <div class="wave-bar"></div>
                     <div class="wave-bar"></div>
                 </div>
+
+                <div id="audioVisualizerStatus" style="font-size: 14px; font-weight: 600; color: #94a3b8; text-align: center; margin-top: -6px;">কল সংযোগ হচ্ছে...</div>
             </div>
         </div>
 
@@ -482,11 +526,13 @@
         let activeCallId = null;
         let peerConnection = null;
         let localStream = null;
+        let remoteStream = null;
 
         window.__callDiagnostics = {
             getActiveCallId: () => activeCallId,
             getPeerConnection: () => peerConnection,
             getLocalStream: () => localStream,
+            getRemoteStream: () => remoteStream,
             isAnswered: () => isCallAnswered,
             isEnded: () => callHasEnded
         };
@@ -502,6 +548,7 @@
         let ringtoneAudioContext = null;
         let ringtoneOscillators = [];
         let ringtoneTimeout = null;
+        let currentFacingMode = 'user';
 
         // 1. Toast Notification Helper
         function showToast(msg) {
@@ -529,9 +576,9 @@
                     const gain = ringtoneAudioContext.createGain();
 
                     osc1.type = 'sine';
-                    osc1.frequency.setValueAtTime(440, ringtoneAudioContext.currentTime); // 440 Hz
+                    osc1.frequency.setValueAtTime(440, ringtoneAudioContext.currentTime);
                     osc2.type = 'sine';
-                    osc2.frequency.setValueAtTime(480, ringtoneAudioContext.currentTime); // 480 Hz
+                    osc2.frequency.setValueAtTime(480, ringtoneAudioContext.currentTime);
 
                     gain.gain.setValueAtTime(0.08, ringtoneAudioContext.currentTime);
                     gain.gain.exponentialRampToValueAtTime(0.001, ringtoneAudioContext.currentTime + 1.8);
@@ -550,7 +597,7 @@
 
                 playBurst();
             } catch (e) {
-                console.warn('Audio ringtone context init prevented:', e);
+                console.warn('[WebAudio] Ringback tone init error:', e);
             }
         }
 
@@ -605,15 +652,23 @@
                 iconOff.style.display = 'none';
                 showToast('মাইক্রোফোন চালু করা হয়েছে');
             }
+
+            if (activeCallId) {
+                apiFetch(`/api/v1/calls/${activeCallId}/state`, {
+                    method: 'POST',
+                    body: JSON.stringify({ is_muted: isAudioMuted })
+                }).catch(() => {});
+            }
         }
 
-        function toggleCamera() {
+        async function toggleCamera() {
             if (!localStream) return;
             const videoTrack = localStream.getVideoTracks()[0];
             const btn = document.getElementById('btnToggleCam');
             const iconOn = document.getElementById('camIconOn');
             const iconOff = document.getElementById('camIconOff');
             const pip = document.getElementById('localVideoContainer');
+            const localVid = document.getElementById('localVideo');
 
             if (videoTrack) {
                 isVideoMuted = !isVideoMuted;
@@ -630,30 +685,109 @@
                     iconOn.style.display = 'block';
                     iconOff.style.display = 'none';
                     pip.style.display = 'block';
+                    if (localVid) localVid.play().catch(() => {});
                     showToast('ক্যামেরা চালু করা হয়েছে');
                 }
+
+                if (activeCallId) {
+                    apiFetch(`/api/v1/calls/${activeCallId}/state`, {
+                        method: 'POST',
+                        body: JSON.stringify({ is_camera_off: isVideoMuted })
+                    }).catch(() => {});
+                }
             } else {
-                // If initial call was audio, attempt to add video track dynamically
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(stream => {
-                        const newTrack = stream.getVideoTracks()[0];
-                        localStream.addTrack(newTrack);
-                        if (peerConnection) {
-                            peerConnection.addTrack(newTrack, localStream);
-                        }
-                        const localVid = document.getElementById('localVideo');
-                        localVid.srcObject = localStream;
-                        pip.style.display = 'block';
-                        btn.classList.remove('muted');
-                        iconOn.style.display = 'block';
-                        iconOff.style.display = 'none';
-                        isVideoMuted = false;
-                        showToast('ভিডিও চালু হয়েছে');
-                    })
-                    .catch(e => {
-                        showToast('ক্যামেরা অ্যাক্সেস মেলেনি: ' + e.message);
+                // If initial call was audio, request camera dynamically and renegotiate
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 1280, max: 1920 }, height: { ideal: 720, max: 1080 }, facingMode: 'user' }
                     });
+                    const newTrack = stream.getVideoTracks()[0];
+                    localStream.addTrack(newTrack);
+
+                    localVid.srcObject = localStream;
+                    localVid.muted = true;
+                    localVid.play().catch(() => {});
+                    pip.style.display = 'block';
+                    btn.classList.remove('muted');
+                    iconOn.style.display = 'block';
+                    iconOff.style.display = 'none';
+                    isVideoMuted = false;
+                    showToast('ভিডিও ক্যামেরা চালু হয়েছে');
+
+                    if (peerConnection) {
+                        const videoSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+                        if (videoSender) {
+                            await videoSender.replaceTrack(newTrack);
+                        } else {
+                            peerConnection.addTrack(newTrack, localStream);
+                            if (peerConnection.signalingState === 'stable') {
+                                const offer = await peerConnection.createOffer();
+                                const cleanSdp = normalizeSdp(offer.sdp);
+                                await peerConnection.setLocalDescription(new RTCSessionDescription({ type: 'offer', sdp: cleanSdp }));
+                                await sendSignal('offer', { type: 'offer', sdp: cleanSdp });
+                            }
+                        }
+                    }
+
+                    checkMultipleCameras();
+
+                    if (activeCallId) {
+                        apiFetch(`/api/v1/calls/${activeCallId}/state`, {
+                            method: 'POST',
+                            body: JSON.stringify({ is_camera_off: false })
+                        }).catch(() => {});
+                    }
+                } catch (e) {
+                    showToast('ক্যামেরা চালু করা সম্ভব হয়নি: ' + (e.message || e.name));
+                }
             }
+        }
+
+        async function flipCamera(e) {
+            if (e) e.stopPropagation();
+            if (!localStream) return;
+            const currentTrack = localStream.getVideoTracks()[0];
+            if (!currentTrack) return;
+
+            currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+            try {
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { exact: currentFacingMode } }
+                });
+                const newTrack = newStream.getVideoTracks()[0];
+                currentTrack.stop();
+                localStream.removeTrack(currentTrack);
+                localStream.addTrack(newTrack);
+
+                const localVid = document.getElementById('localVideo');
+                localVid.srcObject = localStream;
+                localVid.play().catch(() => {});
+
+                if (peerConnection) {
+                    const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+                    if (sender) {
+                        await sender.replaceTrack(newTrack);
+                    }
+                }
+                showToast('ক্যামেরা পরিবর্তিত হয়েছে');
+            } catch (err) {
+                console.warn('[WebRTC] Camera flip failed:', err);
+                currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+                showToast('ক্যামেরা পরিবর্তন সম্ভব হয়নি');
+            }
+        }
+
+        async function checkMultipleCameras() {
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                    if (videoDevices.length > 1) {
+                        const flipBtn = document.getElementById('btnFlipCam');
+                        if (flipBtn) flipBtn.style.display = 'flex';
+                    }
+                }
+            } catch (e) {}
         }
 
         async function toggleScreenShare() {
@@ -664,7 +798,7 @@
                     const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
 
                     if (sender) {
-                        sender.replaceTrack(screenTrack);
+                        await sender.replaceTrack(screenTrack);
                     }
 
                     screenTrack.onended = () => {
@@ -674,6 +808,13 @@
                     isScreenSharing = true;
                     document.getElementById('btnToggleScreen').classList.add('active');
                     showToast('স্ক্রিন শেয়ার চালু হয়েছে');
+
+                    if (activeCallId) {
+                        apiFetch(`/api/v1/calls/${activeCallId}/state`, {
+                            method: 'POST',
+                            body: JSON.stringify({ is_screen_sharing: true })
+                        }).catch(() => {});
+                    }
                 } catch (e) {
                     console.warn('Screen share cancelled/failed:', e);
                 }
@@ -682,7 +823,7 @@
             }
         }
 
-        function stopScreenShare() {
+        async function stopScreenShare() {
             if (screenStream) {
                 screenStream.getTracks().forEach(t => t.stop());
                 screenStream = null;
@@ -690,11 +831,18 @@
             const videoTrack = localStream?.getVideoTracks()[0];
             const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
             if (sender && videoTrack) {
-                sender.replaceTrack(videoTrack);
+                await sender.replaceTrack(videoTrack).catch(() => {});
             }
             isScreenSharing = false;
             document.getElementById('btnToggleScreen')?.classList.remove('active');
             showToast('স্ক্রিন শেয়ার সমাপ্ত');
+
+            if (activeCallId) {
+                apiFetch(`/api/v1/calls/${activeCallId}/state`, {
+                    method: 'POST',
+                    body: JSON.stringify({ is_screen_sharing: false })
+                }).catch(() => {});
+            }
         }
 
         function toggleFullscreen() {
@@ -727,7 +875,7 @@
             callTimerInterval = null;
         }
 
-        // 5. Authenticated API helper (session cookie + CSRF, plus Bearer token when available)
+        // 5. Authenticated API helper
         function apiFetch(url, options = {}) {
             const token = SERVER_AUTH_TOKEN || localStorage.getItem('jugajug_token') || '';
             const headers = Object.assign({
@@ -743,6 +891,8 @@
         function setCallStatus(text) {
             const el = document.getElementById('callStatusText');
             if (el) el.innerText = text;
+            const vizEl = document.getElementById('audioVisualizerStatus');
+            if (vizEl) vizEl.innerText = text;
         }
 
         let pendingRemoteCandidates = [];
@@ -754,44 +904,68 @@
         let signalQueue = Promise.resolve();
         const processedSignals = new Set();
 
-        // Cross-browser SDP sanitizer (fixes empty stream ID 'msid:-', normalizes line endings, and ensures RFC-compliant trailing CRLF)
-        function sanitizeSdp(sdp) {
+        // Cross-browser RFC 4566 SDP line ending normalizer (preserves untouched Unified Plan MSIDs & SSRCs)
+        function normalizeSdp(sdp) {
             if (!sdp || typeof sdp !== 'string') return sdp;
-            const normalized = sdp.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
-            const lines = normalized.split('\n').map(l => {
-                let line = l.trim();
-                line = line.replace(/^a=msid:-\s+(.+)$/, 'a=msid:jugajug_stream $1');
-                line = line.replace(/^a=ssrc:(\d+)\s+msid:-\s+(.+)$/, 'a=ssrc:$1 msid:jugajug_stream $2');
-                return line;
-            }).filter(l => l.length > 0);
+            const lines = sdp.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n');
+            return lines.map(l => l.trim()).filter(l => l.length > 0).join('\r\n') + '\r\n';
+        }
 
-            let clean = lines.join('\r\n') + '\r\n';
-            if (clean.includes('a=msid:jugajug_stream') && clean.includes('a=msid-semantic: WMS') && !clean.includes('a=msid-semantic: WMS jugajug_stream')) {
-                clean = clean.replace(/a=msid-semantic:\s*WMS[^\r\n]*/, 'a=msid-semantic: WMS jugajug_stream');
+        function handleMediaError(err) {
+            console.error('[WebRTC] Media access error:', err);
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                showToast('ক্যামেরা ও মাইক্রোফোনের অনুমতি মেলেনি। ব্রাউজারে পারমিশন চালু করুন।');
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                showToast('কোনো ক্যামেরা বা মাইক্রোফোন ডিভাইস খুঁজে পাওয়া যায়নি।');
+            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                showToast('ক্যামেরা বা মাইক্রোফোন অন্য অ্যাপ্লিকেশন ব্যবহার করছে।');
+            } else if (err.name === 'OverconstrainedError') {
+                showToast('ডিভাইসের রেজোলিউশন কনস্ট্রেইন্ট মেলেনি।');
+            } else {
+                showToast('ক্যামেরা/মাইক্রোফোন সমস্যা: ' + (err.message || err.name));
             }
-            if (!clean.endsWith('\r\n')) {
-                clean += '\r\n';
-            }
-            return clean;
         }
 
         // 6. WebRTC Core Engine
         async function acquireLocalMedia() {
             const wantsVideo = INITIAL_CALL_TYPE === 'video';
-            try {
-                return await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                    video: wantsVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: { ideal: 'user' } } : false
-                });
-            } catch (err) {
-                if (wantsVideo) {
+
+            if (wantsVideo) {
+                try {
+                    return await navigator.mediaDevices.getUserMedia({
+                        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+                        video: { width: { ideal: 1280, max: 1920 }, height: { ideal: 720, max: 1080 }, facingMode: 'user' }
+                    });
+                } catch (err1) {
+                    console.warn('[WebRTC] Preferred camera constraint failed, trying basic:', err1.name);
                     try {
-                        showToast('ক্যামেরা পাওয়া যায়নি, শুধু অডিওতে সংযোগ করা হচ্ছে');
-                        return await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                    } catch (e) {}
+                        return await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                    } catch (err2) {
+                        console.warn('[WebRTC] Video capture failed, falling back to audio only:', err2.name);
+                        showToast('ক্যামেরা পাওয়া যায়নি, শুধু অডিওতে সংযোগ করা হচ্ছে');
+                        try {
+                            return await navigator.mediaDevices.getUserMedia({
+                                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+                            });
+                        } catch (err3) {
+                            handleMediaError(err3);
+                            return null;
+                        }
+                    }
                 }
-                showToast('মাইক্রোফোন/ক্যামেরার অনুমতি পাওয়া যায়নি — শুধু শুনতে পারবেন');
-                return null;
+            } else {
+                try {
+                    return await navigator.mediaDevices.getUserMedia({
+                        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+                    });
+                } catch (err) {
+                    try {
+                        return await navigator.mediaDevices.getUserMedia({ audio: true });
+                    } catch (err2) {
+                        handleMediaError(err2);
+                        return null;
+                    }
+                }
             }
         }
 
@@ -799,20 +973,29 @@
             localStream = await acquireLocalMedia();
 
             const hasLocalVideo = !!(localStream && localStream.getVideoTracks().length > 0);
+            const localVid = document.getElementById('localVideo');
+            const localVidContainer = document.getElementById('localVideoContainer');
+
             if (hasLocalVideo) {
-                document.getElementById('localVideo').srcObject = localStream;
-                document.getElementById('localVideoContainer').style.display = 'block';
+                localVid.srcObject = localStream;
+                localVid.muted = true;
+                localVid.setAttribute('playsinline', '');
+                localVid.setAttribute('webkit-playsinline', '');
+                localVid.play().catch(e => console.warn('[WebRTC] Local video play catch:', e));
+                localVidContainer.style.display = 'block';
                 isVideoMuted = false;
+                checkMultipleCameras();
             } else {
                 isVideoMuted = true;
                 document.getElementById('btnToggleCam').classList.add('muted');
                 document.getElementById('camIconOn').style.display = 'none';
                 document.getElementById('camIconOff').style.display = 'block';
+                localVidContainer.style.display = 'none';
             }
-            if (INITIAL_CALL_TYPE === 'video') {
-                document.getElementById('remoteVideo').style.display = 'block';
-                document.getElementById('audioVisualizer').style.display = 'none';
-            }
+
+            // Central viewport shows audio visualizer / caller avatar during ringing / connecting
+            document.getElementById('audioVisualizer').style.display = 'flex';
+            document.getElementById('remoteVideo').style.display = 'none';
 
             setupPeerConnection();
             startSyncListener();
@@ -891,12 +1074,17 @@
         }
 
         function setupPeerConnection() {
-            peerConnection = new RTCPeerConnection({
+            const config = {
                 iceServers: (ICE_SERVERS && ICE_SERVERS.length > 0) ? ICE_SERVERS : [
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
-            });
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun.cloudflare.com:3478' }
+                ],
+                iceCandidatePoolSize: 10
+            };
+
+            peerConnection = new RTCPeerConnection(config);
 
             if (localStream) {
                 localStream.getTracks().forEach(track => {
@@ -910,26 +1098,76 @@
             }
 
             peerConnection.ontrack = (event) => {
-                console.log('[WebRTC] Remote track received:', event.track.kind);
-                const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+                console.log('[WebRTC] Remote track received:', event.track.kind, event.track.id);
 
-                if (event.track.kind === 'video') {
-                    const remoteVid = document.getElementById('remoteVideo');
-                    remoteVid.srcObject = stream;
-                    remoteVid.style.display = 'block';
-                    document.getElementById('audioVisualizer').style.display = 'none';
-                    remoteVid.play().catch(() => {});
+                // 1. Maintain persistent MediaStream
+                if (!remoteStream) {
+                    remoteStream = new MediaStream();
+                }
+                if (!remoteStream.getTrackById(event.track.id)) {
+                    remoteStream.addTrack(event.track);
                 }
 
+                // 2. Audio playback via dedicated remoteAudio element
                 const remoteAud = document.getElementById('remoteAudio');
-                if (remoteAud) {
-                    remoteAud.srcObject = stream;
+                if (remoteAud && (!remoteAud.srcObject || remoteAud.srcObject !== remoteStream)) {
+                    remoteAud.srcObject = remoteStream;
                     const playPromise = remoteAud.play();
                     if (playPromise !== undefined) {
                         playPromise.catch(err => {
-                            console.warn('[WebRTC] Autoplay prevented by browser:', err);
+                            console.warn('[WebRTC] Audio autoplay blocked:', err);
                             showAudioUnlockPrompt();
                         });
+                    }
+                }
+
+                // 3. Video playback via remoteVideo element
+                const remoteVid = document.getElementById('remoteVideo');
+                if (remoteVid) {
+                    if (!remoteVid.srcObject || remoteVid.srcObject !== remoteStream) {
+                        remoteVid.srcObject = remoteStream;
+                    }
+                    // CRITICAL: Mute remoteVideo to guarantee that browser audio autoplay policies
+                    // NEVER block remote video frame rendering! Unmuted audio is safely played by remoteAudio.
+                    remoteVid.muted = true;
+                    remoteVid.setAttribute('playsinline', '');
+                    remoteVid.setAttribute('webkit-playsinline', '');
+
+                    const renderRemoteVideoIfReady = () => {
+                        const videoTracks = remoteStream.getVideoTracks();
+                        const hasLiveVideo = videoTracks.some(t => t.readyState === 'live' && t.enabled && !t.muted);
+                        if (hasLiveVideo) {
+                            remoteVid.style.display = 'block';
+                            document.getElementById('audioVisualizer').style.display = 'none';
+                            remoteVid.play().catch(e => console.warn('[WebRTC] Remote video play error:', e));
+                        }
+                    };
+
+                    if (event.track.kind === 'video') {
+                        renderRemoteVideoIfReady();
+
+                        event.track.onunmute = () => {
+                            console.log('[WebRTC] Remote video track unmuted (RTP packets received)');
+                            renderRemoteVideoIfReady();
+                        };
+
+                        event.track.onmute = () => {
+                            console.log('[WebRTC] Remote video track muted (peer disabled camera or packet delay)');
+                            const videoTracks = remoteStream.getVideoTracks();
+                            const stillHasActiveVideo = videoTracks.some(t => t.readyState === 'live' && !t.muted);
+                            if (!stillHasActiveVideo) {
+                                remoteVid.style.display = 'none';
+                                document.getElementById('audioVisualizer').style.display = 'flex';
+                                const vizStatus = document.getElementById('audioVisualizerStatus');
+                                if (vizStatus) vizStatus.innerText = 'অপর প্রান্তের ক্যামেরা বন্ধ আছে';
+                            }
+                        };
+
+                        event.track.onended = () => {
+                            console.log('[WebRTC] Remote video track ended');
+                            remoteVid.style.display = 'none';
+                            document.getElementById('audioVisualizer').style.display = 'flex';
+                        };
                     }
                 }
 
@@ -954,6 +1192,9 @@
                     if (!ANSWER_CALL_ID && peerConnection.restartIce) {
                         peerConnection.restartIce();
                     }
+                } else if (state === 'disconnected') {
+                    setCallStatus('পুনঃসংযোগ হচ্ছে...');
+                    document.getElementById('statusDot').className = 'status-dot';
                 }
             };
 
@@ -969,6 +1210,7 @@
                 } else if (state === 'failed') {
                     setCallStatus('সংযোগ ব্যর্থ — নেটওয়ার্ক পরীক্ষা করুন');
                     document.getElementById('statusDot').className = 'status-dot';
+                    showToast('সংযোগ ব্যর্থ — নেটওয়ার্ক পরীক্ষা করুন');
                 }
             };
         }
@@ -978,10 +1220,6 @@
             isCallAnswered = true;
             clearTimeout(ringTimeoutTimer);
             stopRingbackTone();
-            if (fastSignalTimer) {
-                clearInterval(fastSignalTimer);
-                fastSignalTimer = null;
-            }
             setCallStatus('সংযুক্ত (Connected)');
             document.getElementById('statusDot').className = 'status-dot connected';
             startCallTimer();
@@ -1007,8 +1245,11 @@
             setCallStatus('সংযুক্ত হচ্ছে...');
 
             try {
-                const offer = await peerConnection.createOffer();
-                const cleanSdp = sanitizeSdp(offer.sdp);
+                const offer = await peerConnection.createOffer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: (INITIAL_CALL_TYPE === 'video')
+                });
+                const cleanSdp = normalizeSdp(offer.sdp);
                 await peerConnection.setLocalDescription(new RTCSessionDescription({ type: 'offer', sdp: cleanSdp }));
                 await sendSignal('offer', { type: 'offer', sdp: cleanSdp });
                 console.log('[WebRTC] Offer created and sent successfully.');
@@ -1023,7 +1264,7 @@
             const queued = pendingRemoteCandidates.splice(0, pendingRemoteCandidates.length);
             for (const candidate of queued) {
                 try {
-                    if (candidate && (candidate.candidate || candidate.sdpMid !== null || candidate.sdpMLineIndex !== null)) {
+                    if (candidate && (candidate.candidate || candidate.candidate === '' || candidate.sdpMid !== null || candidate.sdpMLineIndex !== null)) {
                         await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
                     }
                 } catch (e) {
@@ -1059,7 +1300,20 @@
             if (Number(signal.sender_id) === CURRENT_USER_ID) return;
             if (Number(signal.call_id) !== Number(activeCallId)) return;
 
-            const sigKey = `${signal.signal_type}_${signal.sender_id}_${JSON.stringify(signal.payload || '').slice(0, 40)}`;
+            let sigKey = '';
+            if (signal.signal_type === 'candidate' && signal.payload) {
+                const cand = signal.payload;
+                sigKey = `cand_${signal.sender_id}_${cand.candidate || ''}_${cand.sdpMid}_${cand.sdpMLineIndex}`;
+            } else if (signal.signal_type === 'offer') {
+                const sdp = signal.payload?.sdp || (typeof signal.payload === 'string' ? signal.payload : '');
+                sigKey = `offer_${signal.sender_id}_${sdp.length}_${sdp.slice(0, 100)}`;
+            } else if (signal.signal_type === 'answer') {
+                const sdp = signal.payload?.sdp || (typeof signal.payload === 'string' ? signal.payload : '');
+                sigKey = `answer_${signal.sender_id}_${sdp.length}_${sdp.slice(0, 100)}`;
+            } else {
+                sigKey = `${signal.signal_type}_${signal.sender_id}_${JSON.stringify(signal.payload || '')}`;
+            }
+
             if (processedSignals.has(sigKey)) return;
             processedSignals.add(sigKey);
 
@@ -1067,7 +1321,7 @@
                 if (signal.signal_type === 'offer') {
                     console.log('[WebRTC] Processing incoming offer from peer:', signal.sender_id);
                     const rawSdp = signal.payload?.sdp || (typeof signal.payload === 'string' ? signal.payload : '');
-                    const cleanSdp = sanitizeSdp(rawSdp);
+                    const cleanSdp = normalizeSdp(rawSdp);
                     const desc = new RTCSessionDescription({ type: 'offer', sdp: cleanSdp });
 
                     if (peerConnection.signalingState !== 'stable') {
@@ -1081,7 +1335,7 @@
                     await flushPendingCandidates();
 
                     const answer = await peerConnection.createAnswer();
-                    const cleanAnswerSdp = sanitizeSdp(answer.sdp);
+                    const cleanAnswerSdp = normalizeSdp(answer.sdp);
                     await peerConnection.setLocalDescription(new RTCSessionDescription({ type: 'answer', sdp: cleanAnswerSdp }));
 
                     await sendSignal('answer', { type: 'answer', sdp: cleanAnswerSdp });
@@ -1090,7 +1344,7 @@
                     console.log('[WebRTC] Processing incoming answer from peer:', signal.sender_id);
                     if (peerConnection.signalingState === 'have-local-offer') {
                         const rawSdp = signal.payload?.sdp || (typeof signal.payload === 'string' ? signal.payload : '');
-                        const cleanSdp = sanitizeSdp(rawSdp);
+                        const cleanSdp = normalizeSdp(rawSdp);
                         await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: cleanSdp }));
                         await flushPendingCandidates();
                     } else {
@@ -1098,7 +1352,7 @@
                     }
                 } else if (signal.signal_type === 'candidate' && signal.payload) {
                     const candData = signal.payload;
-                    if (candData && (candData.candidate || candData.sdpMid !== null || candData.sdpMLineIndex !== null)) {
+                    if (candData && (candData.candidate || candData.candidate === '' || candData.sdpMid !== null || candData.sdpMLineIndex !== null)) {
                         if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
                             try {
                                 await peerConnection.addIceCandidate(new RTCIceCandidate(candData));
@@ -1133,11 +1387,11 @@
             }
         }
 
-        // 7. Fast Signal Polling (sub-second exchange during negotiation) + General Realtime Listener
+        // 7. Fast Signal Polling during negotiation + General Realtime Listener
         function startFastSignalPolling() {
             if (fastSignalTimer) clearInterval(fastSignalTimer);
             fastSignalTimer = setInterval(async () => {
-                if (callHasEnded || isCallAnswered) {
+                if (callHasEnded) {
                     clearInterval(fastSignalTimer);
                     fastSignalTimer = null;
                     return;
@@ -1195,6 +1449,7 @@
 
             if (localStream) localStream.getTracks().forEach(t => t.stop());
             if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+            if (remoteStream) remoteStream.getTracks().forEach(t => t.stop());
 
             if (peerConnection) {
                 peerConnection.close();
@@ -1223,6 +1478,7 @@
             }
             if (localStream) localStream.getTracks().forEach(t => t.stop());
             if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+            if (remoteStream) remoteStream.getTracks().forEach(t => t.stop());
         });
 
         // Initialize on DOM Ready

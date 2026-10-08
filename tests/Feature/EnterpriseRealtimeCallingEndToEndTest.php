@@ -369,4 +369,105 @@ class EnterpriseRealtimeCallingEndToEndTest extends TestCase
         $this->assertNotEmpty($calls);
         $this->assertSame($callId, $calls[0]['id']);
     }
+
+    public function test_signals_endpoint_retrieves_complete_chronological_ice_candidates_and_sdp(): void
+    {
+        $init = $this->actingAs($this->userA, 'sanctum')->postJson('/api/v1/calls', [
+            'conversation_id' => $this->conversation->id,
+            'call_type' => 'video',
+        ]);
+        $callId = $init->json('data.id');
+
+        // Caller sends offer
+        $this->actingAs($this->userA, 'sanctum')->postJson("/api/v1/calls/{$callId}/signal", [
+            'signal_type' => 'offer',
+            'payload' => ['type' => 'offer', 'sdp' => 'v=0...caller-offer-sdp'],
+        ]);
+
+        // Callee sends answer
+        $this->actingAs($this->userB, 'sanctum')->postJson("/api/v1/calls/{$callId}/signal", [
+            'signal_type' => 'answer',
+            'payload' => ['type' => 'answer', 'sdp' => 'v=0...callee-answer-sdp'],
+        ]);
+
+        // Multiple ICE candidates with same prefix but different parameters
+        $this->actingAs($this->userA, 'sanctum')->postJson("/api/v1/calls/{$callId}/signal", [
+            'signal_type' => 'candidate',
+            'payload' => ['candidate' => 'candidate:0 1 UDP 2122252543 192.168.1.100 54321 typ host', 'sdpMid' => '0', 'sdpMLineIndex' => 0],
+        ]);
+
+        $this->actingAs($this->userA, 'sanctum')->postJson("/api/v1/calls/{$callId}/signal", [
+            'signal_type' => 'candidate',
+            'payload' => ['candidate' => 'candidate:0 2 UDP 2122252542 192.168.1.100 54322 typ host', 'sdpMid' => '1', 'sdpMLineIndex' => 1],
+        ]);
+
+        $this->actingAs($this->userB, 'sanctum')->postJson("/api/v1/calls/{$callId}/signal", [
+            'signal_type' => 'candidate',
+            'payload' => ['candidate' => 'candidate:1 1 UDP 2122252541 192.168.1.200 54323 typ host', 'sdpMid' => '0', 'sdpMLineIndex' => 0],
+        ]);
+
+        // Retrieve signals
+        $sigResp = $this->actingAs($this->userA, 'sanctum')->getJson("/api/v1/calls/{$callId}/signals");
+        $sigResp->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        $signals = $sigResp->json('data');
+        $this->assertCount(5, $signals);
+        $this->assertSame('offer', $signals[0]['signal_type']);
+        $this->assertSame('answer', $signals[1]['signal_type']);
+        $this->assertSame('candidate', $signals[2]['signal_type']);
+        $this->assertSame('candidate', $signals[3]['signal_type']);
+        $this->assertSame('candidate', $signals[4]['signal_type']);
+    }
+
+    public function test_participant_camera_state_can_be_toggled_via_api(): void
+    {
+        $init = $this->actingAs($this->userA, 'sanctum')->postJson('/api/v1/calls', [
+            'conversation_id' => $this->conversation->id,
+            'call_type' => 'video',
+        ]);
+        $callId = $init->json('data.id');
+
+        // Turn camera off
+        $camOffResp = $this->actingAs($this->userA, 'sanctum')->postJson("/api/v1/calls/{$callId}/state", [
+            'is_camera_off' => true,
+        ]);
+        $camOffResp->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.is_camera_off', true);
+
+        $this->assertDatabaseHas('call_participants', [
+            'call_id' => $callId,
+            'user_id' => $this->userA->id,
+            'is_camera_off' => true,
+        ]);
+
+        // Turn camera back on
+        $camOnResp = $this->actingAs($this->userA, 'sanctum')->postJson("/api/v1/calls/{$callId}/state", [
+            'is_camera_off' => false,
+        ]);
+        $camOnResp->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.is_camera_off', false);
+
+        $this->assertDatabaseHas('call_participants', [
+            'call_id' => $callId,
+            'user_id' => $this->userA->id,
+            'is_camera_off' => false,
+        ]);
+    }
+
+    public function test_ice_servers_returns_high_availability_stun_servers(): void
+    {
+        $response = $this->actingAs($this->userA, 'sanctum')->getJson('/api/v1/calls/ice-servers');
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        $iceServers = $response->json('data.ice_servers');
+        $this->assertNotEmpty($iceServers);
+
+        $stunUrls = collect($iceServers)->pluck('urls')->flatten()->all();
+        $this->assertContains('stun:stun.l.google.com:19302', $stunUrls);
+        $this->assertContains('stun:stun.cloudflare.com:3478', $stunUrls);
+    }
 }
