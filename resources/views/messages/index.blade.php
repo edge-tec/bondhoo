@@ -434,15 +434,23 @@
         display: none;
         background: var(--ms-bg-input);
         border: none;
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
         border-radius: 50%;
         cursor: pointer;
         color: var(--ms-text-primary);
-        margin-right: 6px;
+        margin-right: 8px;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        transition: background 0.15s, transform 0.1s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .btn-mobile-back:active {
+        background: var(--ms-bg-hover);
+        transform: scale(0.95);
     }
 
     /* In-Chat Search Bar */
@@ -2381,8 +2389,10 @@
                     $unread = is_array($conv) ? ($conv['unread_count'] ?? 0) : ($conv->unread_count ?? 0);
                     $isPinned = is_array($conv) ? ($conv['is_pinned'] ?? false) : false;
                     $isMuted = is_array($conv) ? ($conv['is_muted'] ?? false) : false;
+                    $otherUser = is_array($conv) ? ($conv['other_user'] ?? null) : (method_exists($conv, 'getOtherParticipant') ? $conv->getOtherParticipant($currentUser->id) : null);
+                    $otherUserId = $otherUser ? (is_array($otherUser) ? ($otherUser['id'] ?? null) : $otherUser->id) : null;
                 @endphp
-                <a href="{{ route('messages.show', ['id' => $cId]) }}" class="conversation-item {{ $isActive ? 'active' : '' }} {{ $unread > 0 ? 'conv-item-unread' : '' }}" id="convItem-{{ $cId }}" data-id="{{ $cId }}" data-title="{{ strtolower($chatTitle) }}">
+                <a href="{{ route('messages.show', ['id' => $cId]) }}" class="conversation-item {{ $isActive ? 'active' : '' }} {{ $unread > 0 ? 'conv-item-unread' : '' }}" id="convItem-{{ $cId }}" data-id="{{ $cId }}" data-user-id="{{ $otherUserId ?? '' }}" data-title="{{ strtolower($chatTitle) }}">
                     <div class="conv-avatar-wrapper">
                         <div class="avatar" style="width: 48px; height: 48px;">
                             @if($chatAvatar)
@@ -2483,7 +2493,7 @@
             <!-- Chat Header -->
             <div class="chat-header">
                 <div class="chat-header-user">
-                    <button type="button" class="btn-mobile-back" onclick="event.stopPropagation(); window.location.href='{{ route('messages.index') }}'">
+                    <button type="button" class="btn-mobile-back" aria-label="ইনবক্সে ফিরে যান" title="ইনবক্সে ফিরে যান" onclick="event.stopPropagation(); window.location.href='{{ route('messages.index') }}'">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
@@ -3719,6 +3729,9 @@
         scrollToBottom();
         initRealtimeMessenger();
         restoreDraft();
+        if (typeof initConversationsInfiniteScroll === 'function') {
+            initConversationsInfiniteScroll();
+        }
         if (currentConvId) {
             loadSharedTab('media');
         }
@@ -3799,18 +3812,81 @@
         });
     }
 
+    let convSearchTimeout = null;
+    let initialInboxItemsHtml = null;
+    let convCurrentPage = 1;
+    let convHasMore = {{ ($conversations instanceof \Illuminate\Pagination\LengthAwarePaginator && $conversations->hasMorePages()) ? 'true' : 'false' }};
+    let convIsLoading = false;
+    let currentConvTab = 'all';
+
+    function formatRelativeTime(dateStr) {
+        if (!dateStr) return '';
+        try {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSec = Math.floor(diffMs / 1000);
+            if (diffSec < 60) return 'এখনই';
+            const diffMin = Math.floor(diffSec / 60);
+            if (diffMin < 60) return `${diffMin} মি.`;
+            const diffHours = Math.floor(diffMin / 60);
+            if (diffHours < 24) return `${diffHours} ঘ.`;
+            const diffDays = Math.floor(diffHours / 24);
+            if (diffDays < 7) return `${diffDays} দিন`;
+            return date.toLocaleDateString('bn-BD', { month: 'short', day: 'numeric' });
+        } catch (e) {
+            return '';
+        }
+    }
+
     function handleConvSearch(term) {
-        term = term.toLowerCase().trim();
+        term = (term || '').trim();
+        const container = document.getElementById('conversationsListContainer');
+        if (!container) return;
+
+        if (initialInboxItemsHtml === null && !term) {
+            initialInboxItemsHtml = container.innerHTML;
+        }
+
+        const lowerTerm = term.toLowerCase();
+        let localMatches = 0;
         document.querySelectorAll('#conversationsListContainer .conversation-item').forEach(item => {
-            const title = item.getAttribute('data-title') || '';
-            item.style.display = (!term || title.includes(term)) ? 'flex' : 'none';
+            const title = (item.getAttribute('data-title') || '').toLowerCase();
+            const snippet = (item.querySelector('.conv-snippet')?.innerText || '').toLowerCase();
+            const matches = !lowerTerm || title.includes(lowerTerm) || snippet.includes(lowerTerm);
+            item.style.display = matches ? 'flex' : 'none';
+            if (matches) localMatches++;
         });
+
+        clearTimeout(convSearchTimeout);
+        if (!term) {
+            return;
+        }
+
+        // Debounced remote backend search for conversations not currently in DOM
+        convSearchTimeout = setTimeout(async () => {
+            try {
+                const token = localStorage.getItem('jugajug_token') || localStorage.getItem('bondhoo_token') || '';
+                const res = await fetch(`/api/v1/conversations?search=${encodeURIComponent(term)}&per_page=30`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    }
+                });
+                const json = await res.json();
+                if (json.success && Array.isArray(json.data)) {
+                    if (localMatches === 0 && json.data.length > 0) {
+                        renderConversationsList(json.data);
+                    }
+                }
+            } catch (e) {}
+        }, 300);
     }
 
     function renderConversationsList(items) {
         const container = document.getElementById('conversationsListContainer');
         if (!container) return;
-        if (items.length === 0) {
+        if (!items || items.length === 0) {
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px 16px; color: var(--fb-text-secondary);">
                     <div style="margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: var(--fb-hover);">
@@ -3820,38 +3896,214 @@
                         </svg>
                     </div>
                     <div style="font-weight: 700; font-size: 15px; color: var(--fb-text-primary);">কোনো চ্যাট পাওয়া যায়নি</div>
+                    <div style="font-size: 12.5px; color: var(--ms-text-secondary); margin-top: 4px;">ভিন্ন নামে খুঁজুন অথবা নতুন চ্যাট শুরু করুন</div>
                 </div>
             `;
             return;
         }
 
         container.innerHTML = items.map(c => {
-            const isActive = currentConvId === c.id;
+            const isActive = currentConvId && Number(currentConvId) === Number(c.id);
             const snippet = c.last_message ? (c.last_message.sender_id === currentUserId ? 'আপনি: ' : '') + (c.last_message.body || '') : 'কথোপকথন শুরু করুন...';
+            const otherUser = c.other_user || (c.participants ? c.participants.find(p => p.id !== currentUserId) : null);
+            const otherUserId = otherUser ? (otherUser.id || '') : (c.user_id || '');
+            const timeStr = c.last_message_at ? formatRelativeTime(c.last_message_at) : '';
+
             return `
-                <a href="/messages/${c.id}" class="conversation-item ${isActive ? 'active' : ''} ${c.unread_count > 0 ? 'conv-item-unread' : ''}" id="convItem-${c.id}" data-id="${c.id}" data-title="${(c.title || '').toLowerCase()}">
+                <a href="/messages/${c.id}" class="conversation-item ${isActive ? 'active' : ''} ${c.unread_count > 0 ? 'conv-item-unread' : ''}" id="convItem-${c.id}" data-id="${c.id}" data-user-id="${otherUserId}" data-title="${escapeHtml((c.title || '').toLowerCase())}">
                     <div class="conv-avatar-wrapper">
                         <div class="avatar" style="width: 48px; height: 48px;">
-                            ${c.avatar_url ? `<img src="${c.avatar_url}" alt="">` : (c.title ? c.title.charAt(0) : 'U')}
+                            ${c.avatar_url ? `<img src="${c.avatar_url}" alt="${escapeHtml(c.title || '')}">` : escapeHtml((c.title ? c.title.charAt(0) : 'U'))}
                         </div>
-                        <div class="online-indicator"></div>
+                        <div class="online-indicator" id="convPresence-${c.id}"></div>
                     </div>
                     <div class="conv-content">
                         <div class="conv-top-row">
                             <div class="conv-name">
-                                ${c.title || 'ব্যবহারকারী'}
+                                ${escapeHtml(c.title || 'ব্যবহারকারী')}
                                 ${c.is_pinned ? `<span class="badge-pinned" title="পিন করা"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg></span>` : ''}
                                 ${c.is_muted ? `<span class="badge-muted" title="মিউট করা"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M17 17H3v-2l2-2V9a7 7 0 0 1 .74-3.15"></path><path d="M9 17v1a3 3 0 0 0 6 0v-1"></path><path d="M10.26 4.74A7 7 0 0 1 19 9v4l1.2 1.2"></path></svg></span>` : ''}
                             </div>
+                            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                                <span class="conv-time" id="convTime-${c.id}">${timeStr}</span>
+                                <button type="button" class="btn-open-dock" onclick="event.preventDefault(); event.stopPropagation(); openDockedChat(${c.id}, '${escapeJs(c.title)}', '${c.avatar_url || ''}', false);" title="ডক উইন্ডোতে খুলুন">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="conv-bottom-row">
-                            <div class="conv-snippet">${snippet}</div>
-                            ${c.unread_count > 0 ? `<span class="badge-unread-pill">${c.unread_count}</span>` : ''}
+                            <div class="conv-snippet" id="convSnippet-${c.id}">${escapeHtml(snippet)}</div>
+                            ${c.unread_count > 0 ? `<span class="badge-unread-pill" id="convUnreadBadge-${c.id}">${c.unread_count}</span>` : ''}
                         </div>
                     </div>
                 </a>
             `;
         }).join('');
+    }
+
+    function appendMoreConversationsToInbox(items) {
+        const container = document.getElementById('conversationsListContainer');
+        if (!container || !Array.isArray(items)) return;
+
+        items.forEach(c => {
+            if (document.getElementById(`convItem-${c.id}`)) return;
+            const isActive = currentConvId && Number(currentConvId) === Number(c.id);
+            const snippet = c.last_message ? (c.last_message.sender_id === currentUserId ? 'আপনি: ' : '') + (c.last_message.body || '') : 'কথোপকথন শুরু করুন...';
+            const otherUser = c.other_user || (c.participants ? c.participants.find(p => p.id !== currentUserId) : null);
+            const otherUserId = otherUser ? (otherUser.id || '') : (c.user_id || '');
+            const timeStr = c.last_message_at ? formatRelativeTime(c.last_message_at) : '';
+
+            const rowHtml = `
+                <a href="/messages/${c.id}" class="conversation-item ${isActive ? 'active' : ''} ${c.unread_count > 0 ? 'conv-item-unread' : ''}" id="convItem-${c.id}" data-id="${c.id}" data-user-id="${otherUserId}" data-title="${escapeHtml((c.title || '').toLowerCase())}">
+                    <div class="conv-avatar-wrapper">
+                        <div class="avatar" style="width: 48px; height: 48px;">
+                            ${c.avatar_url ? `<img src="${c.avatar_url}" alt="${escapeHtml(c.title || '')}">` : escapeHtml((c.title ? c.title.charAt(0) : 'U'))}
+                        </div>
+                        <div class="online-indicator" id="convPresence-${c.id}"></div>
+                    </div>
+                    <div class="conv-content">
+                        <div class="conv-top-row">
+                            <div class="conv-name">
+                                ${escapeHtml(c.title || 'ব্যবহারকারী')}
+                                ${c.is_pinned ? `<span class="badge-pinned" title="পিন করা"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg></span>` : ''}
+                                ${c.is_muted ? `<span class="badge-muted" title="মিউট করা"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M17 17H3v-2l2-2V9a7 7 0 0 1 .74-3.15"></path><path d="M9 17v1a3 3 0 0 0 6 0v-1"></path><path d="M10.26 4.74A7 7 0 0 1 19 9v4l1.2 1.2"></path></svg></span>` : ''}
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                                <span class="conv-time" id="convTime-${c.id}">${timeStr}</span>
+                                <button type="button" class="btn-open-dock" onclick="event.preventDefault(); event.stopPropagation(); openDockedChat(${c.id}, '${escapeJs(c.title)}', '${c.avatar_url || ''}', false);" title="ডক উইন্ডোতে খুলুন">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="conv-bottom-row">
+                            <div class="conv-snippet" id="convSnippet-${c.id}">${escapeHtml(snippet)}</div>
+                            ${c.unread_count > 0 ? `<span class="badge-unread-pill" id="convUnreadBadge-${c.id}">${c.unread_count}</span>` : ''}
+                        </div>
+                    </div>
+                </a>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        });
+    }
+
+    function initConversationsInfiniteScroll() {
+        const container = document.getElementById('conversationsListContainer');
+        if (!container) return;
+
+        container.addEventListener('scroll', () => {
+            if (!convHasMore || convIsLoading) return;
+            const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+            if (scrollBottom < 120) {
+                loadMoreConversations();
+            }
+        });
+    }
+
+    async function loadMoreConversations() {
+        if (convIsLoading || !convHasMore) return;
+        convIsLoading = true;
+        convCurrentPage++;
+
+        try {
+            const token = localStorage.getItem('jugajug_token') || localStorage.getItem('bondhoo_token') || '';
+            const searchVal = document.getElementById('convSearchInput')?.value.trim() || '';
+            let url = `/api/v1/conversations?page=${convCurrentPage}&per_page=20`;
+            if (currentConvTab && currentConvTab !== 'all') url += `&filter=${currentConvTab}`;
+            if (searchVal) url += `&search=${encodeURIComponent(searchVal)}`;
+
+            const res = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                }
+            });
+            const json = await res.json();
+            if (json.success && json.data) {
+                const items = Array.isArray(json.data) ? json.data : (json.data.data || []);
+                if (items.length === 0) {
+                    convHasMore = false;
+                } else {
+                    appendMoreConversationsToInbox(items);
+                    if (json.meta && json.meta.current_page >= json.meta.last_page) {
+                        convHasMore = false;
+                    }
+                }
+            } else {
+                convHasMore = false;
+            }
+        } catch (e) {
+            convCurrentPage--;
+        } finally {
+            convIsLoading = false;
+        }
+    }
+
+    function updateConversationPreviewInInbox(convId, m) {
+        if (!convId || !m) return;
+        const container = document.getElementById('conversationsListContainer');
+        if (!container) return;
+
+        let item = document.getElementById(`convItem-${convId}`);
+        const isMe = Number(m.sender_id || m.sender?.id) === Number(currentUserId);
+        const rawBody = m.body || (m.media_ids ? '📷 ছবি/ফাইল' : (m.type === 'voice' ? '🎙️ ভয়েস বার্তা' : 'বার্তা'));
+        const snippetText = (isMe ? 'আপনি: ' : '') + (rawBody.length > 28 ? rawBody.substring(0, 28) + '...' : rawBody);
+
+        if (item) {
+            // 1. Update snippet
+            const snippetEl = item.querySelector('.conv-snippet') || document.getElementById(`convSnippet-${convId}`);
+            if (snippetEl) snippetEl.textContent = snippetText;
+
+            // 2. Update time
+            const timeEl = item.querySelector('.conv-time') || document.getElementById(`convTime-${convId}`);
+            if (timeEl) timeEl.textContent = 'এখনই';
+
+            // 3. Update unread badge if not in active conversation
+            const isCurrentChat = currentConvId && Number(currentConvId) === Number(convId);
+            if (!isCurrentChat && !isMe) {
+                let badge = item.querySelector('.badge-unread-pill') || document.getElementById(`convUnreadBadge-${convId}`);
+                if (badge) {
+                    const currentCount = parseInt(badge.textContent, 10) || 0;
+                    badge.textContent = currentCount + 1;
+                } else {
+                    const bottomRow = item.querySelector('.conv-bottom-row');
+                    if (bottomRow) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'badge-unread-pill';
+                        newBadge.id = `convUnreadBadge-${convId}`;
+                        newBadge.textContent = '1';
+                        bottomRow.appendChild(newBadge);
+                    }
+                }
+                item.classList.add('conv-item-unread');
+            }
+
+            // 4. Sort to top of inbox
+            container.prepend(item);
+        } else {
+            // New conversation row not in DOM yet
+            fetchSingleConversationForInbox(convId);
+        }
+    }
+
+    async function fetchSingleConversationForInbox(convId) {
+        try {
+            const token = localStorage.getItem('jugajug_token') || localStorage.getItem('bondhoo_token') || '';
+            const res = await fetch(`/api/v1/conversations/${convId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                }
+            });
+            const data = await res.json();
+            if (data.success && data.data) {
+                appendMoreConversationsToInbox([data.data]);
+                const newlyAdded = document.getElementById(`convItem-${convId}`);
+                const container = document.getElementById('conversationsListContainer');
+                if (newlyAdded && container) {
+                    container.prepend(newlyAdded);
+                }
+            }
+        } catch (e) {}
     }
 
     // Message Sending & Input
@@ -6387,6 +6639,9 @@
             if (convId && typeof openDockedChats !== 'undefined' && openDockedChats.includes(convId)) {
                 appendDockedMessage(convId, m);
             }
+            if (convId && typeof updateConversationPreviewInInbox === 'function') {
+                updateConversationPreviewInInbox(convId, m);
+            }
         }
         // 2. Message Read Receipts
         else if (evt.event_type === 'conversation.read') {
@@ -6397,6 +6652,14 @@
                 });
             }
             const convId = Number(evt.conversation_id || evt.payload?.conversation_id);
+            if (convId) {
+                const item = document.getElementById(`convItem-${convId}`);
+                if (item) {
+                    item.classList.remove('conv-item-unread');
+                    const badge = item.querySelector('.badge-unread-pill');
+                    if (badge) badge.remove();
+                }
+            }
             if (convId && typeof openDockedChats !== 'undefined' && openDockedChats.includes(convId)) {
                 const bodyEl = document.getElementById(`dockedMessages-${convId}`);
                 if (bodyEl) {

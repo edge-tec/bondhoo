@@ -593,14 +593,7 @@
     function handleMobileNavMessenger() {
         closeMobileMenuDrawer();
         closeMobileCreateSheet();
-
-        if (typeof openMessengerModal === 'function') {
-            openMessengerModal();
-        } else if (typeof openLatestOrToggleChat === 'function') {
-            openLatestOrToggleChat(event);
-        } else {
-            window.location.href = '/messages';
-        }
+        window.location.href = '/messages';
     }
 
     function handleMobileNavProfile() {

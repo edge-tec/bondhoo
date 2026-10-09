@@ -5956,6 +5956,10 @@
                 event.stopPropagation();
                 event.preventDefault();
             }
+            if (window.innerWidth <= 768) {
+                window.location.href = '/messages';
+                return;
+            }
             const box = document.getElementById('messengerChatBox');
             const isVisible = box && (box.classList.contains('active') || box.style.display === 'flex') && !box.classList.contains('hidden') && box.style.display !== 'none';
             if (isVisible) {

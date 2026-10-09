@@ -46,13 +46,27 @@ class MessengerWebController extends Controller
         }
 
         $conversations = $this->messengerService->getUserConversations($user, 30);
-        $firstItem = $conversations->first();
         $activeConversation = null;
-        if ($firstItem) {
-            $firstId = is_array($firstItem) ? $firstItem['id'] : $firstItem->id;
+
+        // Open specific conversation only if explicitly requested
+        if ($request->filled('conversation_id')) {
+            $convId = (int) $request->input('conversation_id');
             $activeConversation = Conversation::with(['participants.user.profile', 'lastMessage'])
                 ->whereHas('participants', fn ($q) => $q->where('user_id', $user->id))
-                ->find($firstId);
+                ->find($convId);
+            if ($activeConversation) {
+                $this->messengerService->markConversationAsRead($activeConversation, $user);
+            }
+        } elseif ($request->filled('user')) {
+            $targetUserId = (int) $request->input('user');
+            $targetUser = User::find($targetUserId);
+            if ($targetUser && $targetUser->id !== $user->id) {
+                $activeConversation = $this->messengerService->getOrCreateDirectConversation($user, $targetUser->id);
+                if ($activeConversation) {
+                    $activeConversation->load(['participants.user.profile', 'lastMessage']);
+                    $this->messengerService->markConversationAsRead($activeConversation, $user);
+                }
+            }
         }
 
         $messages = $activeConversation ? $this->messengerService->getMessages($activeConversation, $user, 50) : collect();
