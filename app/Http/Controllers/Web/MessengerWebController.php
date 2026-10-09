@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\User;
 use App\Services\Contracts\MessengerServiceInterface;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,8 +24,8 @@ class MessengerWebController extends Controller
     protected function resolveUser(Request $request): ?User
     {
         $user = $request->user();
-        if (! $user && $request->hasCookie('jugajug_token')) {
-            $rawToken = (string) $request->cookie('jugajug_token');
+        if (! $user && ($request->hasCookie('jugajug_token') || $request->hasCookie('bondhoo_token'))) {
+            $rawToken = (string) ($request->cookie('bondhoo_token') ?: $request->cookie('jugajug_token'));
             $pat = PersonalAccessToken::findToken($rawToken);
             if ($pat && $pat->tokenable instanceof User) {
                 $user = $pat->tokenable;
@@ -33,6 +34,22 @@ class MessengerWebController extends Controller
         }
 
         return $user;
+    }
+
+    /**
+     * Resolve or generate an auth token for web client API communication.
+     */
+    protected function resolveUserToken(Request $request, User $user): string
+    {
+        $cookieToken = (string) ($request->cookie('bondhoo_token') ?: $request->cookie('jugajug_token'));
+        if ($cookieToken) {
+            $pat = PersonalAccessToken::findToken($cookieToken);
+            if ($pat && (int) $pat->tokenable_id === (int) $user->id) {
+                return $cookieToken;
+            }
+        }
+
+        return $user->createToken('bondhoo_messenger_web')->plainTextToken;
     }
 
     /**
@@ -70,12 +87,14 @@ class MessengerWebController extends Controller
         }
 
         $messages = $activeConversation ? $this->messengerService->getMessages($activeConversation, $user, 50) : collect();
+        $userToken = $this->resolveUserToken($request, $user);
 
         return view('messages.index', [
             'currentUser' => $user,
             'conversations' => $conversations,
             'activeConversation' => $activeConversation,
             'messages' => $messages,
+            'userToken' => $userToken,
         ]);
     }
 
@@ -102,12 +121,62 @@ class MessengerWebController extends Controller
 
         $conversations = $this->messengerService->getUserConversations($user, 30);
         $messages = $this->messengerService->getMessages($activeConversation, $user, 50);
+        $userToken = $this->resolveUserToken($request, $user);
 
         return view('messages.index', [
             'currentUser' => $user,
             'conversations' => $conversations,
             'activeConversation' => $activeConversation,
             'messages' => $messages,
+            'userToken' => $userToken,
         ]);
+    }
+
+    /**
+     * Send a message through web session guard as a resilient fallback.
+     */
+    public function sendMessage(Request $request, int $id): JsonResponse
+    {
+        $user = $this->resolveUser($request);
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'মেসেঞ্জার ব্যবহার করতে অনুগ্রহ করে প্রথমে লগইন করুন।',
+            ], 401);
+        }
+
+        $conversation = Conversation::whereHas('participants', fn ($q) => $q->where('user_id', $user->id))->find($id);
+        if (! $conversation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'কনভার্সনটি পাওয়া যায়নি বা আপনার দেখার অনুমতি নেই।',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'body' => ['nullable', 'string', 'max:5000'],
+            'media_ids' => ['nullable', 'array'],
+            'media_ids.*' => ['integer', 'exists:media,id'],
+            'type' => ['nullable', 'string', 'in:text,media,voice,file,link,system'],
+            'reply_to_id' => ['nullable', 'integer', 'exists:messages,id'],
+            'client_message_id' => ['nullable', 'string', 'max:128'],
+            'idempotency_key' => ['nullable', 'string', 'max:128'],
+            'metadata' => ['nullable', 'array'],
+        ]);
+
+        if (empty(trim($validated['body'] ?? '')) && empty($validated['media_ids'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'বার্তা অবশ্যই টেক্সট বা ফাইল যুক্ত হতে হবে।',
+            ], 422);
+        }
+
+        $message = $this->messengerService->sendMessage($user, $conversation, $validated);
+
+        return response()->json([
+            'success' => true,
+            'data' => $message->toResponseArray($user),
+            'message' => 'Message sent successfully.',
+        ], 201);
     }
 }

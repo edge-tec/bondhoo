@@ -368,17 +368,76 @@
         justify-content: space-between;
         background: var(--ms-bg-card);
         flex-shrink: 0;
-        z-index: 5;
+        z-index: 20;
+        gap: 8px;
+        position: relative;
     }
 
     .chat-header-user {
         display: flex;
         align-items: center;
-        gap: 12px;
-        cursor: pointer;
+        gap: 10px;
         min-width: 0;
-        flex: 1;
-        padding-right: 8px;
+        flex: 1 1 auto;
+        overflow: hidden;
+    }
+
+    .chat-header-info {
+        min-width: 0;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .chat-header-name {
+        font-weight: 800;
+        font-size: 15.5px;
+        color: var(--fb-text-primary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.25;
+    }
+
+    .chat-header-name-link {
+        text-decoration: none;
+        color: inherit;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        display: block;
+        cursor: pointer;
+    }
+
+    .chat-header-name-link:hover {
+        text-decoration: underline;
+    }
+
+    .chat-header-group-badge {
+        font-size: 11px;
+        background: rgba(0,0,0,0.06);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .chat-header-status {
+        font-size: 11.5px;
+        color: var(--ms-green);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        line-height: 1.35;
+        cursor: pointer;
     }
 
     .chat-header-actions {
@@ -418,6 +477,7 @@
         color: var(--ms-primary);
         width: 36px;
         height: 36px;
+        flex-shrink: 0;
     }
 
     .chat-header-actions .icon-circle-btn svg {
@@ -944,8 +1004,14 @@
         justify-content: center;
         cursor: pointer;
         box-shadow: 0 2px 8px rgba(0, 132, 255, 0.35);
-        transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
         flex-shrink: 0;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        position: relative;
+        z-index: 5;
     }
 
     .btn-send-message:hover {
@@ -956,6 +1022,14 @@
 
     .btn-send-message:active {
         transform: scale(0.95);
+    }
+
+    .btn-send-message:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+        pointer-events: none;
     }
 
     .btn-send-message svg {
@@ -1592,6 +1666,11 @@
     }
 
     @media (max-width: 767px) {
+        .main-app-container.main-messenger-mode {
+            height: calc(100dvh - 56px) !important;
+            max-height: calc(100dvh - 56px) !important;
+        }
+
         .conversations-pane {
             width: 100%;
             max-width: 100%;
@@ -1606,33 +1685,107 @@
 
         .btn-mobile-back {
             display: inline-flex;
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
+            margin-right: 4px;
         }
 
         .chat-header {
-            padding: 0 12px;
+            padding: 0 10px;
             height: 56px;
-        }
-
-        .messages-stream {
-            padding: 12px;
-        }
-
-        .message-row {
-            max-width: 86%;
-        }
-
-        .chat-footer {
-            padding: 8px 10px;
             gap: 6px;
         }
 
+        .chat-header-user {
+            gap: 8px;
+        }
+
+        .chat-header-user .avatar {
+            width: 38px !important;
+            height: 38px !important;
+            font-size: 15px !important;
+        }
+
+        .chat-header-name {
+            font-size: 14.5px;
+        }
+
+        .chat-header-status {
+            font-size: 11px;
+        }
+
+        /* Hide secondary buttons on mobile to avoid overcrowding and header control collision */
+        .chat-header-actions .btn-header-profile,
+        .chat-header-actions .btn-header-search,
+        .chat-header-actions .btn-header-multicall {
+            display: none !important;
+        }
+
+        .chat-header-actions {
+            gap: 4px;
+        }
+
+        .chat-header-actions .icon-circle-btn {
+            width: 34px !important;
+            height: 34px !important;
+        }
+
+        .chat-header-actions .icon-circle-btn svg {
+            width: 17px !important;
+            height: 17px !important;
+        }
+
+        .messages-stream {
+            padding: 10px 12px;
+        }
+
+        .message-row {
+            max-width: 88%;
+        }
+
+        .chat-composer-wrapper {
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        .chat-footer {
+            padding: 6px 8px;
+            gap: 5px;
+        }
+
         .chat-textarea-box {
-            padding: 6px 12px;
+            padding: 6px 10px;
+            gap: 4px;
+        }
+
+        .chat-textarea {
+            font-size: 14px;
+            min-height: 20px;
         }
 
         .ms-composer-btn {
-            width: 32px;
-            height: 32px;
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            padding: 0 !important;
+        }
+
+        .ms-composer-btn svg {
+            width: 19px !important;
+            height: 19px !important;
+        }
+
+        .btn-send-message {
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+        }
+
+        .btn-send-message svg {
+            width: 17px !important;
+            height: 17px !important;
         }
     }
 
@@ -2500,7 +2653,7 @@
                         </svg>
                     </button>
                     @if(!$isGroup && !$isSaved && $activeOther)
-                        <a href="{{ route('profile.show', ['username' => $activeOther->username ?? $activeOther->id]) }}" class="conv-avatar-wrapper" title="{{ $activeTitle }}-এর প্রোফাইল দেখুন" style="text-decoration: none; cursor: pointer;">
+                        <a href="{{ route('profile.show', ['username' => $activeOther->username ?? $activeOther->id]) }}" class="conv-avatar-wrapper" title="{{ $activeTitle }}-এর প্রোফাইল দেখুন" style="text-decoration: none; cursor: pointer; flex-shrink: 0;">
                             <div class="avatar" style="width: 44px; height: 44px;">
                                 @if($activeAvatar)
                                     <img src="{{ $activeAvatar }}" alt="{{ $activeTitle }}">
@@ -2511,7 +2664,7 @@
                             <div class="online-indicator" id="headerOnlineDot"></div>
                         </a>
                     @else
-                        <div class="conv-avatar-wrapper" onclick="toggleDetailsSidebar()" style="cursor: pointer;">
+                        <div class="conv-avatar-wrapper" onclick="toggleDetailsSidebar()" style="cursor: pointer; flex-shrink: 0;">
                             <div class="avatar" style="width: 44px; height: 44px;">
                                 @if($activeAvatar)
                                     <img src="{{ $activeAvatar }}" alt="{{ $activeTitle }}">
@@ -2524,24 +2677,24 @@
                             @endif
                         </div>
                     @endif
-                    <div>
-                        <div style="font-weight: 800; font-size: 16px; color: var(--fb-text-primary); display: flex; align-items: center; gap: 6px;">
+                    <div class="chat-header-info">
+                        <div class="chat-header-name">
                             @if(!$isGroup && !$isSaved && $activeOther)
-                                <a href="{{ route('profile.show', ['username' => $activeOther->username ?? $activeOther->id]) }}" style="text-decoration: none; color: inherit;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="{{ $activeTitle }}-এর প্রোফাইল দেখুন">
+                                <a href="{{ route('profile.show', ['username' => $activeOther->username ?? $activeOther->id]) }}" class="chat-header-name-link" title="{{ $activeTitle }}-এর প্রোফাইল দেখুন">
                                     {{ $activeTitle }}
                                 </a>
                             @else
-                                <span onclick="toggleDetailsSidebar()" style="cursor: pointer;">{{ $activeTitle }}</span>
+                                <span onclick="toggleDetailsSidebar()" class="chat-header-name-link">{{ $activeTitle }}</span>
                             @endif
                             @if($isGroup)
-                                <span style="font-size: 11px; background: rgba(0,0,0,0.06); padding: 2px 8px; border-radius: 10px; font-weight: 600;">গ্রুপ ({{ $activeConversation->participants->count() }})</span>
+                                <span class="chat-header-group-badge">গ্রুপ ({{ $activeConversation->participants->count() }})</span>
                             @endif
                         </div>
-                        <div style="font-size: 12px; color: var(--fb-green); cursor: pointer;" onclick="toggleDetailsSidebar()" id="headerPresenceText">
+                        <div class="chat-header-status" onclick="toggleDetailsSidebar()" id="headerPresenceText">
                             @if($isGroup)
                                 {{ $activeConversation->participants->count() }} জন সদস্য
                             @elseif($isSaved)
-                                আপনার ব্যক্তিগত সংরক্ষিত নোট ও বার্তা
+                                সংরক্ষিত বার্তা
                             @else
                                 সক্রিয় আছেন · প্রোফাইল দেখুন ↗
                             @endif
@@ -2551,38 +2704,38 @@
 
                 <div class="chat-header-actions">
                     @if(!$isGroup && !$isSaved && $activeOther)
-                        <a href="{{ route('profile.show', ['username' => $activeOther->username ?? $activeOther->id]) }}" class="icon-circle-btn" title="{{ $activeTitle }}-এর প্রোফাইল দেখুন" style="text-decoration: none; color: inherit;">
+                        <a href="{{ route('profile.show', ['username' => $activeOther->username ?? $activeOther->id]) }}" class="icon-circle-btn btn-header-profile" title="{{ $activeTitle }}-এর প্রোফাইল দেখুন" style="text-decoration: none; color: inherit;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="12" cy="7" r="4"></circle>
                             </svg>
                         </a>
                     @endif
-                    <button type="button" class="icon-circle-btn" title="মেসেজ সার্চ করুন" onclick="toggleInChatSearch()">
+                    <button type="button" class="icon-circle-btn btn-header-search" title="মেসেজ সার্চ করুন" onclick="toggleInChatSearch()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                     </button>
                     @if(!$isSaved)
-                        <button type="button" class="icon-circle-btn" id="multiFriendCallBtn" title="মাল্টি-ফ্রেন্ড কল (অন্য বন্ধুদের যুক্ত করে কল)" onclick="openMultiFriendCallModal(currentConvId, '{{ addslashes($activeTitle) }}')">
+                        <button type="button" class="icon-circle-btn btn-header-multicall" id="multiFriendCallBtn" title="মাল্টি-ফ্রেন্ড কল (অন্য বন্ধুদের যুক্ত করে কল)" onclick="openMultiFriendCallModal(currentConvId, '{{ addslashes($activeTitle) }}')">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                             </svg>
                         </button>
-                        <button type="button" class="icon-circle-btn" title="{{ $isGroup ? 'গ্রুপ অডিও কল' : 'অডিও কল' }}" onclick="startCall('{{ $isGroup ? 'group_audio' : 'audio' }}', '{{ addslashes($activeTitle) }}')">
+                        <button type="button" class="icon-circle-btn btn-header-audiocall" title="{{ $isGroup ? 'গ্রুপ অডিও কল' : 'অডিও কল' }}" onclick="startCall('{{ $isGroup ? 'group_audio' : 'audio' }}', '{{ addslashes($activeTitle) }}')">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                             </svg>
                         </button>
-                        <button type="button" class="icon-circle-btn" title="{{ $isGroup ? 'গ্রুপ ভিডিও কল' : 'ভিডিও কল' }}" onclick="startCall('{{ $isGroup ? 'group_video' : 'video' }}', '{{ addslashes($activeTitle) }}')">
+                        <button type="button" class="icon-circle-btn btn-header-videocall" title="{{ $isGroup ? 'গ্রুপ ভিডিও কল' : 'ভিডিও কল' }}" onclick="startCall('{{ $isGroup ? 'group_video' : 'video' }}', '{{ addslashes($activeTitle) }}')">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <polygon points="23 7 16 12 23 17 23 7"></polygon>
                                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                             </svg>
                         </button>
                     @endif
-                    <button type="button" class="icon-circle-btn" title="চ্যাট বিবরণ ও ফাইলসমূহ" onclick="toggleDetailsSidebar()">
+                    <button type="button" class="icon-circle-btn btn-header-details" title="চ্যাট বিবরণ ও ফাইলসমূহ" onclick="toggleDetailsSidebar()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -2879,7 +3032,7 @@
 
                     <!-- Text Composer Box (Capsule Pill with embedded emoji picker) -->
                     <div class="chat-textarea-box" id="composerTextBox">
-                        <textarea class="chat-textarea" id="chatMessageInput" placeholder="একটি বার্তা লিখুন... (Enter চাপলে সেন্ড হবে)" rows="1" onkeydown="handleComposerKeydown(event)" oninput="handleComposerInput(this)"></textarea>
+                        <textarea class="chat-textarea" id="chatMessageInput" placeholder="বার্তা লিখুন..." rows="1" onkeydown="handleComposerKeydown(event)" oninput="handleComposerInput(this)"></textarea>
                         <button type="button" class="ms-input-icon-btn" title="ইমোজি" onclick="toggleEmojiPicker()">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -2921,7 +3074,7 @@
                     </button>
 
                     <!-- Send Button -->
-                    <button type="button" class="btn-send-message" id="btnSendMessage" title="বার্তা পাঠান" onclick="submitMessage()">
+                    <button type="button" class="btn-send-message" id="btnSendMessage" title="বার্তা পাঠান">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                         </svg>
@@ -3716,6 +3869,28 @@
     const currentUserId = {{ $currentUser?->id ?? 'null' }};
     const currentConvId = {{ $activeConversation ? $activeConversation->id : 'null' }};
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const serverAuthToken = @json($userToken ?? '');
+
+    function getAuthToken() {
+        return serverAuthToken || localStorage.getItem('bondhoo_token') || localStorage.getItem('jugajug_token') || '';
+    }
+
+    if (serverAuthToken) {
+        try {
+            localStorage.setItem('bondhoo_token', serverAuthToken);
+            localStorage.setItem('jugajug_token', serverAuthToken);
+        } catch (e) {}
+    }
+
+    function getMessengerHeaders(extraHeaders = {}) {
+        const token = getAuthToken();
+        return {
+            'Accept': 'application/json',
+            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            ...extraHeaders
+        };
+    }
 
     let activeReplyToId = null;
     let voiceMediaRecorder = null;
@@ -3734,6 +3909,21 @@
         }
         if (currentConvId) {
             loadSharedTab('media');
+        }
+
+        // Attach touch and click listeners to send button for cross-device responsiveness
+        const sendBtn = document.getElementById('btnSendMessage');
+        if (sendBtn) {
+            sendBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                submitMessage();
+            });
+            sendBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                submitMessage();
+            }, { passive: false });
         }
     });
 
@@ -4151,22 +4341,60 @@
         }
     }
 
+    let isSendingMessage = false;
+    let lastSendTriggerTime = 0;
     const pendingFailedMessages = {};
     const activeUploads = {};
 
-    function submitMessage(extraPayload = {}) {
-        if (!currentConvId) return;
+    function restoreFailedMessageToInput(clientMsgId) {
+        const record = pendingFailedMessages[clientMsgId];
+        if (!record) return;
         const input = document.getElementById('chatMessageInput');
-        const bodyText = (input?.value || '').trim();
+        if (input) {
+            input.value = record.originalText || record.payload.body || '';
+            handleComposerInput(input);
+            input.focus();
+            showToast('মেসেজটি ইনপুটে ফিরিয়ে আনা হয়েছে');
+        }
+    }
 
-        if (!bodyText && !extraPayload.media_ids && !extraPayload.body) return;
+    async function submitMessage(extraPayload = {}) {
+        if (!currentConvId) return;
+
+        const now = Date.now();
+        if (isSendingMessage || (now - lastSendTriggerTime < 250)) {
+            return;
+        }
+
+        const input = document.getElementById('chatMessageInput');
+        const rawBodyText = input?.value || '';
+        const bodyText = (extraPayload.body !== undefined ? extraPayload.body : rawBodyText).trim();
+
+        if (!bodyText && !extraPayload.media_ids) {
+            return;
+        }
+
+        lastSendTriggerTime = now;
+        isSendingMessage = true;
+
+        const sendBtn = document.getElementById('btnSendMessage');
+        if (sendBtn) {
+            sendBtn.disabled = true;
+            sendBtn.classList.add('sending');
+            sendBtn.style.opacity = '0.65';
+        }
 
         const clientMsgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
         const payload = {
             body: bodyText,
             reply_to_id: activeReplyToId,
+            client_message_id: clientMsgId,
+            idempotency_key: clientMsgId,
             ...extraPayload
         };
+
+        const originalText = rawBodyText;
+        pendingFailedMessages[clientMsgId] = { payload, originalText };
 
         // Optimistic UI Append
         const textToDisplay = payload.body || (payload.media_ids ? 'মিডিয়া ফাইল...' : '');
@@ -4181,54 +4409,113 @@
         cancelReply();
         localStorage.removeItem(`draft_conv_${currentConvId}`);
 
-        fetch(`/api/v1/conversations/${currentConvId}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...(csrfToken ? {'X-CSRF-TOKEN': csrfToken} : {}) },
-            body: JSON.stringify(payload)
-        })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success && res.data) {
+        try {
+            let resData = null;
+            let success = false;
+            let lastError = null;
+
+            // Attempt 1: API endpoint with Bearer auth token and CSRF
+            try {
+                const apiRes = await fetch(`/api/v1/conversations/${currentConvId}/messages`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: getMessengerHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify(payload)
+                });
+
+                if (apiRes.ok) {
+                    resData = await apiRes.json();
+                    if (resData && (resData.success || resData.data)) {
+                        success = true;
+                    }
+                } else {
+                    const errBody = await apiRes.json().catch(() => null);
+                    lastError = errBody?.message || `API error (${apiRes.status})`;
+                }
+            } catch (apiErr) {
+                lastError = 'API network error';
+            }
+
+            // Attempt 2: Fallback to web session endpoint if API request failed
+            if (!success) {
+                try {
+                    const webRes = await fetch(`/messages/${currentConvId}/send`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {})
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (webRes.ok) {
+                        resData = await webRes.json();
+                        if (resData && (resData.success || resData.data)) {
+                            success = true;
+                        }
+                    } else {
+                        const webErr = await webRes.json().catch(() => null);
+                        lastError = webErr?.message || (lastError ?? `সার্ভার এরর (${webRes.status})`);
+                    }
+                } catch (webErr) {
+                    lastError = 'নেটওয়ার্ক সংযোগ বিঘ্নিত হয়েছে। পুনরায় চেষ্টা করুন।';
+                }
+            }
+
+            if (success && resData?.data) {
                 delete pendingFailedMessages[clientMsgId];
                 if (window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
-                    window.bondhooSoundManager.playOutgoingMessageSentTone(res.data.id);
+                    window.bondhooSoundManager.playOutgoingMessageSentTone(resData.data.id);
                 }
                 const localRow = document.getElementById(`localRow-${clientMsgId}`);
                 if (localRow) {
-                    localRow.id = `messageRow-${res.data.id}`;
-                    localRow.setAttribute('data-id', res.data.id);
+                    localRow.id = `messageRow-${resData.data.id}`;
+                    localRow.setAttribute('data-id', resData.data.id);
                     localRow.style.opacity = '1';
                     const check = localRow.querySelector('.delivery-check');
                     if (check) check.textContent = '✓';
                 }
             } else {
-                markMessageAsFailed(clientMsgId, payload, res.message || 'মেসেজ পাঠানো সম্ভব হয়নি');
+                markMessageAsFailed(clientMsgId, payload, originalText, lastError || 'মেসেজ পাঠানো সম্ভব হয়নি');
             }
-        })
-        .catch(() => {
-            markMessageAsFailed(clientMsgId, payload, 'নেটওয়ার্ক সংযোগ বিঘ্নিত হয়েছে');
-        });
+        } catch (e) {
+            console.error('Fatal send error:', e);
+            markMessageAsFailed(clientMsgId, payload, originalText, 'মেসেজ পাঠাতে অপ্রত্যাশিত ত্রুটি ঘটেছে।');
+        } finally {
+            isSendingMessage = false;
+            if (sendBtn) {
+                sendBtn.disabled = false;
+                sendBtn.classList.remove('sending');
+                sendBtn.style.opacity = '';
+            }
+        }
     }
 
-    function markMessageAsFailed(clientMsgId, payload, errorMsg) {
-        pendingFailedMessages[clientMsgId] = payload;
+    function markMessageAsFailed(clientMsgId, payload, originalText, errorMsg) {
+        pendingFailedMessages[clientMsgId] = { payload, originalText };
         const localRow = document.getElementById(`localRow-${clientMsgId}`);
         if (localRow) {
             localRow.classList.add('failed');
             const metaRow = localRow.querySelector('.message-meta-row');
             if (metaRow) {
                 metaRow.innerHTML = `
-                    <span style="color: #ef4444; font-size: 11px;">⚠️ ${escapeHtml(errorMsg)}</span>
-                    <button type="button" class="retry-send-btn" onclick="retryFailedMessage('${clientMsgId}')">পুনরায় পাঠান</button>
+                    <span style="color: #ef4444; font-size: 11px; font-weight: 500;">⚠️ ${escapeHtml(errorMsg)}</span>
+                    <button type="button" class="retry-send-btn" onclick="retryFailedMessage('${clientMsgId}')" style="background:#0084ff; color:white; border:none; padding:3px 8px; border-radius:12px; font-size:11px; cursor:pointer; font-weight:600; margin-left:6px;">পুনরায় পাঠান</button>
+                    <button type="button" class="restore-send-btn" onclick="restoreFailedMessageToInput('${clientMsgId}')" style="background:#e4e6eb; color:#050505; border:none; padding:3px 8px; border-radius:12px; font-size:11px; cursor:pointer; font-weight:600; margin-left:4px;">ইনপুটে নিন</button>
                 `;
             }
         }
         showToast(errorMsg);
     }
 
-    function retryFailedMessage(clientMsgId) {
-        const payload = pendingFailedMessages[clientMsgId];
-        if (!payload || !currentConvId) return;
+    async function retryFailedMessage(clientMsgId) {
+        const record = pendingFailedMessages[clientMsgId];
+        if (!record || !currentConvId) return;
+
+        const payload = record.payload;
+        const originalText = record.originalText;
 
         const localRow = document.getElementById(`localRow-${clientMsgId}`);
         if (localRow) {
@@ -4239,32 +4526,75 @@
             }
         }
 
-        fetch(`/api/v1/conversations/${currentConvId}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...(csrfToken ? {'X-CSRF-TOKEN': csrfToken} : {}) },
-            body: JSON.stringify(payload)
-        })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success && res.data) {
+        try {
+            let resData = null;
+            let success = false;
+            let lastError = null;
+
+            try {
+                const response = await fetch(`/api/v1/conversations/${currentConvId}/messages`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: getMessengerHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) {
+                    resData = await response.json();
+                    if (resData && (resData.success || resData.data)) {
+                        success = true;
+                    }
+                } else {
+                    const errBody = await response.json().catch(() => null);
+                    lastError = errBody?.message || `API error (${response.status})`;
+                }
+            } catch (err) {
+                lastError = 'API network error';
+            }
+
+            if (!success) {
+                try {
+                    const fallbackRes = await fetch(`/messages/${currentConvId}/send`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {})
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    if (fallbackRes.ok) {
+                        resData = await fallbackRes.json();
+                        if (resData && (resData.success || resData.data)) {
+                            success = true;
+                        }
+                    } else {
+                        const webErr = await fallbackRes.json().catch(() => null);
+                        lastError = webErr?.message || (lastError ?? `সার্ভার এরর (${fallbackRes.status})`);
+                    }
+                } catch (webErr) {
+                    lastError = 'নেটওয়ার্ক সংযোগ বিঘ্নিত হয়েছে। পুনরায় চেষ্টা করুন।';
+                }
+            }
+
+            if (success && resData?.data) {
                 delete pendingFailedMessages[clientMsgId];
                 if (window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
-                    window.bondhooSoundManager.playOutgoingMessageSentTone(res.data.id);
+                    window.bondhooSoundManager.playOutgoingMessageSentTone(resData.data.id);
                 }
                 if (localRow) {
-                    localRow.id = `messageRow-${res.data.id}`;
-                    localRow.setAttribute('data-id', res.data.id);
+                    localRow.id = `messageRow-${resData.data.id}`;
+                    localRow.setAttribute('data-id', resData.data.id);
                     localRow.style.opacity = '1';
                     const check = localRow.querySelector('.delivery-check');
                     if (check) check.textContent = '✓';
                 }
             } else {
-                markMessageAsFailed(clientMsgId, payload, res.message || 'পুনরায় ব্যর্থ হয়েছে');
+                markMessageAsFailed(clientMsgId, payload, originalText, lastError || 'পুনরায় ব্যর্থ হয়েছে');
             }
-        })
-        .catch(() => {
-            markMessageAsFailed(clientMsgId, payload, 'নেটওয়ার্ক সংযোগ বিঘ্নিত হয়েছে');
-        });
+        } catch (e) {
+            markMessageAsFailed(clientMsgId, payload, originalText, 'নেটওয়ার্ক সংযোগ বিঘ্নিত হয়েছে');
+        }
     }
 
     function appendLocalMessageBubble(text, clientMsgId) {
@@ -4377,8 +4707,11 @@
         activeUploads[uploadId] = { xhr, files, caption };
 
         xhr.open('POST', '/api/v1/messages/attachments');
+        xhr.withCredentials = true;
         xhr.setRequestHeader('Accept', 'application/json');
         if (csrfToken) xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+        const uploadToken = getAuthToken();
+        if (uploadToken) xhr.setRequestHeader('Authorization', `Bearer ${uploadToken}`);
 
         xhr.upload.onprogress = (evt) => {
             if (evt.lengthComputable) {
@@ -4663,7 +4996,8 @@
 
             fetch(`/api/v1/conversations/${currentConvId}/voice`, {
                 method: 'POST',
-                headers: { 'Accept': 'application/json', ...(csrfToken ? {'X-CSRF-TOKEN': csrfToken} : {}) },
+                credentials: 'same-origin',
+                headers: getMessengerHeaders(),
                 body: formData
             })
             .then(r => r.json())

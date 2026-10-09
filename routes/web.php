@@ -236,6 +236,7 @@ Route::get('/profile', [ProfileWebController::class, 'me'])->name('profile.me');
 // Dedicated Frontend Pages (Step 1 Modularization)
 Route::get('/messages', [MessengerWebController::class, 'index'])->name('messages.index');
 Route::get('/messages/{id}', [MessengerWebController::class, 'show'])->name('messages.show')->whereNumber('id');
+Route::post('/messages/{id}/send', [MessengerWebController::class, 'sendMessage'])->name('messages.web.send')->whereNumber('id');
 Route::get('/messages/{id}/voice', [VoiceMessageController::class, 'stream'])->name('messages.voice.stream')->whereNumber('id');
 Route::get('/call/{id}', [CallWebController::class, 'show'])->name('call.show')->whereNumber('id');
 
