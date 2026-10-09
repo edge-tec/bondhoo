@@ -9855,6 +9855,10 @@
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
                     </button>
                     <div id="chatOptionsMenuDropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: white; border: 1px solid var(--fb-border); box-shadow: 0 4px 14px rgba(0,0,0,0.12); border-radius: 8px; width: 220px; z-index: 1000; padding: 4px 0;">
+                        <button type="button" onclick="openMultiFriendCallModal(activeChatConversationId, activeChatUser?.name, activeChatUser?.id)" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: none; border: none; font-size: 13px; color: #1e293b; cursor: pointer; text-align: left;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1877f2" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            <span>মাল্টি-ফ্রেন্ড কল</span>
+                        </button>
                         <button type="button" onclick="confirmClearChatHistory()" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: none; border: none; font-size: 13px; color: #dc2626; cursor: pointer; text-align: left;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             <span>চ্যাট হিস্ট্রি ক্লিয়ার করুন</span>
@@ -9869,6 +9873,9 @@
                 </button>
                 <button type="button" class="jj-chat-header-btn" title="ভিডিও কল" onclick="startChatCall('video')">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                </button>
+                <button type="button" class="jj-chat-header-btn" id="multiFriendCallBtn" title="মাল্টি-ফ্রেন্ড কল (অন্য বন্ধুদের সাথে যুক্ত করে কল)" onclick="openMultiFriendCallModal(activeChatConversationId, activeChatUser?.name, activeChatUser?.id)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
                 </button>
                 <button type="button" class="jj-chat-header-btn" id="minimizeRealChatBtn" title="ছোট করুন" onclick="minimizeRealChat(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -9895,6 +9902,50 @@
                 <div style="display: flex; justify-content: flex-end; gap: 8px;">
                     <button type="button" onclick="closeClearChatModal()" style="padding: 8px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; font-size: 13px; font-weight: 600; cursor: pointer;">Cancel / বাতিল</button>
                     <button type="button" id="confirmClearChatBtn" onclick="executeClearChatHistory()" style="padding: 8px 16px; border-radius: 6px; border: none; background: #dc2626; color: white; font-size: 13px; font-weight: 600; cursor: pointer;">Clear / ক্লিয়ার করুন</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MULTI-FRIEND CALLING MODAL -->
+        <div id="multiFriendCallModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+            <div style="background: white; border-radius: 16px; max-width: 440px; width: 92%; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; border: 1px solid #e2e8f0;">
+                <!-- Header -->
+                <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; background: #f8fafc;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(24, 119, 242, 0.12); color: #1877f2; display: flex; align-items: center; justify-content: center;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 15px; color: #0f172a;">মাল্টি-ফ্রেন্ড কল</div>
+                            <div style="font-size: 11.5px; color: #64748b;">বন্ধুদের যুক্ত করে একসাথে কল শুরু করুন</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeMultiFriendCallModal()" style="background: none; border: none; font-size: 18px; color: #64748b; cursor: pointer; padding: 4px; border-radius: 50%;" title="বন্ধ করুন">✕</button>
+                </div>
+                <!-- Search bar -->
+                <div style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; background: white;">
+                    <div style="display: flex; align-items: center; gap: 8px; background: #f1f5f9; border-radius: 20px; padding: 6px 14px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="multiCallSearchInput" placeholder="বন্ধু খুঁজুন..." oninput="filterMultiCallFriends(this.value)" style="border: none; background: transparent; outline: none; width: 100%; font-size: 13px;">
+                    </div>
+                </div>
+                <!-- Friend List -->
+                <div id="multiCallFriendsList" style="flex: 1; overflow-y: auto; max-height: 320px; padding: 8px 12px;">
+                    <div style="text-align: center; color: #64748b; font-size: 13px; padding: 24px;">বন্ধুদের তালিকা লোড হচ্ছে...</div>
+                </div>
+                <!-- Footer -->
+                <div style="padding: 14px 18px; border-top: 1px solid #f1f5f9; background: #f8fafc; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                    <span id="multiCallSelectedCount" style="font-size: 12.5px; font-weight: 600; color: #64748b;">০ জন নির্বাচিত</span>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" onclick="startMultiFriendCall('audio')" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; border: 1px solid #1877f2; background: white; color: #1877f2; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all 0.15s ease;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            <span>অডিও কল</span>
+                        </button>
+                        <button type="button" onclick="startMultiFriendCall('video')" style="display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; border: none; background: #1877f2; color: white; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 4px 10px rgba(24, 119, 242, 0.3);">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                            <span>ভিডিও কল</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -11333,6 +11384,180 @@
             const win = window.open(callUrl, '_blank');
             if (!win || win.closed || typeof win.closed === 'undefined') {
                 window.location.href = callUrl;
+            }
+        }
+
+        /* ------------------------------------------------------------- */
+        /* MULTI-FRIEND CALLING WORKSPACE */
+        /* ------------------------------------------------------------- */
+        let multiCallTargetConvId = null;
+        let multiCallSelectedFriendIds = new Set();
+        let cachedMultiCallFriends = [];
+
+        async function openMultiFriendCallModal(convId = null, chatTitle = '', initialFriendId = null) {
+            multiCallTargetConvId = convId || activeChatConversationId;
+            multiCallSelectedFriendIds.clear();
+
+            const activePartnerId = initialFriendId || activeChatUser?.id;
+            if (activePartnerId) {
+                multiCallSelectedFriendIds.add(Number(activePartnerId));
+            }
+
+            const modal = document.getElementById('multiFriendCallModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+
+            const searchInput = document.getElementById('multiCallSearchInput');
+            if (searchInput) searchInput.value = '';
+
+            updateMultiCallSelectedCounter();
+            await loadMultiCallFriends();
+        }
+
+        function closeMultiFriendCallModal() {
+            const modal = document.getElementById('multiFriendCallModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function loadMultiCallFriends(query = '') {
+            const listEl = document.getElementById('multiCallFriendsList');
+            if (!listEl) return;
+
+            if (cachedMultiCallFriends.length === 0 && !query) {
+                listEl.innerHTML = '<div style="text-align: center; color: #64748b; font-size: 13px; padding: 24px;">বন্ধুদের তালিকা লোড হচ্ছে...</div>';
+            }
+
+            try {
+                const qParam = query ? `?q=${encodeURIComponent(query)}` : '';
+                const res = await fetch(`/api/v1/presence/friends/active${qParam}`, {
+                    headers: getAuthHeaders({ 'Accept': 'application/json' })
+                });
+                const data = await res.json();
+                if (data.success && Array.isArray(data.data)) {
+                    if (!query) cachedMultiCallFriends = data.data;
+                    renderMultiCallFriendsList(data.data);
+                } else {
+                    listEl.innerHTML = '<div style="text-align: center; color: #64748b; font-size: 13px; padding: 24px;">কোনো বন্ধু পাওয়া যায়নি</div>';
+                }
+            } catch (e) {
+                listEl.innerHTML = '<div style="text-align: center; color: #dc2626; font-size: 13px; padding: 24px;">তালিকা লোড করতে ব্যর্থ হয়েছে</div>';
+            }
+        }
+
+        function filterMultiCallFriends(query) {
+            query = query.trim().toLowerCase();
+            if (!query) {
+                renderMultiCallFriendsList(cachedMultiCallFriends);
+                return;
+            }
+            const filtered = cachedMultiCallFriends.filter(f =>
+                (f.name && f.name.toLowerCase().includes(query)) ||
+                (f.username && f.username.toLowerCase().includes(query))
+            );
+            if (filtered.length > 0) {
+                renderMultiCallFriendsList(filtered);
+            } else {
+                loadMultiCallFriends(query);
+            }
+        }
+
+        function renderMultiCallFriendsList(friends) {
+            const listEl = document.getElementById('multiCallFriendsList');
+            if (!listEl) return;
+
+            if (!friends || friends.length === 0) {
+                listEl.innerHTML = '<div style="text-align: center; color: #64748b; font-size: 13px; padding: 24px;">কোনো বন্ধু পাওয়া যায়নি</div>';
+                return;
+            }
+
+            let html = '';
+            friends.forEach(f => {
+                const isSelected = multiCallSelectedFriendIds.has(Number(f.id));
+                const avatar = f.avatar_url;
+                const initial = (f.name || 'U').charAt(0).toUpperCase();
+
+                html += `
+                    <div onclick="toggleMultiCallFriend(${f.id})" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 10px; cursor: pointer; transition: background 0.15s ease; ${isSelected ? 'background: rgba(24, 119, 242, 0.08);' : ''}" onmouseover="if(!multiCallSelectedFriendIds.has(${f.id}))this.style.background='#f8fafc'" onmouseout="if(!multiCallSelectedFriendIds.has(${f.id}))this.style.background='transparent'">
+                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                            <div style="position: relative; width: 38px; height: 38px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #1e293b; flex-shrink: 0; overflow: hidden;">
+                                ${avatar ? `<img src="${avatar}" alt="" style="width: 100%; height: 100%; object-fit: cover;">` : initial}
+                                ${f.online ? `<span style="position: absolute; bottom: 1px; right: 1px; width: 9px; height: 9px; border-radius: 50%; background: #10b981; border: 2px solid white;"></span>` : ''}
+                            </div>
+                            <div style="min-width: 0;">
+                                <div style="font-weight: 600; font-size: 13px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(f.name)}</div>
+                                <div style="font-size: 11px; color: #64748b;">${f.online ? '<span style="color: #10b981; font-weight: 600;">সক্রিয়</span>' : (f.last_seen_human || 'অফলাইন')}</div>
+                            </div>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="multiCheck-${f.id}" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleMultiCallFriend(${f.id});" style="width: 17px; height: 17px; cursor: pointer; accent-color: #1877f2;">
+                        </div>
+                    </div>
+                `;
+            });
+
+            listEl.innerHTML = html;
+        }
+
+        function toggleMultiCallFriend(friendId) {
+            friendId = Number(friendId);
+            if (multiCallSelectedFriendIds.has(friendId)) {
+                multiCallSelectedFriendIds.delete(friendId);
+            } else {
+                multiCallSelectedFriendIds.add(friendId);
+            }
+            updateMultiCallSelectedCounter();
+            renderMultiCallFriendsList(cachedMultiCallFriends);
+        }
+
+        function updateMultiCallSelectedCounter() {
+            const countEl = document.getElementById('multiCallSelectedCount');
+            if (countEl) {
+                const count = multiCallSelectedFriendIds.size;
+                countEl.innerText = `${count} জন নির্বাচিত`;
+                countEl.style.color = count > 0 ? '#1877f2' : '#64748b';
+            }
+        }
+
+        async function startMultiFriendCall(type) {
+            if (multiCallSelectedFriendIds.size === 0) {
+                alert('অনুগ্রহ করে কমপক্ষে একজন বন্ধু নির্বাচন করুন।');
+                return;
+            }
+
+            const receiverIds = Array.from(multiCallSelectedFriendIds);
+            showToast(`${type === 'video' ? 'গ্রুপ ভিডিও' : 'গ্রুপ অডিও'} কল প্রস্তুত হচ্ছে... 📞`);
+            closeMultiFriendCallModal();
+            closeRealChat();
+
+            try {
+                const res = await fetch('/api/v1/calls', {
+                    method: 'POST',
+                    headers: getAuthHeaders({
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }),
+                    body: JSON.stringify({
+                        conversation_id: multiCallTargetConvId || null,
+                        receiver_ids: receiverIds,
+                        call_type: type === 'video' ? 'group_video' : 'group_audio'
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success && data.data) {
+                    const convId = data.data.conversation_id;
+                    const callUrl = `/call/${convId}?type=${type}&call_id=${data.data.id}`;
+                    window.location.href = callUrl;
+                } else if (multiCallTargetConvId) {
+                    window.location.href = `/call/${multiCallTargetConvId}?type=${type}`;
+                } else {
+                    alert(data.message || 'কল সংযোগ স্থাপন করা সম্ভব হয়নি।');
+                }
+            } catch (e) {
+                if (multiCallTargetConvId) {
+                    window.location.href = `/call/${multiCallTargetConvId}?type=${type}`;
+                } else {
+                    alert('নেটওয়ার্ক সমস্যার কারণে কল শুরু করা যায়নি।');
+                }
             }
         }
 

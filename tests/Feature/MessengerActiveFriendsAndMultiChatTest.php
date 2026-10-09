@@ -269,4 +269,105 @@ class MessengerActiveFriendsAndMultiChatTest extends TestCase
             'status' => 'ringing',
         ]);
     }
+
+    public function test_user_can_initiate_multi_friend_call_with_multiple_receivers(): void
+    {
+        $caller = User::factory()->create();
+        $friend1 = User::factory()->create();
+        $friend2 = User::factory()->create();
+
+        $response = $this->actingAs($caller)->postJson('/api/v1/calls', [
+            'receiver_ids' => [$friend1->id, $friend2->id],
+            'call_type' => 'video',
+        ]);
+
+        $response->assertStatus(201);
+        $callId = $response->json('data.id');
+
+        $this->assertDatabaseHas('calls', [
+            'id' => $callId,
+            'caller_id' => $caller->id,
+            'call_type' => Call::TYPE_GROUP_VIDEO,
+            'status' => Call::STATUS_RINGING,
+        ]);
+
+        $this->assertDatabaseHas('call_participants', [
+            'call_id' => $callId,
+            'user_id' => $friend1->id,
+            'status' => 'ringing',
+        ]);
+
+        $this->assertDatabaseHas('call_participants', [
+            'call_id' => $callId,
+            'user_id' => $friend2->id,
+            'status' => 'ringing',
+        ]);
+    }
+
+    public function test_user_can_invite_friend_to_ongoing_call_in_realtime(): void
+    {
+        $caller = User::factory()->create(['name' => 'মমিনুল হক']);
+        $callee = User::factory()->create(['name' => 'সাকিব']);
+        $newFriend = User::factory()->create(['name' => 'মুশফিক']);
+
+        $conversation = Conversation::create([
+            'type' => Conversation::TYPE_DIRECT,
+        ]);
+        ConversationParticipant::create(['conversation_id' => $conversation->id, 'user_id' => $caller->id, 'role' => 'member']);
+        ConversationParticipant::create(['conversation_id' => $conversation->id, 'user_id' => $callee->id, 'role' => 'member']);
+
+        $callingService = app(CallingService::class);
+        $call = $callingService->initiateCall($caller, $conversation, 'audio');
+
+        // Caller invites newFriend to the ongoing call
+        $response = $this->actingAs($caller)->postJson("/api/v1/calls/{$call->id}/invite", [
+            'friend_id' => $newFriend->id,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('data.invited.0.id', $newFriend->id);
+
+        // Call should be upgraded to group audio
+        $this->assertDatabaseHas('calls', [
+            'id' => $call->id,
+            'call_type' => Call::TYPE_GROUP_AUDIO,
+        ]);
+
+        // Conversation should be upgraded to group
+        $this->assertDatabaseHas('conversations', [
+            'id' => $conversation->id,
+            'type' => Conversation::TYPE_GROUP,
+        ]);
+
+        // New friend must be added as participant with status ringing
+        $this->assertDatabaseHas('call_participants', [
+            'call_id' => $call->id,
+            'user_id' => $newFriend->id,
+            'status' => 'ringing',
+        ]);
+
+        // New friend must be able to access the call route
+        $callRoomResponse = $this->actingAs($newFriend)->get("/call/{$conversation->id}?type=audio&answer=1&call_id={$call->id}");
+        $callRoomResponse->assertStatus(200);
+    }
+
+    public function test_stranger_cannot_invite_friends_to_call(): void
+    {
+        $caller = User::factory()->create();
+        $callee = User::factory()->create();
+        $stranger = User::factory()->create();
+        $targetFriend = User::factory()->create();
+
+        $conversation = Conversation::create(['type' => Conversation::TYPE_DIRECT]);
+        ConversationParticipant::create(['conversation_id' => $conversation->id, 'user_id' => $caller->id]);
+        ConversationParticipant::create(['conversation_id' => $conversation->id, 'user_id' => $callee->id]);
+
+        $call = app(CallingService::class)->initiateCall($caller, $conversation, 'audio');
+
+        $response = $this->actingAs($stranger)->postJson("/api/v1/calls/{$call->id}/invite", [
+            'friend_id' => $targetFriend->id,
+        ]);
+
+        $response->assertStatus(403);
+    }
 }

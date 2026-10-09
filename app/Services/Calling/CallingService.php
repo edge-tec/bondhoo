@@ -90,7 +90,7 @@ class CallingService
     /**
      * Initiate a 1-to-1 or group audio/video call.
      */
-    public function initiateCall(User $caller, Conversation $conversation, string $callType = 'audio', ?int $receiverId = null): Call
+    public function initiateCall(User $caller, Conversation $conversation, string $callType = 'audio', ?int $receiverId = null, array $receiverIds = []): Call
     {
         if (! in_array($callType, [Call::TYPE_AUDIO, Call::TYPE_VIDEO, Call::TYPE_GROUP_AUDIO, Call::TYPE_GROUP_VIDEO], true)) {
             throw new InvalidArgumentException("Invalid call type: {$callType}");
@@ -110,6 +110,19 @@ class CallingService
                 'role' => 'member',
                 'request_status' => 'accepted',
             ]);
+        }
+
+        foreach ($receiverIds as $rId) {
+            $rId = (int) $rId;
+            if ($rId > 0 && ! $conversation->hasParticipant($rId)) {
+                ConversationParticipant::firstOrCreate([
+                    'conversation_id' => $conversation->id,
+                    'user_id' => $rId,
+                ], [
+                    'role' => 'member',
+                    'request_status' => 'accepted',
+                ]);
+            }
         }
 
         // Verify blocking and privacy in direct conversations
@@ -214,8 +227,9 @@ class CallingService
             }
         }
 
-        // Adjust group call types automatically if conversation is a group
-        if ($conversation->isGroup()) {
+        // Adjust group call types automatically if conversation is a group or multiple callees
+        $isMultiParty = $conversation->isGroup() || count($receiverIds) > 1;
+        if ($isMultiParty) {
             $callType = ($callType === Call::TYPE_VIDEO || $callType === Call::TYPE_GROUP_VIDEO)
                 ? Call::TYPE_GROUP_VIDEO
                 : Call::TYPE_GROUP_AUDIO;
@@ -225,7 +239,7 @@ class CallingService
                 : Call::TYPE_AUDIO;
         }
 
-        return DB::transaction(function () use ($caller, $conversation, $callType, $receiverId) {
+        return DB::transaction(function () use ($caller, $conversation, $callType, $receiverId, $receiverIds) {
             $call = Call::create([
                 'conversation_id' => $conversation->id,
                 'caller_id' => $caller->id,
@@ -256,12 +270,19 @@ class CallingService
                 $otherUserIds->push($receiverId);
             }
 
+            foreach ($receiverIds as $rId) {
+                $rId = (int) $rId;
+                if ($rId > 0 && $rId !== $caller->id && ! $otherUserIds->contains($rId)) {
+                    $otherUserIds->push($rId);
+                }
+            }
+
             foreach ($otherUserIds as $otherId) {
                 CallParticipant::firstOrCreate([
                     'call_id' => $call->id,
                     'user_id' => $otherId,
                 ], [
-                    'role' => $conversation->isGroup() ? CallParticipant::ROLE_PARTICIPANT : CallParticipant::ROLE_CALLEE,
+                    'role' => ($conversation->isGroup() || count($otherUserIds) > 1) ? CallParticipant::ROLE_PARTICIPANT : CallParticipant::ROLE_CALLEE,
                     'status' => CallParticipant::STATUS_RINGING,
                 ]);
             }
@@ -693,5 +714,158 @@ class CallingService
         }
 
         return $call;
+    }
+
+    /**
+     * Invite one or more friends into an ongoing call in real-time.
+     */
+    public function inviteToCall(User $user, int $callId, int|array $friendIds): array
+    {
+        return DB::transaction(function () use ($user, $callId, $friendIds) {
+            $call = Call::where('id', $callId)->lockForUpdate()->firstOrFail();
+
+            if (in_array($call->status, [Call::STATUS_ENDED, Call::STATUS_REJECTED, Call::STATUS_MISSED, Call::STATUS_BUSY, Call::STATUS_FAILED], true)) {
+                throw new InvalidArgumentException('Call is no longer active.');
+            }
+
+            // Ensure inviter is an active participant in this call
+            $isParticipant = $call->participants()
+                ->where('user_id', $user->id)
+                ->whereIn('status', [CallParticipant::STATUS_ACCEPTED, CallParticipant::STATUS_RINGING])
+                ->exists();
+
+            if (! $isParticipant) {
+                throw new AuthorizationException('You are not an active participant in this call.');
+            }
+
+            $conversation = $call->conversation;
+            if (! $conversation) {
+                throw new InvalidArgumentException('Conversation not found.');
+            }
+
+            $ids = is_array($friendIds) ? $friendIds : [$friendIds];
+            $ids = array_unique(array_filter(array_map('intval', $ids)));
+
+            $invited = [];
+
+            foreach ($ids as $friendId) {
+                if ($friendId === (int) $user->id) {
+                    continue;
+                }
+
+                $friend = User::with(['profile', 'privacySettings'])->find($friendId);
+                if (! $friend || $friend->trashed()) {
+                    continue;
+                }
+
+                if (in_array($friend->status, ['suspended', 'banned', 'inactive'], true)) {
+                    continue;
+                }
+
+                // Privacy/blocking checks
+                if ($this->profilePrivacyService->isBlocked($friend, $user)) {
+                    continue;
+                }
+
+                // Ensure friend is in conversation participants so they can access the call route
+                ConversationParticipant::firstOrCreate([
+                    'conversation_id' => $conversation->id,
+                    'user_id' => $friend->id,
+                ], [
+                    'role' => 'member',
+                    'request_status' => 'accepted',
+                ]);
+
+                // If conversation was direct, upgrade to group call
+                if ($conversation->isDirect()) {
+                    $conversation->update([
+                        'type' => Conversation::TYPE_GROUP,
+                        'title' => $conversation->title ?: 'গ্রুপ কল',
+                    ]);
+                }
+
+                // Upgrade call type to group if not already
+                $newCallType = $call->call_type;
+                if ($call->call_type === Call::TYPE_AUDIO) {
+                    $newCallType = Call::TYPE_GROUP_AUDIO;
+                } elseif ($call->call_type === Call::TYPE_VIDEO) {
+                    $newCallType = Call::TYPE_GROUP_VIDEO;
+                }
+                if ($newCallType !== $call->call_type) {
+                    $call->update(['call_type' => $newCallType]);
+                }
+
+                // Add or update call participant
+                $participant = CallParticipant::firstOrCreate([
+                    'call_id' => $call->id,
+                    'user_id' => $friend->id,
+                ], [
+                    'role' => CallParticipant::ROLE_PARTICIPANT,
+                    'status' => CallParticipant::STATUS_RINGING,
+                ]);
+
+                if ($participant->status !== CallParticipant::STATUS_RINGING && $participant->status !== CallParticipant::STATUS_ACCEPTED) {
+                    $participant->update([
+                        'status' => CallParticipant::STATUS_RINGING,
+                        'left_at' => null,
+                    ]);
+                }
+
+                // Broadcast call.incoming to the friend's private channel
+                $incomingPayload = [
+                    'call_id' => $call->id,
+                    'uuid' => $call->uuid,
+                    'conversation_id' => $conversation->id,
+                    'call_type' => $call->call_type,
+                    'room_id' => $call->room_id,
+                    'caller' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'username' => $user->username,
+                        'avatar_url' => $user->profile?->avatar_url,
+                    ],
+                    'ice_servers' => $this->getIceServers($user),
+                    'is_group' => true,
+                ];
+
+                $this->realtimeService->broadcast("private-user.{$friend->id}", 'call.incoming', $incomingPayload);
+                $this->syncEventService->recordEvent('call.incoming', $incomingPayload, (int) $friend->id, $conversation->id);
+
+                // Broadcast call.participant_invited to the conversation and active call participants
+                $invitePayload = [
+                    'call_id' => $call->id,
+                    'conversation_id' => $conversation->id,
+                    'invited_by' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                    ],
+                    'participant' => [
+                        'id' => $friend->id,
+                        'name' => $friend->name,
+                        'username' => $friend->username,
+                        'avatar_url' => $friend->profile?->avatar_url,
+                        'status' => 'ringing',
+                    ],
+                ];
+
+                $this->realtimeService->broadcastToConversation($conversation->id, 'call.participant_invited', $invitePayload);
+                $this->syncEventService->recordEvent('call.participant_invited', $invitePayload, null, $conversation->id);
+
+                $invited[] = [
+                    'id' => $friend->id,
+                    'name' => $friend->name,
+                    'username' => $friend->username,
+                    'avatar_url' => $friend->profile?->avatar_url,
+                    'status' => 'ringing',
+                ];
+            }
+
+            return [
+                'call_id' => $call->id,
+                'conversation_id' => $conversation->id,
+                'call_type' => $call->call_type,
+                'invited' => $invited,
+            ];
+        });
     }
 }

@@ -527,6 +527,11 @@
             </div>
 
             <div class="header-actions">
+                <!-- Add Friend to Call -->
+                <button type="button" id="btnAddFriendHeader" class="network-badge" style="cursor: pointer; background: rgba(24, 119, 242, 0.28); border-color: rgba(24, 119, 242, 0.6); color: #fff; gap: 6px;" onclick="openAddFriendModal()" title="চলমান কলে অন্য বন্ধুদের যুক্ত করুন">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                    <span>+ বন্ধু যুক্ত করুন</span>
+                </button>
                 <!-- Network Quality Indicator Badge -->
                 <div id="networkQualityBadge" class="network-badge" title="নেটওয়ার্ক গুণমান">
                     <span id="netSignalBars">📶</span>
@@ -612,10 +617,49 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
             </button>
 
+            <!-- Add Friend to Call -->
+            <button type="button" id="btnAddFriendDock" class="control-btn" onclick="openAddFriendModal()" title="চলমান কলে বন্ধু যুক্ত করুন" style="background: rgba(24, 119, 242, 0.24); border-color: rgba(24, 119, 242, 0.55); color: #60a5fa;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+            </button>
+
             <!-- End Call / Hang Up -->
             <button type="button" id="btnEndCall" class="control-btn hangup" onclick="hangUpCall()" title="কল শেষ করুন">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
             </button>
+        </div>
+    </div>
+
+    <!-- In-Call Realtime Add Friend Modal Overlay -->
+    <div id="addFriendCallModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 16px;">
+        <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 18px; max-width: 440px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.6); overflow: hidden;">
+            <!-- Modal Header -->
+            <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.5);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(24, 119, 242, 0.2); color: #60a5fa; display: flex; align-items: center; justify-content: center;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 15px; color: #ffffff;">চলমান কলে বন্ধু যুক্ত করুন</div>
+                        <div style="font-size: 11.5px; color: #94a3b8;">রিয়েল-টাইমে যেকোনো বন্ধুকে এই কলে যোগ দিন</div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAddFriendModal()" style="background: rgba(255,255,255,0.08); border: none; font-size: 16px; color: #cbd5e1; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="বন্ধ করুন">✕</button>
+            </div>
+            <!-- Search -->
+            <div style="padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: rgba(15, 23, 42, 0.8);">
+                <div style="display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 7px 14px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="addFriendSearchInput" placeholder="বন্ধুর নাম খুঁজুন..." oninput="filterAddFriends(this.value)" style="border: none; background: transparent; outline: none; width: 100%; font-size: 13px; color: #ffffff;">
+                </div>
+            </div>
+            <!-- Friend List -->
+            <div id="addFriendList" style="flex: 1; overflow-y: auto; max-height: 340px; padding: 10px 14px;">
+                <div style="text-align: center; color: #94a3b8; font-size: 13px; padding: 24px;">বন্ধুদের তালিকা লোড হচ্ছে...</div>
+            </div>
+            <!-- Footer -->
+            <div style="padding: 12px 18px; border-top: 1px solid rgba(255, 255, 255, 0.08); background: rgba(30, 41, 59, 0.4); display: flex; align-items: center; justify-content: flex-end;">
+                <button type="button" onclick="closeAddFriendModal()" style="padding: 7px 16px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2); background: transparent; color: #cbd5e1; font-size: 12.5px; font-weight: 600; cursor: pointer;">সম্পন্ন</button>
+            </div>
         </div>
     </div>
 
@@ -1849,9 +1893,13 @@
 
             if (evt.event_type === 'call.signal') {
                 enqueueSignal(payload);
+            } else if (evt.event_type === 'call.participant_invited' && isThisCall) {
+                const partName = payload.participant?.name || 'বন্ধু';
+                showToast(`${partName} কে কলে আমন্ত্রণ জানানো হয়েছে... 📞`);
             } else if (evt.event_type === 'call.accepted' && isThisCall && Number(payload.user_id) !== CURRENT_USER_ID) {
                 stopRingbackTone();
-                setCallStatus('সংযোগ স্থাপন হচ্ছে...');
+                setCallStatus('সংযুক্ত (Connected)');
+                showToast('নতুন অংশগ্রহণকারী কলে যুক্ত হয়েছেন! 🎉');
                 if (!ANSWER_CALL_ID) {
                     if (!offerSent) {
                         sendOffer();
@@ -2003,6 +2051,160 @@
             }
             cleanupMedia();
         });
+
+        // 13. Real-time In-Call Add Friends
+        let cachedCallFriends = [];
+        let callInvitedUserIds = new Set([CURRENT_USER_ID, Number(PEER_USER_ID || 0)]);
+
+        async function openAddFriendModal() {
+            const modal = document.getElementById('addFriendCallModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            const searchInput = document.getElementById('addFriendSearchInput');
+            if (searchInput) searchInput.value = '';
+
+            await loadCallFriendsList();
+        }
+
+        function closeAddFriendModal() {
+            const modal = document.getElementById('addFriendCallModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function loadCallFriendsList(query = '') {
+            const listEl = document.getElementById('addFriendList');
+            if (!listEl) return;
+
+            if (cachedCallFriends.length === 0 && !query) {
+                listEl.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 13px; padding: 24px;">বন্ধুদের তালিকা লোড হচ্ছে...</div>';
+            }
+
+            try {
+                const qParam = query ? `?q=${encodeURIComponent(query)}` : '';
+                const res = await apiFetch(`/api/v1/presence/friends/active${qParam}`);
+                const data = await res.json();
+                if (data.success && Array.isArray(data.data)) {
+                    if (!query) cachedCallFriends = data.data;
+                    renderCallFriendsList(data.data);
+                } else {
+                    listEl.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 13px; padding: 24px;">কোনো বন্ধু পাওয়া যায়নি</div>';
+                }
+            } catch (e) {
+                listEl.innerHTML = '<div style="text-align: center; color: #ef4444; font-size: 13px; padding: 24px;">তালিকা লোড করতে সমস্যা হয়েছে</div>';
+            }
+        }
+
+        function filterAddFriends(query) {
+            query = query.trim().toLowerCase();
+            if (!query) {
+                renderCallFriendsList(cachedCallFriends);
+                return;
+            }
+            const filtered = cachedCallFriends.filter(f =>
+                (f.name && f.name.toLowerCase().includes(query)) ||
+                (f.username && f.username.toLowerCase().includes(query))
+            );
+            if (filtered.length > 0) {
+                renderCallFriendsList(filtered);
+            } else {
+                loadCallFriendsList(query);
+            }
+        }
+
+        function renderCallFriendsList(friends) {
+            const listEl = document.getElementById('addFriendList');
+            if (!listEl) return;
+
+            if (!friends || friends.length === 0) {
+                listEl.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 13px; padding: 24px;">কোনো বন্ধু পাওয়া যায়নি</div>';
+                return;
+            }
+
+            let html = '';
+            friends.forEach(f => {
+                if (Number(f.id) === CURRENT_USER_ID) return;
+                const isAlreadyIn = callInvitedUserIds.has(Number(f.id));
+                const avatar = f.avatar_url;
+                const initial = (f.name || 'U').charAt(0).toUpperCase();
+
+                html += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 12px; margin-bottom: 6px; background: rgba(255,255,255,0.04); transition: background 0.15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
+                        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                            <div style="position: relative; width: 40px; height: 40px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; overflow: hidden; border: 1.5px solid rgba(255,255,255,0.15);">
+                                ${avatar ? `<img src="${avatar}" alt="" style="width: 100%; height: 100%; object-fit: cover;">` : initial}
+                                ${f.online ? `<span style="position: absolute; bottom: 1px; right: 1px; width: 10px; height: 10px; border-radius: 50%; background: #10b981; border: 2px solid #0f172a;"></span>` : ''}
+                            </div>
+                            <div style="min-width: 0;">
+                                <div style="font-weight: 600; font-size: 13.5px; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(f.name)}</div>
+                                <div style="font-size: 11px; color: #94a3b8;">${f.online ? '<span style="color: #10b981;">সক্রিয়</span>' : (f.last_seen_human || 'অফলাইন')}</div>
+                            </div>
+                        </div>
+                        <div>
+                            ${isAlreadyIn ? `
+                                <span style="font-size: 11.5px; font-weight: 600; color: #94a3b8; background: rgba(255,255,255,0.08); padding: 5px 12px; border-radius: 14px;">ইতোমধ্যে কলে</span>
+                            ` : `
+                                <button type="button" id="btnInvite-${f.id}" onclick="inviteFriendToCall(${f.id}, '${escapeJs(f.name)}')" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 16px; border: none; background: #1877f2; color: #ffffff; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s ease;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    <span>যোগ দিন</span>
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+
+            listEl.innerHTML = html;
+        }
+
+        async function inviteFriendToCall(friendId, friendName) {
+            if (!activeCallId) return;
+            const btn = document.getElementById(`btnInvite-${friendId}`);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>রিং হচ্ছে... 📞</span>';
+                btn.style.background = '#059669';
+            }
+
+            try {
+                const res = await apiFetch(`/api/v1/calls/${activeCallId}/invite`, {
+                    method: 'POST',
+                    body: JSON.stringify({ friend_id: friendId })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    callInvitedUserIds.add(Number(friendId));
+                    showToast(`${friendName} কে কলে আমন্ত্রণ জানানো হয়েছে! 📞`);
+                    if (btn) {
+                        btn.innerHTML = '<span>আমন্ত্রিত ✓</span>';
+                        btn.style.background = '#0284c7';
+                    }
+                } else {
+                    showToast(data.message || 'আমন্ত্রণ পাঠাতে ব্যর্থ হয়েছে');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span>যোগ দিন</span>';
+                        btn.style.background = '#1877f2';
+                    }
+                }
+            } catch (e) {
+                showToast('আমন্ত্রণ পাঠাতে নেটওয়ার্ক সমস্যা হয়েছে');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>যোগ দিন</span>';
+                    btn.style.background = '#1877f2';
+                }
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        function escapeJs(str) {
+            if (!str) return '';
+            return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
 
         // Initialize on DOM Ready
         document.addEventListener('DOMContentLoaded', () => {

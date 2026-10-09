@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
+use App\Models\ConversationParticipant;
 use App\Models\MessengerSyncEvent;
 use App\Services\Calling\CallingService;
 use App\Services\Contracts\MessengerServiceInterface;
@@ -25,32 +26,94 @@ class CallController extends Controller
         $validated = $request->validate([
             'conversation_id' => ['nullable', 'integer', 'exists:conversations,id'],
             'receiver_id' => ['nullable', 'integer', 'exists:users,id'],
+            'receiver_ids' => ['nullable', 'array'],
+            'receiver_ids.*' => ['integer', 'exists:users,id'],
             'call_type' => ['required', 'string', 'in:audio,video,group_audio,group_video'],
         ]);
 
-        if (empty($validated['conversation_id']) && empty($validated['receiver_id'])) {
+        $receiverIds = ! empty($validated['receiver_ids']) ? array_map('intval', $validated['receiver_ids']) : [];
+        if (! empty($validated['receiver_id']) && ! in_array((int) $validated['receiver_id'], $receiverIds, true)) {
+            $receiverIds[] = (int) $validated['receiver_id'];
+        }
+
+        if (empty($validated['conversation_id']) && empty($receiverIds)) {
             return $this->errorResponse('Either conversation_id or receiver_id is required.', 422);
         }
 
         try {
             if (! empty($validated['conversation_id'])) {
                 $conversation = Conversation::findOrFail($validated['conversation_id']);
+                if (count($receiverIds) > 1 && $conversation->isDirect()) {
+                    $conversation->update([
+                        'type' => Conversation::TYPE_GROUP,
+                        'title' => $conversation->title ?: 'গ্রুপ কল',
+                    ]);
+                }
+            } elseif (count($receiverIds) > 1) {
+                $conversation = Conversation::create([
+                    'type' => Conversation::TYPE_GROUP,
+                    'title' => 'গ্রুপ কল',
+                    'creator_id' => $request->user()->id,
+                ]);
+                ConversationParticipant::create([
+                    'conversation_id' => $conversation->id,
+                    'user_id' => $request->user()->id,
+                    'role' => 'admin',
+                    'request_status' => 'accepted',
+                ]);
             } else {
                 $messengerService = app(MessengerServiceInterface::class);
-                $conversation = $messengerService->getOrCreateDirectConversation($request->user(), (int) $validated['receiver_id']);
+                $singleReceiver = ! empty($receiverIds) ? $receiverIds[0] : (int) $validated['receiver_id'];
+                $conversation = $messengerService->getOrCreateDirectConversation($request->user(), $singleReceiver);
             }
 
             $call = $this->callingService->initiateCall(
                 caller: $request->user(),
                 conversation: $conversation,
                 callType: $validated['call_type'],
-                receiverId: ! empty($validated['receiver_id']) ? (int) $validated['receiver_id'] : null
+                receiverId: ! empty($validated['receiver_id']) ? (int) $validated['receiver_id'] : (! empty($receiverIds) ? $receiverIds[0] : null),
+                receiverIds: $receiverIds
             );
 
             return $this->successResponse(
                 data: $call->toResponseArray($request->user()),
                 message: 'Call initiated successfully.',
                 statusCode: 201
+            );
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * Invite one or more friends into an ongoing call in real-time.
+     */
+    public function invite(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'friend_id' => ['nullable', 'integer', 'exists:users,id'],
+            'friend_ids' => ['nullable', 'array'],
+            'friend_ids.*' => ['integer', 'exists:users,id'],
+        ]);
+
+        if (empty($validated['friend_id']) && empty($validated['friend_ids'])) {
+            return $this->errorResponse('Either friend_id or friend_ids is required.', 422);
+        }
+
+        $friendIds = ! empty($validated['friend_ids']) ? $validated['friend_ids'] : [(int) $validated['friend_id']];
+
+        try {
+            $result = $this->callingService->inviteToCall(
+                user: $request->user(),
+                callId: $id,
+                friendIds: $friendIds
+            );
+
+            return $this->successResponse(
+                data: $result,
+                message: 'Friends invited to the call successfully.'
             );
         } catch (AuthorizationException $e) {
             return $this->errorResponse($e->getMessage(), 403);

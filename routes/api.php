@@ -351,6 +351,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/calls/{id}/leave', [CallController::class, 'leave']);
         Route::post('/calls/{id}/signal', [CallController::class, 'signal']);
         Route::post('/calls/{id}/state', [CallController::class, 'updateState']);
+        Route::post('/calls/{id}/invite', [CallController::class, 'invite']);
 
         // Offline Synchronization & Event Replay (Mobile Apps / Multi-device)
         Route::get('/messenger/sync', [MessengerSyncController::class, 'sync']);
