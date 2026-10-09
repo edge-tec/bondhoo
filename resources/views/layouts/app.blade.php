@@ -1346,6 +1346,22 @@
                             }
                             const item = document.getElementById(`hndItem-${e.id}`);
                             if (item) item.remove();
+                        })
+                        .listen('.call.incoming', (e) => {
+                            const payload = e.payload || e;
+                            if (typeof window.showIncomingCall === 'function') {
+                                window.showIncomingCall(payload);
+                            }
+                        })
+                        .listen('.call.ended', () => {
+                            if (typeof window.hideIncomingCall === 'function') {
+                                window.hideIncomingCall();
+                            }
+                        })
+                        .listen('.call.rejected', () => {
+                            if (typeof window.hideIncomingCall === 'function') {
+                                window.hideIncomingCall();
+                            }
                         });
                 }
             })();

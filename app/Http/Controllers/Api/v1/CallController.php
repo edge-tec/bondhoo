@@ -43,7 +43,8 @@ class CallController extends Controller
             $call = $this->callingService->initiateCall(
                 caller: $request->user(),
                 conversation: $conversation,
-                callType: $validated['call_type']
+                callType: $validated['call_type'],
+                receiverId: ! empty($validated['receiver_id']) ? (int) $validated['receiver_id'] : null
             );
 
             return $this->successResponse(

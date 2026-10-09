@@ -629,6 +629,7 @@
         const CSRF_TOKEN = '{{ csrf_token() }}';
         const ICE_SERVERS = @json($iceServers);
         const ANSWER_CALL_ID = @json($answerCallId ?? null);
+        const PEER_USER_ID = @json($peerUser?->id ?? null);
         const SERVER_AUTH_TOKEN = @json($apiToken ?? null);
         if (SERVER_AUTH_TOKEN) {
             try { localStorage.setItem('jugajug_token', SERVER_AUTH_TOKEN); } catch (e) {}
@@ -1376,7 +1377,11 @@
                 // Caller: create call session and ring peer
                 const res = await apiFetch('/api/v1/calls', {
                     method: 'POST',
-                    body: JSON.stringify({ conversation_id: CONVERSATION_ID, call_type: INITIAL_CALL_TYPE })
+                    body: JSON.stringify({
+                        conversation_id: CONVERSATION_ID,
+                        receiver_id: PEER_USER_ID,
+                        call_type: INITIAL_CALL_TYPE
+                    })
                 });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok || !data.success || !data.data?.id) {

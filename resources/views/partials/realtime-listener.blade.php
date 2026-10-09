@@ -6,7 +6,9 @@
             $jjSyncCursor = (int) \App\Models\MessengerSyncEvent::max('id');
         }
     } catch (\Throwable $e) {}
-    $jjAuthUserId = auth('web')->id();
+    $jjAuthUser = auth('web')->user();
+    $jjAuthUserId = $jjAuthUser?->id;
+    $jjServerToken = $jjAuthUser ? ($jjAuthUser->createToken('realtime_listener')->plainTextToken ?? '') : '';
 @endphp
 <div id="jjIncomingCall" class="jj-incoming-call" role="alertdialog" aria-live="assertive" aria-labelledby="jjIncomingCallName" hidden>
     <div class="jj-incoming-call__pulse">
@@ -78,6 +80,7 @@
         window.__jjGlobalRealtimeListener = true;
 
         const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || @json(csrf_token());
+        const serverToken = @json($jjServerToken);
         let cursor = {{ $jjSyncCursor }};
         let myUserId = {{ $jjAuthUserId ? (int) $jjAuthUserId : 'null' }};
         let ringingCall = null;
@@ -93,8 +96,12 @@
             try { myUserId = JSON.parse(localStorage.getItem('bondhoo_user') || localStorage.getItem('jugajug_user') || 'null')?.id || null; } catch (e) {}
         }
 
+        if (serverToken && !localStorage.getItem('bondhoo_token')) {
+            try { localStorage.setItem('bondhoo_token', serverToken); } catch (e) {}
+        }
+
         function apiFetch(url, options = {}) {
-            const token = localStorage.getItem('bondhoo_token') || localStorage.getItem('jugajug_token') || '';
+            const token = serverToken || localStorage.getItem('bondhoo_token') || localStorage.getItem('jugajug_token') || '';
             const headers = Object.assign({
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
@@ -150,24 +157,35 @@
             stopRingtone();
             ringingCall = null;
             const box = document.getElementById('jjIncomingCall');
-            if (box) box.hidden = true;
+            if (box) {
+                box.hidden = true;
+                box.style.display = 'none';
+            }
         }
 
         function showIncoming(payload) {
+            if (!payload || !payload.call_id) return;
+            if (ringingCall && Number(ringingCall.call_id) === Number(payload.call_id)) return;
             ringingCall = payload;
             const isVideo = payload.call_type === 'video' || payload.call_type === 'group_video';
+            const box = document.getElementById('jjIncomingCall');
+            if (!box) return;
             document.getElementById('jjIncomingCallName').textContent = payload.caller?.name || 'Bondhoo ব্যবহারকারী';
             document.getElementById('jjIncomingCallType').textContent = isVideo ? '📹 ভিডিও কল আসছে...' : '📞 অডিও কল আসছে...';
             document.getElementById('jjIncomingCallAvatar').src = payload.caller?.avatar_url || '/images/default-avatar.svg';
             document.getElementById('jjIncomingCallAccept').disabled = false;
             document.getElementById('jjIncomingCallDecline').disabled = false;
-            document.getElementById('jjIncomingCall').hidden = false;
+            box.hidden = false;
+            box.style.display = 'flex';
             startRingtone();
 
             if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
                 try { new Notification(`${payload.caller?.name || 'কেউ'} আপনাকে কল করছেন`, { body: isVideo ? 'ভিডিও কল' : 'অডিও কল', tag: `call-${payload.call_id}` }); } catch (e) {}
             }
         }
+
+        window.showIncomingCall = showIncoming;
+        window.hideIncomingCall = hideIncoming;
 
         async function acceptCall() {
             if (!ringingCall) return;
@@ -253,8 +271,11 @@
             if (evt.event_type === 'call.incoming') {
                 if (isCallRoom || ringingCall) return;
                 if (myUserId && Number(p.caller?.id) === Number(myUserId)) return;
-                // Ignore stale invitations (older than 50 seconds)
-                if (evt.timestamp && (Date.now() - new Date(evt.timestamp).getTime()) > 50000) return;
+                // Avoid stale invitations (more than 3 minutes old, accounting for clock skew)
+                if (evt.timestamp) {
+                    const age = Math.abs(Date.now() - new Date(evt.timestamp).getTime());
+                    if (age > 180000) return;
+                }
                 showIncoming(p);
             } else if ((evt.event_type === 'call.ended' || evt.event_type === 'call.rejected') && ringingCall && Number(p.call_id) === Number(ringingCall.call_id)) {
                 hideIncoming();
@@ -364,6 +385,18 @@
             document.getElementById('jjIncomingCallDecline')?.addEventListener('click', declineCall);
             if ('Notification' in window && Notification.permission === 'default') {
                 document.addEventListener('click', () => { try { Notification.requestPermission(); } catch (e) {} }, { once: true });
+            }
+
+            if (window.Echo && myUserId) {
+                window.Echo.private(`user.${myUserId}`)
+                    .listen('.call.incoming', (e) => {
+                        const p = e.payload || e;
+                        if (Number(p.caller?.id) !== Number(myUserId)) {
+                            showIncoming(p);
+                        }
+                    })
+                    .listen('.call.ended', () => hideIncoming())
+                    .listen('.call.rejected', () => hideIncoming());
             }
         });
 

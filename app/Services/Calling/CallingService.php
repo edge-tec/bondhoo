@@ -74,7 +74,7 @@ class CallingService
     /**
      * Initiate a 1-to-1 or group audio/video call.
      */
-    public function initiateCall(User $caller, Conversation $conversation, string $callType = 'audio'): Call
+    public function initiateCall(User $caller, Conversation $conversation, string $callType = 'audio', ?int $receiverId = null): Call
     {
         if (! in_array($callType, [Call::TYPE_AUDIO, Call::TYPE_VIDEO, Call::TYPE_GROUP_AUDIO, Call::TYPE_GROUP_VIDEO], true)) {
             throw new InvalidArgumentException("Invalid call type: {$callType}");
@@ -85,11 +85,32 @@ class CallingService
             throw new AuthorizationException('You are not a participant in this conversation.');
         }
 
+        // Ensure receiver is added to direct conversation if supplied
+        if ($receiverId && ! $conversation->hasParticipant($receiverId)) {
+            ConversationParticipant::firstOrCreate([
+                'conversation_id' => $conversation->id,
+                'user_id' => $receiverId,
+            ], [
+                'role' => 'member',
+                'request_status' => 'accepted',
+            ]);
+        }
+
         // Verify blocking and privacy in direct conversations
         if (! $conversation->isGroup()) {
             $otherParticipant = ConversationParticipant::where('conversation_id', $conversation->id)
                 ->where('user_id', '!=', $caller->id)
                 ->first();
+
+            if (! $otherParticipant && $receiverId) {
+                $otherParticipant = ConversationParticipant::firstOrCreate([
+                    'conversation_id' => $conversation->id,
+                    'user_id' => $receiverId,
+                ], [
+                    'role' => 'member',
+                    'request_status' => 'accepted',
+                ]);
+            }
 
             if (! $otherParticipant) {
                 throw new InvalidArgumentException('Receiver could not be found for this conversation.');
@@ -164,7 +185,7 @@ class CallingService
                 : Call::TYPE_AUDIO;
         }
 
-        return DB::transaction(function () use ($caller, $conversation, $callType) {
+        return DB::transaction(function () use ($caller, $conversation, $callType, $receiverId) {
             $call = Call::create([
                 'conversation_id' => $conversation->id,
                 'caller_id' => $caller->id,
@@ -190,6 +211,10 @@ class CallingService
             $otherUserIds = $conversation->participants()
                 ->where('user_id', '!=', $caller->id)
                 ->pluck('user_id');
+
+            if ($receiverId && ! $otherUserIds->contains($receiverId)) {
+                $otherUserIds->push($receiverId);
+            }
 
             foreach ($otherUserIds as $otherId) {
                 CallParticipant::firstOrCreate([
@@ -228,8 +253,14 @@ class CallingService
 
             $this->realtimeService->broadcastToConversation($conversation->id, 'call.incoming', $payload);
 
-            // Record sync event
+            // Record sync event for conversation
             $this->syncEventService->recordEvent('call.incoming', $payload, null, $conversation->id);
+
+            // Directly broadcast and record sync event for every callee's personal channel
+            foreach ($otherUserIds as $otherId) {
+                $this->realtimeService->broadcast("private-user.{$otherId}", 'call.incoming', $payload);
+                $this->syncEventService->recordEvent('call.incoming', $payload, (int) $otherId, $conversation->id);
+            }
 
             return $call;
         });
@@ -338,6 +369,9 @@ class CallingService
                 $this->realtimeService->broadcastToConversation($call->conversation_id, 'call.rejected', $payload);
                 $this->syncEventService->recordEvent('call.rejected', $payload, null, $call->conversation_id);
                 $this->syncEventService->recordEvent('call.history_updated', $payload, null, $call->conversation_id);
+                foreach ($call->participants as $cp) {
+                    $this->realtimeService->broadcast("private-user.{$cp->user_id}", 'call.rejected', $payload);
+                }
             }
 
             return $call->fresh(['participants.user.profile', 'caller.profile']);
@@ -415,6 +449,10 @@ class CallingService
             $this->syncEventService->recordEvent($callEnded ? 'call.ended' : 'call.left', $payload, null, $call->conversation_id);
             if ($callEnded) {
                 $this->syncEventService->recordEvent('call.history_updated', $payload, null, $call->conversation_id);
+            }
+
+            foreach ($call->participants as $cp) {
+                $this->realtimeService->broadcast("private-user.{$cp->user_id}", $callEnded ? 'call.ended' : 'call.left', $payload);
             }
 
             return $call->fresh(['participants.user.profile', 'caller.profile']);

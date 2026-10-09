@@ -235,4 +235,30 @@ class WebRTCCallingWebTest extends TestCase
         $this->assertSame('missed', $respArray['outcome']);
         $this->assertSame(0, $respArray['duration_seconds']);
     }
+
+    public function test_call_initiation_delivers_incoming_event_to_recipient_sync_stream(): void
+    {
+        // User1 initiates a call to User2
+        $response = $this->actingAs($this->user1, 'sanctum')->postJson('/api/v1/calls', [
+            'conversation_id' => $this->conversation->id,
+            'receiver_id' => $this->user2->id,
+            'call_type' => 'video',
+        ]);
+
+        $response->assertStatus(201);
+        $callId = $response->json('data.id');
+        $this->assertNotNull($callId);
+
+        // User2 polls /api/v1/messenger/sync and receives the call.incoming event
+        $syncResp = $this->actingAs($this->user2, 'sanctum')->getJson('/api/v1/messenger/sync?since_id=0');
+        $syncResp->assertStatus(200);
+
+        $events = collect($syncResp->json('data.events'));
+        $incomingEvent = $events->firstWhere('event_type', 'call.incoming');
+
+        $this->assertNotNull($incomingEvent, 'Receiver did not receive call.incoming sync event');
+        $this->assertSame($callId, $incomingEvent['payload']['call_id']);
+        $this->assertSame($this->user1->id, $incomingEvent['payload']['caller']['id']);
+        $this->assertSame('video', $incomingEvent['payload']['call_type']);
+    }
 }

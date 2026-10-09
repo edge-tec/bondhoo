@@ -5417,7 +5417,12 @@
         try {
             const res = await fetch(`/api/v1/messenger/sync?since_id=${lastSyncEventId}&limit=200`, {
                 credentials: 'same-origin',
-                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}) }
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                }
             });
             const data = await res.json();
             if (data.success && data.data?.events) {
@@ -5545,8 +5550,8 @@
         else if (evt.event_type === 'call.incoming') {
             const p = evt.payload || {};
             if (Number(p.caller?.id) !== Number(currentUserId)) {
-                // Ignore stale invitations (older than 50 seconds)
-                if (!evt.timestamp || (Date.now() - new Date(evt.timestamp).getTime()) <= 50000) {
+                // Ignore stale invitations (older than 3 minutes, accounting for clock skew)
+                if (!evt.timestamp || Math.abs(Date.now() - new Date(evt.timestamp).getTime()) <= 180000) {
                     showIncomingCallModal(p);
                 }
             }
