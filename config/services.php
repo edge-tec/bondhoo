@@ -36,8 +36,8 @@ return [
     ],
 
     'turn' => [
-        'url' => env('TURN_SERVER_URL', 'turn:turn.jugajug.com:3478'),
-        'secret' => env('TURN_SERVER_SECRET', 'jugajug-enterprise-turn-secret'),
+        'url' => env('TURN_SERVER_URL'),
+        'secret' => env('TURN_SERVER_SECRET'),
     ],
 
 ];

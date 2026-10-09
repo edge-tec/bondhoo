@@ -2023,7 +2023,10 @@
                     @endphp
 
                     @if($mType === 'system' || $mType === 'call')
-                        <div class="system-message-row" style="{{ $mType === 'call' ? 'background: rgba(24,119,242,0.1); color: var(--fb-primary); padding: 8px 16px; border-radius: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin: 8px auto;' : '' }}">{{ $mBody }}</div>
+                        @php
+                            $callMetaId = is_array($msg) ? ($msg['metadata']['call_id'] ?? $mId) : ($msg->metadata['call_id'] ?? $mId);
+                        @endphp
+                        <div class="system-message-row" id="callSummaryRow-{{ $callMetaId }}" data-call-id="{{ $callMetaId }}" style="{{ $mType === 'call' ? 'background: rgba(24,119,242,0.1); color: var(--fb-primary); padding: 8px 16px; border-radius: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin: 8px auto;' : '' }}">{{ $mBody }}</div>
                     @else
                         <div class="message-row {{ $isOut ? 'outgoing' : 'incoming' }}" id="messageRow-{{ $mId }}" data-id="{{ $mId }}">
                             @if(!$isOut && $isGroup)
@@ -4097,8 +4100,14 @@
         if (!stream) return;
 
         if (m.type === 'call') {
+            const callId = m.metadata?.call_id || m.id;
+            const existingRow = document.getElementById(`callSummaryRow-${callId}`) || (m.id ? document.getElementById(`callSummaryRow-${m.id}`) : null);
+            if (existingRow) {
+                existingRow.innerText = m.body || 'কল';
+                return;
+            }
             const html = `
-                <div class="system-message-row" style="background: rgba(24,119,242,0.1); color: var(--fb-primary); padding: 8px 16px; border-radius: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin: 8px auto;">
+                <div class="system-message-row" id="callSummaryRow-${callId}" data-call-id="${callId}" style="background: rgba(24,119,242,0.1); color: var(--fb-primary); padding: 8px 16px; border-radius: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin: 8px auto;">
                     ${escapeHtml(m.body || 'কল')}
                 </div>
             `;
@@ -5063,11 +5072,26 @@
         .then(r => r.json())
         .then(res => {
             callHistoryLoading = false;
-            const calls = res.data || [];
+            let calls = res.data || [];
             if (!append && calls.length === 0) {
                 listEl.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); font-size: 13px; padding: 24px;">কোনো কলের ইতিহাস নেই।</div>';
                 return;
             }
+
+            // Deduplicate items against existing DOM when appending, and within current page
+            const seenCallIds = new Set();
+            if (append) {
+                listEl.querySelectorAll('[data-call-history-id]').forEach(el => {
+                    const cid = el.getAttribute('data-call-history-id');
+                    if (cid) seenCallIds.add(String(cid));
+                });
+            }
+            calls = calls.filter(c => {
+                const idStr = String(c.id);
+                if (seenCallIds.has(idStr)) return false;
+                seenCallIds.add(idStr);
+                return true;
+            });
 
             const html = calls.map(c => {
                 const isOutgoing = Number(c.caller?.id) === Number(currentUserId);
@@ -5119,7 +5143,7 @@
                 const callTypeLabel = (c.call_type === 'video' || c.call_type === 'group_video') ? 'ভিডিও' : 'অডিও';
 
                 return `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--fb-bg); border-radius: 10px; transition: background 0.2s;">
+                    <div id="callHistoryItem-${c.id}" data-call-history-id="${c.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--fb-bg); border-radius: 10px; transition: background 0.2s;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div class="avatar" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: #e4e6eb; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #1c1e21;">
                                 ${peerAvatar ? `<img src="${peerAvatar}" style="width: 100%; height: 100%; object-fit: cover;">` : escapeHtml(peerName.charAt(0))}

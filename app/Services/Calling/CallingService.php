@@ -37,18 +37,22 @@ class CallingService
                     'stun:stun.l.google.com:19302',
                     'stun:stun1.l.google.com:19302',
                     'stun:stun2.l.google.com:19302',
+                    'stun:stun3.l.google.com:19302',
+                    'stun:stun4.l.google.com:19302',
                     'stun:stun.cloudflare.com:3478',
+                    'stun:openrelay.metered.ca:80',
                 ],
             ],
         ];
 
-        $turnUrl = config('services.turn.url', env('TURN_SERVER_URL', 'turn:turn.jugajug.com:3478'));
-        $turnSecret = config('services.turn.secret', env('TURN_SERVER_SECRET', 'jugajug-enterprise-turn-secret'));
+        $turnUrl = config('services.turn.url', env('TURN_SERVER_URL'));
+        $turnSecret = config('services.turn.secret', env('TURN_SERVER_SECRET'));
 
-        if ($turnUrl) {
+        // If custom TURN server is configured in env/config (and not non-existent placeholder)
+        if ($turnUrl && ! str_contains($turnUrl, 'turn.jugajug.com')) {
             $timestamp = time() + 86400; // 24 hours validity
             $username = $user ? "{$timestamp}:{$user->id}" : "{$timestamp}:guest";
-            $credential = base64_encode(hash_hmac('sha1', $username, $turnSecret, true));
+            $credential = base64_encode(hash_hmac('sha1', $username, (string) $turnSecret, true));
 
             $turnUrls = [
                 $turnUrl.'?transport=udp',
@@ -65,6 +69,18 @@ class CallingService
                 'urls' => $turnUrls,
                 'username' => $username,
                 'credential' => $credential,
+            ];
+        } else {
+            // Live public OpenRelay TURN fallback for reliable NAT traversal across mobile CGNAT
+            $servers[] = [
+                'urls' => [
+                    'turn:openrelay.metered.ca:80',
+                    'turn:openrelay.metered.ca:443',
+                    'turn:openrelay.metered.ca:443?transport=tcp',
+                    'turns:openrelay.metered.ca:443?transport=tcp',
+                ],
+                'username' => 'openrelayproject',
+                'credential' => 'openrelayproject',
             ];
         }
 
@@ -158,8 +174,8 @@ class CallingService
             ->first();
 
         if ($existingCall) {
-            // Clean up stale ringing calls older than 60 seconds without answer
-            if ($existingCall->status === Call::STATUS_RINGING && $existingCall->started_at && $existingCall->started_at->diffInSeconds(now()) > 60) {
+            // Clean up stale ringing calls older than 45 seconds without answer
+            if ($existingCall->status === Call::STATUS_RINGING && $existingCall->started_at && $existingCall->started_at->diffInSeconds(now()) > 45) {
                 $existingCall->update([
                     'status' => Call::STATUS_MISSED,
                     'ended_at' => now(),
@@ -168,6 +184,30 @@ class CallingService
                 // Return existing call session idempotently if same caller or already active
                 if ($existingCall->caller_id === $caller->id || $existingCall->status === Call::STATUS_ACTIVE) {
                     $existingCall->load(['caller.profile', 'participants.user.profile']);
+
+                    // Re-broadcast call.incoming to all callees so their devices ring reliably
+                    $payload = [
+                        'call_id' => $existingCall->id,
+                        'uuid' => $existingCall->uuid,
+                        'conversation_id' => $conversation->id,
+                        'call_type' => $existingCall->call_type,
+                        'room_id' => $existingCall->room_id,
+                        'caller' => [
+                            'id' => $caller->id,
+                            'name' => $caller->name,
+                            'username' => $caller->username,
+                            'avatar_url' => $caller->profile?->avatar_url,
+                        ],
+                        'ice_servers' => $this->getIceServers($caller),
+                    ];
+                    $this->realtimeService->broadcastToConversation($conversation->id, 'call.incoming', $payload);
+                    $this->syncEventService->recordEvent('call.incoming', $payload, null, $conversation->id);
+                    foreach ($existingCall->participants as $part) {
+                        if ($part->user_id !== $caller->id) {
+                            $this->realtimeService->broadcast("private-user.{$part->user_id}", 'call.incoming', $payload);
+                            $this->syncEventService->recordEvent('call.incoming', $payload, (int) $part->user_id, $conversation->id);
+                        }
+                    }
 
                     return $existingCall;
                 }
@@ -322,6 +362,9 @@ class CallingService
                 $this->realtimeService->broadcastToConversation($call->conversation_id, 'call.accepted', $payload);
                 $this->syncEventService->recordEvent('call.accepted', $payload, null, $call->conversation_id);
                 $this->syncEventService->recordEvent('call.history_updated', $payload, null, $call->conversation_id);
+                foreach ($call->participants as $cp) {
+                    $this->realtimeService->broadcast("private-user.{$cp->user_id}", 'call.accepted', $payload);
+                }
             } else {
                 // reject or busy
                 $status = $action === 'busy' ? CallParticipant::STATUS_BUSY : CallParticipant::STATUS_REJECTED;
@@ -379,7 +422,7 @@ class CallingService
     }
 
     /**
-     * Leave or end a call.
+     * Leave or end a call with single authoritative, idempotent finalization.
      */
     public function leaveCall(User $user, int $callId): Call
     {
@@ -395,7 +438,10 @@ class CallingService
                 throw new AuthorizationException('You are not a participant in this call.');
             }
 
-            if ($participant->status === CallParticipant::STATUS_LEFT && in_array($call->status, [Call::STATUS_ENDED, Call::STATUS_MISSED, Call::STATUS_REJECTED], true)) {
+            $alreadyFinalized = in_array($call->status, [Call::STATUS_ENDED, Call::STATUS_MISSED, Call::STATUS_REJECTED, Call::STATUS_BUSY, Call::STATUS_FAILED], true);
+
+            // If participant already left and session is finalized, return idempotently
+            if ($participant->status === CallParticipant::STATUS_LEFT && $alreadyFinalized) {
                 return $call->fresh(['participants.user.profile', 'caller.profile']);
             }
 
@@ -407,6 +453,11 @@ class CallingService
                 'left_at' => $now,
                 'duration_seconds' => $durationSeconds,
             ]);
+
+            // If session was ALREADY finalized by the other participant or server, do NOT re-finalize or recreate message
+            if ($alreadyFinalized) {
+                return $call->fresh(['participants.user.profile', 'caller.profile']);
+            }
 
             // Check if call should be ended
             $activeCount = $call->participants()
@@ -466,7 +517,11 @@ class CallingService
     {
         $existing = Message::where('conversation_id', $call->conversation_id)
             ->where('type', 'call')
-            ->where('metadata->call_id', $call->id)
+            ->where(function ($q) use ($call) {
+                $q->where('metadata->call_id', $call->id)
+                    ->orWhere('metadata->call_id', (string) $call->id);
+            })
+            ->lockForUpdate()
             ->first();
 
         $callTypeLabel = in_array($call->call_type, [Call::TYPE_VIDEO, Call::TYPE_GROUP_VIDEO], true) ? 'ভিডিও কল' : 'অডিও কল';
@@ -481,6 +536,14 @@ class CallingService
         };
 
         if ($existing) {
+            // Preserve valid positive duration if existing had one and incoming duplicate is 0
+            $existingDuration = (int) ($existing->metadata['duration'] ?? 0);
+            if ($durationSeconds === 0 && $existingDuration > 0) {
+                $durationSeconds = $existingDuration;
+                $durStr = ' ('.gmdate('i:s', $durationSeconds).')';
+                $bodyText = "{$icon} {$callTypeLabel} সম্পন্ন{$durStr}";
+            }
+
             $existing->update([
                 'body' => $bodyText,
                 'metadata' => array_merge($existing->metadata ?? [], [
@@ -587,8 +650,19 @@ class CallingService
         // Broadcast signal to conversation
         $this->realtimeService->broadcastToConversation($call->conversation_id, 'call.signal', $signalData);
 
+        // Also broadcast directly to target user channel or other participants
+        if ($targetUserId) {
+            $this->realtimeService->broadcast("private-user.{$targetUserId}", 'call.signal', $signalData);
+        } else {
+            foreach ($call->participants as $cp) {
+                if ($cp->user_id !== $sender->id) {
+                    $this->realtimeService->broadcast("private-user.{$cp->user_id}", 'call.signal', $signalData);
+                }
+            }
+        }
+
         // Persist for the polling sync fallback (works even without a WebSocket server)
-        $this->syncEventService->recordEvent('call.signal', $signalData, null, $call->conversation_id);
+        $this->syncEventService->recordEvent('call.signal', $signalData, $targetUserId, $call->conversation_id);
 
         return $signalData;
     }

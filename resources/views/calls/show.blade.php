@@ -1269,6 +1269,12 @@
 
         // 8. WebRTC Core Engine
         async function acquireLocalMedia() {
+            if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+                console.warn('[WebRTC] navigator.mediaDevices not available.');
+                showToast('ক্যামেরা/মাইক্রোফোন ব্রাউজারে সাপোর্ট করছে না বা সাইটটি HTTPS-এ নেই');
+                return null;
+            }
+
             const wantsVideo = INITIAL_CALL_TYPE === 'video';
 
             if (wantsVideo) {
@@ -1446,11 +1452,14 @@
                 localStream.getTracks().forEach(track => {
                     peerConnection.addTrack(track, localStream);
                 });
-            } else {
+            }
+            const audioSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'audio');
+            if (!audioSender) {
                 peerConnection.addTransceiver('audio', { direction: 'recvonly' });
-                if (INITIAL_CALL_TYPE === 'video') {
-                    peerConnection.addTransceiver('video', { direction: 'recvonly' });
-                }
+            }
+            const videoSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+            if (!videoSender && INITIAL_CALL_TYPE === 'video') {
+                peerConnection.addTransceiver('video', { direction: 'recvonly' });
             }
 
             peerConnection.ontrack = (event) => {
@@ -1693,7 +1702,11 @@
             try {
                 await apiFetch(`/api/v1/calls/${activeCallId}/signal`, {
                     method: 'POST',
-                    body: JSON.stringify({ signal_type: signalType, payload: payload })
+                    body: JSON.stringify({
+                        signal_type: signalType,
+                        payload: payload,
+                        target_user_id: PEER_USER_ID
+                    })
                 });
             } catch (e) {
                 console.warn('[WebRTC] Signal send failed:', e);
@@ -1703,9 +1716,6 @@
         async function sendOffer() {
             if (offerSent || !peerConnection) return;
             offerSent = true;
-            clearTimeout(ringTimeoutTimer);
-            stopRingbackTone();
-            setCallStatus('সংযুক্ত হচ্ছে...');
 
             try {
                 const offer = await peerConnection.createOffer({
@@ -1840,8 +1850,14 @@
             if (evt.event_type === 'call.signal') {
                 enqueueSignal(payload);
             } else if (evt.event_type === 'call.accepted' && isThisCall && Number(payload.user_id) !== CURRENT_USER_ID) {
-                if (!ANSWER_CALL_ID && !offerSent) {
-                    sendOffer();
+                stopRingbackTone();
+                setCallStatus('সংযোগ স্থাপন হচ্ছে...');
+                if (!ANSWER_CALL_ID) {
+                    if (!offerSent) {
+                        sendOffer();
+                    } else if (peerConnection && peerConnection.signalingState === 'stable') {
+                        sendOffer();
+                    }
                 }
             } else if (evt.event_type === 'call.rejected' && isThisCall && Number(payload.user_id) !== CURRENT_USER_ID) {
                 onCallEnded(payload.status === 'busy' ? 'ব্যবহারকারী ব্যস্ত আছেন' : 'কল প্রত্যাখ্যান করা হয়েছে', false);
@@ -1907,6 +1923,8 @@
         }
 
         // 11. Hangup and Cleanup
+        let leaveRequestSent = false;
+
         function hangUpCall(reason = 'কল সমাপ্ত হয়েছে') {
             onCallEnded(typeof reason === 'string' ? reason : 'কল সমাপ্ত হয়েছে', true);
         }
@@ -1941,11 +1959,10 @@
                 peerConnection = null;
             }
 
-            if (notifyServer && activeCallId) {
+            if (notifyServer && activeCallId && !leaveRequestSent) {
+                leaveRequestSent = true;
                 apiFetch(`/api/v1/calls/${activeCallId}/leave`, { method: 'POST', keepalive: true }).catch(() => {});
             }
-
-
 
             setTimeout(() => {
                 if (window.opener) {
@@ -1955,6 +1972,14 @@
                 window.location.replace(`/messages/${CONVERSATION_ID}`);
             }, 1500);
         }
+
+        // Unblock audio autoplay on any user interaction
+        document.addEventListener('click', () => {
+            const remoteAud = document.getElementById('remoteAudio');
+            if (remoteAud && remoteAud.srcObject && remoteAud.paused) {
+                remoteAud.play().catch(() => {});
+            }
+        }, { passive: true });
 
         // 12. Browser Navigation and BFcache Protection
         window.addEventListener('pageshow', (event) => {
@@ -1972,7 +1997,8 @@
                 clearInterval(fastSignalTimer);
                 fastSignalTimer = null;
             }
-            if (!callHasEnded && activeCallId) {
+            if (!callHasEnded && activeCallId && !leaveRequestSent) {
+                leaveRequestSent = true;
                 apiFetch(`/api/v1/calls/${activeCallId}/leave`, { method: 'POST', keepalive: true }).catch(() => {});
             }
             cleanupMedia();

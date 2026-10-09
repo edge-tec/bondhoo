@@ -6,6 +6,7 @@ use App\Models\Call;
 use App\Models\CallParticipant;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
+use App\Models\Message;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -260,5 +261,139 @@ class WebRTCCallingWebTest extends TestCase
         $this->assertSame($callId, $incomingEvent['payload']['call_id']);
         $this->assertSame($this->user1->id, $incomingEvent['payload']['caller']['id']);
         $this->assertSame('video', $incomingEvent['payload']['call_type']);
+    }
+
+    public function test_duplicate_leave_requests_preserve_duration_and_create_single_message(): void
+    {
+        // Setup an active call that has been running for 45 seconds
+        $startedAt = now()->subSeconds(45);
+        $call = Call::create([
+            'conversation_id' => $this->conversation->id,
+            'caller_id' => $this->user1->id,
+            'call_type' => 'video',
+            'status' => Call::STATUS_ACTIVE,
+            'started_at' => $startedAt,
+        ]);
+
+        CallParticipant::create([
+            'call_id' => $call->id,
+            'user_id' => $this->user1->id,
+            'role' => 'caller',
+            'status' => 'accepted',
+            'joined_at' => $startedAt,
+        ]);
+
+        CallParticipant::create([
+            'call_id' => $call->id,
+            'user_id' => $this->user2->id,
+            'role' => 'callee',
+            'status' => 'accepted',
+            'joined_at' => $startedAt,
+        ]);
+
+        // 1. Caller leaves
+        $leaveResp1 = $this->actingAs($this->user1, 'sanctum')->postJson("/api/v1/calls/{$call->id}/leave");
+        $leaveResp1->assertStatus(200);
+
+        $call->refresh();
+        $this->assertSame(Call::STATUS_ENDED, $call->status);
+        $firstDuration = $call->duration_seconds;
+        $this->assertGreaterThanOrEqual(45, $firstDuration);
+
+        // Exactly 1 message created
+        $callMessages = Message::where('conversation_id', $this->conversation->id)
+            ->where('type', 'call')
+            ->get();
+        $this->assertCount(1, $callMessages);
+        $this->assertStringContainsString('ভিডিও কল সম্পন্ন', $callMessages->first()->body);
+
+        // 2. Callee leaves afterwards (simultaneous or delayed hangup)
+        $leaveResp2 = $this->actingAs($this->user2, 'sanctum')->postJson("/api/v1/calls/{$call->id}/leave");
+        $leaveResp2->assertStatus(200);
+
+        // 3. Caller sends duplicate beacon / pagehide request
+        $leaveResp3 = $this->actingAs($this->user1, 'sanctum')->postJson("/api/v1/calls/{$call->id}/leave");
+        $leaveResp3->assertStatus(200);
+
+        $call->refresh();
+        // Duration must be preserved, NOT reset to 0
+        $this->assertSame($firstDuration, $call->duration_seconds);
+        $this->assertSame(Call::STATUS_ENDED, $call->status);
+
+        // Messages must NOT be duplicated
+        $callMessagesAfter = Message::where('conversation_id', $this->conversation->id)
+            ->where('type', 'call')
+            ->get();
+        $this->assertCount(1, $callMessagesAfter);
+    }
+
+    public function test_callee_reject_call_produces_zero_duration_and_single_summary_message(): void
+    {
+        $call = Call::create([
+            'conversation_id' => $this->conversation->id,
+            'caller_id' => $this->user1->id,
+            'call_type' => 'audio',
+            'status' => Call::STATUS_RINGING,
+            'started_at' => now(),
+        ]);
+
+        CallParticipant::create([
+            'call_id' => $call->id,
+            'user_id' => $this->user1->id,
+            'role' => 'caller',
+            'status' => 'accepted',
+        ]);
+
+        CallParticipant::create([
+            'call_id' => $call->id,
+            'user_id' => $this->user2->id,
+            'role' => 'callee',
+            'status' => 'ringing',
+        ]);
+
+        // Callee rejects the call
+        $resp = $this->actingAs($this->user2, 'sanctum')->postJson("/api/v1/calls/{$call->id}/respond", [
+            'action' => 'reject',
+        ]);
+        $resp->assertStatus(200);
+
+        $call->refresh();
+        $this->assertSame(Call::STATUS_REJECTED, $call->status);
+        $this->assertSame(0, $call->duration_seconds);
+
+        // Exactly one message recorded
+        $messages = Message::where('conversation_id', $this->conversation->id)
+            ->where('type', 'call')
+            ->get();
+        $this->assertCount(1, $messages);
+        $this->assertStringContainsString('প্রত্যাখ্যাত', $messages->first()->body);
+    }
+
+    public function test_reusing_ringing_call_rebroadcasts_incoming_event_to_recipient(): void
+    {
+        // First call initiation creates the ringing call
+        $resp1 = $this->actingAs($this->user1, 'sanctum')->postJson('/api/v1/calls', [
+            'conversation_id' => $this->conversation->id,
+            'receiver_id' => $this->user2->id,
+            'call_type' => 'video',
+        ]);
+        $resp1->assertStatus(201);
+        $callId1 = $resp1->json('data.id');
+
+        // Second call initiation returns the existing ringing call session
+        $resp2 = $this->actingAs($this->user1, 'sanctum')->postJson('/api/v1/calls', [
+            'conversation_id' => $this->conversation->id,
+            'receiver_id' => $this->user2->id,
+            'call_type' => 'video',
+        ]);
+        $resp2->assertStatus(201);
+        $this->assertSame($callId1, $resp2->json('data.id'));
+
+        // Recipient sync stream contains call.incoming event
+        $syncResp = $this->actingAs($this->user2, 'sanctum')->getJson('/api/v1/messenger/sync?since_id=0');
+        $syncResp->assertStatus(200);
+        $events = collect($syncResp->json('data.events'));
+        $incomingEvents = $events->where('event_type', 'call.incoming');
+        $this->assertNotEmpty($incomingEvents);
     }
 }
