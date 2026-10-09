@@ -95,4 +95,40 @@ class EnterpriseMobileAppResponsiveNavigationTest extends TestCase
         $this->assertStringContainsString('mobileMenuDrawer', $content);
         $this->assertStringContainsString('mobileCreateActionSheet', $content);
     }
+
+    public function test_feed_route_renders_dashboard_for_authenticated_user(): void
+    {
+        $user = User::factory()->create([
+            'username' => 'feeduser',
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get('/feed');
+
+        $response->assertStatus(200);
+        $content = $response->getContent();
+        $this->assertStringContainsString('tab-feed', $content);
+        $this->assertStringContainsString('mobile-bottom-nav', $content);
+    }
+
+    public function test_feed_route_redirects_unauthenticated_user_to_login(): void
+    {
+        $response = $this->get('/feed');
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_feed_route_authenticates_with_cookie_token(): void
+    {
+        $user = User::factory()->create([
+            'username' => 'cookietokenuser',
+            'status' => 'active',
+        ]);
+        $token = $user->createToken('jugajug_web')->plainTextToken;
+
+        $response = $this->withCookie('jugajug_token', $token)->get('/feed');
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('tab-feed', $response->getContent());
+    }
 }

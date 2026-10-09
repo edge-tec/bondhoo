@@ -23,8 +23,22 @@ use App\Services\AuthServiceV2;
 use App\Services\Email\SmtpConfigService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\PersonalAccessToken;
 
-Route::get('/', function () {
+$resolveWebUser = function () {
+    if (! auth('web')->check()) {
+        $token = request()->cookie('jugajug_token') ?? request()->cookie('bondhoo_token');
+        if ($token) {
+            $pat = PersonalAccessToken::findToken((string) $token);
+            if ($pat && $pat->tokenable instanceof User) {
+                auth('web')->login($pat->tokenable);
+            }
+        }
+    }
+};
+
+Route::get('/', function () use ($resolveWebUser) {
+    $resolveWebUser();
     if (auth('web')->check() || request()->cookie('bondhoo_token') || request()->cookie('jugajug_token')) {
         return view('dashboard');
     }
@@ -32,13 +46,23 @@ Route::get('/', function () {
     return view('auth.login');
 })->name('dashboard');
 
-Route::get('/dashboard', function () {
+Route::get('/dashboard', function () use ($resolveWebUser) {
+    $resolveWebUser();
     if (! auth('web')->check() && ! request()->cookie('bondhoo_token') && ! request()->cookie('jugajug_token')) {
         return redirect()->route('login');
     }
 
     return view('dashboard');
 })->name('dashboard.view');
+
+Route::get('/feed', function () use ($resolveWebUser) {
+    $resolveWebUser();
+    if (! auth('web')->check() && ! request()->cookie('bondhoo_token') && ! request()->cookie('jugajug_token')) {
+        return redirect()->route('login');
+    }
+
+    return view('dashboard');
+})->name('feed');
 
 // Authentication Pages & Actions (Facebook-style UX & Government Grade Security)
 Route::get('/login', function () {
