@@ -240,19 +240,35 @@
             if (myUserId && Number(message.sender?.id) === Number(myUserId)) return;
             if (isMessengerPage || isCallRoom) return;
 
+            // Call summary or system messages must NEVER auto-open the chat popup
+            if (message.type === 'call' || message.type === 'system') {
+                if (typeof window.loadMessagesSilent === 'function' && document.getElementById('messengerChatBox')) {
+                    const box = document.getElementById('messengerChatBox');
+                    const isOpen = box && box.style.display !== 'none' && !box.classList.contains('hidden') && !box.classList.contains('minimized');
+                    let activeId = null;
+                    try { activeId = typeof activeChatConversationId !== 'undefined' ? activeChatConversationId : null; } catch (e) {}
+                    if (isOpen && Number(activeId) === Number(message.conversation_id)) {
+                        window.loadMessagesSilent(message.conversation_id);
+                    }
+                }
+                return;
+            }
+
             // Pages with the floating chat popup (dashboard / profile): open or refresh it in place
             if (typeof window.openRealChat === 'function' && document.getElementById('messengerChatBox')) {
                 let activeId = null;
                 try { activeId = typeof activeChatConversationId !== 'undefined' ? activeChatConversationId : null; } catch (e) {}
                 const box = document.getElementById('messengerChatBox');
-                const isOpen = box && box.style.display !== 'none' && !box.classList.contains('hidden');
+                const isOpen = box && box.style.display !== 'none' && !box.classList.contains('hidden') && !box.classList.contains('minimized');
+                const isMobile = window.innerWidth <= 768;
 
                 playMessagePing();
                 if (isOpen && Number(activeId) === Number(message.conversation_id)) {
                     if (typeof window.loadMessagesSilent === 'function') window.loadMessagesSilent(message.conversation_id);
                     return;
                 }
-                if (!isOpen) {
+                // Only auto-open floating window on desktop if chat was not already open. On mobile, show the toast alert so screen is not hijacked.
+                if (!isOpen && !isMobile) {
                     const s = message.sender || {};
                     window.openRealChat(message.conversation_id, s.name || 'চ্যাট', s.avatar_url || '', s.id || null, s.username || null);
                     return;

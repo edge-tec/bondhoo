@@ -10624,6 +10624,16 @@
         }
 
         function renderProfileChatMessageHtml(m) {
+            if (m.type === 'call') {
+                return `
+                    <div id="chatMsg_${m.id}" data-id="${m.id}" data-version="${m.version || 1}" style="text-align: center; margin: 8px auto; width: 100%;">
+                        <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(24,119,242,0.1); color: var(--fb-primary, #1877f2); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            ${escapeChatHtml(m.body || 'কল')}
+                        </div>
+                    </div>
+                `;
+            }
+
             const isMe = m.is_mine ?? (m.sender_id === {{ auth()->id() ?? 'null' }});
             const isDeleted = !!(m.deleted_at || m.is_deleted_for_everyone);
             const isEdited = !!(m.is_edited || m.edited_at);
@@ -11319,6 +11329,7 @@
             }
             showToast(`${type === 'audio' ? 'অডিও' : 'ভিডিও'} কল সংযুক্ত হচ্ছে... 📞`);
             const callUrl = `/call/${activeChatConversationId}?type=${type}`;
+            closeRealChat();
             const win = window.open(callUrl, '_blank');
             if (!win || win.closed || typeof win.closed === 'undefined') {
                 window.location.href = callUrl;

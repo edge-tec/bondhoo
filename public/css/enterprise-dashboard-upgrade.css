@@ -1934,6 +1934,13 @@ header {
         width: calc(100vw - 32px) !important;
         right: 16px !important;
     }
+    #messengerChatBox.minimized,
+    .jj-chat-box.minimized {
+        height: 52px !important;
+        max-height: 52px !important;
+        top: auto !important;
+        bottom: 0 !important;
+    }
     #aiFloatingBtn {
         right: 16px !important;
         bottom: 16px !important;
@@ -1943,6 +1950,8 @@ header {
 @media (max-width: 480px) {
     #messengerChatBox,
     .jj-chat-box {
+        position: fixed !important;
+        top: 0 !important;
         right: 0 !important;
         left: 0 !important;
         bottom: 0 !important;
@@ -1955,6 +1964,23 @@ header {
         border-radius: 0 !important;
         border: none !important;
         z-index: 100000 !important;
+        display: none;
+        flex-direction: column !important;
+        box-sizing: border-box !important;
+        background: #ffffff !important;
+    }
+    #messengerChatBox.active,
+    .jj-chat-box.active {
+        display: flex !important;
+    }
+    #messengerChatBox.minimized,
+    .jj-chat-box.minimized {
+        top: auto !important;
+        bottom: 0 !important;
+        height: 52px !important;
+        max-height: 52px !important;
+        border-radius: 12px 12px 0 0 !important;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15) !important;
     }
     #messengerChatBox.expanded,
     .jj-chat-box.expanded {
@@ -1962,12 +1988,24 @@ header {
         height: 100dvh !important;
     }
     .jj-chat-header {
-        height: 56px !important;
+        height: 54px !important;
+        min-height: 54px !important;
+        flex-shrink: 0 !important;
         padding: 0 12px !important;
     }
+    .jj-chat-messages {
+        flex: 1 1 auto !important;
+        height: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
     .jj-chat-composer {
+        flex-shrink: 0 !important;
+        min-height: 54px !important;
         padding: 8px 10px !important;
         gap: 5px !important;
+        background: #ffffff !important;
+        border-top: 1px solid #e4e6eb !important;
     }
     .jj-chat-action-btn {
         width: 30px !important;
