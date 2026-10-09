@@ -10981,6 +10981,9 @@
                 });
                 const data = await res.json();
                 if (data.success) {
+                    if (data.data?.id && window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
+                        window.bondhooSoundManager.playOutgoingMessageSentTone(data.data.id);
+                    }
                     await loadMessagesSilent(activeChatConversationId);
                     const container = document.getElementById('messengerChatMessages');
                     if (container) container.scrollTop = container.scrollHeight;
@@ -11108,6 +11111,9 @@
                     });
                     const data = await res.json();
                     if (data.success) {
+                        if (data.data?.id && window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
+                            window.bondhooSoundManager.playOutgoingMessageSentTone(data.data.id);
+                        }
                         showToast('ভয়েস বার্তা পাঠানো হয়েছে! 🚀');
                         await loadMessagesSilent(activeChatConversationId);
                         const container = document.getElementById('messengerChatMessages');
@@ -11189,6 +11195,9 @@
                     });
                     const msgData = await msgRes.json();
                     if (msgData.success) {
+                        if (msgData.data?.id && window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
+                            window.bondhooSoundManager.playOutgoingMessageSentTone(msgData.data.id);
+                        }
                         showToast('ফাইল পাঠানো সম্পন্ন! 🚀');
                         document.getElementById(tempId)?.remove();
                         if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);

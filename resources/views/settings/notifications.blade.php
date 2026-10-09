@@ -244,11 +244,33 @@
                 </div>
             </div>
 
+            <!-- 5. Bondhoo Messenger Sounds & Ringtone System -->
+            <div class="card" style="border-left: 4px solid #1877f2;">
+                <div class="card-header">
+                    <div class="card-title">🔔 মেসেঞ্জার সাউন্ড ও রিংটোন সেটিংস</div>
+                    <span style="font-size: 11px; background: #e7f3ff; color: #1877f2; padding: 3px 8px; border-radius: 12px; font-weight: 700;">৩টি স্বতন্ত্র অডিও সাউন্ড</span>
+                </div>
+                <div style="padding: 10px 0;">
+                    <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 14px;">
+                        ইনকামিং কল রিংটোন, ইনকামিং মেসেজ টোন এবং আউটগোয়িং মেসেজ সেন্ট টোন সম্পূর্ণ আলাদাভাবে কনফিগার ও প্রিভিউ করুন। প্রতিটি সাউন্ডের ভলিউম ও সক্রিয়তা স্বাধীনভাবে নিয়ন্ত্রণ করা যায়।
+                    </p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" onclick="openMessengerSoundSettings()" style="background: #f0f2f5; color: #0f172a; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                            <span>🎧</span>
+                            <span>মেসেঞ্জার সাউন্ড সেটিংস কনফিগার করুন</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
                 <button type="submit" id="btnSubmit" class="btn-save">সেটিংস সংরক্ষণ করুন 💾</button>
             </div>
         </form>
     </div>
+
+    @include('partials.messenger-sound-settings-modal')
+    <script src="/js/bondhoo-sound-manager.js"></script>
 
     <script>
         async function savePreferences() {

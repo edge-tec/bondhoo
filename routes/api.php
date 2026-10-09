@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\v1\GroupController;
 use App\Http\Controllers\Api\v1\MediaController;
 use App\Http\Controllers\Api\v1\MessageController;
 use App\Http\Controllers\Api\v1\MessengerSearchController;
+use App\Http\Controllers\Api\v1\MessengerSoundController;
 use App\Http\Controllers\Api\v1\MessengerSyncController;
 use App\Http\Controllers\Api\v1\NotificationController;
 use App\Http\Controllers\Api\v1\PageController;
@@ -363,6 +364,12 @@ Route::prefix('v1')->group(function () {
 
         // Global and In-Chat Messenger Search
         Route::get('/messenger/search', [MessengerSearchController::class, 'search']);
+
+        // Messenger Sound Preferences & Sound Library
+        Route::get('/settings/messenger-sounds', [MessengerSoundController::class, 'index']);
+        Route::put('/settings/messenger-sounds', [MessengerSoundController::class, 'update']);
+        Route::post('/settings/messenger-sounds/reset', [MessengerSoundController::class, 'reset']);
+        Route::post('/settings/messenger-sounds/upload', [MessengerSoundController::class, 'upload']);
 
         // OpenAPI Documentation Endpoint
         Route::get('/docs/messenger', fn () => response()->file(public_path('docs/messenger-openapi.json'), ['Content-Type' => 'application/json']));

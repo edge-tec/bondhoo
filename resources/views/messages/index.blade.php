@@ -2311,6 +2311,13 @@
                     </div>
                 </div>
 
+                <button type="button" class="icon-circle-btn" onclick="openMessengerSoundModal()" title="মেসেঞ্জার সাউন্ড ও রিংটোন সেটিংস">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                </button>
+
                 <button type="button" class="icon-circle-btn" onclick="openNewChatModal()" title="নতুন বার্তা বা গ্রুপ">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -3685,6 +3692,8 @@
     </div>
 </div>
 
+@include('partials.messenger-sound-settings-modal')
+
 <!-- Global Messenger In-App Toast -->
 <div id="toastNotification" style="display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.92); color: white; padding: 10px 22px; border-radius: 30px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-lg); z-index: 6000; backdrop-filter: blur(6px); transition: all 0.2s ease;">
     <span id="toastNotificationText"></span>
@@ -3929,6 +3938,9 @@
         .then(res => {
             if (res.success && res.data) {
                 delete pendingFailedMessages[clientMsgId];
+                if (window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
+                    window.bondhooSoundManager.playOutgoingMessageSentTone(res.data.id);
+                }
                 const localRow = document.getElementById(`localRow-${clientMsgId}`);
                 if (localRow) {
                     localRow.id = `messageRow-${res.data.id}`;
@@ -3984,6 +3996,9 @@
         .then(res => {
             if (res.success && res.data) {
                 delete pendingFailedMessages[clientMsgId];
+                if (window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
+                    window.bondhooSoundManager.playOutgoingMessageSentTone(res.data.id);
+                }
                 if (localRow) {
                     localRow.id = `messageRow-${res.data.id}`;
                     localRow.setAttribute('data-id', res.data.id);
@@ -4404,6 +4419,9 @@
                 document.getElementById(tempVoiceId)?.remove();
                 if (res.success && res.data) {
                     appendOutgoingVoiceMessageBubble(res.data);
+                    if (window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
+                        window.bondhooSoundManager.playOutgoingMessageSentTone(res.data.id);
+                    }
                 } else {
                     alert(res.message || 'ভয়েস মেসেজ পাঠাতে ব্যর্থ হয়েছে।');
                 }
@@ -6097,34 +6115,41 @@
     let messengerRingtoneCtx = null;
     let messengerRingtoneTimer = null;
 
-    function startIncomingRingtone() {
-        stopIncomingRingtone();
-        try {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            if (!AudioCtx) return;
-            messengerRingtoneCtx = new AudioCtx();
-            const burst = () => {
-                if (!messengerRingtoneCtx) return;
-                [0, 0.45].forEach(offset => {
-                    const osc = messengerRingtoneCtx.createOscillator();
-                    const gain = messengerRingtoneCtx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(offset ? 659 : 523, messengerRingtoneCtx.currentTime + offset);
-                    gain.gain.setValueAtTime(0.0001, messengerRingtoneCtx.currentTime + offset);
-                    gain.gain.exponentialRampToValueAtTime(0.12, messengerRingtoneCtx.currentTime + offset + 0.03);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, messengerRingtoneCtx.currentTime + offset + 0.4);
-                    osc.connect(gain).connect(messengerRingtoneCtx.destination);
-                    osc.start(messengerRingtoneCtx.currentTime + offset);
-                    osc.stop(messengerRingtoneCtx.currentTime + offset + 0.42);
-                });
-                messengerRingtoneTimer = setTimeout(burst, 2000);
-            };
-            burst();
-        } catch (e) {}
+    function startIncomingRingtone(callId) {
+        stopIncomingRingtone(callId);
+        if (window.bondhooSoundManager && typeof window.bondhooSoundManager.playIncomingCallRingtone === 'function') {
+            window.bondhooSoundManager.playIncomingCallRingtone(callId || currentIncomingCallPayload?.call_id);
+        } else {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                messengerRingtoneCtx = new AudioCtx();
+                const burst = () => {
+                    if (!messengerRingtoneCtx) return;
+                    [0, 0.45].forEach(offset => {
+                        const osc = messengerRingtoneCtx.createOscillator();
+                        const gain = messengerRingtoneCtx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(offset ? 659 : 523, messengerRingtoneCtx.currentTime + offset);
+                        gain.gain.setValueAtTime(0.0001, messengerRingtoneCtx.currentTime + offset);
+                        gain.gain.exponentialRampToValueAtTime(0.12, messengerRingtoneCtx.currentTime + offset + 0.03);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, messengerRingtoneCtx.currentTime + offset + 0.4);
+                        osc.connect(gain).connect(messengerRingtoneCtx.destination);
+                        osc.start(messengerRingtoneCtx.currentTime + offset);
+                        osc.stop(messengerRingtoneCtx.currentTime + offset + 0.42);
+                    });
+                    messengerRingtoneTimer = setTimeout(burst, 2000);
+                };
+                burst();
+            } catch (e) {}
+        }
         if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
     }
 
-    function stopIncomingRingtone() {
+    function stopIncomingRingtone(callId) {
+        if (window.bondhooSoundManager && typeof window.bondhooSoundManager.stopIncomingCallRingtone === 'function') {
+            window.bondhooSoundManager.stopIncomingCallRingtone(callId || currentIncomingCallPayload?.call_id);
+        }
         clearTimeout(messengerRingtoneTimer);
         if (messengerRingtoneCtx) {
             try { messengerRingtoneCtx.close(); } catch (e) {}
@@ -6155,11 +6180,11 @@
         if (nameEl) nameEl.textContent = caller.name || 'ইনকামিং কল...';
         if (badgeEl) badgeEl.textContent = (payload.call_type === 'video' || payload.call_type === 'group_video') ? 'ভিডিও কল আসছে...' : 'অডিও কল আসছে...';
         modal.style.display = 'block';
-        startIncomingRingtone();
+        startIncomingRingtone(payload.call_id);
     }
 
     function hideIncomingCallModal() {
-        stopIncomingRingtone();
+        stopIncomingRingtone(currentIncomingCallPayload?.call_id);
         currentIncomingCallPayload = null;
         const modal = document.getElementById('incomingCallModal');
         if (modal) modal.style.display = 'none';
@@ -6350,6 +6375,11 @@
         // 1. New Message Created
         if (evt.event_type === 'message.created') {
             const m = evt.payload || {};
+            if (m.id && Number(m.sender_id || m.sender?.id) !== Number(currentUserId)) {
+                if (window.bondhooSoundManager && typeof window.bondhooSoundManager.playIncomingMessageTone === 'function') {
+                    window.bondhooSoundManager.playIncomingMessageTone(m.id, evt.conversation_id || m.conversation_id);
+                }
+            }
             if (currentConvId && Number(evt.conversation_id) === Number(currentConvId) && m.id && !document.getElementById(`messageRow-${m.id}`)) {
                 appendIncomingMessageBubble(m);
             }
@@ -6925,6 +6955,10 @@
         .then(res => {
             if (!res.success) {
                 alert(res.message || 'বার্তা পাঠানো সম্ভব হয়নি।');
+            } else if (res.data && res.data.id) {
+                if (window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
+                    window.bondhooSoundManager.playOutgoingMessageSentTone(res.data.id);
+                }
             }
         })
         .catch(() => alert('বার্তা পাঠাতে ত্রুটি হয়েছে।'));

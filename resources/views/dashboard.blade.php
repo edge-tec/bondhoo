@@ -6893,6 +6893,9 @@
                 });
                 const data = await res.json();
                 if (data.success) {
+                    if (data.data?.id && window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
+                        window.bondhooSoundManager.playOutgoingMessageSentTone(data.data.id);
+                    }
                     await loadMessagesSilent(activeChatConversationId);
                     const container = document.getElementById('messengerChatMessages');
                     if (container) container.scrollTop = container.scrollHeight;
@@ -7024,6 +7027,9 @@
                     });
                     const data = await res.json();
                     if (data.success) {
+                        if (data.data?.id && window.bondhooSoundManager && typeof window.bondhooSoundManager.playOutgoingMessageSentTone === 'function') {
+                            window.bondhooSoundManager.playOutgoingMessageSentTone(data.data.id);
+                        }
                         showToast('ভয়েস বার্তা পাঠানো হয়েছে! 🚀');
                         await loadMessagesSilent(activeChatConversationId);
                         const container = document.getElementById('messengerChatMessages');

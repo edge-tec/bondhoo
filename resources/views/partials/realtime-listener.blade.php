@@ -74,6 +74,7 @@
     @keyframes jjCallShake { 0%, 100% { transform: rotate(0); } 10%, 30% { transform: rotate(-12deg); } 20%, 40% { transform: rotate(12deg); } 50% { transform: rotate(0); } }
 </style>
 
+<script src="/js/bondhoo-sound-manager.js"></script>
 <script>
     (function () {
         if (window.__jjGlobalRealtimeListener) return;
@@ -84,8 +85,6 @@
         let cursor = {{ $jjSyncCursor }};
         let myUserId = {{ $jjAuthUserId ? (int) $jjAuthUserId : 'null' }};
         let ringingCall = null;
-        let ringCtx = null;
-        let ringTimer = null;
         let inFlight = false;
         let failures = 0;
         let alertTimer = null;
@@ -117,39 +116,16 @@
             return div.innerHTML;
         }
 
-        // Synthesized ringtone (Web Audio API) — no external audio files required
-        function startRingtone() {
-            stopRingtone();
-            try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
-                ringCtx = new AudioCtx();
-                const burst = () => {
-                    if (!ringCtx) return;
-                    [0, 0.45].forEach(offset => {
-                        const osc = ringCtx.createOscillator();
-                        const gain = ringCtx.createGain();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(offset ? 659 : 523, ringCtx.currentTime + offset);
-                        gain.gain.setValueAtTime(0.0001, ringCtx.currentTime + offset);
-                        gain.gain.exponentialRampToValueAtTime(0.15, ringCtx.currentTime + offset + 0.03);
-                        gain.gain.exponentialRampToValueAtTime(0.0001, ringCtx.currentTime + offset + 0.4);
-                        osc.connect(gain).connect(ringCtx.destination);
-                        osc.start(ringCtx.currentTime + offset);
-                        osc.stop(ringCtx.currentTime + offset + 0.42);
-                    });
-                    ringTimer = setTimeout(burst, 2000);
-                };
-                burst();
-            } catch (e) {}
-            if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
+        // Dedicated Incoming Call Ringtone through BondhooSoundManager
+        function startRingtone(callId = null) {
+            if (window.bondhooSoundManager) {
+                window.bondhooSoundManager.playIncomingCallRingtone(callId);
+            }
         }
 
-        function stopRingtone() {
-            clearTimeout(ringTimer);
-            if (ringCtx) {
-                try { ringCtx.close(); } catch (e) {}
-                ringCtx = null;
+        function stopRingtone(callId = null) {
+            if (window.bondhooSoundManager) {
+                window.bondhooSoundManager.stopIncomingCallRingtone(callId);
             }
         }
 
@@ -177,7 +153,7 @@
             document.getElementById('jjIncomingCallDecline').disabled = false;
             box.hidden = false;
             box.style.display = 'flex';
-            startRingtone();
+            startRingtone(payload.call_id);
 
             if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
                 try { new Notification(`${payload.caller?.name || 'কেউ'} আপনাকে কল করছেন`, { body: isVideo ? 'ভিডিও কল' : 'অডিও কল', tag: `call-${payload.call_id}` }); } catch (e) {}
@@ -205,22 +181,11 @@
             } catch (e) {}
         }
 
-        function playMessagePing() {
-            try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
-                const ctx = new AudioCtx();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, ctx.currentTime);
-                gain.gain.setValueAtTime(0.08, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
-                osc.connect(gain).connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.26);
-                setTimeout(() => ctx.close(), 400);
-            } catch (e) {}
+        // Dedicated Incoming Message Tone through BondhooSoundManager
+        function playMessagePing(messageId = null, conversationId = null) {
+            if (window.bondhooSoundManager) {
+                window.bondhooSoundManager.playIncomingMessageTone(messageId, conversationId);
+            }
         }
 
         function showMessageAlert(message) {
@@ -262,7 +227,7 @@
                 const isOpen = box && box.style.display !== 'none' && !box.classList.contains('hidden') && !box.classList.contains('minimized');
                 const isMobile = window.innerWidth <= 768;
 
-                playMessagePing();
+                playMessagePing(message.id, message.conversation_id);
                 if (isOpen && Number(activeId) === Number(message.conversation_id)) {
                     if (typeof window.loadMessagesSilent === 'function') window.loadMessagesSilent(message.conversation_id);
                     return;
@@ -277,7 +242,7 @@
                 return;
             }
 
-            playMessagePing();
+            playMessagePing(message.id, message.conversation_id);
             showMessageAlert(message);
         }
 
