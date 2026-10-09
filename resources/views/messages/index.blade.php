@@ -5039,22 +5039,37 @@
         loadCallHistory();
     }
 
-    function loadCallHistory() {
-        const listEl = document.getElementById('callHistoryListContent');
-        if (!listEl) return;
-        listEl.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); font-size: 13px; padding: 16px;">কল হিস্ট্রি লোড হচ্ছে...</div>';
+    let callHistoryPage = 1;
+    let callHistoryLoading = false;
 
-        fetch('/api/v1/calls/history', {
+    function openCallHistoryModal() {
+        openChatModal('callHistoryModal');
+        callHistoryPage = 1;
+        loadCallHistory(1, false);
+    }
+
+    function loadCallHistory(page = 1, append = false) {
+        const listEl = document.getElementById('callHistoryListContent');
+        if (!listEl || callHistoryLoading) return;
+        callHistoryLoading = true;
+
+        if (!append) {
+            listEl.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); font-size: 13px; padding: 16px;">কল হিস্ট্রি লোড হচ্ছে...</div>';
+        }
+
+        fetch(`/api/v1/calls/history?page=${page}&per_page=15`, {
             headers: { 'Accept': 'application/json', ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}) }
         })
         .then(r => r.json())
         .then(res => {
+            callHistoryLoading = false;
             const calls = res.data || [];
-            if (calls.length === 0) {
-                listEl.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); font-size: 13px; padding: 16px;">কোনো কলের ইতিহাস নেই।</div>';
+            if (!append && calls.length === 0) {
+                listEl.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); font-size: 13px; padding: 24px;">কোনো কলের ইতিহাস নেই।</div>';
                 return;
             }
-            listEl.innerHTML = calls.map(c => {
+
+            const html = calls.map(c => {
                 const isOutgoing = Number(c.caller?.id) === Number(currentUserId);
                 const peer = isOutgoing
                     ? (c.participants?.find(p => p.user && Number(p.user.id) !== Number(currentUserId))?.user || c.recipient || { name: 'ইউজার' })
@@ -5069,13 +5084,18 @@
                 let statusLabel = 'অজানা';
                 let statusColor = '#6b7280';
                 if (c.status === 'ended') {
-                    statusLabel = durStr ? `সম্পন্ন (${durStr})` : 'সম্পন্ন';
-                    statusColor = '#10b981';
+                    if (durSec > 0) {
+                        statusLabel = `সম্পন্ন (${durStr})`;
+                        statusColor = '#10b981';
+                    } else {
+                        statusLabel = isOutgoing ? 'উত্তর মেলেনি' : 'মিসড কল';
+                        statusColor = '#ef4444';
+                    }
                 } else if (c.status === 'active') {
                     statusLabel = 'চলমান';
                     statusColor = '#3b82f6';
                 } else if (c.status === 'missed') {
-                    statusLabel = 'মিসড কল';
+                    statusLabel = isOutgoing ? 'বাতিল' : 'মিসড কল';
                     statusColor = '#ef4444';
                 } else if (c.status === 'rejected') {
                     statusLabel = 'প্রত্যাখ্যাত';
@@ -5083,16 +5103,20 @@
                 } else if (c.status === 'busy') {
                     statusLabel = 'ব্যস্ত';
                     statusColor = '#f59e0b';
+                } else if (c.status === 'failed') {
+                    statusLabel = 'ব্যর্থ';
+                    statusColor = '#ef4444';
                 } else {
                     statusLabel = c.status || 'কল';
                 }
 
-                const iconSvg = c.call_type === 'video'
+                const iconSvg = (c.call_type === 'video' || c.call_type === 'group_video')
                     ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`
                     : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>`;
 
                 const peerAvatar = peer?.avatar_url || peer?.profile?.avatar_url;
                 const peerName = peer?.name || 'ইউজার';
+                const callTypeLabel = (c.call_type === 'video' || c.call_type === 'group_video') ? 'ভিডিও' : 'অডিও';
 
                 return `
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--fb-bg); border-radius: 10px; transition: background 0.2s;">
@@ -5103,7 +5127,7 @@
                             <div>
                                 <div style="font-weight: 700; font-size: 13px; color: var(--fb-text-primary);">${escapeHtml(peerName)}</div>
                                 <div style="font-size: 11px; color: var(--fb-text-secondary); display: flex; align-items: center; gap: 6px; margin-top: 2px;">
-                                    <span>${isOutgoing ? '↗ আউটগোয়িং' : '↙ ইনকামিং'} (${c.call_type === 'video' ? 'ভিডিও' : 'অডিও'})</span>
+                                    <span>${isOutgoing ? '↗ আউটগোয়িং' : '↙ ইনকামিং'} (${callTypeLabel})</span>
                                     <span>•</span>
                                     <span>${formattedTime}</span>
                                 </div>
@@ -5111,23 +5135,44 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 11px; font-weight: 700; color: ${statusColor}; background: rgba(0,0,0,0.04); padding: 4px 8px; border-radius: 12px;">${statusLabel}</span>
-                            <button type="button" onclick="closeChatModal('callHistoryModal'); ${c.conversation_id ? `window.location.href='/call/${c.conversation_id}?type=${c.call_type || 'audio'}'` : ''}" class="icon-circle-btn" style="width: 34px; height: 34px;" title="কল ব্যাক">
+                            <button type="button" onclick="closeChatModal('callHistoryModal'); ${c.conversation_id ? `window.location.href='/call/${c.conversation_id}?type=${(c.call_type === 'video' || c.call_type === 'group_video') ? 'video' : 'audio'}'` : ''}" class="icon-circle-btn" style="width: 34px; height: 34px;" title="কল ব্যাক">
                                 ${iconSvg}
                             </button>
                         </div>
                     </div>
                 `;
             }).join('');
+
+            // Remove previous load more button if present
+            document.getElementById('btnLoadMoreCallHistory')?.remove();
+
+            if (append) {
+                listEl.insertAdjacentHTML('beforeend', html);
+            } else {
+                listEl.innerHTML = html;
+            }
+
+            if (res.meta && res.meta.current_page < res.meta.last_page) {
+                const loadMoreBtn = document.createElement('button');
+                loadMoreBtn.id = 'btnLoadMoreCallHistory';
+                loadMoreBtn.type = 'button';
+                loadMoreBtn.style.cssText = 'padding: 8px; margin-top: 8px; border: none; background: var(--fb-hover); color: var(--fb-primary); font-weight: 700; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%;';
+                loadMoreBtn.innerText = 'আরও কল দেখুন...';
+                loadMoreBtn.onclick = () => {
+                    callHistoryPage++;
+                    loadCallHistory(callHistoryPage, true);
+                };
+                listEl.appendChild(loadMoreBtn);
+            }
         })
         .catch(() => {
+            callHistoryLoading = false;
             listEl.innerHTML = '<div style="text-align: center; color: #ef4444; font-size: 13px; padding: 16px;">কল হিস্ট্রি পাওয়া যায়নি।</div>';
         });
     }
 
     /**
-     * Calls are handled by the dedicated WebRTC call room (/call/{conversation}),
-     * which negotiates the SDP offer and handles STUN/TURN, audio/video streams,
-     * controls, screen sharing, and duration timer.
+     * Start WebRTC Audio or Video call
      */
     function startCall(callType = 'audio', targetName = '') {
         if (!currentConvId) {
@@ -5182,6 +5227,11 @@
 
     function showIncomingCallModal(payload) {
         if (!payload || !payload.call_id) return;
+        // Avoid duplicate popups for same call
+        if (currentIncomingCallPayload && Number(currentIncomingCallPayload.call_id) === Number(payload.call_id)) {
+            return;
+        }
+
         currentIncomingCallPayload = payload;
         const modal = document.getElementById('incomingCallModal');
         if (!modal) return;

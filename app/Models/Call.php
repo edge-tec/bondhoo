@@ -103,6 +103,21 @@ class Call extends Model
 
     public function toResponseArray(?User $viewer = null): array
     {
+        $hasAnswered = $this->duration_seconds > 0 || $this->participants->contains(
+            fn ($p) => (int) $p->user_id !== (int) $this->caller_id && ($p->joined_at !== null || $p->status === 'accepted')
+        );
+
+        $outcome = match ($this->status) {
+            self::STATUS_ACTIVE => 'active',
+            self::STATUS_RINGING => 'ringing',
+            self::STATUS_REJECTED => 'rejected',
+            self::STATUS_BUSY => 'busy',
+            self::STATUS_MISSED => 'missed',
+            self::STATUS_FAILED => 'failed',
+            self::STATUS_ENDED => $hasAnswered ? 'completed' : 'missed',
+            default => $this->status,
+        };
+
         return [
             'id' => $this->id,
             'uuid' => $this->uuid,
@@ -115,6 +130,7 @@ class Call extends Model
             ],
             'call_type' => $this->call_type,
             'status' => $this->status,
+            'outcome' => $outcome,
             'room_id' => $this->room_id,
             'started_at' => $this->started_at?->toIso8601String(),
             'ended_at' => $this->ended_at?->toIso8601String(),

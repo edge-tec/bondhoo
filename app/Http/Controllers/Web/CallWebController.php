@@ -69,15 +69,28 @@ class CallWebController extends Controller
 
         $iceServers = $this->callingService->getIceServers($user);
 
-        // Callee mode: validate the call being answered belongs to this conversation and is still ringing
+        // Callee / Specific Call mode: validate authoritative status
         $answerCallId = null;
-        if ($request->boolean('answer') && $request->filled('call_id')) {
+        if ($request->filled('call_id')) {
             $call = Call::where('id', (int) $request->query('call_id'))
                 ->where('conversation_id', $conversation->id)
-                ->whereIn('status', [Call::STATUS_RINGING, Call::STATUS_INITIATING, Call::STATUS_ACTIVE])
                 ->first();
 
-            if ($call && $call->participants()->where('user_id', $user->id)->exists()) {
+            // If the specified call is already ended, rejected, or missed, never revive or dial anew
+            if ($call && in_array($call->status, [Call::STATUS_ENDED, Call::STATUS_REJECTED, Call::STATUS_MISSED, Call::STATUS_BUSY, Call::STATUS_FAILED], true)) {
+                return redirect()->route('messages.show', ['id' => $conversation->id])
+                    ->with('info', 'কলটি ইতোমধ্যে সমাপ্ত হয়েছে।');
+            }
+
+            if ($request->boolean('answer')) {
+                if ($call && in_array($call->status, [Call::STATUS_RINGING, Call::STATUS_INITIATING, Call::STATUS_ACTIVE]) && $call->participants()->where('user_id', $user->id)->exists()) {
+                    $answerCallId = $call->id;
+                    $callType = in_array($call->call_type, [Call::TYPE_VIDEO, Call::TYPE_GROUP_VIDEO], true) ? 'video' : 'audio';
+                } else {
+                    return redirect()->route('messages.show', ['id' => $conversation->id])
+                        ->with('info', 'কলটি আর সক্রিয় নেই।');
+                }
+            } elseif ($call && in_array($call->status, [Call::STATUS_RINGING, Call::STATUS_INITIATING, Call::STATUS_ACTIVE])) {
                 $answerCallId = $call->id;
                 $callType = in_array($call->call_type, [Call::TYPE_VIDEO, Call::TYPE_GROUP_VIDEO], true) ? 'video' : 'audio';
             }
@@ -107,6 +120,10 @@ class CallWebController extends Controller
             'answerCallId' => $answerCallId,
             'syncCursor' => $syncCursor,
             'apiToken' => $apiToken,
-        ])->withCookie(cookie('jugajug_token', $apiToken, 60 * 24));
+        ])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT')
+            ->withCookie(cookie('jugajug_token', $apiToken, 60 * 24));
     }
 }

@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>{{ $callType === 'video' ? 'ভিডিও কল' : 'অডিও কল' }} — {{ $peerUser?->name ?? 'Bondhoo কল' }}</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
@@ -14,8 +14,8 @@
     <style>
         :root {
             --call-bg: #0b0f19;
-            --call-surface: rgba(30, 41, 59, 0.75);
-            --call-border: rgba(255, 255, 255, 0.1);
+            --call-surface: rgba(30, 41, 59, 0.82);
+            --call-border: rgba(255, 255, 255, 0.12);
             --call-primary: #1877f2;
             --call-success: #10b981;
             --call-danger: #ef4444;
@@ -28,6 +28,7 @@
             padding: 0;
             user-select: none;
             font-family: 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body, html {
@@ -47,6 +48,7 @@
             flex-direction: column;
             justify-content: space-between;
             background: radial-gradient(circle at 50% 20%, #1e293b 0%, #0b0f19 80%);
+            overflow: hidden;
         }
 
         /* Top Bar */
@@ -56,12 +58,13 @@
             left: 0;
             right: 0;
             z-index: 50;
-            padding: 16px 24px;
+            padding: calc(14px + env(safe-area-inset-top, 0px)) calc(20px + env(safe-area-inset-right, 0px)) 14px calc(20px + env(safe-area-inset-left, 0px));
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(180deg, rgba(11, 15, 25, 0.85) 0%, transparent 100%);
-            backdrop-filter: blur(8px);
+            background: linear-gradient(180deg, rgba(11, 15, 25, 0.9) 0%, rgba(11, 15, 25, 0.4) 75%, transparent 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .peer-info {
@@ -75,7 +78,7 @@
             height: 44px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.25);
             background: linear-gradient(135deg, #1877f2, #00c6ff);
             display: flex;
             align-items: center;
@@ -83,7 +86,7 @@
             font-size: 18px;
             font-weight: 700;
             color: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
         }
 
         .peer-text h2 {
@@ -103,6 +106,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            margin-top: 2px;
         }
 
         .status-dot {
@@ -125,12 +129,32 @@
             50% { opacity: 0.4; transform: scale(1.2); }
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .network-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--call-border);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            backdrop-filter: blur(6px);
+            transition: all 0.3s ease;
+        }
+
         .call-timer-badge {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid var(--call-border);
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             letter-spacing: 0.5px;
             display: none;
@@ -144,6 +168,7 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            background: #000;
         }
 
         /* Video Elements */
@@ -155,27 +180,50 @@
             background: #000;
         }
 
+        /* Draggable Picture-in-Picture Local Video */
         .local-video-pip {
             position: absolute;
-            bottom: 100px;
-            right: 24px;
-            width: 180px;
-            height: 240px;
+            top: calc(80px + env(safe-area-inset-top, 0px));
+            right: calc(24px + env(safe-area-inset-right, 0px));
+            width: 160px;
+            height: 220px;
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            z-index: 40;
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            z-index: 45;
             background: #1e293b;
             display: none;
-            transition: all 0.3s ease;
+            cursor: grab;
+            touch-action: none;
+            transition: box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .local-video-pip:active {
+            cursor: grabbing;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.85);
+            border-color: rgba(24, 119, 242, 0.6);
         }
 
         .local-video-pip video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Mirror local video */
+            transform: scaleX(-1); /* Mirror local video by default */
+            display: block;
+        }
+
+        .local-cam-off-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0f172a;
+            color: #94a3b8;
+            gap: 6px;
+            z-index: 1;
         }
 
         .pip-label {
@@ -186,18 +234,27 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(0, 0, 0, 0.68);
             backdrop-filter: blur(6px);
-            padding: 3px 8px;
+            -webkit-backdrop-filter: blur(6px);
+            padding: 4px 8px;
             border-radius: 8px;
             font-size: 11px;
             font-weight: 600;
             color: #ffffff;
             z-index: 2;
+            pointer-events: auto;
         }
 
-        .pip-flip-btn {
-            background: rgba(255, 255, 255, 0.25);
+        .pip-drag-handle {
+            opacity: 0.7;
+            font-size: 10px;
+            margin-right: 4px;
+            cursor: grab;
+        }
+
+        .pip-action-btn {
+            background: rgba(255, 255, 255, 0.22);
             border: none;
             color: #ffffff;
             border-radius: 4px;
@@ -207,11 +264,16 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
 
-        .pip-flip-btn:hover {
+        .pip-action-btn:hover {
             background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        .pip-action-btn:active {
+            transform: scale(0.95);
         }
 
         /* Audio Mode Visualizer */
@@ -268,14 +330,14 @@
             height: 140px;
             border-radius: 50%;
             object-fit: cover;
-            border: 4px solid rgba(255, 255, 255, 0.2);
+            border: 4px solid rgba(255, 255, 255, 0.25);
             background: linear-gradient(135deg, #1877f2, #00c6ff);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 54px;
             font-weight: 800;
-            box-shadow: 0 0 40px rgba(24, 119, 242, 0.4);
+            box-shadow: 0 0 40px rgba(24, 119, 242, 0.45);
         }
 
         .audio-wave-bars {
@@ -306,7 +368,7 @@
         /* Floating Bottom Control Dock */
         .call-controls-dock {
             position: absolute;
-            bottom: 32px;
+            bottom: calc(28px + env(safe-area-inset-bottom, 0px));
             left: 50%;
             transform: translateX(-50%);
             z-index: 50;
@@ -318,7 +380,8 @@
             border-radius: 40px;
             border: 1px solid var(--call-border);
             backdrop-filter: blur(16px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
         }
 
         .control-btn {
@@ -345,6 +408,12 @@
             transform: scale(0.95);
         }
 
+        .control-btn.active {
+            background: #1877f2 !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 16px rgba(24, 119, 242, 0.5);
+        }
+
         .control-btn.muted, .control-btn.disabled {
             background: #ef4444 !important;
             color: #ffffff !important;
@@ -365,20 +434,25 @@
         /* Toast notifications */
         .call-toast {
             position: absolute;
-            top: 80px;
+            top: calc(76px + env(safe-area-inset-top, 0px));
             left: 50%;
             transform: translateX(-50%);
-            z-index: 60;
-            background: rgba(15, 23, 42, 0.9);
+            z-index: 65;
+            background: rgba(15, 23, 42, 0.95);
             border: 1px solid var(--call-border);
-            padding: 10px 20px;
+            padding: 10px 22px;
             border-radius: 30px;
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 600;
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             display: none;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
             animation: fadeInDown 0.3s ease;
+            white-space: nowrap;
+            max-width: 90vw;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         @keyframes fadeInDown {
@@ -387,8 +461,26 @@
         }
 
         @media (max-width: 640px) {
+            .call-header {
+                padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px 14px;
+            }
+            .peer-avatar {
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
+            }
+            .peer-text h2 {
+                font-size: 14.5px;
+            }
+            .peer-status {
+                font-size: 12px;
+            }
+            .network-badge {
+                padding: 4px 9px;
+                font-size: 11px;
+            }
             .call-controls-dock {
-                bottom: 20px;
+                bottom: calc(18px + env(safe-area-inset-bottom, 0px));
                 padding: 10px 18px;
                 gap: 12px;
             }
@@ -401,10 +493,11 @@
                 height: 52px;
             }
             .local-video-pip {
-                width: 120px;
-                height: 160px;
-                right: 16px;
-                bottom: 96px;
+                top: calc(72px + env(safe-area-inset-top, 0px));
+                right: calc(16px + env(safe-area-inset-right, 0px));
+                width: 110px;
+                height: 154px;
+                border-radius: 14px;
             }
         }
     </style>
@@ -433,27 +526,45 @@
                 </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="header-actions">
+                <!-- Network Quality Indicator Badge -->
+                <div id="networkQualityBadge" class="network-badge" title="নেটওয়ার্ক গুণমান">
+                    <span id="netSignalBars">📶</span>
+                    <span id="netQualityText" style="color: #10b981;">উত্তম</span>
+                </div>
                 <div id="callTimerBadge" class="call-timer-badge">00:00</div>
-                <button type="button" class="control-btn" style="width: 40px; height: 40px;" onclick="toggleFullscreen()" title="ফুলস্ক্রিন">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <button type="button" id="btnFullscreen" class="control-btn" style="width: 40px; height: 40px;" onclick="toggleFullscreen()" title="ফুলস্ক্রিন">
+                    <svg id="iconEnterFs" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                    <svg id="iconExitFs" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><path d="M4 14h6m0 0v6m0-6L3 21m17-7h-6m0 0v6m0-6 7 7M4 10h6m0 0V4m0 6L3 3m17 7h-6m0 0V4m0 6 7-7"/></svg>
                 </button>
             </div>
         </div>
 
         <!-- Central Viewport -->
         <div class="call-viewport">
-            <!-- Remote Video Stream (muted to guarantee autoplay without browser policy restrictions; audio is handled by remoteAudio) -->
+            <!-- Remote Video Stream -->
             <video id="remoteVideo" class="remote-video" autoplay playsinline muted></video>
 
-            <!-- Local Video PIP -->
-            <div id="localVideoContainer" class="local-video-pip">
+            <!-- Local Video Picture-in-Picture (Default: Top-Right, Draggable) -->
+            <div id="localVideoContainer" class="local-video-pip" title="টেনে অন্য স্থানে স্থানান্তর করতে পারেন (ডাবল-ক্লিক করে ডিফল্টে ফেরান)">
                 <video id="localVideo" autoplay playsinline muted></video>
+                <div id="localCamOffOverlay" class="local-cam-off-overlay" style="display: none;">
+                    <div style="font-size: 26px;">📷</div>
+                    <span style="font-size: 11px; font-weight: 600; color: #94a3b8;">ক্যামেরা বন্ধ</span>
+                </div>
                 <div class="pip-label">
-                    <span>আপনি</span>
-                    <button type="button" id="btnFlipCam" class="pip-flip-btn" onclick="flipCamera(event)" title="ক্যামেরা পরিবর্তন" style="display: none;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0-4.4-3.6-8-8-8s-8 3.6-8 8h3l-4 5-4-5h3c0-5.5 4.5-10 10-10s10 4.5 10 10h-2Z"/></svg>
-                    </button>
+                    <span style="display: flex; align-items: center; gap: 4px;">
+                        <span class="pip-drag-handle">⋮⋮</span>
+                        <span>আপনি</span>
+                    </span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <button type="button" id="btnFlipCam" class="pip-action-btn" onclick="flipCamera(event)" title="ক্যামেরা পরিবর্তন" style="display: none;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0-4.4-3.6-8-8-8s-8 3.6-8 8h3l-4 5-4-5h3c0-5.5 4.5-10 10-10s10 4.5 10 10h-2Z"/></svg>
+                        </button>
+                        <button type="button" id="btnResetPip" class="pip-action-btn" onclick="resetPipPosition(event)" title="ডিফল্ট পজিশনে ফেরান">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -508,7 +619,7 @@
         </div>
     </div>
 
-    <!-- Hidden audio element for remote stream in audio-only mode -->
+    <!-- Hidden audio element for remote stream playback -->
     <audio id="remoteAudio" autoplay playsinline style="display: none;"></audio>
 
     <script>
@@ -527,15 +638,6 @@
         let peerConnection = null;
         let localStream = null;
         let remoteStream = null;
-
-        window.__callDiagnostics = {
-            getActiveCallId: () => activeCallId,
-            getPeerConnection: () => peerConnection,
-            getLocalStream: () => localStream,
-            getRemoteStream: () => remoteStream,
-            isAnswered: () => isCallAnswered,
-            isEnded: () => callHasEnded
-        };
         let screenStream = null;
         let callTimerInterval = null;
         let callDurationSecs = 0;
@@ -546,9 +648,28 @@
         let lastSyncEventId = {{ (int) ($syncCursor ?? 0) }};
         let syncPollTimer = null;
         let ringtoneAudioContext = null;
-        let ringtoneOscillators = [];
         let ringtoneTimeout = null;
         let currentFacingMode = 'user';
+        let availableVideoDevices = [];
+        let currentDeviceIndex = 0;
+        let isFlippingCam = false;
+        let netStatsInterval = null;
+        let isLowBitrateMode = false;
+        let pipWasDragged = false;
+        let pipPointerId = null;
+        let pipStartX = 0;
+        let pipStartY = 0;
+        let pipInitLeft = 0;
+        let pipInitTop = 0;
+
+        window.__callDiagnostics = {
+            getActiveCallId: () => activeCallId,
+            getPeerConnection: () => peerConnection,
+            getLocalStream: () => localStream,
+            getRemoteStream: () => remoteStream,
+            isAnswered: () => isCallAnswered,
+            isEnded: () => callHasEnded
+        };
 
         // 1. Toast Notification Helper
         function showToast(msg) {
@@ -669,6 +790,7 @@
             const iconOff = document.getElementById('camIconOff');
             const pip = document.getElementById('localVideoContainer');
             const localVid = document.getElementById('localVideo');
+            const overlay = document.getElementById('localCamOffOverlay');
 
             if (videoTrack) {
                 isVideoMuted = !isVideoMuted;
@@ -678,13 +800,13 @@
                     btn.classList.add('muted');
                     iconOn.style.display = 'none';
                     iconOff.style.display = 'block';
-                    pip.style.display = 'none';
+                    if (overlay) overlay.style.display = 'flex';
                     showToast('ক্যামেরা বন্ধ করা হয়েছে');
                 } else {
                     btn.classList.remove('muted');
                     iconOn.style.display = 'block';
                     iconOff.style.display = 'none';
-                    pip.style.display = 'block';
+                    if (overlay) overlay.style.display = 'none';
                     if (localVid) localVid.play().catch(() => {});
                     showToast('ক্যামেরা চালু করা হয়েছে');
                 }
@@ -708,6 +830,7 @@
                     localVid.muted = true;
                     localVid.play().catch(() => {});
                     pip.style.display = 'block';
+                    if (overlay) overlay.style.display = 'none';
                     btn.classList.remove('muted');
                     iconOn.style.display = 'block';
                     iconOff.style.display = 'none';
@@ -743,25 +866,78 @@
             }
         }
 
+        // Front/Rear Camera Switching with Fallbacks
         async function flipCamera(e) {
-            if (e) e.stopPropagation();
+            if (e) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+            if (pipWasDragged) return;
+            if (isFlippingCam) return;
             if (!localStream) return;
+
             const currentTrack = localStream.getVideoTracks()[0];
-            if (!currentTrack) return;
+            if (!currentTrack) {
+                showToast('ক্যামেরা চালু নেই');
+                return;
+            }
+
+            isFlippingCam = true;
+            showToast('ক্যামেরা পরিবর্তন করা হচ্ছে...');
 
             currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+            let newStream = null;
+
+            // 1st attempt: facingMode ideal constraint
             try {
-                const newStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { exact: currentFacingMode } }
+                newStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { ideal: currentFacingMode },
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 }
+                    }
                 });
-                const newTrack = newStream.getVideoTracks()[0];
+            } catch (err1) {
+                console.warn('[WebRTC] facingMode switch error, trying deviceId fallback:', err1);
+                // 2nd attempt: select next deviceId
+                if (availableVideoDevices.length > 1) {
+                    currentDeviceIndex = (currentDeviceIndex + 1) % availableVideoDevices.length;
+                    const targetDevice = availableVideoDevices[currentDeviceIndex];
+                    try {
+                        newStream = await navigator.mediaDevices.getUserMedia({
+                            video: { deviceId: { exact: targetDevice.deviceId } }
+                        });
+                    } catch (err2) {
+                        console.warn('[WebRTC] deviceId switch error:', err2);
+                    }
+                }
+            }
+
+            if (!newStream) {
+                currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+                showToast('ক্যামেরা পরিবর্তন সম্ভব হয়নি');
+                isFlippingCam = false;
+                return;
+            }
+
+            const newTrack = newStream.getVideoTracks()[0];
+            if (!newTrack) {
+                newStream.getTracks().forEach(t => t.stop());
+                isFlippingCam = false;
+                return;
+            }
+
+            try {
                 currentTrack.stop();
                 localStream.removeTrack(currentTrack);
                 localStream.addTrack(newTrack);
 
                 const localVid = document.getElementById('localVideo');
-                localVid.srcObject = localStream;
-                localVid.play().catch(() => {});
+                if (localVid) {
+                    localVid.srcObject = localStream;
+                    localVid.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
+                    localVid.play().catch(() => {});
+                }
 
                 if (peerConnection) {
                     const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
@@ -769,11 +945,13 @@
                         await sender.replaceTrack(newTrack);
                     }
                 }
-                showToast('ক্যামেরা পরিবর্তিত হয়েছে');
-            } catch (err) {
-                console.warn('[WebRTC] Camera flip failed:', err);
-                currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
-                showToast('ক্যামেরা পরিবর্তন সম্ভব হয়নি');
+
+                showToast(currentFacingMode === 'environment' ? 'ব্যাক ক্যামেরা চালু হয়েছে' : 'ফ্রন্ট ক্যামেরা চালু হয়েছে');
+            } catch (applyErr) {
+                console.error('[WebRTC] Error applying flipped camera track:', applyErr);
+                showToast('ক্যামেরা পরিবর্তনে সমস্যা হয়েছে');
+            } finally {
+                isFlippingCam = false;
             }
         }
 
@@ -781,15 +959,151 @@
             try {
                 if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
                     const devices = await navigator.mediaDevices.enumerateDevices();
-                    const videoDevices = devices.filter(d => d.kind === 'videoinput');
-                    if (videoDevices.length > 1) {
-                        const flipBtn = document.getElementById('btnFlipCam');
-                        if (flipBtn) flipBtn.style.display = 'flex';
+                    availableVideoDevices = devices.filter(d => d.kind === 'videoinput');
+                    const flipBtn = document.getElementById('btnFlipCam');
+                    if (flipBtn) {
+                        if (availableVideoDevices.length > 1) {
+                            flipBtn.style.display = 'flex';
+                        } else {
+                            flipBtn.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[WebRTC] enumerateDevices error:', e);
+            }
+        }
+
+        // 4. Draggable Picture-in-Picture Local Video
+        function initDraggablePip() {
+            const pip = document.getElementById('localVideoContainer');
+            if (!pip) return;
+
+            // Restore saved position if valid
+            try {
+                const saved = localStorage.getItem('bondhoo_pip_pos');
+                if (saved) {
+                    const pos = JSON.parse(saved);
+                    if (typeof pos.xPct === 'number' && typeof pos.yPct === 'number') {
+                        const targetLeft = Math.round(pos.xPct * window.innerWidth);
+                        const targetTop = Math.round(pos.yPct * window.innerHeight);
+                        applyClampedPipPosition(targetLeft, targetTop, false);
                     }
                 }
             } catch (e) {}
+
+            pip.addEventListener('pointerdown', (e) => {
+                if (e.target.closest('button')) return;
+
+                pipPointerId = e.pointerId;
+                pip.setPointerCapture(e.pointerId);
+                pipStartX = e.clientX;
+                pipStartY = e.clientY;
+
+                const rect = pip.getBoundingClientRect();
+                pipInitLeft = rect.left;
+                pipInitTop = rect.top;
+                pipWasDragged = false;
+                pip.style.transition = 'none';
+            });
+
+            pip.addEventListener('pointermove', (e) => {
+                if (pipPointerId !== e.pointerId) return;
+
+                const dx = e.clientX - pipStartX;
+                const dy = e.clientY - pipStartY;
+
+                if (Math.hypot(dx, dy) > 5) {
+                    pipWasDragged = true;
+                }
+
+                const newLeft = pipInitLeft + dx;
+                const newTop = pipInitTop + dy;
+                applyClampedPipPosition(newLeft, newTop, false);
+            });
+
+            const endDrag = (e) => {
+                if (pipPointerId === e.pointerId) {
+                    try { pip.releasePointerCapture(e.pointerId); } catch (err) {}
+                    pipPointerId = null;
+                    pip.style.transition = 'all 0.25s ease';
+
+                    if (pipWasDragged) {
+                        const rect = pip.getBoundingClientRect();
+                        try {
+                            localStorage.setItem('bondhoo_pip_pos', JSON.stringify({
+                                xPct: rect.left / window.innerWidth,
+                                yPct: rect.top / window.innerHeight
+                            }));
+                        } catch (err) {}
+                    }
+                    setTimeout(() => { pipWasDragged = false; }, 80);
+                }
+            };
+
+            pip.addEventListener('pointerup', endDrag);
+            pip.addEventListener('pointercancel', endDrag);
+
+            // Double click to restore top-right
+            pip.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                resetPipPosition();
+            });
+
+            window.addEventListener('resize', () => {
+                const rect = pip.getBoundingClientRect();
+                applyClampedPipPosition(rect.left, rect.top, true);
+            });
         }
 
+        function applyClampedPipPosition(left, top, animate = false) {
+            const pip = document.getElementById('localVideoContainer');
+            if (!pip) return;
+
+            const pipWidth = pip.offsetWidth || 160;
+            const pipHeight = pip.offsetHeight || 220;
+
+            const header = document.querySelector('.call-header');
+            const dock = document.querySelector('.call-controls-dock');
+
+            const minX = 12;
+            const maxX = Math.max(minX, window.innerWidth - pipWidth - 12);
+            const minY = header ? (header.offsetHeight + 10) : 70;
+            const maxY = dock ? (dock.offsetTop - pipHeight - 12) : Math.max(minY, window.innerHeight - pipHeight - 96);
+
+            const clampX = Math.max(minX, Math.min(maxX, left));
+            const clampY = Math.max(minY, Math.min(maxY, top));
+
+            pip.style.left = `${clampX}px`;
+            pip.style.top = `${clampY}px`;
+            pip.style.right = 'auto';
+            pip.style.bottom = 'auto';
+
+            if (animate) {
+                pip.style.transition = 'all 0.25s ease';
+            }
+        }
+
+        function resetPipPosition(e) {
+            if (e) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+            const pip = document.getElementById('localVideoContainer');
+            if (!pip) return;
+
+            try { localStorage.removeItem('bondhoo_pip_pos'); } catch (err) {}
+
+            pip.style.transition = 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            const pipWidth = pip.offsetWidth || 160;
+            const defaultLeft = window.innerWidth - pipWidth - (window.innerWidth < 640 ? 16 : 24);
+            const defaultTop = window.innerWidth < 640 ? 72 : 80;
+
+            applyClampedPipPosition(defaultLeft, defaultTop, true);
+            showToast('পজিশন রিসেট করা হয়েছে (টপ-রাইট)');
+        }
+
+        // 5. Screen Share
         async function toggleScreenShare() {
             if (!isScreenSharing) {
                 try {
@@ -806,7 +1120,7 @@
                     };
 
                     isScreenSharing = true;
-                    document.getElementById('btnToggleScreen').classList.add('active');
+                    document.getElementById('btnToggleScreen')?.classList.add('active');
                     showToast('স্ক্রিন শেয়ার চালু হয়েছে');
 
                     if (activeCallId) {
@@ -846,16 +1160,42 @@
         }
 
         function toggleFullscreen() {
+            const iconEnter = document.getElementById('iconEnterFs');
+            const iconExit = document.getElementById('iconExitFs');
+
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(() => {});
+                document.documentElement.requestFullscreen().then(() => {
+                    if (iconEnter) iconEnter.style.display = 'none';
+                    if (iconExit) iconExit.style.display = 'block';
+                }).catch(() => {});
             } else {
                 if (document.exitFullscreen) {
-                    document.exitFullscreen().catch(() => {});
+                    document.exitFullscreen().then(() => {
+                        if (iconEnter) iconEnter.style.display = 'block';
+                        if (iconExit) iconExit.style.display = 'none';
+                    }).catch(() => {});
                 }
             }
         }
 
-        // 4. Timer Stopwatch
+        document.addEventListener('fullscreenchange', () => {
+            const isFs = !!document.fullscreenElement;
+            const iconEnter = document.getElementById('iconEnterFs');
+            const iconExit = document.getElementById('iconExitFs');
+            if (iconEnter) iconEnter.style.display = isFs ? 'none' : 'block';
+            if (iconExit) iconExit.style.display = isFs ? 'block' : 'none';
+            clampPipPosition();
+        });
+
+        function clampPipPosition() {
+            const pip = document.getElementById('localVideoContainer');
+            if (pip && pip.style.left) {
+                const rect = pip.getBoundingClientRect();
+                applyClampedPipPosition(rect.left, rect.top, true);
+            }
+        }
+
+        // 6. Timer Stopwatch
         function startCallTimer() {
             if (callTimerInterval) return;
             const badge = document.getElementById('callTimerBadge');
@@ -875,7 +1215,7 @@
             callTimerInterval = null;
         }
 
-        // 5. Authenticated API helper
+        // 7. Authenticated API helper
         function apiFetch(url, options = {}) {
             const token = SERVER_AUTH_TOKEN || localStorage.getItem('jugajug_token') || '';
             const headers = Object.assign({
@@ -904,7 +1244,7 @@
         let signalQueue = Promise.resolve();
         const processedSignals = new Set();
 
-        // Cross-browser RFC 4566 SDP line ending normalizer (preserves untouched Unified Plan MSIDs & SSRCs)
+        // Cross-browser RFC 4566 SDP line ending normalizer
         function normalizeSdp(sdp) {
             if (!sdp || typeof sdp !== 'string') return sdp;
             const lines = sdp.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n');
@@ -926,7 +1266,7 @@
             }
         }
 
-        // 6. WebRTC Core Engine
+        // 8. WebRTC Core Engine
         async function acquireLocalMedia() {
             const wantsVideo = INITIAL_CALL_TYPE === 'video';
 
@@ -970,6 +1310,16 @@
         }
 
         async function initializeCallSession() {
+            // Prevent reviving an ended call via browser Back / Forward history traversal
+            const navEntries = (window.performance && window.performance.getEntriesByType) ? window.performance.getEntriesByType('navigation') : [];
+            const isBackForwardNav = (navEntries.length > 0 && navEntries[0].type === 'back_forward') ||
+                                     (window.performance && window.performance.navigation && window.performance.navigation.type === 2);
+            if (isBackForwardNav && !ANSWER_CALL_ID) {
+                console.warn('[WebRTC] Detected back/forward traversal to call page. Redirecting to messages.');
+                window.location.replace(`/messages/${CONVERSATION_ID}`);
+                return;
+            }
+
             localStream = await acquireLocalMedia();
 
             const hasLocalVideo = !!(localStream && localStream.getVideoTracks().length > 0);
@@ -999,6 +1349,7 @@
 
             setupPeerConnection();
             startSyncListener();
+            initDraggablePip();
 
             try {
                 if (ANSWER_CALL_ID) {
@@ -1017,12 +1368,12 @@
                         return;
                     }
 
-                    // Immediately fetch and process any signals (e.g. caller offer) already stored on backend
+                    // Immediately fetch and process any signals already transmitted
                     await fetchAndApplyPendingSignals();
                     return;
                 }
 
-                // Caller: create the call session and ring the other side
+                // Caller: create call session and ring peer
                 const res = await apiFetch('/api/v1/calls', {
                     method: 'POST',
                     body: JSON.stringify({ conversation_id: CONVERSATION_ID, call_type: INITIAL_CALL_TYPE })
@@ -1038,7 +1389,7 @@
                 startRingbackTone();
                 startFastSignalPolling();
 
-                // Caller sends offer immediately so it is already in backend when callee accepts
+                // Caller sends offer immediately
                 sendOffer();
 
                 clearTimeout(ringTimeoutTimer);
@@ -1058,7 +1409,7 @@
             if (!unlockBanner) {
                 unlockBanner = document.createElement('div');
                 unlockBanner.id = 'audioUnlockBanner';
-                unlockBanner.style.cssText = 'position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #1877f2; color: #fff; padding: 10px 20px; border-radius: 24px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.5); z-index: 9999; cursor: pointer; display: flex; align-items: center; gap: 8px;';
+                unlockBanner.style.cssText = 'position: fixed; top: 76px; left: 50%; transform: translateX(-50%); background: #1877f2; color: #fff; padding: 10px 22px; border-radius: 26px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); z-index: 9999; cursor: pointer; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px);';
                 unlockBanner.innerHTML = '<span>🔊 কথা শুনতে এখানে ট্যাপ করুন</span>';
                 document.body.appendChild(unlockBanner);
 
@@ -1108,7 +1459,7 @@
                     remoteStream.addTrack(event.track);
                 }
 
-                // 2. Audio playback via dedicated remoteAudio element
+                // 2. Audio playback via dedicated unmuted remoteAudio element
                 const remoteAud = document.getElementById('remoteAudio');
                 if (remoteAud && (!remoteAud.srcObject || remoteAud.srcObject !== remoteStream)) {
                     remoteAud.srcObject = remoteStream;
@@ -1127,8 +1478,6 @@
                     if (!remoteVid.srcObject || remoteVid.srcObject !== remoteStream) {
                         remoteVid.srcObject = remoteStream;
                     }
-                    // CRITICAL: Mute remoteVideo to guarantee that browser audio autoplay policies
-                    // NEVER block remote video frame rendering! Unmuted audio is safely played by remoteAudio.
                     remoteVid.muted = true;
                     remoteVid.setAttribute('playsinline', '');
                     remoteVid.setAttribute('webkit-playsinline', '');
@@ -1147,12 +1496,12 @@
                         renderRemoteVideoIfReady();
 
                         event.track.onunmute = () => {
-                            console.log('[WebRTC] Remote video track unmuted (RTP packets received)');
+                            console.log('[WebRTC] Remote video track unmuted');
                             renderRemoteVideoIfReady();
                         };
 
                         event.track.onmute = () => {
-                            console.log('[WebRTC] Remote video track muted (peer disabled camera or packet delay)');
+                            console.log('[WebRTC] Remote video track muted');
                             const videoTracks = remoteStream.getVideoTracks();
                             const stillHasActiveVideo = videoTracks.some(t => t.readyState === 'live' && !t.muted);
                             if (!stillHasActiveVideo) {
@@ -1194,7 +1543,8 @@
                     }
                 } else if (state === 'disconnected') {
                     setCallStatus('পুনঃসংযোগ হচ্ছে...');
-                    document.getElementById('statusDot').className = 'status-dot';
+                    const dot = document.getElementById('statusDot');
+                    if (dot) dot.className = 'status-dot';
                 }
             };
 
@@ -1206,10 +1556,12 @@
                     onCallConnected();
                 } else if (state === 'disconnected') {
                     setCallStatus('পুনঃসংযোগ হচ্ছে...');
-                    document.getElementById('statusDot').className = 'status-dot';
+                    const dot = document.getElementById('statusDot');
+                    if (dot) dot.className = 'status-dot';
                 } else if (state === 'failed') {
                     setCallStatus('সংযোগ ব্যর্থ — নেটওয়ার্ক পরীক্ষা করুন');
-                    document.getElementById('statusDot').className = 'status-dot';
+                    const dot = document.getElementById('statusDot');
+                    if (dot) dot.className = 'status-dot';
                     showToast('সংযোগ ব্যর্থ — নেটওয়ার্ক পরীক্ষা করুন');
                 }
             };
@@ -1221,8 +1573,114 @@
             clearTimeout(ringTimeoutTimer);
             stopRingbackTone();
             setCallStatus('সংযুক্ত (Connected)');
-            document.getElementById('statusDot').className = 'status-dot connected';
+            const dot = document.getElementById('statusDot');
+            if (dot) dot.className = 'status-dot connected';
             startCallTimer();
+            startNetworkQualityMonitor();
+        }
+
+        // 9. Adaptive Video Quality and Network Statistics Monitor
+        function startNetworkQualityMonitor() {
+            if (netStatsInterval) clearInterval(netStatsInterval);
+
+            netStatsInterval = setInterval(async () => {
+                if (!peerConnection || callHasEnded || !isCallAnswered) return;
+
+                try {
+                    const stats = await peerConnection.getStats();
+                    let currentRtt = null;
+                    let currentPacketsLost = 0;
+                    let totalPackets = 0;
+                    let currentFps = null;
+
+                    stats.forEach(report => {
+                        if (report.type === 'candidate-pair' && report.state === 'succeeded' && report.nominated) {
+                            if (report.currentRoundTripTime !== undefined) {
+                                currentRtt = Math.round(report.currentRoundTripTime * 1000);
+                            }
+                        } else if (report.type === 'outbound-rtp' && report.kind === 'video') {
+                            if (report.framesPerSecond !== undefined) {
+                                currentFps = Math.round(report.framesPerSecond);
+                            }
+                        } else if (report.type === 'remote-inbound-rtp') {
+                            if (report.packetsLost !== undefined) {
+                                currentPacketsLost += report.packetsLost;
+                            }
+                            if (report.packetsReceived !== undefined) {
+                                totalPackets += report.packetsReceived;
+                            }
+                        }
+                    });
+
+                    let quality = 'excellent';
+                    let qualityLabel = 'উত্তম';
+                    let qualityColor = '#10b981';
+                    let signalIcon = '📶';
+
+                    const lossRate = (totalPackets > 0) ? (currentPacketsLost / (totalPackets + currentPacketsLost)) : 0;
+
+                    if (currentRtt !== null) {
+                        if (currentRtt > 450 || lossRate > 0.12) {
+                            quality = 'poor';
+                            qualityLabel = 'দুর্বল';
+                            qualityColor = '#ef4444';
+                            signalIcon = '⚠️';
+                        } else if (currentRtt > 220 || lossRate > 0.05) {
+                            quality = 'moderate';
+                            qualityLabel = 'মাঝারি';
+                            qualityColor = '#f59e0b';
+                            signalIcon = '📶';
+                        }
+                    }
+
+                    const netBadge = document.getElementById('networkQualityBadge');
+                    const netText = document.getElementById('netQualityText');
+                    const netIcon = document.getElementById('netSignalBars');
+
+                    if (netText) {
+                        netText.innerText = qualityLabel;
+                        netText.style.color = qualityColor;
+                    }
+                    if (netIcon) {
+                        netIcon.innerText = signalIcon;
+                    }
+                    if (netBadge) {
+                        const rttText = currentRtt !== null ? `${currentRtt}ms` : 'স্বাভাবিক';
+                        netBadge.title = `পিং: ${rttText} | লস: ${Math.round(lossRate * 100)}% | এফপিএস: ${currentFps || '—'}`;
+                    }
+
+                    const videoSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+                    if (videoSender && typeof videoSender.getParameters === 'function') {
+                        try {
+                            const params = videoSender.getParameters();
+                            if (params && params.encodings && params.encodings.length > 0) {
+                                if (quality === 'poor' && !isLowBitrateMode) {
+                                    isLowBitrateMode = true;
+                                    params.encodings[0].maxBitrate = 180000;
+                                    params.encodings[0].scaleResolutionDownBy = 2.0;
+                                    await videoSender.setParameters(params);
+                                    console.log('[WebRTC] Network degraded. Scaled video parameters down.');
+                                } else if (quality !== 'poor' && isLowBitrateMode) {
+                                    isLowBitrateMode = false;
+                                    params.encodings[0].scaleResolutionDownBy = 1.0;
+                                    delete params.encodings[0].maxBitrate;
+                                    try {
+                                        await videoSender.setParameters(params);
+                                    } catch (restoreErr) {
+                                        params.encodings[0].maxBitrate = 2500000;
+                                        await videoSender.setParameters(params);
+                                    }
+                                    console.log('[WebRTC] Network recovered. Restored video parameters.');
+                                }
+                            }
+                        } catch (paramErr) {
+                            console.warn('[WebRTC] Video sender parameter adaptation error:', paramErr);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[WebRTC] Stats monitor error:', e);
+                }
+            }, 4000);
         }
 
         async function sendSignal(signalType, payload) {
@@ -1387,7 +1845,7 @@
             }
         }
 
-        // 7. Fast Signal Polling during negotiation + General Realtime Listener
+        // 10. Polling & Real-time Listeners
         function startFastSignalPolling() {
             if (fastSignalTimer) clearInterval(fastSignalTimer);
             fastSignalTimer = setInterval(async () => {
@@ -1402,12 +1860,10 @@
             }, 600);
         }
 
-        let syncTickCount = 0;
         function startSyncListener() {
             syncPollTimer = setInterval(async () => {
                 if (syncInFlight || callHasEnded) return;
                 syncInFlight = true;
-                syncTickCount++;
                 try {
                     const res = await apiFetch(`/api/v1/messenger/sync?since_id=${lastSyncEventId}&limit=200`);
                     const data = await res.json();
@@ -1424,7 +1880,28 @@
             }, 1000);
         }
 
-        // 8. Hangup and Cleanup
+        function cleanupMedia() {
+            if (localStream) {
+                localStream.getTracks().forEach(t => t.stop());
+                localStream = null;
+            }
+            if (screenStream) {
+                screenStream.getTracks().forEach(t => t.stop());
+                screenStream = null;
+            }
+            if (remoteStream) {
+                remoteStream.getTracks().forEach(t => t.stop());
+                remoteStream = null;
+            }
+            const localVid = document.getElementById('localVideo');
+            if (localVid) localVid.srcObject = null;
+            const remoteVid = document.getElementById('remoteVideo');
+            if (remoteVid) remoteVid.srcObject = null;
+            const remoteAud = document.getElementById('remoteAudio');
+            if (remoteAud) remoteAud.srcObject = null;
+        }
+
+        // 11. Hangup and Cleanup
         function hangUpCall(reason = 'কল সমাপ্ত হয়েছে') {
             onCallEnded(typeof reason === 'string' ? reason : 'কল সমাপ্ত হয়েছে', true);
         }
@@ -1442,17 +1919,20 @@
                 clearInterval(fastSignalTimer);
                 fastSignalTimer = null;
             }
+            if (netStatsInterval) {
+                clearInterval(netStatsInterval);
+                netStatsInterval = null;
+            }
 
             setCallStatus(reason);
-            document.getElementById('statusDot').style.backgroundColor = 'var(--call-danger)';
+            const dot = document.getElementById('statusDot');
+            if (dot) dot.style.backgroundColor = 'var(--call-danger)';
             showToast(reason);
 
-            if (localStream) localStream.getTracks().forEach(t => t.stop());
-            if (screenStream) screenStream.getTracks().forEach(t => t.stop());
-            if (remoteStream) remoteStream.getTracks().forEach(t => t.stop());
+            cleanupMedia();
 
             if (peerConnection) {
-                peerConnection.close();
+                try { peerConnection.close(); } catch (e) {}
                 peerConnection = null;
             }
 
@@ -1460,13 +1940,27 @@
                 apiFetch(`/api/v1/calls/${activeCallId}/leave`, { method: 'POST', keepalive: true }).catch(() => {});
             }
 
+
+
             setTimeout(() => {
                 if (window.opener) {
-                    window.close();
+                    try { window.close(); } catch (e) {}
                 }
-                window.location.href = `/messages/${CONVERSATION_ID}`;
-            }, 1800);
+                // Critical: replace history state to avoid reviving call via browser back button
+                window.location.replace(`/messages/${CONVERSATION_ID}`);
+            }, 1500);
         }
+
+        // 12. Browser Navigation and BFcache Protection
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                window.location.replace(`/messages/${CONVERSATION_ID}`);
+            }
+        });
+
+        window.addEventListener('popstate', () => {
+            hangUpCall('কল থেকে বের হওয়া হয়েছে');
+        });
 
         window.addEventListener('pagehide', () => {
             if (fastSignalTimer) {
@@ -1476,9 +1970,7 @@
             if (!callHasEnded && activeCallId) {
                 apiFetch(`/api/v1/calls/${activeCallId}/leave`, { method: 'POST', keepalive: true }).catch(() => {});
             }
-            if (localStream) localStream.getTracks().forEach(t => t.stop());
-            if (screenStream) screenStream.getTracks().forEach(t => t.stop());
-            if (remoteStream) remoteStream.getTracks().forEach(t => t.stop());
+            cleanupMedia();
         });
 
         // Initialize on DOM Ready

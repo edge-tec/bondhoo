@@ -50,11 +50,19 @@ class CallingService
             $username = $user ? "{$timestamp}:{$user->id}" : "{$timestamp}:guest";
             $credential = base64_encode(hash_hmac('sha1', $username, $turnSecret, true));
 
+            $turnUrls = [
+                $turnUrl.'?transport=udp',
+                $turnUrl.'?transport=tcp',
+            ];
+
+            // If hostname is available, add turns (TLS) port 5349 fallback
+            $host = parse_url($turnUrl, PHP_URL_HOST) ?: parse_url('turn://'.$turnUrl, PHP_URL_HOST);
+            if ($host) {
+                $turnUrls[] = "turns:{$host}:5349?transport=tcp";
+            }
+
             $servers[] = [
-                'urls' => [
-                    $turnUrl.'?transport=udp',
-                    $turnUrl.'?transport=tcp',
-                ],
+                'urls' => $turnUrls,
                 'username' => $username,
                 'credential' => $credential,
             ];
@@ -375,7 +383,8 @@ class CallingService
             $callEnded = false;
             // In 1-on-1 call, if any participant leaves or if caller leaves, call ends
             if (! $call->isGroup() || $activeCount <= 1) {
-                $callDuration = $call->started_at ? (int) abs($now->diffInSeconds($call->started_at, false)) : 0;
+                $wasActive = ($call->status === Call::STATUS_ACTIVE);
+                $callDuration = ($wasActive && $call->started_at) ? max(1, (int) abs($now->diffInSeconds($call->started_at, false))) : 0;
                 $finalStatus = Call::STATUS_ENDED;
 
                 $call->participants()
@@ -430,7 +439,7 @@ class CallingService
             Call::STATUS_MISSED => '📞 মিসড '.$callTypeLabel,
             Call::STATUS_REJECTED => '📞 প্রত্যাখ্যাত '.$callTypeLabel,
             Call::STATUS_BUSY => '📞 ব্যস্ত '.$callTypeLabel,
-            default => "{$icon} {$callTypeLabel} সম্পন্ন{$durStr}",
+            default => ($durationSeconds === 0) ? '📞 মিসড '.$callTypeLabel : "{$icon} {$callTypeLabel} সম্পন্ন{$durStr}",
         };
 
         if ($existing) {
