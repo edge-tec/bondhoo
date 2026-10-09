@@ -272,6 +272,8 @@ Route::prefix('v1')->group(function () {
         // Real-time Presence & Typing
         Route::post('/presence/heartbeat', [PresenceController::class, 'heartbeat']);
         Route::post('/presence/offline', [PresenceController::class, 'offline']);
+        Route::get('/presence/friends/active', [PresenceController::class, 'activeFriends']);
+        Route::post('/presence/visibility', [PresenceController::class, 'toggleVisibility']);
         Route::post('/presence/typing', [PresenceController::class, 'typing']);
         Route::get('/presence/typing/{conversationId}', [PresenceController::class, 'getTyping'])->whereNumber('conversationId');
 

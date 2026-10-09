@@ -1742,6 +1742,536 @@
     .retry-send-btn:hover {
         background: rgba(239, 68, 68, 0.1);
     }
+
+    /* Active Friends Section & Carousel */
+    .active-friends-section {
+        padding: 10px 14px 6px;
+        border-bottom: 1px solid var(--ms-border);
+        background: var(--ms-bg-card);
+        flex-shrink: 0;
+    }
+    .active-friends-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    .active-friends-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ms-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .active-friends-badge {
+        background: rgba(49, 162, 76, 0.15);
+        color: var(--ms-green);
+        padding: 1px 7px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .active-friends-refresh-btn {
+        background: transparent;
+        border: none;
+        color: var(--ms-text-secondary);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s, transform 0.2s;
+    }
+    .active-friends-refresh-btn:hover {
+        color: var(--ms-primary);
+        transform: rotate(90deg);
+    }
+    .active-friends-rail {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0,0,0,0.15) transparent;
+    }
+    .active-friends-rail::-webkit-scrollbar {
+        height: 4px;
+    }
+    .active-friends-rail::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.15);
+        border-radius: 4px;
+    }
+    .active-friend-pill {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 68px;
+        min-width: 68px;
+        cursor: pointer;
+        text-align: center;
+        position: relative;
+        padding: 4px;
+        border-radius: 10px;
+        transition: background 0.15s, transform 0.15s;
+    }
+    .active-friend-pill:hover {
+        background: var(--ms-bg-hover);
+        transform: translateY(-2px);
+    }
+    .active-friend-avatar-wrap {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        margin-bottom: 4px;
+    }
+    .active-friend-avatar-wrap .avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .active-friend-avatar-wrap .online-indicator {
+        position: absolute;
+        bottom: 1px;
+        right: 1px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        border: 2.5px solid var(--ms-bg-card);
+    }
+    .active-friend-avatar-wrap .online-indicator.is-online {
+        background: var(--ms-green);
+        box-shadow: 0 0 6px var(--ms-green);
+    }
+    .active-friend-avatar-wrap .online-indicator.is-offline {
+        background: #94a3b8;
+    }
+    .active-friend-name {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--ms-text-primary);
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.25;
+        min-width: 0;
+    }
+    .active-friend-status {
+        font-size: 10px;
+        color: var(--ms-text-secondary);
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+    }
+    .active-friend-actions {
+        display: none;
+        position: absolute;
+        bottom: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--ms-bg-card);
+        border: 1px solid var(--ms-border);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+        border-radius: 18px;
+        padding: 3px 6px;
+        gap: 5px;
+        z-index: 25;
+    }
+    .active-friend-pill:hover .active-friend-actions {
+        display: flex;
+    }
+    .af-action-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--ms-bg-input);
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ms-text-primary);
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+    }
+    .af-action-btn:hover {
+        background: var(--ms-primary);
+        color: #ffffff;
+    }
+
+    /* Presence Status Dropdown in Pane Header */
+    .presence-status-btn {
+        position: relative;
+    }
+    .presence-status-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        display: inline-block;
+        transition: background 0.2s;
+    }
+    .presence-status-dot.online {
+        background: var(--ms-green);
+        box-shadow: 0 0 7px var(--ms-green);
+    }
+    .presence-status-dot.offline {
+        background: #94a3b8;
+    }
+    .presence-dropdown-menu {
+        position: absolute;
+        top: 48px;
+        right: 0;
+        background: var(--ms-bg-card);
+        border: 1px solid var(--ms-border);
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        padding: 8px 0;
+        width: 240px;
+        z-index: 999;
+    }
+    .presence-dropdown-header {
+        padding: 6px 14px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--ms-text-secondary);
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--ms-border);
+        letter-spacing: 0.5px;
+    }
+    .presence-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .presence-option:hover {
+        background: var(--ms-bg-hover);
+    }
+    .presence-option.active {
+        background: var(--ms-bg-active);
+    }
+    .presence-dot-sample {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .presence-dot-sample.online {
+        background: var(--ms-green);
+    }
+    .presence-dot-sample.offline {
+        background: #94a3b8;
+    }
+    .presence-option-text strong {
+        display: block;
+        font-size: 13px;
+        color: var(--ms-text-primary);
+    }
+    .presence-option-text small {
+        display: block;
+        font-size: 11px;
+        color: var(--ms-text-secondary);
+    }
+
+    /* Floating Dock Workspace (Desktop Multi-Chat) */
+    .messenger-docked-tray {
+        position: fixed;
+        bottom: 0;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        align-items: flex-end;
+        gap: 14px;
+        pointer-events: none;
+    }
+    .docked-chat-window {
+        pointer-events: auto;
+        width: 320px;
+        background: var(--ms-bg-card);
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 6px 26px rgba(0,0,0,0.22), 0 0 0 1px var(--ms-border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: height 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 430px;
+        max-height: calc(100vh - 80px);
+    }
+    .docked-chat-window.minimized {
+        height: 46px !important;
+    }
+    .docked-header {
+        height: 46px;
+        min-height: 46px;
+        padding: 0 12px;
+        background: var(--ms-bg-card);
+        border-bottom: 1px solid var(--ms-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        user-select: none;
+    }
+    .docked-header-user {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        flex: 1;
+    }
+    .docked-avatar-wrap {
+        position: relative;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+    }
+    .docked-avatar-wrap .avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
+    .docked-avatar-wrap .online-indicator {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 8px;
+        height: 8px;
+        border: 1.5px solid var(--ms-bg-card);
+        border-radius: 50%;
+        background: var(--ms-green);
+    }
+    .docked-header-info {
+        min-width: 0;
+    }
+    .docked-header-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ms-text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+    .docked-header-status {
+        font-size: 10.5px;
+        color: var(--ms-text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.1;
+    }
+    .docked-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+    .docked-action-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ms-text-secondary);
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+    }
+    .docked-action-btn:hover {
+        background: var(--ms-bg-hover);
+        color: var(--ms-text-primary);
+    }
+    .docked-unread-badge {
+        background: var(--ms-primary);
+        color: #ffffff;
+        font-size: 10px;
+        font-weight: 800;
+        padding: 1px 6px;
+        border-radius: 10px;
+        margin-right: 4px;
+        display: none;
+    }
+    .docked-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: var(--ms-bg-main);
+    }
+    .docked-msg-row {
+        display: flex;
+        flex-direction: column;
+        max-width: 82%;
+    }
+    .docked-msg-row.outgoing {
+        align-self: flex-end;
+    }
+    .docked-msg-row.incoming {
+        align-self: flex-start;
+    }
+    .docked-msg-bubble {
+        padding: 7px 12px;
+        border-radius: 14px;
+        font-size: 13px;
+        line-height: 1.4;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+    .docked-msg-row.incoming .docked-msg-bubble {
+        background: var(--ms-bubble-incoming);
+        color: var(--ms-text-primary);
+        border-bottom-left-radius: 3px;
+    }
+    .docked-msg-row.outgoing .docked-msg-bubble {
+        background: var(--ms-primary);
+        color: #ffffff;
+        border-bottom-right-radius: 3px;
+    }
+    .docked-msg-time {
+        font-size: 9.5px;
+        color: var(--ms-text-secondary);
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+    .docked-msg-row.outgoing .docked-msg-time {
+        align-self: flex-end;
+    }
+    .docked-composer {
+        padding: 8px 10px;
+        background: var(--ms-bg-card);
+        border-top: 1px solid var(--ms-border);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .docked-composer input {
+        flex: 1;
+        border: none;
+        background: var(--ms-bg-input);
+        border-radius: 18px;
+        padding: 7px 12px;
+        font-size: 13px;
+        color: var(--ms-text-primary);
+        outline: none;
+        font-family: inherit;
+    }
+    .docked-send-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--ms-primary);
+        border: none;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: transform 0.1s;
+    }
+    .docked-send-btn:hover {
+        transform: scale(1.08);
+    }
+
+    /* Mobile Open Chats Switcher Bar */
+    .mobile-open-chats-bar {
+        display: none;
+        padding: 6px 12px;
+        background: var(--ms-bg-card);
+        border-bottom: 1px solid var(--ms-border);
+        overflow-x: auto;
+        gap: 8px;
+        align-items: center;
+        flex-shrink: 0;
+        scrollbar-width: none;
+    }
+    .mobile-open-chats-bar::-webkit-scrollbar {
+        display: none;
+    }
+    @media (max-width: 768px) {
+        .mobile-open-chats-bar {
+            display: flex;
+        }
+        .messenger-docked-tray {
+            display: none !important;
+        }
+    }
+    .mobile-chat-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 16px;
+        background: var(--ms-bg-input);
+        color: var(--ms-text-primary);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: background 0.15s;
+    }
+    .mobile-chat-pill.active {
+        background: var(--ms-primary);
+        color: #ffffff;
+    }
+    .mobile-chat-pill-avatar {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+    }
+    .mobile-chat-close {
+        background: none;
+        border: none;
+        color: inherit;
+        font-size: 12px;
+        cursor: pointer;
+        padding: 0 2px;
+        margin-left: 2px;
+    }
+
+    /* Open in dock button in conversation item */
+    .btn-open-dock {
+        opacity: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--ms-bg-input);
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ms-text-secondary);
+        cursor: pointer;
+        transition: opacity 0.15s, background 0.15s;
+        flex-shrink: 0;
+        margin-left: 4px;
+    }
+    .conversation-item:hover .btn-open-dock {
+        opacity: 1;
+    }
+    .btn-open-dock:hover {
+        background: var(--ms-primary);
+        color: #ffffff;
+    }
 </style>
 @endsection
 
@@ -1757,6 +2287,30 @@
         <div class="pane-header">
             <h1 class="pane-title">চ্যাট ও বার্তা</h1>
             <div class="pane-header-actions">
+                <!-- Presence status button -->
+                <div style="position: relative;">
+                    <button type="button" class="icon-circle-btn presence-status-btn" id="presenceStatusBtn" onclick="togglePresenceMenu()" title="উপস্থিতি স্থিতি">
+                        <span class="presence-status-dot online" id="myPresenceDot"></span>
+                    </button>
+                    <div class="presence-dropdown-menu" id="presenceDropdownMenu" style="display: none;">
+                        <div class="presence-dropdown-header">উপস্থিতি স্থিতি</div>
+                        <div class="presence-option active" id="presenceOptionOnline" onclick="setMyPresence(false)">
+                            <span class="presence-dot-sample online"></span>
+                            <div class="presence-option-text">
+                                <strong>সক্রিয় (Online)</strong>
+                                <small>অন্যরা আপনাকে সক্রিয় দেখতে পাবে</small>
+                            </div>
+                        </div>
+                        <div class="presence-option" id="presenceOptionOffline" onclick="setMyPresence(true)">
+                            <span class="presence-dot-sample offline"></span>
+                            <div class="presence-option-text">
+                                <strong>অদৃশ্য (Appear Offline)</strong>
+                                <small>মেসেঞ্জার ব্যবহার করলেও অফলাইন দেখাবে</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <button type="button" class="icon-circle-btn" onclick="openNewChatModal()" title="নতুন বার্তা বা গ্রুপ">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -1776,6 +2330,22 @@
                     </svg>
                 </span>
                 <input type="text" id="convSearchInput" placeholder="চ্যাট ও ব্যবহারকারী খুঁজুন..." oninput="handleConvSearch(this.value)">
+            </div>
+        </div>
+
+        <!-- Active Friends Horizontal Rail -->
+        <div class="active-friends-section" id="activeFriendsSection">
+            <div class="active-friends-header">
+                <div class="active-friends-title">
+                    <span>অনলাইন বন্ধুরা</span>
+                    <span class="active-friends-badge" id="activeFriendsCount">০</span>
+                </div>
+                <button type="button" class="active-friends-refresh-btn" onclick="fetchActiveFriends(true)" title="উপস্থিতি রিফ্রেশ করুন">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                </button>
+            </div>
+            <div class="active-friends-rail" id="activeFriendsRail">
+                <div style="font-size: 11.5px; color: var(--ms-text-secondary); padding: 8px 4px;">বন্ধুদের তথ্য লোড হচ্ছে...</div>
             </div>
         </div>
 
@@ -1839,11 +2409,16 @@
                                     </span>
                                 @endif
                             </div>
-                            <span class="conv-time" id="convTime-{{ $cId }}">
-                                @if($conv['last_message_at'] ?? null)
-                                    {{ \Carbon\Carbon::parse($conv['last_message_at'])->shortRelativeDiffForHumans() }}
-                                @endif
-                            </span>
+                            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                                <span class="conv-time" id="convTime-{{ $cId }}">
+                                    @if($conv['last_message_at'] ?? null)
+                                        {{ \Carbon\Carbon::parse($conv['last_message_at'])->shortRelativeDiffForHumans() }}
+                                    @endif
+                                </span>
+                                <button type="button" class="btn-open-dock" onclick="event.preventDefault(); event.stopPropagation(); openDockedChat({{ $cId }}, '{{ addslashes($chatTitle) }}', '{{ $chatAvatar ?? '' }}', false);" title="ডক উইন্ডোতে খুলুন">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="conv-bottom-row">
                             <div class="conv-snippet" id="convSnippet-{{ $cId }}">
@@ -1895,6 +2470,9 @@
                 $activeAvatar = $isGroup ? $activeConversation->avatar_url : ($activeOther?->profile?->avatar_url ?? null);
                 $activeRole = $activeConversation->participants->firstWhere('user_id', $currentUser->id)?->role ?? 'member';
             @endphp
+            <!-- Mobile Open Chats Switcher Bar -->
+            <div class="mobile-open-chats-bar" id="mobileOpenChatsBar"></div>
+
             <!-- Chat Header -->
             <div class="chat-header">
                 <div class="chat-header-user">
@@ -1970,12 +2548,12 @@
                         </svg>
                     </button>
                     @if(!$isSaved)
-                        <button type="button" class="icon-circle-btn" title="অডিও কল" onclick="startCall('audio', '{{ $activeTitle }}')">
+                        <button type="button" class="icon-circle-btn" title="{{ $isGroup ? 'গ্রুপ অডিও কল' : 'অডিও কল' }}" onclick="startCall('{{ $isGroup ? 'group_audio' : 'audio' }}', '{{ addslashes($activeTitle) }}')">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                             </svg>
                         </button>
-                        <button type="button" class="icon-circle-btn" title="ভিডিও কল" onclick="startCall('video', '{{ $activeTitle }}')">
+                        <button type="button" class="icon-circle-btn" title="{{ $isGroup ? 'গ্রুপ ভিডিও কল' : 'ভিডিও কল' }}" onclick="startCall('{{ $isGroup ? 'group_video' : 'video' }}', '{{ addslashes($activeTitle) }}')">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <polygon points="23 7 16 12 23 17 23 7"></polygon>
                                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
@@ -2655,6 +3233,9 @@
     @endif
 </div>
 
+<!-- Multi-Chat Floating Dock Workspace (Desktop) -->
+<div class="messenger-docked-tray" id="messengerDockedTray"></div>
+
 <!-- ==============================================
      MODALS
      ============================================== -->
@@ -2663,7 +3244,7 @@
 <div class="chat-modal-overlay" id="newChatModal">
     <div class="chat-modal-box">
         <div style="padding: 16px 20px; border-bottom: 1px solid var(--ms-border); display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 18px; font-weight: 800; color: var(--ms-text-primary); margin: 0;">নতুন বার্তা</h3>
+            <h3 style="font-size: 18px; font-weight: 800; color: var(--ms-text-primary); margin: 0;">নতুন বার্তা বা গ্রুপ</h3>
             <button type="button" class="icon-circle-btn" style="width: 32px; height: 32px; font-size: 15px;" onclick="closeChatModal('newChatModal')" title="বন্ধ করুন">✕</button>
         </div>
         <div style="padding: 16px 20px;">
@@ -2683,7 +3264,7 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    <span>নতুন গ্রুপ</span>
+                    <span>নতুন গ্রুপ চ্যাট</span>
                 </button>
             </div>
 
@@ -2713,12 +3294,27 @@
                     </svg>
                     <input type="text" id="groupTitleInput" placeholder="গ্রুপের নাম লিখুন..." style="width: 100%;">
                 </div>
-                <div class="ms-search-capsule" style="border-radius: 16px; margin-bottom: 12px; padding: 10px 14px;">
-                    <textarea id="groupDescInput" placeholder="গ্রুপের বিবরণ (ঐচ্ছিক)..." style="width: 100%; border: none; background: transparent; outline: none; resize: none; font-size: 13.5px; height: 48px; font-family: inherit; color: var(--ms-text-primary);"></textarea>
+                <div class="ms-search-capsule" style="border-radius: 14px; margin-bottom: 10px; padding: 8px 14px;">
+                    <textarea id="groupDescInput" placeholder="গ্রুপের বিবরণ (ঐচ্ছিক)..." style="width: 100%; border: none; background: transparent; outline: none; resize: none; font-size: 13px; height: 42px; font-family: inherit; color: var(--ms-text-primary);"></textarea>
                 </div>
-                <div style="font-weight: 700; font-size: 12.5px; color: var(--ms-text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">সদস্য নির্বাচন করুন:</div>
+                <div class="ms-search-capsule" style="margin-bottom: 10px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink: 0; color: var(--ms-text-secondary);"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <input type="url" id="groupAvatarUrlInput" placeholder="গ্রুপ ছবি URL (ঐচ্ছিক)..." style="width: 100%; font-size: 12.5px;">
+                </div>
+                <!-- Search friends inside group creation -->
+                <div class="ms-search-capsule" style="margin-bottom: 10px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="flex-shrink: 0; color: var(--ms-text-secondary);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="groupFriendSearchInput" placeholder="সদস্য খুঁজতে নাম লিখুন..." oninput="filterGroupFriends(this.value)" style="width: 100%; font-size: 12.5px;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; font-size: 12.5px; color: var(--ms-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">সদস্য নির্বাচন করুন:</span>
+                    <span id="groupSelectedCount" style="font-size: 12px; font-weight: 700; color: var(--ms-primary); background: var(--ms-bg-active); padding: 2px 8px; border-radius: 10px;">নির্বাচিত: ০ জন</span>
+                </div>
                 <div id="groupMembersSelectionList" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--ms-border); border-radius: 12px; padding: 10px; background: var(--ms-bg-input);"></div>
-                <button type="button" class="btn-fb-primary" style="width: 100%; margin-top: 14px; border-radius: 20px; padding: 10px; font-weight: 700; justify-content: center; background: var(--ms-primary);" onclick="submitCreateGroup()">গ্রুপ তৈরি করুন</button>
+                <div style="display: flex; gap: 10px; margin-top: 14px;">
+                    <button type="button" class="icon-circle-btn" style="flex: 1; border-radius: 20px; font-weight: 700; height: 42px;" onclick="closeChatModal('newChatModal')">বাতিল</button>
+                    <button type="button" id="btnSubmitCreateGroup" class="btn-fb-primary" style="flex: 2; border-radius: 20px; padding: 10px; font-weight: 700; justify-content: center; background: var(--ms-primary); height: 42px;" onclick="submitCreateGroup()">গ্রুপ তৈরি করুন</button>
+                </div>
             </div>
         </div>
     </div>
@@ -4610,6 +5206,8 @@
         });
     }
 
+    let __selectedGroupMemberIds = new Set();
+
     function renderGroupMembersChecklist(friends) {
         const listEl = document.getElementById('groupMembersSelectionList');
         if (!listEl) return;
@@ -4620,6 +5218,7 @@
         listEl.innerHTML = friends.map(f => {
             const avatarUrl = f.profile?.avatar_url || f.avatar_url || '';
             const initial = (f.name || 'U').charAt(0).toUpperCase();
+            const isChecked = __selectedGroupMemberIds.has(Number(f.id));
             return `
                 <label style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 10px; cursor: pointer; background: var(--ms-bg-card); transition: background 0.15s; margin-bottom: 4px;" onmouseover="this.style.background='var(--ms-bg-hover)'" onmouseout="this.style.background='var(--ms-bg-card)'">
                     <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
@@ -4631,20 +5230,64 @@
                             ${f.username ? `<div style="font-size: 11.5px; color: var(--ms-text-secondary);">@${escapeHtml(f.username)}</div>` : ''}
                         </div>
                     </div>
-                    <input type="checkbox" name="group_members_select[]" value="${f.id}" style="width: 18px; height: 18px; accent-color: var(--ms-primary); cursor: pointer;">
+                    <input type="checkbox" name="group_members_select[]" value="${f.id}" ${isChecked ? 'checked' : ''} onchange="handleGroupMemberToggle(this)" style="width: 18px; height: 18px; accent-color: var(--ms-primary); cursor: pointer;">
                 </label>
             `;
         }).join('');
     }
 
+    function handleGroupMemberToggle(checkbox) {
+        const id = Number(checkbox.value);
+        if (checkbox.checked) {
+            __selectedGroupMemberIds.add(id);
+        } else {
+            __selectedGroupMemberIds.delete(id);
+        }
+        updateGroupSelectedCount();
+    }
+
+    function updateGroupSelectedCount() {
+        const countEl = document.getElementById('groupSelectedCount');
+        if (countEl) {
+            countEl.textContent = `নির্বাচিত: ${__selectedGroupMemberIds.size} জন`;
+        }
+    }
+
+    function filterGroupFriends(query) {
+        const q = (query || '').toLowerCase().trim();
+        if (!__cachedFriends) return;
+        if (!q) {
+            renderGroupMembersChecklist(__cachedFriends);
+            return;
+        }
+        const filtered = __cachedFriends.filter(f => {
+            const name = (f.name || '').toLowerCase();
+            const username = (f.username || '').toLowerCase();
+            return name.includes(q) || username.includes(q);
+        });
+        renderGroupMembersChecklist(filtered);
+    }
+
     function submitCreateGroup() {
         const title = document.getElementById('groupTitleInput')?.value.trim();
         const description = document.getElementById('groupDescInput')?.value.trim();
+        const avatarUrl = document.getElementById('groupAvatarUrlInput')?.value.trim();
+        const btnSubmit = document.getElementById('btnSubmitCreateGroup');
+
         if (!title) {
-            alert('অনুগ্রহ করে গ্রুপের শিরোনাম লিখুন।');
+            alert('অনুগ্রহ করে গ্রুপের নাম লিখুন।');
             return;
         }
-        const memberIds = Array.from(document.querySelectorAll('input[name="group_members_select[]"]:checked')).map(cb => parseInt(cb.value));
+        const memberIds = Array.from(__selectedGroupMemberIds);
+        if (memberIds.length < 1) {
+            alert('অনুগ্রহ করে অন্তত একজন বন্ধুকে সদস্য হিসেবে নির্বাচন করুন।');
+            return;
+        }
+
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'গ্রুপ তৈরি হচ্ছে...';
+        }
 
         fetch('/api/v1/conversations', {
             method: 'POST',
@@ -4653,6 +5296,7 @@
                 type: 'group',
                 title: title,
                 description: description || null,
+                avatar_url: avatarUrl || null,
                 participant_ids: memberIds
             })
         })
@@ -4663,10 +5307,18 @@
                 window.location.href = `/messages?conversation_id=${res.data.id}`;
             } else {
                 alert(res.message || 'গ্রুপ তৈরি করা যায়নি।');
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = 'গ্রুপ তৈরি করুন';
+                }
             }
         })
         .catch(() => {
             alert('সার্ভারে ত্রুটি হয়েছে।');
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'গ্রুপ তৈরি করুন';
+            }
         });
     }
 
@@ -5470,6 +6122,10 @@
             if (currentConvId && Number(evt.conversation_id) === Number(currentConvId) && m.id && !document.getElementById(`messageRow-${m.id}`)) {
                 appendIncomingMessageBubble(m);
             }
+            const convId = Number(evt.conversation_id || m.conversation_id);
+            if (convId && typeof openDockedChats !== 'undefined' && openDockedChats.includes(convId)) {
+                appendDockedMessage(convId, m);
+            }
         }
         // 2. Message Read Receipts
         else if (evt.event_type === 'conversation.read') {
@@ -5478,6 +6134,16 @@
                     el.textContent = '✓✓';
                     el.classList.add('seen');
                 });
+            }
+            const convId = Number(evt.conversation_id || evt.payload?.conversation_id);
+            if (convId && typeof openDockedChats !== 'undefined' && openDockedChats.includes(convId)) {
+                const bodyEl = document.getElementById(`dockedMessages-${convId}`);
+                if (bodyEl) {
+                    bodyEl.querySelectorAll('.docked-msg-row.outgoing .docked-check').forEach(c => {
+                        c.textContent = '✓✓';
+                        c.style.color = 'var(--ms-primary)';
+                    });
+                }
             }
         }
         // 3. Message Delivered Receipts
@@ -5569,6 +6235,12 @@
                 const ind = convItem.querySelector('.online-indicator');
                 if (ind) ind.style.display = isOnline ? 'block' : 'none';
             }
+            if (typeof updateActiveFriendPresence === 'function') {
+                updateActiveFriendPresence(targetUserId, isOnline);
+            }
+            if (typeof updateDockedPresence === 'function') {
+                updateDockedPresence(targetUserId, isOnline);
+            }
         }
         // 7. Calling Events (Real-time in Messenger)
         else if (evt.event_type === 'call.incoming') {
@@ -5604,6 +6276,504 @@
             }
         }
     }
+
+    // ==============================================
+    // ACTIVE FRIENDS & PRESENCE PRIVACY SYSTEM
+    // ==============================================
+    let __activeFriendsList = [];
+    let __activeFriendsInFlight = false;
+
+    function fetchActiveFriends(forceRefresh = false, searchQuery = '') {
+        if (__activeFriendsInFlight && !forceRefresh) return;
+        __activeFriendsInFlight = true;
+
+        const q = searchQuery !== '' ? `?q=${encodeURIComponent(searchQuery)}` : '';
+        fetch(`/api/v1/presence/friends/active${q}`, {
+            headers: { 'Accept': 'application/json', ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}) }
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && Array.isArray(res.data)) {
+                __activeFriendsList = res.data;
+                renderActiveFriendsRail(__activeFriendsList);
+            }
+        })
+        .catch(() => {})
+        .finally(() => {
+            __activeFriendsInFlight = false;
+        });
+    }
+
+    function renderActiveFriendsRail(friends) {
+        const railEl = document.getElementById('activeFriendsRail');
+        const countEl = document.getElementById('activeFriendsCount');
+        if (!railEl) return;
+
+        const onlineCount = friends.filter(f => f.online).length;
+        if (countEl) {
+            countEl.textContent = onlineCount.toString();
+        }
+
+        if (friends.length === 0) {
+            railEl.innerHTML = '<div style="font-size: 11.5px; color: var(--ms-text-secondary); padding: 8px 6px;">বর্তমানে কোনো বন্ধু সক্রিয় নেই</div>';
+            return;
+        }
+
+        railEl.innerHTML = friends.map(f => {
+            const avatarUrl = f.avatar_url || '';
+            const initial = (f.name || 'U').charAt(0).toUpperCase();
+            const statusText = f.online ? 'সক্রিয়' : (f.last_seen_display || 'অফলাইন');
+            const safeName = escapeHtml(f.name);
+            const safeUsername = escapeHtml(f.username || '');
+            const hasConv = f.conversation_id ? Number(f.conversation_id) : 'null';
+
+            return `
+                <div class="active-friend-pill" data-friend-id="${f.id}" onclick="openDirectChat(${f.id}, ${hasConv})" title="${safeName} (@${safeUsername}) - ${statusText}">
+                    <div class="active-friend-avatar-wrap">
+                        <div class="avatar">
+                            ${avatarUrl ? `<img src="${avatarUrl}" alt="${safeName}" style="width: 100%; height: 100%; object-fit: cover;">` : initial}
+                        </div>
+                        <span class="online-indicator ${f.online ? 'is-online' : 'is-offline'}"></span>
+                    </div>
+                    <span class="active-friend-name">${safeName}</span>
+                    <span class="active-friend-status">${statusText}</span>
+                    <div class="active-friend-actions" onclick="event.stopPropagation()">
+                        <button type="button" class="af-action-btn" onclick="callFriend(${f.id}, ${hasConv}, 'audio', '${escapeJs(f.name)}')" title="অডিও কল">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        </button>
+                        <button type="button" class="af-action-btn" onclick="callFriend(${f.id}, ${hasConv}, 'video', '${escapeJs(f.name)}')" title="ভিডিও কল">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        </button>
+                        <button type="button" class="af-action-btn" onclick="openDockedChat(${hasConv}, '${escapeJs(f.name)}', '${escapeJs(avatarUrl)}', ${f.online ? 'true' : 'false'})" title="ডক উইন্ডোতে চ্যাট করুন">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updateActiveFriendPresence(userId, isOnline) {
+        const friendPill = document.querySelector(`.active-friend-pill[data-friend-id="${userId}"]`);
+        if (friendPill) {
+            const ind = friendPill.querySelector('.online-indicator');
+            const statusEl = friendPill.querySelector('.active-friend-status');
+            if (ind) {
+                ind.className = `online-indicator ${isOnline ? 'is-online' : 'is-offline'}`;
+            }
+            if (statusEl) {
+                statusEl.textContent = isOnline ? 'সক্রিয়' : 'অফলাইন';
+            }
+        }
+        const item = __activeFriendsList.find(f => Number(f.id) === Number(userId));
+        if (item) {
+            item.online = isOnline;
+            const countEl = document.getElementById('activeFriendsCount');
+            if (countEl) {
+                countEl.textContent = __activeFriendsList.filter(f => f.online).length.toString();
+            }
+        }
+    }
+
+    function openDirectChat(friendId, existingConvId) {
+        if (existingConvId && Number(existingConvId) > 0) {
+            if (window.innerWidth <= 768) {
+                window.location.href = `/messages?conversation_id=${existingConvId}`;
+            } else {
+                const friend = __activeFriendsList.find(f => Number(f.id) === Number(friendId));
+                openDockedChat(existingConvId, friend?.name || 'বন্ধু', friend?.avatar_url || '', friend?.online || false);
+            }
+            return;
+        }
+
+        // Create direct conversation on demand
+        fetch('/api/v1/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}) },
+            body: JSON.stringify({ recipient_id: friendId, type: 'direct' })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && res.data) {
+                const convId = res.data.id;
+                if (window.innerWidth <= 768) {
+                    window.location.href = `/messages?conversation_id=${convId}`;
+                } else {
+                    const friend = __activeFriendsList.find(f => Number(f.id) === Number(friendId));
+                    openDockedChat(convId, friend?.name || res.data.title || 'বন্ধু', friend?.avatar_url || '', friend?.online || false);
+                }
+            } else {
+                alert(res.message || 'চ্যাট শুরু করা যায়নি।');
+            }
+        })
+        .catch(() => alert('সার্ভারে ত্রুটি হয়েছে।'));
+    }
+
+    function callFriend(friendId, existingConvId, callType = 'audio', friendName = '') {
+        if (existingConvId && Number(existingConvId) > 0) {
+            startCall(callType, friendName, existingConvId);
+            return;
+        }
+
+        fetch('/api/v1/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}) },
+            body: JSON.stringify({ recipient_id: friendId, type: 'direct' })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && res.data) {
+                startCall(callType, friendName, res.data.id);
+            } else {
+                alert(res.message || 'কল সংযোগ স্থাপন করা যায়নি।');
+            }
+        })
+        .catch(() => alert('সার্ভারে ত্রুটি হয়েছে।'));
+    }
+
+    function togglePresenceMenu() {
+        const menu = document.getElementById('presenceDropdownMenu');
+        if (menu) {
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('presenceDropdownMenu');
+        const btn = document.getElementById('presenceStatusBtn');
+        if (menu && btn && !btn.contains(e.target) && !menu.contains(e.target)) {
+            menu.style.display = 'none';
+        }
+    });
+
+    function setMyPresence(appearOffline) {
+        togglePresenceMenu();
+        fetch('/api/v1/presence/visibility', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}) },
+            body: JSON.stringify({ appear_offline: appearOffline })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                const isOffline = res.data?.appear_offline;
+                const dot = document.getElementById('myPresenceDot');
+                const optOnline = document.getElementById('presenceOptionOnline');
+                const optOffline = document.getElementById('presenceOptionOffline');
+
+                if (dot) {
+                    dot.className = `presence-status-dot ${isOffline ? 'offline' : 'online'}`;
+                }
+                if (optOnline) optOnline.classList.toggle('active', !isOffline);
+                if (optOffline) optOffline.classList.toggle('active', isOffline);
+
+                showToast(isOffline ? 'আপনি এখন অন্যদের কাছে অফলাইন দেখাচ্ছেন।' : 'আপনি এখন অনলাইনে সক্রিয় আছেন।');
+            }
+        })
+        .catch(() => showToast('উপস্থিতি পরিবর্তন ব্যর্থ হয়েছে।'));
+    }
+
+    // ==============================================
+    // DESKTOP MULTI-CHAT WORKSPACE & DOCKED CHATS
+    // ==============================================
+    const MAX_DOCKED_CHATS = 3;
+    let openDockedChats = []; // Array of conversation IDs
+
+    function openDockedChat(convId, title, avatarUrl, isOnline = false) {
+        if (!convId || Number(convId) <= 0) return;
+        convId = Number(convId);
+
+        // If on mobile, register to mobile switcher and navigate
+        if (window.innerWidth <= 768) {
+            registerMobileOpenChat(convId, title, avatarUrl);
+            window.location.href = `/messages?conversation_id=${convId}`;
+            return;
+        }
+
+        const tray = document.getElementById('messengerDockedTray');
+        if (!tray) return;
+
+        // If window already open, restore and focus
+        let existingWin = document.getElementById(`dockedChat-${convId}`);
+        if (existingWin) {
+            existingWin.classList.remove('minimized');
+            const btnMin = existingWin.querySelector('.btn-dock-min svg');
+            if (btnMin) btnMin.innerHTML = '<line x1="5" y1="12" x2="19" y2="12"></line>';
+            const badge = existingWin.querySelector('.docked-unread-badge');
+            if (badge) badge.style.display = 'none';
+            const input = existingWin.querySelector('.docked-input');
+            if (input) input.focus();
+            return;
+        }
+
+        // Limit to MAX_DOCKED_CHATS by closing oldest
+        if (openDockedChats.length >= MAX_DOCKED_CHATS) {
+            const oldestId = openDockedChats.shift();
+            closeDockedChat(oldestId, false);
+        }
+
+        openDockedChats.push(convId);
+
+        const safeTitle = escapeHtml(title);
+        const safeAvatar = escapeHtml(avatarUrl || '');
+        const initial = (title || 'U').charAt(0).toUpperCase();
+
+        const winHtml = `
+            <div class="docked-chat-window" id="dockedChat-${convId}" data-conv-id="${convId}">
+                <div class="docked-header" onclick="toggleDockedChat(${convId})">
+                    <div class="docked-header-user">
+                        <div class="docked-avatar-wrap">
+                            <div class="avatar">
+                                ${safeAvatar ? `<img src="${safeAvatar}" alt="${safeTitle}" style="width: 100%; height: 100%; object-fit: cover;">` : initial}
+                            </div>
+                            <span class="online-indicator" id="dockedPresence-${convId}" style="display: ${isOnline ? 'block' : 'none'};"></span>
+                        </div>
+                        <div class="docked-header-info">
+                            <div class="docked-header-name">${safeTitle}</div>
+                            <div class="docked-header-status" id="dockedStatus-${convId}">${isOnline ? 'সক্রিয় আছেন' : 'মেসেঞ্জার'}</div>
+                        </div>
+                    </div>
+                    <div class="docked-header-actions" onclick="event.stopPropagation()">
+                        <span class="docked-unread-badge" id="dockedBadge-${convId}">০</span>
+                        <button type="button" class="docked-action-btn" onclick="startCall('audio', '${escapeJs(title)}', ${convId})" title="অডিও কল">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        </button>
+                        <button type="button" class="docked-action-btn" onclick="startCall('video', '${escapeJs(title)}', ${convId})" title="ভিডিও কল">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        </button>
+                        <button type="button" class="docked-action-btn btn-dock-min" onclick="toggleDockedChat(${convId})" title="মিনিমাইজ/রিস্টোর">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </button>
+                        <button type="button" class="docked-action-btn" onclick="window.location.href='/messages?conversation_id=${convId}'" title="ফুলস্ক্রিন চ্যাটে যান">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                        </button>
+                        <button type="button" class="docked-action-btn" onclick="closeDockedChat(${convId})" title="বন্ধ করুন">✕</button>
+                    </div>
+                </div>
+                <div class="docked-body" id="dockedMessages-${convId}">
+                    <div style="font-size: 11.5px; color: var(--ms-text-secondary); text-align: center; padding: 20px;">বার্তা লোড হচ্ছে...</div>
+                </div>
+                <div class="docked-composer" onclick="event.stopPropagation()">
+                    <input type="text" class="docked-input" id="dockedInput-${convId}" placeholder="একটি বার্তা লিখুন..." oninput="handleDockedDraft(${convId}, this.value)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDockedMessage(${convId});}">
+                    <button type="button" class="docked-send-btn" onclick="sendDockedMessage(${convId})" title="পাঠান">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        tray.insertAdjacentHTML('beforeend', winHtml);
+
+        // Restore draft if exists
+        const savedDraft = localStorage.getItem(`ms_draft_${convId}`);
+        if (savedDraft) {
+            const inp = document.getElementById(`dockedInput-${convId}`);
+            if (inp) inp.value = savedDraft;
+        }
+
+        // Fetch recent messages
+        fetchDockedMessages(convId);
+    }
+
+    function toggleDockedChat(convId) {
+        const win = document.getElementById(`dockedChat-${convId}`);
+        if (!win) return;
+        const isMin = win.classList.toggle('minimized');
+        const minBtn = win.querySelector('.btn-dock-min svg');
+        if (minBtn) {
+            minBtn.innerHTML = isMin ? '<rect x="3" y="3" width="18" height="18" rx="2"/>' : '<line x1="5" y1="12" x2="19" y2="12"/>';
+        }
+        if (!isMin) {
+            const badge = document.getElementById(`dockedBadge-${convId}`);
+            if (badge) badge.style.display = 'none';
+            const body = document.getElementById(`dockedMessages-${convId}`);
+            if (body) body.scrollTop = body.scrollHeight;
+        }
+    }
+
+    function closeDockedChat(convId, updateArray = true) {
+        const win = document.getElementById(`dockedChat-${convId}`);
+        if (win) win.remove();
+        if (updateArray) {
+            openDockedChats = openDockedChats.filter(id => id !== convId);
+        }
+    }
+
+    function handleDockedDraft(convId, text) {
+        if (text) {
+            localStorage.setItem(`ms_draft_${convId}`, text);
+        } else {
+            localStorage.removeItem(`ms_draft_${convId}`);
+        }
+    }
+
+    function fetchDockedMessages(convId) {
+        fetch(`/api/v1/conversations/${convId}/messages?per_page=25`, {
+            headers: { 'Accept': 'application/json', ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}) }
+        })
+        .then(r => r.json())
+        .then(res => {
+            const body = document.getElementById(`dockedMessages-${convId}`);
+            if (!body) return;
+            const msgs = (res.data || []).reverse();
+            if (msgs.length === 0) {
+                body.innerHTML = '<div style="font-size: 11.5px; color: var(--ms-text-secondary); text-align: center; padding: 20px;">কোনো বার্তা পাওয়া যায়নি। কথোপকথন শুরু করুন!</div>';
+                return;
+            }
+            body.innerHTML = msgs.map(m => renderDockedMessageItem(m)).join('');
+            body.scrollTop = body.scrollHeight;
+        })
+        .catch(() => {
+            const body = document.getElementById(`dockedMessages-${convId}`);
+            if (body) body.innerHTML = '<div style="font-size: 11.5px; color: #ef4444; text-align: center; padding: 20px;">বার্তা লোড ব্যর্থ হয়েছে।</div>';
+        });
+    }
+
+    function renderDockedMessageItem(m) {
+        const isMine = m.is_mine || (m.sender?.id && Number(m.sender.id) === Number(currentUserId));
+        const safeBody = escapeHtml(m.body || '');
+        const timeStr = m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const isSeen = m.delivery_status === 'seen';
+
+        return `
+            <div class="docked-msg-row ${isMine ? 'outgoing' : 'incoming'}" id="dockedMsg-${m.id}">
+                <div class="docked-msg-bubble">${safeBody}</div>
+                <div class="docked-msg-time">
+                    <span>${timeStr}</span>
+                    ${isMine ? `<span class="docked-check" style="color: ${isSeen ? 'var(--ms-primary)' : 'inherit'}; font-weight: 700;">${isSeen ? '✓✓' : '✓'}</span>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    function appendDockedMessage(convId, m) {
+        const body = document.getElementById(`dockedMessages-${convId}`);
+        if (!body) return;
+        body.insertAdjacentHTML('beforeend', renderDockedMessageItem(m));
+        body.scrollTop = body.scrollHeight;
+
+        const win = document.getElementById(`dockedChat-${convId}`);
+        if (win && win.classList.contains('minimized')) {
+            const badge = document.getElementById(`dockedBadge-${convId}`);
+            if (badge) {
+                const cur = parseInt(badge.textContent) || 0;
+                badge.textContent = (cur + 1).toString();
+                badge.style.display = 'inline-block';
+            }
+        }
+    }
+
+    function sendDockedMessage(convId) {
+        const input = document.getElementById(`dockedInput-${convId}`);
+        if (!input) return;
+        const bodyText = input.value.trim();
+        if (!bodyText) return;
+
+        input.value = '';
+        localStorage.removeItem(`ms_draft_${convId}`);
+
+        // Optimistic append
+        const tempMsg = {
+            id: 'temp-' + Date.now(),
+            body: bodyText,
+            is_mine: true,
+            delivery_status: 'sending',
+            created_at: new Date().toISOString()
+        };
+        appendDockedMessage(convId, tempMsg);
+
+        fetch(`/api/v1/conversations/${convId}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}) },
+            body: JSON.stringify({ body: bodyText })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success) {
+                alert(res.message || 'বার্তা পাঠানো সম্ভব হয়নি।');
+            }
+        })
+        .catch(() => alert('বার্তা পাঠাতে ত্রুটি হয়েছে।'));
+    }
+
+    function updateDockedPresence(userId, isOnline) {
+        openDockedChats.forEach(cId => {
+            const win = document.getElementById(`dockedChat-${cId}`);
+            if (win) {
+                const ind = document.getElementById(`dockedPresence-${cId}`);
+                const status = document.getElementById(`dockedStatus-${cId}`);
+                if (ind) ind.style.display = isOnline ? 'block' : 'none';
+                if (status) status.textContent = isOnline ? 'সক্রিয় আছেন' : 'অফলাইন';
+            }
+        });
+    }
+
+    // ==============================================
+    // MOBILE OPEN CHATS SWITCHER
+    // ==============================================
+    let mobileOpenChats = JSON.parse(localStorage.getItem('ms_mobile_open_chats') || '[]');
+
+    function registerMobileOpenChat(convId, title, avatarUrl) {
+        convId = Number(convId);
+        mobileOpenChats = mobileOpenChats.filter(c => c.id !== convId);
+        mobileOpenChats.unshift({ id: convId, title: title, avatar_url: avatarUrl });
+        if (mobileOpenChats.length > 5) mobileOpenChats.pop();
+        localStorage.setItem('ms_mobile_open_chats', JSON.stringify(mobileOpenChats));
+        renderMobileOpenChatsBar();
+    }
+
+    function renderMobileOpenChatsBar() {
+        const bar = document.getElementById('mobileOpenChatsBar');
+        if (!bar || window.innerWidth > 768) return;
+        if (mobileOpenChats.length <= 1) {
+            bar.style.display = 'none';
+            return;
+        }
+        bar.style.display = 'flex';
+        bar.innerHTML = mobileOpenChats.map(c => {
+            const isActive = currentConvId && Number(currentConvId) === Number(c.id);
+            const safeTitle = escapeHtml(c.title);
+            return `
+                <div class="mobile-chat-pill ${isActive ? 'active' : ''}" onclick="window.location.href='/messages?conversation_id=${c.id}'">
+                    <span>${safeTitle}</span>
+                    <button type="button" class="mobile-chat-close" onclick="event.stopPropagation(); removeMobileOpenChat(${c.id});">✕</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function removeMobileOpenChat(convId) {
+        convId = Number(convId);
+        mobileOpenChats = mobileOpenChats.filter(c => c.id !== convId);
+        localStorage.setItem('ms_mobile_open_chats', JSON.stringify(mobileOpenChats));
+        renderMobileOpenChatsBar();
+    }
+
+    function escapeJs(str) {
+        return (str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    // Initialize Active Friends & Switcher on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchActiveFriends();
+        setInterval(() => fetchActiveFriends(), 25000);
+
+        // Check current user presence setting
+        @if($currentUser && $currentUser->privacySettings && !$currentUser->privacySettings->show_online_status)
+            const dot = document.getElementById('myPresenceDot');
+            const optOnline = document.getElementById('presenceOptionOnline');
+            const optOffline = document.getElementById('presenceOptionOffline');
+            if (dot) dot.className = 'presence-status-dot offline';
+            if (optOnline) optOnline.classList.remove('active');
+            if (optOffline) optOffline.classList.add('active');
+        @endif
+
+        @if($activeConversation)
+            registerMobileOpenChat({{ $activeConversation->id }}, '{{ addslashes($activeTitle) }}', '{{ $activeAvatar ?? '' }}');
+        @else
+            renderMobileOpenChatsBar();
+        @endif
+    });
 </script>
 @endsection
 

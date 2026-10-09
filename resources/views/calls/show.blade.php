@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>{{ $callType === 'video' ? 'ভিডিও কল' : 'অডিও কল' }} — {{ $peerUser?->name ?? 'Bondhoo কল' }}</title>
+    <title>{{ $callType === 'video' ? 'ভিডিও কল' : 'অডিও কল' }} — {{ $conversation->isGroup() ? ($conversation->title ?? 'গ্রুপ কল') : ($peerUser?->name ?? 'Bondhoo কল') }}</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
     <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
