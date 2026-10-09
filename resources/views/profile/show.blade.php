@@ -10276,7 +10276,7 @@
                 if (dot) dot.style.background = isOnline ? '#22c55e' : '#94a3b8';
                 if (sub) {
                     if (isOnline) {
-                        sub.innerHTML = '<span style="color:#16a34a; font-weight:600;">🟢 সক্রিয় আছেন (অনলাইন)</span>';
+                        sub.innerHTML = '<span class="contact-online-badge" style="padding: 1px 7px;"><span class="online-pulse-dot"></span>সক্রিয় আছেন</span>';
                     } else if (lastSeen) {
                         sub.innerText = 'সর্বশেষ দেখা গেছে: ' + new Date(lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     } else {

@@ -440,6 +440,49 @@
         cursor: pointer;
     }
 
+    .contact-online-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #15803d;
+        background: rgba(34, 197, 94, 0.12);
+        padding: 1.5px 7px 1.5px 6px;
+        border-radius: 10px;
+        line-height: 1.2;
+        letter-spacing: -0.1px;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+        transition: all 0.2s ease;
+    }
+
+    [data-theme="dark"] .contact-online-badge {
+        color: #4ade80;
+        background: rgba(34, 197, 94, 0.18);
+        border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .online-pulse-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 0 1.5px rgba(34, 197, 94, 0.35);
+        display: inline-block;
+        animation: onlineStatusPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes onlineStatusPulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 1.5px rgba(34, 197, 94, 0.35);
+        }
+        50% {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+        }
+    }
+
     .chat-header-actions {
         display: flex;
         align-items: center;
@@ -2696,7 +2739,7 @@
                             @elseif($isSaved)
                                 সংরক্ষিত বার্তা
                             @else
-                                সক্রিয় আছেন · প্রোফাইল দেখুন ↗
+                                <span class="contact-online-badge" style="padding: 1px 7px;"><span class="online-pulse-dot"></span>সক্রিয় আছেন</span> · প্রোফাইল দেখুন ↗
                             @endif
                         </div>
                     </div>
@@ -6895,8 +6938,8 @@
                 const presenceTextEl = document.getElementById('headerPresenceText');
                 if (!presenceTextEl || !res.data) return;
                 if (res.data.online) {
-                    presenceTextEl.style.color = 'var(--fb-green)';
-                    presenceTextEl.innerHTML = '🟢 সক্রিয় আছেন (অনলাইন)';
+                    presenceTextEl.style.color = '';
+                    presenceTextEl.innerHTML = '<span class="contact-online-badge" style="padding: 1px 7px;"><span class="online-pulse-dot"></span>সক্রিয় আছেন</span>';
                 } else if (res.data.last_seen) {
                     presenceTextEl.style.color = 'var(--fb-text-secondary)';
                     presenceTextEl.innerHTML = `সর্বশেষ দেখা গেছে: ${formatPresenceTime(res.data.last_seen)}`;
@@ -7080,8 +7123,8 @@
                 const presenceTextEl = document.getElementById('headerPresenceText');
                 if (presenceTextEl) {
                     if (isOnline) {
-                        presenceTextEl.style.color = 'var(--fb-green)';
-                        presenceTextEl.innerHTML = '🟢 সক্রিয় আছেন (অনলাইন)';
+                        presenceTextEl.style.color = '';
+                        presenceTextEl.innerHTML = '<span class="contact-online-badge" style="padding: 1px 7px;"><span class="online-pulse-dot"></span>সক্রিয় আছেন</span>';
                     } else {
                         presenceTextEl.style.color = 'var(--fb-text-secondary)';
                         presenceTextEl.innerHTML = 'অফলাইন';

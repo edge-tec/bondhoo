@@ -870,6 +870,7 @@
 
         .contact-avatar-wrapper {
             position: relative;
+            flex-shrink: 0;
         }
 
         .online-dot {
@@ -879,14 +880,71 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: #31a24c;
+            background: #22c55e;
             border: 2px solid white;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
         }
 
         .contact-name {
             font-size: 14px;
             font-weight: 600;
             color: var(--fb-text-primary);
+            line-height: 1.25;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .contact-status-text {
+            font-size: 11.5px;
+            color: var(--fb-text-secondary);
+            display: flex;
+            align-items: center;
+            min-height: 18px;
+        }
+
+        .contact-online-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #15803d;
+            background: rgba(34, 197, 94, 0.12);
+            padding: 1.5px 7px 1.5px 6px;
+            border-radius: 10px;
+            line-height: 1.2;
+            letter-spacing: -0.1px;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        [data-theme="dark"] .contact-online-badge {
+            color: #4ade80;
+            background: rgba(34, 197, 94, 0.18);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .online-pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 1.5px rgba(34, 197, 94, 0.35);
+            display: inline-block;
+            animation: onlineStatusPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes onlineStatusPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 1.5px rgba(34, 197, 94, 0.35);
+            }
+            50% {
+                transform: scale(1.2);
+                box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+            }
         }
 
         /* ------------------------------------------------------------- */
@@ -5891,7 +5949,11 @@
                                     </div>
                                     <div style="flex: 1; min-width: 0;">
                                         <div class="contact-name">${escapeHtml(f.name)}</div>
-                                        <div class="contact-status-text" style="font-size: 11px; color: ${isOnline ? '#16a34a' : 'var(--fb-text-secondary)'};">${isOnline ? '🟢 অনলাইন' : 'চ্যাট শুরু করুন'}</div>
+                                        <div class="contact-status-text">
+                                            ${isOnline 
+                                                ? '<span class="contact-online-badge"><span class="online-pulse-dot"></span>অনলাইন</span>' 
+                                                : '<span style="font-size: 11px; color: var(--fb-text-secondary);">চ্যাট শুরু করুন</span>'}
+                                        </div>
                                     </div>
                                 </div>
                             `}).join('');
@@ -5929,7 +5991,11 @@
                         </div>
                         <div style="flex: 1; min-width: 0;">
                             <div class="contact-name">${escapeHtml(title)}</div>
-                            <div class="contact-status-text" style="font-size: 11px; color: ${isOnline ? '#16a34a' : 'var(--fb-text-secondary)'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${isOnline ? '🟢 অনলাইন' : escapeHtml(lastMsg)}</div>
+                            <div class="contact-status-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${isOnline 
+                                    ? '<span class="contact-online-badge"><span class="online-pulse-dot"></span>অনলাইন</span>' 
+                                    : `<span style="font-size: 11px; color: var(--fb-text-secondary);">${escapeHtml(lastMsg)}</span>`}
+                            </div>
                         </div>
                         ${unread > 0 ? `<span class="sidebar-badge" style="background:#0084ff; color:white; padding: 2px 6px; font-size:11px; border-radius:10px;">${unread}</span>` : ''}
                     </div>
@@ -6108,7 +6174,7 @@
                 }
                 if (sub) {
                     if (isOnline) {
-                        sub.innerHTML = '<span style="color:#16a34a; font-weight:600;">🟢 সক্রিয় আছেন (অনলাইন)</span> · প্রোফাইল দেখুন ↗';
+                        sub.innerHTML = '<span class="contact-online-badge" style="padding: 1px 7px;"><span class="online-pulse-dot"></span>সক্রিয় আছেন</span> · প্রোফাইল দেখুন ↗';
                     } else if (lastSeen) {
                         sub.innerHTML = `সর্বশেষ দেখা গেছে: ${formatPresenceTime(lastSeen)} · প্রোফাইল দেখুন ↗`;
                     } else {
@@ -6539,8 +6605,11 @@
                     dot.style.display = isOnline ? 'block' : 'none';
                 }
                 if (statusText) {
-                    statusText.style.color = isOnline ? '#16a34a' : 'var(--fb-text-secondary)';
-                    if (isOnline) statusText.textContent = '🟢 অনলাইন';
+                    if (isOnline) {
+                        statusText.innerHTML = '<span class="contact-online-badge"><span class="online-pulse-dot"></span>অনলাইন</span>';
+                    } else {
+                        statusText.innerHTML = '<span style="font-size: 11px; color: var(--fb-text-secondary);">অফলাইন</span>';
+                    }
                 }
             }
             if (activeChatUser && Number(activeChatUser.id) === targetId) {
@@ -6549,7 +6618,7 @@
                 if (dot) dot.style.background = isOnline ? '#22c55e' : '#94a3b8';
                 if (sub) {
                     sub.innerHTML = isOnline 
-                        ? '<span style="color:#16a34a; font-weight:600;">🟢 সক্রিয় আছেন (অনলাইন)</span> · প্রোফাইল দেখুন ↗' 
+                        ? '<span class="contact-online-badge" style="padding: 1px 7px;"><span class="online-pulse-dot"></span>সক্রিয় আছেন</span> · প্রোফাইল দেখুন ↗' 
                         : 'অফলাইন · প্রোফাইল দেখুন ↗';
                 }
             }
