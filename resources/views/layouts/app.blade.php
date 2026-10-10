@@ -103,13 +103,14 @@
         }
 
         .fb-logo {
-            width: 40px;
+            width: auto;
+            max-width: 145px;
             height: 40px;
             border-radius: 10px;
             background: transparent !important;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             color: inherit;
             text-decoration: none;
             box-shadow: none !important;
