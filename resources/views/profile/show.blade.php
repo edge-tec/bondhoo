@@ -630,10 +630,9 @@
             margin: 6px 0;
         }
 
-        @media (max-width: 992px) {
-            .desktop-only-nav-tab {
-                display: none !important;
-            }
+        /* Nav tabs fully scrollable across all viewports */
+        .profile-nav-tabs {
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Intro Direct Connect & Social Links */
@@ -1369,7 +1368,7 @@
             background: rgba(17, 24, 39, 0.6);
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
-            z-index: 1000;
+            z-index: 100000 !important;
             display: none;
             align-items: center;
             justify-content: center;
@@ -3623,9 +3622,10 @@
                 box-sizing: border-box !important;
             }
 
-            /* Native Bottom Sheet for Action More Menu, Avatar Menu, and Cover Menu on Mobile */
+            /* Native Bottom Sheet for Action More Menu, Nav Tabs More Menu, Avatar Menu, and Cover Menu on Mobile */
             #profileActionMoreDropdown,
             #visitorActionMoreDropdown,
+            #profileMoreTabsDropdown,
             #avatarMenuDropdown,
             #coverMenuDropdown {
                 position: fixed !important;
@@ -4275,53 +4275,53 @@
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         <span>ভিউ অ্যাজ (পাবলিক ভিউ)</span>
                                     </a>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="copyProfileLink()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeProfileActionMoreMenu(); copyProfileLink()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                         <span>প্রোফাইল লিংক কপি করুন</span>
                                     </button>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="openProfileShareModal()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeProfileActionMoreMenu(); openProfileShareModal()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                                         <span>কিউআর কোড দেখুন</span>
                                     </button>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="exportProfileData()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeProfileActionMoreMenu(); exportProfileData()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                         <span>প্রোফাইল ডেটা এক্সপোর্ট (JSON)</span>
                                     </button>
                                     <div class="more-dropdown-divider"></div>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="openSecurityModal()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeProfileActionMoreMenu(); openSecurityModal()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
                                         <span>সিকিউরিটি ও ডিভাইস সেন্টার</span>
                                     </button>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="openNotificationSettingsModal()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeProfileActionMoreMenu(); openNotificationSettingsModal()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                                         <span>নোটিফিকেশন সেটিংস</span>
                                     </button>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="openPrivacyModal()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeProfileActionMoreMenu(); openPrivacyModal()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                         <span>প্রাইভেসি সেন্টার</span>
                                     </button>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="openBlockingCenterModal()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeProfileActionMoreMenu(); openBlockingCenterModal()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                                         <span>ব্লকিং সেন্টার (Blocked Users)</span>
                                     </button>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="openVerificationModal()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeProfileActionMoreMenu(); openVerificationModal()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
                                         <span>পরিচয় যাচাইকরণ (ভেরিফিকেশন)</span>
                                     </button>
-                                    <a href="#activity" class="more-tab-link" onclick="switchTab('activity')">
+                                    <a href="#activity" class="more-tab-link" onclick="closeProfileActionMoreMenu(); switchTab('activity')">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                                         <span>অ্যাক্টিভিটি হিস্ট্রি</span>
                                     </a>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="switchTab('professional')">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeProfileActionMoreMenu(); switchTab('professional')">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
                                         <span>প্রফেশনাল ড্যাশবোর্ড</span>
                                     </button>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="openManageSectionsModal()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeProfileActionMoreMenu(); openManageSectionsModal()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
                                         <span>সেকশন পরিচালনা করুন</span>
                                     </button>
                                     <div class="more-dropdown-divider"></div>
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;color:var(--fb-red);" onclick="openAccountDeactivateModal()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;color:var(--fb-red);" onclick="closeProfileActionMoreMenu(); openAccountDeactivateModal()">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                                         <span>অ্যাকাউন্ট ডিঅ্যাক্টিভেট বা ডিলিট</span>
                                     </button>
@@ -4435,7 +4435,7 @@
                                     </button>
 
                                     <!-- 5. Search / Filter Timeline Posts -->
-                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="scrollToProfilePostsSearch()">
+                                    <button type="button" class="more-tab-link" style="width:100%;border:none;background:transparent;text-align:left;" onclick="closeVisitorActionMoreMenu(); scrollToProfilePostsSearch()">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                                         <span>টাইমলাইনে পোস্ট খুঁজুন ও ফিল্টার</span>
                                     </button>
@@ -4553,19 +4553,19 @@
                 <li><a href="#videos" class="profile-nav-tab" id="tab-videos" onclick="switchTab('videos')">ভিডিও ({{ $profile['videos_count'] ?? 0 }})</a></li>
                 <li><a href="#reels" class="profile-nav-tab" id="tab-reels" onclick="switchTab('reels')">রিলস</a></li>
                 @if($isOwner)
-                    <li class="desktop-only-nav-tab"><a href="#saved" class="profile-nav-tab" id="tab-saved" onclick="switchTab('saved')">
+                    <li><a href="#saved" class="profile-nav-tab" id="tab-saved" onclick="switchTab('saved')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
                         <span>সংরক্ষিত</span>
                     </a></li>
-                    <li class="desktop-only-nav-tab"><a href="#activity" class="profile-nav-tab" id="tab-activity" onclick="switchTab('activity')">
+                    <li><a href="#activity" class="profile-nav-tab" id="tab-activity" onclick="switchTab('activity')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                         <span>অ্যাক্টিভিটি</span>
                     </a></li>
-                    <li class="desktop-only-nav-tab"><a href="#professional" class="profile-nav-tab" id="tab-professional" onclick="switchTab('professional')">
+                    <li><a href="#professional" class="profile-nav-tab" id="tab-professional" onclick="switchTab('professional')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
                         <span>ড্যাশবোর্ড</span>
                     </a></li>
-                    <li class="desktop-only-nav-tab"><a href="#analytics" class="profile-nav-tab" id="tab-analytics" onclick="switchTab('analytics')">
+                    <li><a href="#analytics" class="profile-nav-tab" id="tab-analytics" onclick="switchTab('analytics')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                         <span>অ্যানালিটিক্স</span>
                     </a></li>
@@ -4575,6 +4575,11 @@
                         <span id="tab-more-btn-text">আরও</span> <span style="font-size: 11px; margin-left: 3px;">▾</span>
                     </button>
                     <div class="profile-nav-more-dropdown" id="profileMoreTabsDropdown">
+                        <div class="sheet-drag-handle"></div>
+                        <div class="sheet-mobile-header">
+                            <span style="font-size:15px;font-weight:700;color:var(--fb-text-primary);">আরও অপশন ও বিভাগ</span>
+                            <button type="button" onclick="closeMoreTabsDropdown()" style="border:none;background:var(--fb-hover);width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--fb-text-secondary);font-size:14px;font-weight:bold;">✕</button>
+                        </div>
                         @if($isOwner)
                             <a href="#saved" class="more-tab-link" id="moreLink-saved" onclick="selectMoreTab('saved', 'সংরক্ষিত', event)">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
@@ -4593,16 +4598,16 @@
                                 <span>প্রোফাইল অ্যানালিটিক্স</span>
                             </a>
                             <div class="more-dropdown-divider"></div>
-                            <a href="javascript:void(0)" class="more-tab-link" onclick="openModal('manageSectionsModal'); closeMoreTabsDropdown();">
+                            <a href="javascript:void(0)" class="more-tab-link" onclick="closeAllProfileDropdowns(); openModal('manageSectionsModal');">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                                 <span>সেকশন পরিচালনা</span>
                             </a>
                         @endif
-                        <a href="javascript:void(0)" class="more-tab-link" onclick="openVerificationModal(); closeMoreTabsDropdown();">
+                        <a href="javascript:void(0)" class="more-tab-link" onclick="closeAllProfileDropdowns(); openVerificationModal();">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
                             <span>পরিচয় ভেরিফিকেশন</span>
                         </a>
-                        <a href="javascript:void(0)" class="more-tab-link" onclick="openPrivacyModal(); closeMoreTabsDropdown();">
+                        <a href="javascript:void(0)" class="more-tab-link" onclick="closeAllProfileDropdowns(); openPrivacyModal();">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                             <span>গোপনীয়তা সেটিংস</span>
                         </a>
@@ -12272,6 +12277,7 @@
                 event.preventDefault();
             }
             closeVisitorActionMoreMenu();
+            closeMoreTabsDropdown();
             const dd = document.getElementById('profileActionMoreDropdown');
             if (dd) dd.classList.toggle('show');
         }
@@ -12287,6 +12293,7 @@
                 event.preventDefault();
             }
             closeProfileActionMoreMenu();
+            closeMoreTabsDropdown();
             const dd = document.getElementById('visitorActionMoreDropdown');
             if (dd) dd.classList.toggle('show');
         }
@@ -12294,6 +12301,19 @@
         function closeVisitorActionMoreMenu() {
             const dd = document.getElementById('visitorActionMoreDropdown');
             if (dd) dd.classList.remove('show');
+        }
+
+        function closeAllProfileDropdowns() {
+            closeProfileActionMoreMenu();
+            closeVisitorActionMoreMenu();
+            closeMoreTabsDropdown();
+            if (typeof closeAvatarMenu === 'function') closeAvatarMenu();
+            if (typeof closeCoverMenu === 'function') closeCoverMenu();
+        }
+
+        function openManageSectionsModal() {
+            closeAllProfileDropdowns();
+            openModal('manageSectionsModal');
         }
 
         function scrollToProfilePostsSearch() {
@@ -12323,19 +12343,24 @@
             if (visitorDd && !e.target.closest('#visitorActionMoreWrapper')) {
                 visitorDd.classList.remove('show');
             }
+            const moreTabsDd = document.getElementById('profileMoreTabsDropdown');
+            if (moreTabsDd && !e.target.closest('.profile-nav-more-item')) {
+                moreTabsDd.classList.remove('show');
+            }
             const coverDd = document.getElementById('coverMenuDropdown');
             if (coverDd && !e.target.closest('#coverActionsWrapper')) {
                 coverDd.classList.remove('show');
+            }
+            const avatarDd = document.getElementById('avatarMenuDropdown');
+            if (avatarDd && !e.target.closest('#avatarActionsWrapper') && !e.target.closest('.profile-avatar-wrapper')) {
+                avatarDd.classList.remove('show');
             }
         });
 
         // Close dropdowns on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                closeProfileActionMoreMenu();
-                closeVisitorActionMoreMenu();
-                closeCoverMenu();
-                closeAvatarMenu();
+                closeAllProfileDropdowns();
             }
         });
 
@@ -12444,6 +12469,7 @@
         }
 
         function switchTab(tabName) {
+            closeAllProfileDropdowns();
             if (tabName === 'reels') {
                 const tabs = ['posts', 'about', 'friends', 'photos', 'videos', 'saved', 'activity', 'professional', 'analytics'];
                 tabs.forEach(t => {
@@ -12593,6 +12619,7 @@
 
         // Modal Helpers
         function openEditProfileModal() {
+            closeAllProfileDropdowns();
             document.getElementById('editProfileModal').classList.add('active');
         }
 
@@ -12758,21 +12785,25 @@
         }
 
         function openModal(id) {
+            closeAllProfileDropdowns();
             const el = document.getElementById(id);
             if (el) el.classList.add('active');
         }
 
         function openVerificationModal() {
+            closeAllProfileDropdowns();
             const el = document.getElementById('verificationModal');
             if (el) el.classList.add('active');
         }
 
         function openPrivacyModal() {
+            closeAllProfileDropdowns();
             const el = document.getElementById('privacyModal');
             if (el) el.classList.add('active');
         }
 
         function openSecurityModal() {
+            closeAllProfileDropdowns();
             const el = document.getElementById('securityModal');
             if (el) {
                 el.classList.add('active');
@@ -12781,6 +12812,7 @@
         }
 
         function openBlockingCenterModal() {
+            closeAllProfileDropdowns();
             const el = document.getElementById('blockingCenterModal');
             if (el) {
                 el.classList.add('active');
@@ -12789,6 +12821,7 @@
         }
 
         function openStoryModal() {
+            closeAllProfileDropdowns();
             const el = document.getElementById('storyModal');
             if (el) el.classList.add('active');
         }
@@ -13555,6 +13588,7 @@
 
         // Notification Settings Modal (Requirement 20)
         function openNotificationSettingsModal() {
+            closeAllProfileDropdowns();
             document.getElementById('notificationSettingsModal')?.classList.add('active');
         }
 
@@ -13604,6 +13638,7 @@
 
         // Account Deactivation & Deletion (Requirement 29)
         function openAccountDeactivateModal() {
+            closeAllProfileDropdowns();
             document.getElementById('accountDeactivateModal')?.classList.add('active');
         }
 
@@ -13771,6 +13806,7 @@
 
         // Profile Share & QR Code Functions
         function openProfileShareModal() {
+            closeAllProfileDropdowns();
             document.getElementById('profileShareModal')?.classList.add('active');
         }
 
@@ -15990,6 +16026,7 @@
         });
 
         function openProfileLockModal() {
+            closeAllProfileDropdowns();
             document.getElementById('profileLockModal').classList.add('active');
         }
 
