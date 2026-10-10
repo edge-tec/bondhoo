@@ -41,7 +41,7 @@
             --fb-blue-light: #eef2ff;
             --fb-badge-blue: #4f46e5;
             --fb-accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
-            --fb-cover-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 40%, #a78bfa 100%);
+            --fb-cover-gradient: radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.18) 0%, transparent 40%), radial-gradient(circle at 20% 80%, rgba(0, 132, 255, 0.4) 0%, transparent 50%), linear-gradient(135deg, #0284c7 0%, #0084ff 45%, #1d4ed8 100%);
 
             /* ═══════ REFINED SHADOWS ═══════ */
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -3481,15 +3481,23 @@
                 white-space: nowrap !important;
             }
 
-            /* Responsive Cover Photo on Mobile */
+            /* Responsive Cover Photo on Mobile (Card format with rounded top corners matching mockup) */
+            .profile-header-container {
+                background: #ffffff !important;
+                border-radius: 0 0 16px 16px !important;
+                margin: 0 !important;
+                padding-bottom: 6px !important;
+            }
             .cover-photo-wrapper {
                 height: 200px !important;
-                border-radius: 0 0 18px 18px !important;
+                border-radius: 18px 18px 0 0 !important;
+                margin: 6px 8px 0 8px !important;
                 overflow: hidden !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
             }
             #coverActionsWrapper {
                 bottom: 12px !important;
-                right: 12px !important;
+                right: 16px !important;
             }
             .cover-photo-edit-btn {
                 bottom: auto !important;
@@ -3531,6 +3539,7 @@
                 border-radius: 50% !important;
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14) !important;
                 position: relative !important;
+                background: #0084ff !important;
             }
             .avatar-img {
                 width: 100% !important;
@@ -3564,17 +3573,22 @@
                 text-align: center !important;
                 width: 100% !important;
                 margin-top: 8px !important;
+                padding: 0 12px !important;
+                box-sizing: border-box !important;
             }
             .profile-fullname {
-                font-size: 22px !important;
+                font-size: 23px !important;
                 line-height: 1.3 !important;
                 font-weight: 700 !important;
+                color: #0f172a !important;
                 margin-top: 4px !important;
                 text-align: center !important;
                 justify-content: center !important;
             }
             .profile-username-sub {
                 font-size: 14px !important;
+                color: #64748b !important;
+                font-weight: 500 !important;
             }
             .profile-meta-row {
                 display: flex !important;
@@ -3584,23 +3598,36 @@
                 flex-wrap: wrap !important;
                 margin-top: 3px !important;
             }
+            .profile-id-pill {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 5px !important;
+                padding: 2px 8px !important;
+                border-radius: 6px !important;
+                background: #f1f5f9 !important;
+                border: 1px solid #e2e8f0 !important;
+                font-size: 12px !important;
+                font-weight: 600 !important;
+                color: #475569 !important;
+                font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace !important;
+            }
             .profile-bio-text {
                 font-size: 13.5px !important;
-                color: var(--fb-text-secondary) !important;
+                color: #334155 !important;
                 text-align: center !important;
                 max-width: 92% !important;
-                margin: 4px auto !important;
-                line-height: 1.4 !important;
+                margin: 4px auto 6px auto !important;
+                line-height: 1.45 !important;
             }
             .profile-loc-time-row {
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                gap: 12px !important;
+                gap: 14px !important;
                 flex-wrap: wrap !important;
                 margin-top: 4px !important;
                 font-size: 13px !important;
-                color: var(--fb-text-secondary) !important;
+                color: #64748b !important;
             }
             .profile-friends-count-sub {
                 display: flex !important;
@@ -3610,7 +3637,7 @@
                 gap: 4px !important;
                 font-size: 12.5px !important;
                 line-height: 1.45 !important;
-                color: var(--fb-text-secondary) !important;
+                color: #334155 !important;
                 margin-top: 6px !important;
                 text-align: center !important;
             }
@@ -4305,9 +4332,10 @@
                 @if($isOwner)
                     <div style="position:absolute;bottom:16px;right:16px;z-index:10;" id="coverActionsWrapper">
                         <button class="cover-photo-edit-btn" onclick="toggleCoverMenu(event)" title="কভার ফটো পরিচালনা">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                <circle cx="12" cy="13" r="4"></circle>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
                             </svg>
                             <span>কভার ফটো পরিবর্তন</span>
                         </button>
