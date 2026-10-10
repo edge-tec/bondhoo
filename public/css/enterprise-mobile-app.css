@@ -59,9 +59,34 @@ html, body {
 }
 
 /* Fluid Media Scaling */
-img, video, canvas, svg {
+img, video, canvas {
     max-width: 100%;
     height: auto;
+}
+
+.mobile-head-icon-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    overflow: visible !important;
+}
+
+.mobile-head-icon-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
+    max-width: 20px !important;
+    max-height: 20px !important;
+    flex-shrink: 0 !important;
+    display: block !important;
 }
 
 /* Minimum Touch Targets */

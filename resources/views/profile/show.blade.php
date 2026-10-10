@@ -3390,6 +3390,140 @@
 
         .mobile-profile-header-bar {
             display: none;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .mobile-profile-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 8px;
+            box-sizing: border-box;
+        }
+        .mobile-profile-brand {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .mobile-profile-brand img {
+            height: 28px;
+            width: auto;
+            max-width: 120px;
+            object-fit: contain;
+            display: block;
+        }
+        .mobile-profile-top-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .mobile-head-icon-btn {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            max-width: 32px !important;
+            max-height: 32px !important;
+            border-radius: 50% !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            color: #1c1e21 !important;
+            text-decoration: none !important;
+            position: relative !important;
+            background: transparent;
+            transition: background 0.15s ease;
+            flex-shrink: 0 !important;
+            overflow: visible !important;
+        }
+        .mobile-head-icon-btn:active {
+            background: #f0f2f5 !important;
+        }
+        .mobile-head-icon-btn svg {
+            width: 20px !important;
+            height: 20px !important;
+            min-width: 20px !important;
+            min-height: 20px !important;
+            max-width: 20px !important;
+            max-height: 20px !important;
+            stroke: #1c1e21 !important;
+            stroke-width: 2.1 !important;
+            flex-shrink: 0 !important;
+            display: block !important;
+        }
+        .mobile-head-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: #e41e3f;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 1.5px solid #ffffff;
+            line-height: 1;
+            box-sizing: border-box;
+        }
+        .mobile-head-avatar-circle {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            border-radius: 50% !important;
+            overflow: hidden !important;
+            border: 1.5px solid #0084ff !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+            box-sizing: border-box !important;
+        }
+        .mobile-head-avatar-circle img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            border-radius: 50% !important;
+        }
+        .mobile-profile-search-wrap {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .mobile-profile-search-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0f2f5;
+            border-radius: 20px;
+            padding: 7px 14px;
+            cursor: pointer;
+            color: #65676b;
+            font-size: 13.5px;
+            user-select: none;
+            transition: background 0.15s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .mobile-profile-search-pill:active {
+            background: #e4e6eb;
+        }
+        .mobile-profile-search-pill svg {
+            width: 16px !important;
+            height: 16px !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+            stroke: #65676b;
+            flex-shrink: 0 !important;
+            display: block;
         }
 
         /* Responsive refinements (Mobile & Tablet <= 900px matching phone mockup) */
@@ -3908,126 +4042,6 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
-
-            /* Mobile Profile Top Header (Matching user screenshot) */
-            header.desktop-header {
-                display: none !important;
-            }
-            .mobile-profile-header-bar {
-                display: block !important;
-                position: sticky;
-                top: 0;
-                z-index: 100;
-                background: #ffffff;
-                border-bottom: 1px solid #e5e7eb;
-                padding: 8px 12px 10px 12px;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-            }
-            .mobile-profile-header-top {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 8px;
-                width: 100%;
-                margin-bottom: 8px;
-            }
-            .mobile-profile-brand {
-                display: inline-flex;
-                align-items: center;
-                text-decoration: none;
-                flex-shrink: 0;
-            }
-            .mobile-profile-brand img {
-                height: 28px;
-                width: auto;
-                max-width: 120px;
-                object-fit: contain;
-                display: block;
-            }
-            .mobile-profile-top-actions {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                flex-shrink: 0;
-            }
-            .mobile-head-icon-btn {
-                width: 32px;
-                height: 32px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #1c1e21;
-                text-decoration: none;
-                position: relative;
-                background: transparent;
-                transition: background 0.15s ease;
-            }
-            .mobile-head-icon-btn:active {
-                background: #f0f2f5;
-            }
-            .mobile-head-icon-btn svg {
-                width: 20px;
-                height: 20px;
-                stroke: #1c1e21;
-                stroke-width: 2.1;
-            }
-            .mobile-head-badge {
-                position: absolute;
-                top: -2px;
-                right: -2px;
-                background: #e41e3f;
-                color: #ffffff;
-                font-size: 10px;
-                font-weight: 700;
-                min-width: 16px;
-                height: 16px;
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0 4px;
-                border: 1.5px solid #ffffff;
-                line-height: 1;
-            }
-            .mobile-head-avatar-circle {
-                width: 32px;
-                height: 32px;
-                border-radius: 50%;
-                overflow: hidden;
-                border: 1.5px solid #0084ff;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-            }
-            .mobile-head-avatar-circle img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-            .mobile-profile-search-wrap {
-                width: 100%;
-            }
-            .mobile-profile-search-pill {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                background: #f0f2f5;
-                border-radius: 20px;
-                padding: 7px 14px;
-                cursor: pointer;
-                color: #65676b;
-                font-size: 13.5px;
-                user-select: none;
-                transition: background 0.15s ease;
-            }
-            .mobile-profile-search-pill:active {
-                background: #e4e6eb;
-            }
-            .mobile-profile-search-pill svg {
-                stroke: #65676b;
-                flex-shrink: 0;
         }
     </style>
 </head>
@@ -4101,45 +4115,45 @@
                 <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo">
             </a>
             <div class="mobile-profile-top-actions">
-                <a href="/watch" class="mobile-head-icon-btn" title="লাইভ ও ভিডিও">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <a href="/watch" class="mobile-head-icon-btn" title="লাইভ ও ভিডিও" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
                         <polygon points="23 7 16 12 23 17 23 7"></polygon>
                         <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                     </svg>
                 </a>
-                <a href="/messages" class="mobile-head-icon-btn" title="মেসেঞ্জার">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <a href="/messages" class="mobile-head-icon-btn" title="মেসেঞ্জার" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span class="mobile-head-badge">3</span>
                 </a>
-                <a href="/friends" class="mobile-head-icon-btn" title="বন্ধুরা">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <a href="/friends" class="mobile-head-icon-btn" title="বন্ধুরা" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                         <circle cx="9" cy="7" r="4"></circle>
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                 </a>
-                <a href="/watch" class="mobile-head-icon-btn" title="ওয়াচ">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <a href="/watch" class="mobile-head-icon-btn" title="ওয়াচ" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
                         <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
                         <polyline points="17 2 12 7 7 2"></polyline>
                     </svg>
                 </a>
-                <a href="/saved" class="mobile-head-icon-btn" title="সংরক্ষিত">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <a href="/saved" class="mobile-head-icon-btn" title="সংরক্ষিত" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
                         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                     </svg>
                 </a>
-                <a href="/settings/devices" class="mobile-head-icon-btn" title="সেটিংস">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <a href="/settings/devices" class="mobile-head-icon-btn" title="সেটিংস" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                 </a>
-                <a href="{{ getUserProfileUrl($user) }}" class="mobile-head-avatar-circle" title="প্রোফাইল">
-                    <img src="{{ $profile['avatar'] ?? '/images/default-avatar.png' }}" alt="{{ $profile['name'] }}">
+                <a href="{{ getUserProfileUrl($user) }}" class="mobile-head-avatar-circle" title="প্রোফাইল" style="width:32px;height:32px;min-width:32px;min-height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;box-sizing:border-box;">
+                    <img src="{{ $profile['avatar'] ?? '/images/default-avatar.png' }}" alt="{{ $profile['name'] }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">
                 </a>
             </div>
         </div>
