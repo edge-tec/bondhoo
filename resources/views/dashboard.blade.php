@@ -948,6 +948,341 @@
         }
 
         /* ------------------------------------------------------------- */
+        /* TOP HEADER MESSENGER DROPDOWN */
+        /* ------------------------------------------------------------- */
+        .top-messenger-dropdown {
+            position: absolute;
+            right: 0;
+            top: 48px;
+            width: 380px;
+            max-width: calc(100vw - 24px);
+            background: var(--fb-card);
+            border-radius: 14px;
+            box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--fb-border);
+            z-index: 150;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: popIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .top-messenger-header {
+            padding: 12px 16px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .top-messenger-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--fb-text-primary);
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .top-messenger-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .top-messenger-action-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--fb-text-secondary);
+            background: var(--fb-hover);
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+
+        .top-messenger-action-icon:hover {
+            color: #0084ff;
+            background: rgba(0, 132, 255, 0.12);
+        }
+
+        .top-messenger-search-box {
+            padding: 4px 16px 10px;
+        }
+
+        .top-messenger-search-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--fb-hover);
+            border-radius: 20px;
+            padding: 8px 14px;
+            border: 1px solid transparent;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .top-messenger-search-input-wrapper:focus-within {
+            background: var(--fb-card);
+            border-color: #0084ff;
+            box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.15);
+        }
+
+        .top-messenger-search-input-wrapper input {
+            border: none;
+            outline: none;
+            background: transparent;
+            width: 100%;
+            font-size: 13px;
+            color: var(--fb-text-primary);
+        }
+
+        .top-messenger-search-input-wrapper input::placeholder {
+            color: var(--fb-text-secondary);
+        }
+
+        /* Active Friends Horizontal Section */
+        .top-messenger-active-section {
+            border-bottom: 1px solid var(--fb-border);
+            padding: 8px 16px 10px;
+        }
+
+        .top-messenger-section-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--fb-text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .top-messenger-active-list {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: thin;
+        }
+
+        .top-messenger-active-list::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .top-messenger-active-list::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+        }
+
+        .top-messenger-active-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            flex-shrink: 0;
+            width: 58px;
+            text-align: center;
+            transition: transform 0.15s;
+        }
+
+        .top-messenger-active-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .top-messenger-active-avatar-wrap {
+            position: relative;
+            width: 44px;
+            height: 44px;
+        }
+
+        .top-messenger-active-avatar-wrap img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--fb-card);
+        }
+
+        .top-messenger-active-avatar-wrap .active-online-dot {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            background: #22c55e;
+            border: 2px solid var(--fb-card);
+            border-radius: 50%;
+            box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
+        }
+
+        .top-messenger-active-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--fb-text-primary);
+            max-width: 58px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Recent Conversations List */
+        .top-messenger-conversations-section {
+            padding: 8px 10px 4px;
+            max-height: 330px;
+            overflow-y: auto;
+        }
+
+        .top-messenger-conv-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.15s;
+            position: relative;
+        }
+
+        .top-messenger-conv-item:hover {
+            background: var(--fb-hover);
+        }
+
+        .top-messenger-conv-avatar-wrap {
+            position: relative;
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+        }
+
+        .top-messenger-conv-avatar-wrap img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .top-messenger-conv-avatar-wrap .conv-online-dot {
+            position: absolute;
+            bottom: 1px;
+            right: 1px;
+            width: 12px;
+            height: 12px;
+            background: #22c55e;
+            border: 2px solid var(--fb-card);
+            border-radius: 50%;
+        }
+
+        .top-messenger-conv-body {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .top-messenger-conv-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .top-messenger-conv-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--fb-text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .top-messenger-conv-time {
+            font-size: 11px;
+            color: var(--fb-text-secondary);
+            flex-shrink: 0;
+            margin-left: 6px;
+        }
+
+        .top-messenger-conv-msg-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .top-messenger-conv-last-msg {
+            font-size: 12.5px;
+            color: var(--fb-text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .top-messenger-conv-item.unread .top-messenger-conv-name {
+            color: #0084ff;
+        }
+
+        .top-messenger-conv-item.unread .top-messenger-conv-last-msg {
+            color: var(--fb-text-primary);
+            font-weight: 700;
+        }
+
+        .top-messenger-unread-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #0084ff;
+            flex-shrink: 0;
+        }
+
+        .top-messenger-unread-pill {
+            background: #0084ff;
+            color: white;
+            font-size: 11px;
+            font-weight: 800;
+            border-radius: 10px;
+            padding: 1px 7px;
+            flex-shrink: 0;
+        }
+
+        .top-messenger-footer {
+            padding: 11px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #0084ff;
+            border-top: 1px solid var(--fb-border);
+            text-decoration: none;
+            background: var(--fb-card);
+            transition: background 0.15s;
+            display: block;
+        }
+
+        .top-messenger-footer:hover {
+            background: var(--fb-hover);
+            text-decoration: underline;
+        }
+
+        [data-theme="dark"] .top-messenger-dropdown {
+            background: #242526 !important;
+            border-color: #393a3b !important;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6) !important;
+        }
+
+        [data-theme="dark"] .top-messenger-search-input-wrapper {
+            background: #3a3b3c !important;
+        }
+
+        [data-theme="dark"] .top-messenger-conv-item:hover,
+        [data-theme="dark"] .top-messenger-footer:hover {
+            background: #3a3b3c !important;
+        }
+
+        /* ------------------------------------------------------------- */
         /* MODAL FOR CREATING POST */
         /* ------------------------------------------------------------- */
         .modal-overlay {
@@ -1349,20 +1684,64 @@
                 </svg>
             </button>
 
-            <!-- Floating Messenger Quick Trigger -->
-            <a href="javascript:void(0)" onclick="openLatestOrToggleChat(event)" class="circle-btn" title="মেসেঞ্জার ও চ্যাট" style="position: relative;">
-                <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M14 2C7.373 2 2 7.155 2 13.518c0 3.626 1.745 6.862 4.475 8.974V26l3.37-1.85c1.28.355 2.646.549 4.155.549 6.627 0 12-5.155 12-11.518C26 7.155 20.627 2 14 2zm1.203 15.534l-3.08-3.284-6.012 3.284 6.613-7.02 3.155 3.284 5.937-3.284-6.613 7.02z" fill="url(#dashMessengerGrad)"/>
-                    <defs>
-                        <linearGradient id="dashMessengerGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#0078FF"/>
-                            <stop offset="70%" stop-color="#00C6FF"/>
-                            <stop offset="100%" stop-color="#00E5FF"/>
-                        </linearGradient>
-                    </defs>
-                </svg>
-                <span id="topMessengerBadge" style="display: none; position: absolute; top: -3px; right: -3px; background: #0084ff; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">0</span>
-            </a>
+            <!-- Floating Messenger Dropdown Menu -->
+            <div style="position: relative;" id="topMessengerContainer">
+                <button type="button" class="circle-btn" id="topMessengerBtn" title="মেসেঞ্জার ও চ্যাটসমূহ" onclick="toggleMessengerDropdown(event)" style="position: relative;">
+                    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M14 2C7.373 2 2 7.155 2 13.518c0 3.626 1.745 6.862 4.475 8.974V26l3.37-1.85c1.28.355 2.646.549 4.155.549 6.627 0 12-5.155 12-11.518C26 7.155 20.627 2 14 2zm1.203 15.534l-3.08-3.284-6.012 3.284 6.613-7.02 3.155 3.284 5.937-3.284-6.613 7.02z" fill="url(#dashMessengerGrad)"/>
+                        <defs>
+                            <linearGradient id="dashMessengerGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#0078FF"/>
+                                <stop offset="70%" stop-color="#00C6FF"/>
+                                <stop offset="100%" stop-color="#00E5FF"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span id="topMessengerBadge" style="display: none; position: absolute; top: -3px; right: -3px; background: #0084ff; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">0</span>
+                </button>
+                <div id="topMessengerDropdown" class="top-messenger-dropdown" style="display: none;">
+                    <div class="top-messenger-header">
+                        <span class="top-messenger-title">
+                            চ্যাটসমূহ
+                        </span>
+                        <div class="top-messenger-actions">
+                            <a href="/messages" class="top-messenger-action-icon" title="মেসেঞ্জারে সম্পূর্ণ দেখুন">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="top-messenger-search-box">
+                        <div class="top-messenger-search-input-wrapper">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="color: var(--fb-text-secondary); flex-shrink: 0;">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input type="text" id="messengerDropdownSearchInput" placeholder="মেসেঞ্জার ও পরিচিতি খুঁজুন..." oninput="filterMessengerDropdown(this.value)">
+                        </div>
+                    </div>
+                    <div class="top-messenger-active-section" id="messengerDropdownActiveSection">
+                        <div class="top-messenger-section-label">
+                            <span>সক্রিয় বন্ধুরা</span>
+                            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: #16a34a; font-weight: 700;">
+                                <span class="online-pulse-dot" style="width: 6px; height: 6px;"></span> অনলাইন
+                            </span>
+                        </div>
+                        <div class="top-messenger-active-list" id="messengerDropdownActiveFriendsList">
+                            <!-- Active friends rendered here -->
+                        </div>
+                    </div>
+                    <div class="top-messenger-conversations-section" id="messengerDropdownConversationsList">
+                        <div style="text-align: center; color: var(--fb-text-secondary); font-size: 13px; padding: 24px 16px;">লোড হচ্ছে...</div>
+                    </div>
+                    <a href="/messages" class="top-messenger-footer">
+                        সব বার্তা মেসেঞ্জারে দেখুন ➔
+                    </a>
+                </div>
+            </div>
 
             <!-- Notifications Bell & Popover -->
             <div style="position: relative;">
@@ -1463,7 +1842,7 @@
                 <span id="sidebarFriendBadge" class="sidebar-badge" style="display: none;">0</span>
             </a>
 
-            <a href="javascript:void(0)" class="sidebar-item" onclick="openLatestOrToggleChat(event)">
+            <a href="/messages" class="sidebar-item">
                 <div class="sidebar-icon" style="color: #0084ff; background: rgba(0, 132, 255, 0.1);">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 </div>
@@ -5929,6 +6308,9 @@
                 const data = await res.json();
                 const convs = Array.isArray(data.data) ? data.data : (data.data?.conversations || []);
                 cachedConversations = convs;
+                if (typeof updateMessengerBadge === 'function') {
+                    updateMessengerBadge(convs);
+                }
 
                 if (convs.length === 0) {
                     // Fallback to friends list as potential contacts
@@ -6017,7 +6399,9 @@
             renderContactsList(filtered);
         }
 
-        function openLatestOrToggleChat(event) {
+        let cachedActiveFriends = [];
+
+        function toggleMessengerDropdown(event) {
             if (event) {
                 event.stopPropagation();
                 event.preventDefault();
@@ -6026,35 +6410,253 @@
                 window.location.href = '/messages';
                 return;
             }
-            const box = document.getElementById('messengerChatBox');
-            const isVisible = box && (box.classList.contains('active') || box.style.display === 'flex') && !box.classList.contains('hidden') && box.style.display !== 'none';
-            if (isVisible) {
-                closeRealChat(event);
-                return;
-            }
-            if (cachedConversations.length > 0) {
-                const first = cachedConversations[0];
-                const other = first.other_user || first.participants?.find(p => p.id !== currentUser?.id);
-                const title = other?.name || first.title || 'চ্যাট';
-                const avatar = other?.avatar_url || other?.profile?.avatar_url || '';
-                const otherId = other?.id || null;
-                const otherUsername = other?.username || '';
-                openRealChat(first.id, title, avatar, otherId, otherUsername);
+
+            const notifDropdown = document.getElementById('notificationsDropdown');
+            if (notifDropdown) notifDropdown.style.display = 'none';
+            const userDropdown = document.getElementById('userMenuDropdown');
+            if (userDropdown) userDropdown.style.display = 'none';
+
+            const dropdown = document.getElementById('topMessengerDropdown');
+            if (!dropdown) return;
+
+            const isShown = dropdown.style.display === 'flex' || dropdown.style.display === 'block';
+            if (isShown) {
+                dropdown.style.display = 'none';
             } else {
-                fetchConversations().then(() => {
-                    if (cachedConversations.length > 0) {
-                        const first = cachedConversations[0];
-                        const other = first.other_user || first.participants?.find(p => p.id !== currentUser?.id);
-                        const title = other?.name || first.title || 'চ্যাট';
-                        const avatar = other?.avatar_url || other?.profile?.avatar_url || '';
-                        const otherId = other?.id || null;
-                        const otherUsername = other?.username || '';
-                        openRealChat(first.id, title, avatar, otherId, otherUsername);
-                    } else {
-                        window.location.href = '/messages';
+                dropdown.style.display = 'flex';
+                loadMessengerDropdownData();
+            }
+        }
+
+        function closeMessengerDropdown() {
+            const dropdown = document.getElementById('topMessengerDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+        }
+
+        function openLatestOrToggleChat(event) {
+            toggleMessengerDropdown(event);
+        }
+
+        async function loadMessengerDropdownData() {
+            loadDropdownActiveFriends();
+            loadDropdownConversations();
+        }
+
+        async function loadDropdownActiveFriends(query = '') {
+            const listEl = document.getElementById('messengerDropdownActiveFriendsList');
+            const sectionEl = document.getElementById('messengerDropdownActiveSection');
+            if (!listEl) return;
+
+            try {
+                const qParam = query ? `?q=${encodeURIComponent(query)}` : '';
+                const res = await fetch(`/api/v1/presence/friends/active${qParam}`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Accept': 'application/json'
                     }
                 });
+                const data = await res.json();
+                if (data.success && Array.isArray(data.data)) {
+                    cachedActiveFriends = data.data;
+                    renderMessengerDropdownActiveFriends(data.data);
+                } else {
+                    renderMessengerDropdownActiveFriends([]);
+                }
+            } catch (err) {
+                console.error('Active friends load error:', err);
+                renderMessengerDropdownActiveFriends([]);
             }
+        }
+
+        function renderMessengerDropdownActiveFriends(friends) {
+            const listEl = document.getElementById('messengerDropdownActiveFriendsList');
+            const sectionEl = document.getElementById('messengerDropdownActiveSection');
+            if (!listEl) return;
+
+            const safeFriends = Array.isArray(friends) ? friends : [];
+            // Prioritize online friends or users tracked in jugajugOnlineUsers
+            const displayFriends = safeFriends.filter(f => f.online || (f.id && window.jugajugOnlineUsers.has(Number(f.id))));
+
+            if (displayFriends.length === 0) {
+                const fallbackFriends = safeFriends.slice(0, 8);
+                if (fallbackFriends.length === 0) {
+                    if (sectionEl) sectionEl.style.display = 'none';
+                    return;
+                }
+                if (sectionEl) sectionEl.style.display = 'block';
+                listEl.innerHTML = fallbackFriends.map(f => {
+                    const isOnline = f.online || (f.id && window.jugajugOnlineUsers.has(Number(f.id)));
+                    const avatar = f.avatar_url || f.profile?.avatar_url || '/images/default-avatar.svg';
+                    const name = f.name || 'বন্ধু';
+                    const firstName = name.split(' ')[0] || name;
+                    return `
+                        <div class="top-messenger-active-item" onclick="handleActiveFriendClick(${f.id}, '${escapeHtml(name)}', '${escapeHtml(f.username || '')}', '${avatar}', ${f.conversation_id || 'null'})" title="${escapeHtml(name)}">
+                            <div class="top-messenger-active-avatar-wrap">
+                                <img src="${avatar}" alt="${escapeHtml(name)}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                                ${isOnline ? '<div class="active-online-dot"></div>' : ''}
+                            </div>
+                            <div class="top-messenger-active-name">${escapeHtml(firstName)}</div>
+                        </div>
+                    `;
+                }).join('');
+                return;
+            }
+
+            if (sectionEl) sectionEl.style.display = 'block';
+            listEl.innerHTML = displayFriends.map(f => {
+                const avatar = f.avatar_url || f.profile?.avatar_url || '/images/default-avatar.svg';
+                const name = f.name || 'বন্ধু';
+                const firstName = name.split(' ')[0] || name;
+                return `
+                    <div class="top-messenger-active-item" onclick="handleActiveFriendClick(${f.id}, '${escapeHtml(name)}', '${escapeHtml(f.username || '')}', '${avatar}', ${f.conversation_id || 'null'})" title="${escapeHtml(name)}">
+                        <div class="top-messenger-active-avatar-wrap">
+                            <img src="${avatar}" alt="${escapeHtml(name)}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                            <div class="active-online-dot"></div>
+                        </div>
+                        <div class="top-messenger-active-name">${escapeHtml(firstName)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleActiveFriendClick(userId, name, username, avatar, conversationId) {
+            closeMessengerDropdown();
+            if (conversationId) {
+                openRealChat(conversationId, name, avatar, userId, username);
+            } else {
+                openDirectChatWithUser(userId, name, username, avatar);
+            }
+        }
+
+        async function loadDropdownConversations() {
+            const listEl = document.getElementById('messengerDropdownConversationsList');
+            if (cachedConversations && cachedConversations.length > 0) {
+                renderMessengerDropdownConversations(cachedConversations);
+            } else if (listEl) {
+                listEl.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); font-size: 13px; padding: 24px 16px;">লোড হচ্ছে...</div>';
+            }
+
+            try {
+                const res = await fetch('/api/v1/conversations', {
+                    headers: { 'Authorization': `Bearer ${currentToken}`, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                const convs = Array.isArray(data.data) ? data.data : (data.data?.conversations || []);
+                cachedConversations = convs;
+                renderMessengerDropdownConversations(convs);
+                updateMessengerBadge(convs);
+            } catch (err) {
+                console.error('Dropdown conversations load error:', err);
+                if (cachedConversations && cachedConversations.length > 0) {
+                    renderMessengerDropdownConversations(cachedConversations);
+                } else if (listEl) {
+                    listEl.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); font-size: 13px; padding: 24px 16px;">চ্যাট লোড করতে সমস্যা হয়েছে</div>';
+                }
+            }
+        }
+
+        function updateMessengerBadge(convs) {
+            const badge = document.getElementById('topMessengerBadge');
+            const sidebarBadge = document.getElementById('sidebarMsgBadge');
+            const totalUnread = (convs || []).reduce((acc, c) => acc + (c.unread_count || 0), 0);
+            if (badge) {
+                if (totalUnread > 0) {
+                    badge.innerText = totalUnread > 99 ? '99+' : totalUnread;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+            if (sidebarBadge) {
+                if (totalUnread > 0) {
+                    sidebarBadge.innerText = totalUnread > 99 ? '99+' : totalUnread;
+                    sidebarBadge.style.display = 'inline-block';
+                } else {
+                    sidebarBadge.style.display = 'none';
+                }
+            }
+        }
+
+        function renderMessengerDropdownConversations(convs) {
+            const listEl = document.getElementById('messengerDropdownConversationsList');
+            if (!listEl) return;
+
+            if (!convs || convs.length === 0) {
+                listEl.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); font-size: 13px; padding: 28px 16px; line-height: 1.5;">কোনো সাম্প্রতিক চ্যাট নেই。<br><span style="font-size: 12px;">পরিচিত বন্ধুদের বার্তা পাঠিয়ে আড্ডা শুরু করুন!</span></div>';
+                return;
+            }
+
+            listEl.innerHTML = convs.map(c => {
+                const other = c.other_user || c.participants?.find(p => p.id !== currentUser?.id);
+                const title = other?.name || c.title || 'চ্যাট';
+                const avatar = other?.avatar_url || other?.profile?.avatar_url || c.avatar_url || '/images/default-avatar.svg';
+                const otherId = other?.id || null;
+                const otherUsername = other?.username || '';
+                const isOnline = otherId ? (window.jugajugOnlineUsers.has(Number(otherId)) || other?.online) : false;
+                const unread = c.unread_count || 0;
+
+                let lastMsg = 'নতুন কথোপকথন';
+                if (c.last_message) {
+                    if (c.last_message.deleted_at) {
+                        lastMsg = 'মেসেজ মুছে ফেলা হয়েছে';
+                    } else if (c.last_message.type === 'call_video') {
+                        lastMsg = '📹 ভিডিও কল';
+                    } else if (c.last_message.type === 'call_audio') {
+                        lastMsg = '📞 অডিও কল';
+                    } else if (c.last_message.body) {
+                        lastMsg = c.last_message.body;
+                    } else if (c.last_message.attachment_url || c.last_message.attachments?.length) {
+                        lastMsg = '📎 মিডিয়া ফাইল';
+                    }
+                }
+                const timeStr = c.last_message?.created_at ? formatTimeAgo(c.last_message.created_at) : '';
+
+                return `
+                    <div class="top-messenger-conv-item ${unread > 0 ? 'unread' : ''}" 
+                         onclick="openRealChat(${c.id}, '${escapeHtml(title)}', '${avatar}', ${otherId || 'null'}, '${escapeHtml(otherUsername)}'); closeMessengerDropdown();" 
+                         title="${escapeHtml(title)}">
+                        <div class="top-messenger-conv-avatar-wrap">
+                            <img src="${avatar}" alt="${escapeHtml(title)}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                            ${isOnline ? '<div class="conv-online-dot"></div>' : ''}
+                        </div>
+                        <div class="top-messenger-conv-body">
+                            <div class="top-messenger-conv-top">
+                                <span class="top-messenger-conv-name">${escapeHtml(title)}</span>
+                                ${timeStr ? `<span class="top-messenger-conv-time">${escapeHtml(timeStr)}</span>` : ''}
+                            </div>
+                            <div class="top-messenger-conv-msg-row">
+                                <span class="top-messenger-conv-last-msg">${escapeHtml(lastMsg)}</span>
+                                ${unread > 0 ? `<span class="top-messenger-unread-pill">${unread}</span>` : (isOnline ? '<span class="contact-online-badge" style="padding: 1px 6px; font-size: 10px;"><span class="online-pulse-dot" style="width: 5px; height: 5px;"></span>অনলাইন</span>' : '')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterMessengerDropdown(keyword) {
+            const q = (keyword || '').trim().toLowerCase();
+            if (!q) {
+                renderMessengerDropdownConversations(cachedConversations);
+                renderMessengerDropdownActiveFriends(cachedActiveFriends);
+                return;
+            }
+
+            // Filter active friends
+            const filteredFriends = cachedActiveFriends.filter(f =>
+                (f.name && f.name.toLowerCase().includes(q)) ||
+                (f.username && f.username.toLowerCase().includes(q))
+            );
+            renderMessengerDropdownActiveFriends(filteredFriends);
+
+            // Filter conversations
+            const filteredConvs = cachedConversations.filter(c => {
+                const other = c.other_user || c.participants?.find(p => p.id !== currentUser?.id);
+                const title = other?.name || c.title || '';
+                const lastMsg = c.last_message?.body || '';
+                return title.toLowerCase().includes(q) || lastMsg.toLowerCase().includes(q);
+            });
+            renderMessengerDropdownConversations(filteredConvs);
         }
 
         async function openDirectChatWithUser(userId, name, username = '', avatar = '') {
@@ -8129,11 +8731,15 @@
         document.addEventListener('click', function(e) {
             const notifDropdown = document.getElementById('notificationsDropdown');
             const userDropdown = document.getElementById('userMenuDropdown');
+            const messengerDropdown = document.getElementById('topMessengerDropdown');
             if (notifDropdown && !notifDropdown.contains(e.target) && !e.target.closest('button[title="নোটিফিকেশন"]')) {
                 notifDropdown.style.display = 'none';
             }
             if (userDropdown && !userDropdown.contains(e.target) && !e.target.closest('#navUserAvatar')) {
                 userDropdown.style.display = 'none';
+            }
+            if (messengerDropdown && !messengerDropdown.contains(e.target) && !e.target.closest('#topMessengerBtn')) {
+                messengerDropdown.style.display = 'none';
             }
         });
 
