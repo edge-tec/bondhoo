@@ -3388,8 +3388,33 @@
             transform: scale(1.08);
         }
 
-        /* Responsive refinements */
+        .mobile-profile-header-bar {
+            display: none;
+        }
+
+        /* Responsive refinements (Mobile & Tablet <= 900px matching phone mockup) */
         @media (max-width: 900px) {
+            /* Hide desktop topbar, apps and desktop-only elements */
+            header.desktop-header,
+            .desktop-header,
+            .desktop-only,
+            .app-slim-dock,
+            .prof-mode-badge {
+                display: none !important;
+            }
+
+            /* Show mobile profile header */
+            .mobile-profile-header-bar {
+                display: block !important;
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 100 !important;
+                background: #ffffff !important;
+                border-bottom: 1px solid #e5e7eb !important;
+                padding: 8px 12px 10px 12px !important;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+            }
+
             .profile-content-container {
                 grid-template-columns: 1fr;
             }
@@ -3397,36 +3422,6 @@
             body.tab-not-posts .profile-left-col {
                 display: none !important;
             }
-            .cover-photo-wrapper {
-                height: 210px;
-                border-bottom-left-radius: 0;
-                border-bottom-right-radius: 0;
-            }
-            .avatar-wrapper {
-                width: 130px;
-                height: 130px;
-                margin-top: -65px;
-                margin-left: auto;
-                margin-right: auto;
-                border-width: 4px;
-            }
-            .profile-fullname {
-                font-size: 23px;
-                justify-content: center;
-                text-align: center;
-            }
-            .profile-main-bar {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
-            header {
-                height: 56px;
-                padding: 0 12px;
-            }
-        }
-
-        @media (max-width: 640px) {
             .profile-header-container {
                 padding: 0 !important;
                 max-width: 100vw !important;
@@ -4033,10 +4028,6 @@
             .mobile-profile-search-pill svg {
                 stroke: #65676b;
                 flex-shrink: 0;
-            }
-        }
-        .mobile-profile-header-bar {
-            display: none;
         }
     </style>
 </head>
@@ -4164,7 +4155,7 @@
     </header>
 
     <!-- TOP NAVIGATION BAR -->
-    <header class="desktop-header">
+    <header class="desktop-header desktop-only">
         <div class="header-left">
             <a href="/" class="fb-logo" title="Bondhoo Home" style="background:transparent;box-shadow:none;padding:0;display:inline-flex;align-items:center;height:38px;text-decoration:none;">
                 <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo" style="height: 34px; max-width: 155px; width: auto; object-fit: contain; display: block;">
@@ -4538,9 +4529,9 @@
                                 </span>
                             @endif
                         </h1>
-                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px;">
+                        <div class="profile-username-id-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px;">
                             <span class="profile-username-sub">{{ '@' . $profile['username'] }}</span>
-                            <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:6px;background:var(--fb-hover);border:1px solid var(--fb-border);font-size:12px;font-weight:700;color:var(--fb-text-secondary);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;" title="প্রোফাইল আইডি (Profile ID)">
+                            <span class="profile-id-pill" style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:6px;background:var(--fb-hover);border:1px solid var(--fb-border);font-size:12px;font-weight:700;color:var(--fb-text-secondary);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;" title="প্রোফাইল আইডি (Profile ID)">
                                 <span>ID: #{{ $profile['id'] }}</span>
                                 <button type="button" onclick="navigator.clipboard.writeText('{{ $profile['id'] }}'); if(typeof showToast==='function'){showToast('প্রোফাইল আইডি কপি হয়েছে (#{{ $profile['id'] }})');}else{alert('প্রোফাইল আইডি কপি হয়েছে (#{{ $profile['id'] }})');}" style="background:none;border:none;padding:0;cursor:pointer;color:inherit;display:inline-flex;align-items:center;" title="প্রোফাইল আইডি কপি করুন">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -4849,7 +4840,7 @@
                     @if($isOwner)
                         <div class="highlight-item" onclick="openCreateHighlightModal()" title="নতুন হাইলাইট যোগ করুন">
                             <div class="highlight-add-circle">+</div>
-                            <span style="font-size:12px;font-weight:600;color:var(--fb-text-primary);">নতুন হাইলাইট</span>
+                            <span class="highlight-title-label" style="font-size:12px;font-weight:600;color:var(--fb-text-primary);">নতুন হাইলাইট</span>
                         </div>
                     @endif
                     @foreach($highlights ?? [] as $hl)
