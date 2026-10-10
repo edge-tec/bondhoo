@@ -812,80 +812,175 @@
         }
 
         /* ------------------------------------------------------------- */
-        /* SLIM VERTICAL DOCK (LEFT APP RAIL) */
+        /* ------------------------------------------------------------- */
+        /* EXPANDED DESKTOP SIDEBAR / APP RAIL (AS IN DESKTOP MOCKUP) */
         /* ------------------------------------------------------------- */
         .app-slim-dock {
             position: fixed;
             left: 0;
-            top: 60px;
+            top: 0;
             bottom: 0;
-            width: 64px;
-            background: var(--fb-card);
+            width: 230px;
+            background: #ffffff;
             border-right: 1px solid var(--fb-border);
-            z-index: 95;
+            z-index: 105;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            align-items: center;
-            padding: 16px 0 20px 0;
-            box-shadow: 1px 0 4px rgba(0,0,0,0.03);
+            align-items: stretch;
+            padding: 14px 12px 18px 12px;
+            box-shadow: 1px 0 6px rgba(0,0,0,0.03);
+            overflow-y: auto;
             transition: all var(--transition-smooth);
+        }
+
+        .dock-brand-area {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px 12px 8px;
+            text-decoration: none;
+            border-bottom: 1px solid var(--fb-divider);
+            margin-bottom: 12px;
+        }
+
+        .dock-brand-area img {
+            height: 32px;
+            max-width: 140px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .dock-search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0f2f5;
+            border-radius: 20px;
+            padding: 7px 12px;
+            margin-bottom: 14px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .dock-search-box:focus-within {
+            background: #ffffff;
+            border-color: #0084ff;
+            box-shadow: 0 0 0 2px rgba(0,132,255,0.2);
+        }
+
+        .dock-search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 13.5px;
+            color: #111827;
+            width: 100%;
+        }
+
+        .dock-search-box svg {
+            color: #65676b;
+            flex-shrink: 0;
         }
 
         .dock-top-group, .dock-bottom-group {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 14px;
+            align-items: stretch;
+            gap: 4px;
             width: 100%;
         }
 
         .dock-item {
-            width: 42px;
+            width: 100%;
             height: 42px;
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: var(--fb-text-secondary);
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 0 12px;
+            color: var(--fb-text-primary);
             background: transparent;
             text-decoration: none;
             position: relative;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.15s ease;
+        }
+
+        .dock-item svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            color: #4b5563;
         }
 
         .dock-item:hover {
             background: var(--fb-hover);
             color: var(--fb-primary);
-            transform: translateY(-2px);
         }
 
-        .dock-item.active {
-            background: var(--fb-primary-light);
+        .dock-item:hover svg {
             color: var(--fb-primary);
         }
 
+        .dock-item.active {
+            background: rgba(0, 132, 255, 0.08);
+            color: #0084ff;
+            font-weight: 700;
+        }
+
+        .dock-item.active svg {
+            color: #0084ff;
+        }
+
+        .dock-label {
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+
         .dock-badge {
-            position: absolute;
-            top: 2px;
-            right: 2px;
+            margin-left: auto;
             background: #0084ff;
             color: white;
-            font-size: 10px;
-            font-weight: 800;
+            font-size: 11px;
+            font-weight: 700;
             border-radius: 10px;
-            padding: 1px 5px;
+            padding: 1px 6px;
             line-height: 1.2;
-            border: 2px solid var(--fb-card);
         }
 
         .dock-badge-red {
             background: #ef4444;
         }
 
-        @media (min-width: 1025px) {
+        @media (min-width: 1200px) {
             body.has-slim-dock {
-                padding-left: 64px;
+                padding-left: 230px;
+            }
+        }
+
+        @media (max-width: 1199px) and (min-width: 1025px) {
+            .app-slim-dock {
+                width: 64px !important;
+                padding: 16px 0 20px 0 !important;
+                align-items: center !important;
+            }
+            .dock-brand-area, .dock-search-box, .dock-label {
+                display: none !important;
+            }
+            .dock-item {
+                width: 42px !important;
+                height: 42px !important;
+                padding: 0 !important;
+                justify-content: center !important;
+                border-radius: 12px !important;
+            }
+            body.has-slim-dock {
+                padding-left: 64px !important;
             }
         }
 
@@ -896,6 +991,83 @@
             body.has-slim-dock {
                 padding-left: 0 !important;
             }
+        }
+
+        /* Desktop Header Stats Box (As in Desktop Mockup) */
+        .profile-desktop-stats-box {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 10px;
+            padding: 2px 4px;
+        }
+        .desktop-stat-counter {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.15s;
+        }
+        .desktop-stat-counter:hover {
+            opacity: 0.8;
+        }
+        .desktop-stat-counter .stat-count {
+            font-size: 16.5px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .desktop-stat-counter .stat-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        /* Quick Shortcuts Bar (Mobile & Tablet Mockup) */
+        .profile-quick-shortcuts-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 14px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            background: #ffffff;
+            border-bottom: 1px solid var(--fb-divider);
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .profile-quick-shortcuts-bar::-webkit-scrollbar {
+            display: none;
+        }
+        .quick-shortcut-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+        .quick-shortcut-item:active {
+            transform: scale(0.92);
+        }
+        .quick-shortcut-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+            transition: all 0.15s;
+        }
+        .quick-shortcut-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #334155;
+            white-space: nowrap;
         }
 
         /* ------------------------------------------------------------- */
@@ -4047,63 +4219,98 @@
 </head>
 <body class="has-slim-dock">
 
-    <!-- SLIM VERTICAL APP RAIL DOCK (AS SHOWN IN DESKTOP MOCKUP) -->
+    <!-- SLIM VERTICAL APP RAIL DOCK / DESKTOP SIDEBAR (AS SHOWN IN DESKTOP MOCKUP) -->
     <aside class="app-slim-dock" aria-label="Quick App Dock">
+        <a href="/" class="dock-brand-area" title="Bondhoo">
+            <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo">
+        </a>
+        <div class="dock-search-box">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" placeholder="Search" onfocus="if(typeof openMobileSearchModal==='function')openMobileSearchModal()">
+        </div>
         <div class="dock-top-group">
-            <a href="/" class="dock-item active" title="হোম ফিড">
+            <a href="/" class="dock-item active" title="Home">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                     <polyline points="9 22 9 12 15 12 15 22"></polyline>
                 </svg>
+                <span class="dock-label">Home</span>
             </a>
-            <a href="/messages" class="dock-item" title="মেসেঞ্জার ও চ্যাট">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-                <span class="dock-badge">3</span>
-            </a>
-            <a href="#friends" onclick="switchTab('friends')" class="dock-item" title="বন্ধুরা">
+            <a href="/friends" class="dock-item" title="Friends">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                     <circle cx="9" cy="7" r="4"></circle>
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
+                <span class="dock-label">Friends</span>
             </a>
-            <a href="/reels" class="dock-item" title="ভিডিও ও রিলস">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-            </a>
-            <a href="javascript:void(0)" onclick="toggleNotificationsDropdown()" class="dock-item" title="নোটিফিকেশন">
+            <a href="javascript:void(0)" onclick="toggleNotificationsDropdown()" class="dock-item" title="Notifications">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
+                <span class="dock-label">Notifications</span>
                 <span class="dock-badge dock-badge-red">1</span>
             </a>
-            <a href="/marketplace" class="dock-item" title="মার্কেটপ্লেস ও স্টোর">
+            <a href="javascript:void(0)" onclick="openMobileMenuDrawer()" class="dock-item" title="Menu">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path>
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                    <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path>
-                    <path d="M2 7h20"></path>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
                 </svg>
+                <span class="dock-label">Menu</span>
             </a>
-            <a href="#analytics" onclick="switchTab('analytics')" class="dock-item" title="অ্যানালিটিক্স">
+            <a href="javascript:void(0)" onclick="switchTab('activity')" class="dock-item" title="মেমোরি">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
+                <span class="dock-label">মেমোরি</span>
+            </a>
+            <a href="javascript:void(0)" onclick="switchTab('saved')" class="dock-item" title="সেভ করা">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span class="dock-label">সেভ করা</span>
+            </a>
+            <a href="/groups" class="dock-item" title="গ্রুপসমূহ">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span class="dock-label">গ্রুপসমূহ</span>
+            </a>
+            <a href="/watch" class="dock-item" title="ভিডিও">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                    <polyline points="17 2 12 7 7 2"></polyline>
+                </svg>
+                <span class="dock-label">ভিডিও</span>
+            </a>
+            <a href="/marketplace" class="dock-item" title="গেম">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="6" y1="12" x2="10" y2="12"></line>
+                    <line x1="8" y1="10" x2="8" y2="14"></line>
+                    <line x1="15" y1="13" x2="15.01" y2="13"></line>
+                    <line x1="18" y1="11" x2="18.01" y2="11"></line>
+                    <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                </svg>
+                <span class="dock-label">গেম</span>
             </a>
         </div>
-        <div class="dock-bottom-group">
+        <div class="dock-bottom-group" style="margin-top:auto;padding-top:12px;border-top:1px solid var(--fb-divider);">
             <a href="javascript:void(0)" onclick="openPrivacyModal()" class="dock-item" title="সেটিংস ও নিরাপত্তা">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"></circle>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
+                <span class="dock-label">সেটিংস</span>
             </a>
         </div>
     </aside>
@@ -4593,6 +4800,22 @@
 
                 <!-- Action Buttons in One Sleek Flex Row -->
                 <div class="profile-actions-bar">
+                    <!-- Desktop Header Stats Counters (As in Desktop Mockup) -->
+                    <div class="profile-desktop-stats-box desktop-only">
+                        <div class="desktop-stat-counter" onclick="switchTab('friends')">
+                            <span class="stat-count">{{ number_format($profile['friends_count']) }}</span>
+                            <span class="stat-label">জন বন্ধু</span>
+                        </div>
+                        <div class="desktop-stat-counter" onclick="openFollowModal('followers')">
+                            <span class="stat-count">{{ number_format($profile['followers_count'] ?? 0) }}</span>
+                            <span class="stat-label">জন ফলোয়ার</span>
+                        </div>
+                        <div class="desktop-stat-counter" onclick="switchTab('posts')">
+                            <span class="stat-count">{{ number_format($profile['posts_count'] ?? 0) }}</span>
+                            <span class="stat-label">টি পোস্ট</span>
+                        </div>
+                    </div>
+
                     @if($isOwner)
                         <div class="profile-actions-row profile-actions-row-primary">
                             <button class="fb-btn fb-btn-primary btn-action-story" onclick="openStoryModal()" style="background:#0084ff;color:white;border:none;box-shadow:0 2px 8px rgba(0,132,255,0.3);">
@@ -4857,35 +5080,90 @@
                             <span class="highlight-title-label" style="font-size:12px;font-weight:600;color:var(--fb-text-primary);">নতুন হাইলাইট</span>
                         </div>
                     @endif
-                    @foreach($highlights ?? [] as $hl)
-                        @php
-                            $hlItems = $hl->items ? $hl->items->map(function($it) {
-                                return [
-                                    'id' => $it->id,
-                                    'media_path' => $it->media_path ?: ($it->story ? $it->story->media_url : null),
-                                    'media_type' => $it->media_type ?? 'image',
-                                ];
-                            })->filter(function($it) {
-                                return !empty($it['media_path']);
-                            })->values() : collect();
+                    @if(isset($highlights) && $highlights->isNotEmpty())
+                        @foreach($highlights as $hl)
+                            @php
+                                $hlItems = $hl->items ? $hl->items->map(function($it) {
+                                    return [
+                                        'id' => $it->id,
+                                        'media_path' => $it->media_path ?: ($it->story ? $it->story->media_url : null),
+                                        'media_type' => $it->media_type ?? 'image',
+                                    ];
+                                })->filter(function($it) {
+                                    return !empty($it['media_path']);
+                                })->values() : collect();
 
-                            if ($hlItems->isEmpty()) {
-                                $hlItems = collect([[
-                                    'id' => 0,
-                                    'media_path' => $hl->cover_image_path ?: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600',
-                                    'media_type' => 'image',
-                                ]]);
-                            }
-                        @endphp
-                        <div class="highlight-item" onclick='viewHighlight({{ $hl->id }}, @json($hl->title), @json($hl->cover_image_path), @json($hlItems))' title="{{ $hl->title }}">
-                            <div class="highlight-circle">
-                                <img src="{{ $hl->cover_image_path ?: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120' }}" alt="{{ $hl->title }}">
+                                if ($hlItems->isEmpty()) {
+                                    $hlItems = collect([[
+                                        'id' => 0,
+                                        'media_path' => $hl->cover_image_path ?: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600',
+                                        'media_type' => 'image',
+                                    ]]);
+                                }
+                            @endphp
+                            <div class="highlight-item" onclick='viewHighlight({{ $hl->id }}, @json($hl->title), @json($hl->cover_image_path), @json($hlItems))' title="{{ $hl->title }}">
+                                <div class="highlight-circle">
+                                    <img src="{{ $hl->cover_image_path ?: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120' }}" alt="{{ $hl->title }}">
+                                </div>
+                                <span style="font-size:12px;font-weight:600;color:var(--fb-text-primary);max-width:72px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;">{{ $hl->title }}</span>
                             </div>
-                            <span style="font-size:12px;font-weight:600;color:var(--fb-text-primary);max-width:72px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;">{{ $hl->title }}</span>
+                        @endforeach
+                    @else
+                        <div class="highlight-item" onclick="switchTab('activity')" title="মেমোরি">
+                            <div class="highlight-circle" style="background:linear-gradient(135deg, #0284c7, #38bdf8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(2,132,199,0.25);">
+                                ⏱️
+                            </div>
+                            <span style="font-size:12px;font-weight:600;color:var(--fb-text-primary);max-width:72px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;">মেমোরি</span>
                         </div>
-                    @endforeach
+                        <div class="highlight-item" onclick="switchTab('saved')" title="সেভ করা">
+                            <div class="highlight-circle" style="background:linear-gradient(135deg, #059669, #34d399);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(5,150,105,0.25);">
+                                🔖
+                            </div>
+                            <span style="font-size:12px;font-weight:600;color:var(--fb-text-primary);max-width:72px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;">সেভ করা</span>
+                        </div>
+                    @endif
                 </div>
             @endif
+
+            <!-- Quick Icons Shortcut Row (As in Mockup) -->
+            <div class="profile-quick-shortcuts-bar">
+                <a href="javascript:void(0)" onclick="switchTab('activity')" class="quick-shortcut-item">
+                    <span class="quick-shortcut-icon" style="background:#e0f2fe;color:#0284c7;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </span>
+                    <span class="quick-shortcut-label">মেমোরি</span>
+                </a>
+                <a href="javascript:void(0)" onclick="switchTab('saved')" class="quick-shortcut-item">
+                    <span class="quick-shortcut-icon" style="background:#fef3c7;color:#d97706;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                    </span>
+                    <span class="quick-shortcut-label">সেভ করা</span>
+                </a>
+                <a href="/groups" class="quick-shortcut-item">
+                    <span class="quick-shortcut-icon" style="background:#ede9fe;color:#7c3aed;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </span>
+                    <span class="quick-shortcut-label">গ্রুপসমূহ</span>
+                </a>
+                <a href="/watch" class="quick-shortcut-item">
+                    <span class="quick-shortcut-icon" style="background:#fee2e2;color:#dc2626;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
+                    </span>
+                    <span class="quick-shortcut-label">ভিডিও</span>
+                </a>
+                <a href="javascript:void(0)" onclick="switchTab('reels')" class="quick-shortcut-item">
+                    <span class="quick-shortcut-icon" style="background:#fce7f3;color:#db2777;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="3" ry="3"></rect><polygon points="10 9 15 12 10 15 10 9"></polygon></svg>
+                    </span>
+                    <span class="quick-shortcut-label">রিলস</span>
+                </a>
+                <a href="/marketplace" class="quick-shortcut-item">
+                    <span class="quick-shortcut-icon" style="background:#dcfce7;color:#16a34a;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line><rect x="2" y="6" width="20" height="12" rx="2"></rect></svg>
+                    </span>
+                    <span class="quick-shortcut-label">গেম</span>
+                </a>
+            </div>
 
             <!-- Profile Navigation Tabs -->
             <ul class="profile-nav-tabs" id="profileNavTabsList">
