@@ -515,8 +515,8 @@ button, a, input, select, textarea, [role="button"] {
 }
 
 .mobile-drawer-panel {
-    width: 86%;
-    max-width: 380px;
+    width: 90%;
+    max-width: 440px;
     height: 100%;
     background: var(--mobile-sheet-bg);
     margin-left: auto;
@@ -764,6 +764,414 @@ button, a, input, select, textarea, [role="button"] {
     padding: 2.5px 8px;
     border-radius: 12px;
     box-shadow: 0 2px 6px rgba(240, 40, 73, 0.35);
+}
+
+/* ==============================================================================
+   GRID VIEW & ADVANCED EXPLORE SYSTEM FOR MOBILE DRAWER
+   ============================================================================== */
+.mobile-drawer-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.mobile-drawer-view-toggle {
+    display: inline-flex;
+    background: var(--fb-input-bg, rgba(0, 0, 0, 0.05));
+    border: 1px solid var(--fb-border);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+    width: 100%;
+}
+
+.mobile-drawer-view-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--fb-text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-drawer-view-btn svg {
+    width: 15px;
+    height: 15px;
+    stroke: currentColor;
+    stroke-width: 2.2;
+}
+
+.mobile-drawer-view-btn.active {
+    background: var(--fb-card, #ffffff);
+    color: var(--fb-primary, #1877f2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Search Bar in Drawer */
+.mobile-drawer-search-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.mobile-drawer-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--fb-text-secondary);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+}
+
+.mobile-drawer-search-icon svg {
+    width: 16px;
+    height: 16px;
+    stroke: var(--fb-text-secondary);
+    stroke-width: 2.2;
+}
+
+.mobile-drawer-search-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 34px 0 36px;
+    border-radius: 12px;
+    border: 1px solid var(--fb-border);
+    background: var(--fb-input-bg, rgba(0, 0, 0, 0.04));
+    color: var(--fb-text-primary);
+    font-size: 13.5px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    box-sizing: border-box;
+}
+
+.mobile-drawer-search-input:focus {
+    border-color: var(--fb-primary, #1877f2);
+    background: var(--fb-card, #ffffff);
+    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.16);
+}
+
+.mobile-drawer-search-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: var(--fb-btn-bg, rgba(0,0,0,0.1));
+    color: var(--fb-text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+
+.mobile-drawer-search-clear:hover {
+    background: var(--fb-hover);
+    color: var(--fb-text-primary);
+}
+
+/* Quick Action Chips */
+.mobile-drawer-quick-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.mobile-drawer-quick-row::-webkit-scrollbar {
+    display: none;
+}
+
+.mobile-drawer-quick-chip {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--fb-card);
+    border: 1px solid var(--fb-border);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--fb-text-primary);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.mobile-drawer-quick-chip svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2.2;
+}
+
+.mobile-drawer-quick-chip:hover {
+    background: var(--fb-hover);
+    border-color: var(--fb-primary);
+    color: var(--fb-primary);
+    transform: translateY(-1px);
+}
+
+.mobile-drawer-quick-chip:active {
+    transform: scale(0.96);
+}
+
+/* Modern 2-Column Grid Layout */
+.mobile-drawer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.mobile-drawer-grid-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+    background: var(--fb-card);
+    border: 1px solid var(--fb-border);
+    border-radius: 14px;
+    text-decoration: none;
+    color: var(--fb-text-primary);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    box-sizing: border-box;
+    min-height: 106px;
+}
+
+.mobile-drawer-grid-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.09);
+    border-color: rgba(24, 119, 242, 0.35);
+}
+
+.mobile-drawer-grid-item:active {
+    transform: scale(0.97);
+}
+
+.mobile-drawer-grid-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-drawer-grid-item:hover .mobile-drawer-grid-icon {
+    transform: scale(1.08);
+}
+
+.mobile-drawer-grid-icon svg {
+    width: 21px;
+    height: 21px;
+    stroke: #ffffff !important;
+    fill: none;
+    stroke-width: 2.1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+.mobile-drawer-grid-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--fb-text-primary);
+    line-height: 1.25;
+    margin-bottom: 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.mobile-drawer-grid-sub {
+    font-size: 11px;
+    color: var(--fb-text-secondary);
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.mobile-drawer-grid-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #f02849;
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(240, 40, 73, 0.35);
+}
+
+.mobile-drawer-empty-search {
+    text-align: center;
+    padding: 36px 16px;
+    color: var(--fb-text-secondary);
+    background: var(--fb-card);
+    border: 1px dashed var(--fb-border);
+    border-radius: 16px;
+    display: none;
+}
+
+.mobile-drawer-empty-search svg {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 8px;
+    opacity: 0.35;
+    stroke: currentColor;
+}
+
+.mobile-drawer-empty-search p {
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.mobile-drawer-empty-search button {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--fb-border);
+    background: var(--fb-btn-bg);
+    color: var(--fb-primary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Dual View Behavior for .mobile-drawer-items-wrap */
+.mobile-drawer-body.is-grid .mobile-drawer-items-wrap {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+.mobile-drawer-body.is-grid .mobile-drawer-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+    background: var(--fb-card);
+    border: 1px solid var(--fb-border);
+    border-radius: 14px;
+    position: relative;
+    min-height: 106px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid var(--fb-border) !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.mobile-drawer-body.is-grid .mobile-drawer-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.09);
+    border-color: rgba(24, 119, 242, 0.35);
+}
+
+.mobile-drawer-body.is-grid .mobile-drawer-item:active {
+    transform: scale(0.97);
+}
+
+.mobile-drawer-body.is-grid .mobile-drawer-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.mobile-drawer-body.is-grid .mobile-drawer-item-content {
+    width: 100%;
+}
+
+.mobile-drawer-body.is-grid .mobile-drawer-item-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--fb-text-primary);
+    line-height: 1.25;
+    margin-bottom: 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.mobile-drawer-body.is-grid .mobile-drawer-item-subtitle {
+    font-size: 11px;
+    color: var(--fb-text-secondary);
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.mobile-drawer-body.is-grid .mobile-drawer-arrow {
+    display: none !important;
+}
+
+.mobile-drawer-body.is-grid .mobile-drawer-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    margin: 0;
+}
+
+/* List Mode */
+.mobile-drawer-body.is-list .mobile-drawer-items-wrap {
+    display: flex;
+    flex-direction: column;
+    background: var(--fb-card);
+    border: 1px solid var(--fb-border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.mobile-drawer-body.is-list .mobile-drawer-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 10px 14px;
+    min-height: 52px;
+    border-radius: 0;
+    border-bottom: 1px solid var(--fb-divider);
+    background: var(--fb-card);
+    box-shadow: none;
+}
+
+.mobile-drawer-body.is-list .mobile-drawer-item:last-child {
+    border-bottom: none;
 }
 
 /* ------------------------------------------------------------------------------

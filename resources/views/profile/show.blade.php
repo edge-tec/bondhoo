@@ -3790,7 +3790,7 @@
                 Applications
             </a>
             <!-- 9-dot App Grid -->
-            <button type="button" class="icon-circle-btn" title="অ্যাপ মেনু" onclick="window.location.href='/'">
+            <button type="button" class="icon-circle-btn" title="অ্যাপ মেনু ও এক্সপ্লোর গ্রিড" onclick="openMobileMenuDrawer()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="5" cy="5" r="2"></circle>
                     <circle cx="12" cy="5" r="2"></circle>

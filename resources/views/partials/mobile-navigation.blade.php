@@ -185,9 +185,52 @@
         </div>
 
         <!-- Drawer Body -->
-        <div class="mobile-drawer-body">
+        <div class="mobile-drawer-body is-grid" id="mobileDrawerBody">
+            <!-- Search Filter Bar -->
+            <div class="mobile-drawer-search-wrap">
+                <span class="mobile-drawer-search-icon">
+                    <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" class="mobile-drawer-search-input" id="mobileDrawerSearchInput" placeholder="মেনু ও ফিচার অনুসন্ধান করুন..." oninput="filterMobileDrawerItems(this.value)" autocomplete="off">
+                <button type="button" class="mobile-drawer-search-clear" id="mobileDrawerSearchClear" onclick="clearMobileDrawerSearch()" style="display: none;" title="মুছে ফেলুন">✕</button>
+            </div>
+
+            <!-- View Switcher Toolbar (Grid vs List) -->
+            <div class="mobile-drawer-toolbar">
+                <div class="mobile-drawer-view-toggle">
+                    <button type="button" class="mobile-drawer-view-btn active" id="mobileDrawerViewGridBtn" onclick="setMobileDrawerView('grid')" title="গ্রিড ভিউ">
+                        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                        <span>গ্রিড ভিউ</span>
+                    </button>
+                    <button type="button" class="mobile-drawer-view-btn" id="mobileDrawerViewListBtn" onclick="setMobileDrawerView('list')" title="লিস্ট ভিউ">
+                        <svg viewBox="0 0 24 24" fill="none"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        <span>লিস্ট ভিউ</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Creation Shortcuts Row -->
+            <div class="mobile-drawer-quick-row">
+                <button type="button" class="mobile-drawer-quick-chip" onclick="handleMobileCreatePost()" title="নতুন পোস্ট তৈরি করুন">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1877f2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <span>+ পোস্ট</span>
+                </button>
+                <button type="button" class="mobile-drawer-quick-chip" onclick="handleMobileCreateStory()" title="নতুন স্টোরি আপলোড করুন">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <span>+ স্টোরি</span>
+                </button>
+                <button type="button" class="mobile-drawer-quick-chip" onclick="handleMobileCreateReel()" title="শর্ট রিলস ভিডিও আপলোড">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b"><rect x="2" y="3" width="20" height="18" rx="3" ry="3"/><polygon points="10 8 16 11 10 14 10 8" fill="#f59e0b" stroke="none"/></svg>
+                    <span>+ রিলস</span>
+                </button>
+                <button type="button" class="mobile-drawer-quick-chip" onclick="handleMobileGoLive()" title="সরাসরি লাইভ শুরু করুন">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444"><circle cx="12" cy="12" r="3" fill="#ef4444"/><path d="M16.95 7.05a7 7 0 0 1 0 9.9"/><path d="M7.05 16.95a7 7 0 0 1 0-9.9"/></svg>
+                    <span>+ লাইভ</span>
+                </button>
+            </div>
+
             <!-- User Profile Card -->
-            <div class="mobile-drawer-user-card" onclick="handleMobileNavProfile()">
+            <div class="mobile-drawer-user-card" onclick="handleMobileNavProfile()" data-search="প্রোফাইল user profile bio timeline">
                 <div class="mobile-drawer-user-avatar" id="mobileDrawerUserAvatar">
                     @if($navUserAvatar && $navUserAvatar !== '/images/default-avatar.svg')
                         <img src="{{ $navUserAvatar }}" alt="{{ $navUserName }}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
@@ -203,10 +246,10 @@
             </div>
 
             <!-- SECTION 1: ACCOUNT (অ্যাকাউন্ট ও প্রোফাইল) -->
-            <div>
+            <div class="mobile-drawer-section-group" data-section="account">
                 <div class="mobile-drawer-section-title">অ্যাকাউন্ট ও প্রোফাইল</div>
-                <div class="mobile-drawer-list">
-                    <div class="mobile-drawer-item" onclick="handleMobileNavProfile()">
+                <div class="mobile-drawer-items-wrap">
+                    <div class="mobile-drawer-item" onclick="handleMobileNavProfile()" data-search="আমার প্রোফাইল টাইমলাইন বায়ো ফটো profile timeline account">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); box-shadow: 0 4px 10px rgba(37, 99, 235, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
@@ -219,7 +262,7 @@
                         </div>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
-                    <div class="mobile-drawer-item" onclick="handleMobileNavFriends()">
+                    <div class="mobile-drawer-item" onclick="handleMobileNavFriends()" data-search="বন্ধুরা ফ্রেন্ড রিকোয়েস্ট বন্ধু তালিকা অনুরোধ friends request">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); box-shadow: 0 4px 10px rgba(2, 132, 199, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
@@ -229,13 +272,13 @@
                             </svg>
                         </span>
                         <div class="mobile-drawer-item-content">
-                            <span class="mobile-drawer-item-title">বন্ধুরা ও ফ্রেন্ড রিকোয়েস্ট</span>
+                            <span class="mobile-drawer-item-title">বন্ধুরা ও রিকোয়েস্ট</span>
                             <span class="mobile-drawer-item-subtitle">বন্ধু তালিকা ও নতুন অনুরোধ</span>
                         </div>
                         <span class="mobile-drawer-badge" id="mobileDrawerFriendsBadge" style="display: none;">0</span>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
-                    <a href="/devices" class="mobile-drawer-item" onclick="closeMobileMenuDrawer()">
+                    <a href="/devices" class="mobile-drawer-item" onclick="closeMobileMenuDrawer()" data-search="ডিভাইস সক্রিয় সেশন ব্রাউজার লগইন devices session login">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); box-shadow: 0 4px 10px rgba(139, 92, 246, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
@@ -252,10 +295,10 @@
             </div>
 
             <!-- SECTION 2: SOCIAL PLATFORMS (কমিউনিটি ও সোশ্যাল) -->
-            <div>
+            <div class="mobile-drawer-section-group" data-section="community">
                 <div class="mobile-drawer-section-title">কমিউনিটি ও সোশ্যাল</div>
-                <div class="mobile-drawer-list">
-                    <div class="mobile-drawer-item" onclick="handleMobileNavGroups()">
+                <div class="mobile-drawer-items-wrap">
+                    <div class="mobile-drawer-item" onclick="handleMobileNavGroups()" data-search="গ্রুপ কমিউনিটি আলোচনা groups community">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); box-shadow: 0 4px 10px rgba(13, 148, 136, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M17 21v-2a4 4 0 0 0-3-3.87"/>
@@ -271,7 +314,7 @@
                         </div>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
-                    <a href="/pages" class="mobile-drawer-item" onclick="closeMobileMenuDrawer()">
+                    <a href="/pages" class="mobile-drawer-item" onclick="closeMobileMenuDrawer()" data-search="পেইজ পেইজসমূহ পেজ ব্র্যান্ড ব্যবসা পাবলিক পেজ pages business brand">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); box-shadow: 0 4px 10px rgba(249, 115, 22, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
@@ -280,11 +323,11 @@
                         </span>
                         <div class="mobile-drawer-item-content">
                             <span class="mobile-drawer-item-title">পেইজসমূহ</span>
-                            <span class="mobile-drawer-item-subtitle">ব্র্যান্ড, ব্যবসা ও পাবলিক পেজ</span>
+                            <span class="mobile-drawer-item-subtitle">ব্র্যান্ড, ব্যবসা ও পেজ</span>
                         </div>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </a>
-                    <div class="mobile-drawer-item" onclick="handleMobileNavMarketplace()">
+                    <div class="mobile-drawer-item" onclick="handleMobileNavMarketplace()" data-search="মার্কেটপ্লেস কেনা-বেচা বাজার শপ স্থানীয় ডিল marketplace shop buy sell">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
@@ -298,7 +341,7 @@
                         </div>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
-                    <div class="mobile-drawer-item" onclick="handleMobileNavEvents()">
+                    <div class="mobile-drawer-item" onclick="handleMobileNavEvents()" data-search="ইভেন্টস অনুষ্ঠান আয়োজন আমন্ত্রণ events calendar schedule">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); box-shadow: 0 4px 10px rgba(236, 72, 153, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="3" y="4" width="18" height="18" rx="3" ry="3"/>
@@ -318,10 +361,10 @@
             </div>
 
             <!-- SECTION 3: COMMUNICATION (মেসেজিং ও কল) -->
-            <div>
+            <div class="mobile-drawer-section-group" data-section="communication">
                 <div class="mobile-drawer-section-title">মেসেজিং ও কল</div>
-                <div class="mobile-drawer-list">
-                    <div class="mobile-drawer-item" onclick="handleMobileNavMessenger()">
+                <div class="mobile-drawer-items-wrap">
+                    <div class="mobile-drawer-item" onclick="handleMobileNavMessenger()" data-search="মেসেঞ্জার চ্যাট মেসেজ কল বার্তা messenger chat messages calls">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #00c6ff 0%, #0078ff 50%, #9030ff 100%); box-shadow: 0 4px 10px rgba(0, 120, 255, 0.32);">
                             <svg viewBox="0 0 24 24" fill="none">
                                 <path fill="#ffffff" d="M12 2C6.48 2 2 6.15 2 11.26c0 2.91 1.45 5.52 3.73 7.21V22l3.36-1.84c.93.26 1.9.4 2.91.4 5.52 0 10-4.15 10-9.26C22 6.15 17.52 2 12 2zm1.05 12.39l-2.61-2.78-5.1 2.78 5.6-5.95 2.68 2.78 5.03-2.78-5.6 5.95z"/>
@@ -329,12 +372,12 @@
                         </span>
                         <div class="mobile-drawer-item-content">
                             <span class="mobile-drawer-item-title">মেসেঞ্জার ও চ্যাট</span>
-                            <span class="mobile-drawer-item-subtitle">তাৎক্ষণিক বার্তা ও ভয়েস/ভিডিও কল</span>
+                            <span class="mobile-drawer-item-subtitle">তাৎক্ষণিক বার্তা ও কল</span>
                         </div>
                         <span class="mobile-drawer-badge" id="mobileDrawerMsgBadge" style="display: none;">0</span>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
-                    <div class="mobile-drawer-item" onclick="handleMobileNavNotifications()">
+                    <div class="mobile-drawer-item" onclick="handleMobileNavNotifications()" data-search="নোটিফিকেশন সেন্টার বিজ্ঞপ্তি নোটিশ আপডেট notifications alerts">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); box-shadow: 0 4px 10px rgba(244, 63, 94, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -344,7 +387,7 @@
                         </span>
                         <div class="mobile-drawer-item-content">
                             <span class="mobile-drawer-item-title">নোটিফিকেশন সেন্টার</span>
-                            <span class="mobile-drawer-item-subtitle">সকল আপডেট, লাইক ও কমেন্ট</span>
+                            <span class="mobile-drawer-item-subtitle">সকল আপডেট ও বিজ্ঞপ্তি</span>
                         </div>
                         <span class="mobile-drawer-badge" id="mobileDrawerNotifBadge" style="display: none;">0</span>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -353,10 +396,10 @@
             </div>
 
             <!-- SECTION 4: CONTENT & MEDIA (ভিডিও ও বিনোদন) -->
-            <div>
+            <div class="mobile-drawer-section-group" data-section="media">
                 <div class="mobile-drawer-section-title">ভিডিও ও বিনোদন</div>
-                <div class="mobile-drawer-list">
-                    <div class="mobile-drawer-item" onclick="handleMobileNavWatch()">
+                <div class="mobile-drawer-items-wrap">
+                    <div class="mobile-drawer-item" onclick="handleMobileNavWatch()" data-search="ওয়াচ ভিডিও ওয়াচ ও ভিডিও ট্রেন্ডিং watch video stream">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="2" y="4" width="20" height="14" rx="3" ry="3"/>
@@ -371,7 +414,7 @@
                         </div>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
-                    <div class="mobile-drawer-item" onclick="handleMobileNavReels()">
+                    <div class="mobile-drawer-item" onclick="handleMobileNavReels()" data-search="রিলস শর্ট ভিডিও রিলস ভিডিও মিউজিক reels short video tiktok">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="2" y="3" width="20" height="18" rx="3" ry="3"/>
@@ -384,11 +427,11 @@
                         </span>
                         <div class="mobile-drawer-item-content">
                             <span class="mobile-drawer-item-title">রিলস শর্ট ভিডিও</span>
-                            <span class="mobile-drawer-item-subtitle">ভার্টিক্যাল ছোট ভিডিও ও মিউজিক</span>
+                            <span class="mobile-drawer-item-subtitle">ভার্টিক্যাল ছোট ভিডিও</span>
                         </div>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
-                    <a href="/live/studio" class="mobile-drawer-item" onclick="closeMobileMenuDrawer()">
+                    <a href="/live/studio" class="mobile-drawer-item" onclick="closeMobileMenuDrawer()" data-search="ক্রিয়েটর লাইভ স্টুডিও সরাসরি সম্প্রচার ব্রডকাস্ট live broadcast studio stream">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%); box-shadow: 0 4px 10px rgba(225, 29, 72, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="3" fill="#ffffff" stroke="none"/>
@@ -399,8 +442,8 @@
                             </svg>
                         </span>
                         <div class="mobile-drawer-item-content">
-                            <span class="mobile-drawer-item-title">ক্রিয়েটর লাইভ স্টুডিও</span>
-                            <span class="mobile-drawer-item-subtitle">সরাসরি লাইভ ব্রডকাস্ট শুরু করুন</span>
+                            <span class="mobile-drawer-item-title">লাইভ স্টুডিও</span>
+                            <span class="mobile-drawer-item-subtitle">সরাসরি ব্রডকাস্ট শুরু করুন</span>
                         </div>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </a>
@@ -408,10 +451,10 @@
             </div>
 
             <!-- SECTION 5: SETTINGS & CONTROLS (নিরাপত্তা ও সেটিংস) -->
-            <div>
+            <div class="mobile-drawer-section-group" data-section="settings">
                 <div class="mobile-drawer-section-title">নিরাপত্তা ও সেটিংস</div>
-                <div class="mobile-drawer-list">
-                    <a href="/settings/two-factor" class="mobile-drawer-item" onclick="closeMobileMenuDrawer()">
+                <div class="mobile-drawer-items-wrap">
+                    <a href="/settings/two-factor" class="mobile-drawer-item" onclick="closeMobileMenuDrawer()" data-search="টু-ফ্যাক্টর নিরাপত্তা 2FA সুরক্ষা পাসওয়ার্ড two factor authentication security">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); box-shadow: 0 4px 10px rgba(79, 70, 229, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -419,12 +462,12 @@
                             </svg>
                         </span>
                         <div class="mobile-drawer-item-content">
-                            <span class="mobile-drawer-item-title">টু-ফ্যাক্টর নিরাপত্তা (2FA)</span>
-                            <span class="mobile-drawer-item-subtitle">অ্যাকাউন্ট দ্বিস্তর সুরক্ষা ও কোড</span>
+                            <span class="mobile-drawer-item-title">টু-ফ্যাক্টর নিরাপত্তা</span>
+                            <span class="mobile-drawer-item-subtitle">অ্যাকাউন্ট দ্বিস্তর সুরক্ষা</span>
                         </div>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </a>
-                    <div class="mobile-drawer-item" onclick="handleMobileToggleTheme()">
+                    <div class="mobile-drawer-item" onclick="handleMobileToggleTheme()" data-search="ডার্ক মোড পরিবর্তন থিম লাইট ডার্ক dark mode light theme">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #334155 0%, #0f172a 100%); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#fef08a" stroke="#fef08a"/>
@@ -436,7 +479,7 @@
                         </div>
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
-                    <div class="mobile-drawer-item" onclick="handleMobileLogout()">
+                    <div class="mobile-drawer-item" onclick="handleMobileLogout()" data-search="লগআউট সাইন আউট logout sign out">
                         <span class="mobile-drawer-icon" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.28);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -451,6 +494,13 @@
                         <svg class="mobile-drawer-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.3"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </div>
                 </div>
+            </div>
+
+            <!-- Empty Search State -->
+            <div class="mobile-drawer-empty-search" id="mobileDrawerEmptySearch">
+                <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <p>কোনো অপশন বা ফিচার খুঁজে পাওয়া যায়নি</p>
+                <button type="button" onclick="clearMobileDrawerSearch()">অনুসন্ধান রিসেট করুন</button>
             </div>
         </div>
     </div>
@@ -481,12 +531,93 @@
         }
     }
 
+    /* Switch Drawer View: 'grid' | 'list' */
+    function setMobileDrawerView(mode) {
+        const bodyEl = document.getElementById('mobileDrawerBody');
+        const gridBtn = document.getElementById('mobileDrawerViewGridBtn');
+        const listBtn = document.getElementById('mobileDrawerViewListBtn');
+        if (!bodyEl) return;
+
+        if (mode === 'list') {
+            bodyEl.classList.remove('is-grid');
+            bodyEl.classList.add('is-list');
+            if (gridBtn) gridBtn.classList.remove('active');
+            if (listBtn) listBtn.classList.add('active');
+        } else {
+            bodyEl.classList.remove('is-list');
+            bodyEl.classList.add('is-grid');
+            if (gridBtn) gridBtn.classList.add('active');
+            if (listBtn) listBtn.classList.remove('active');
+            mode = 'grid';
+        }
+        try {
+            localStorage.setItem('bondhoo_drawer_view', mode);
+        } catch(e) {}
+    }
+
+    function initMobileDrawerView() {
+        let saved = 'grid';
+        try {
+            saved = localStorage.getItem('bondhoo_drawer_view') || 'grid';
+        } catch(e) {}
+        setMobileDrawerView(saved);
+    }
+
+    /* Filter Drawer Items */
+    function filterMobileDrawerItems(val) {
+        const query = (val || '').toLowerCase().trim();
+        const clearBtn = document.getElementById('mobileDrawerSearchClear');
+        if (clearBtn) {
+            clearBtn.style.display = query ? 'flex' : 'none';
+        }
+
+        const sections = document.querySelectorAll('.mobile-drawer-section-group');
+        const emptyState = document.getElementById('mobileDrawerEmptySearch');
+        let totalVisible = 0;
+
+        sections.forEach(sec => {
+            const items = sec.querySelectorAll('.mobile-drawer-item');
+            let secVisible = 0;
+            items.forEach(item => {
+                const searchData = (item.getAttribute('data-search') || '') + ' ' + (item.innerText || '');
+                const matches = !query || searchData.toLowerCase().includes(query);
+                item.style.display = matches ? '' : 'none';
+                if (matches) {
+                    secVisible++;
+                    totalVisible++;
+                }
+            });
+            sec.style.display = (secVisible > 0 || !query) ? '' : 'none';
+        });
+
+        // Also check user card
+        const userCard = document.querySelector('.mobile-drawer-user-card');
+        if (userCard) {
+            const ucData = (userCard.getAttribute('data-search') || '') + ' ' + (userCard.innerText || '');
+            userCard.style.display = (!query || ucData.toLowerCase().includes(query)) ? '' : 'none';
+        }
+
+        if (emptyState) {
+            emptyState.style.display = (totalVisible === 0 && query) ? 'block' : 'none';
+        }
+    }
+
+    function clearMobileDrawerSearch() {
+        const input = document.getElementById('mobileDrawerSearchInput');
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+        filterMobileDrawerItems('');
+    }
+
     /* Open & Close Mobile Menu Drawer */
     function openMobileMenuDrawer() {
         const drawer = document.getElementById('mobileMenuDrawer');
         if (drawer) {
             drawer.classList.add('active');
             document.body.style.overflow = 'hidden';
+            initMobileDrawerView();
             syncMobileDrawerUserInfo();
         }
     }
