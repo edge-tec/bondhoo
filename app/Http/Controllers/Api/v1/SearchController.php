@@ -26,8 +26,9 @@ class SearchController extends Controller
         $query = (string) ($request->query('q') ?? $request->query('query') ?? $request->query('search') ?? $request->input('q') ?? $request->input('query') ?? '');
         $type = (string) $request->query('type', 'all');
         $limit = min((int) ($request->query('limit', 15)), 50);
+        $suggest = $request->boolean('suggest');
 
-        $results = $this->searchService->search($query, $type, $user, $limit);
+        $results = $this->searchService->search($query, $type, $user, $limit, $suggest);
 
         return $this->successResponse(
             data: $results,

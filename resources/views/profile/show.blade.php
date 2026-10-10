@@ -4444,6 +4444,13 @@
             <a href="/marketplace" class="header-app-link desktop-only" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--fb-text-secondary);text-decoration:none;padding:6px 10px;border-radius:8px;transition:background 0.2s;">
                 Applications
             </a>
+            <!-- Mobile Search Circular Icon Button (Visible on mobile screens) -->
+            <button type="button" class="icon-circle-btn mobile-header-search-btn" id="mobileHeaderSearchBtn" title="অনুসন্ধান" onclick="openMobileSearchModal()" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </button>
             <!-- 9-dot App Grid -->
             <button type="button" class="icon-circle-btn" title="অ্যাপ মেনু ও এক্সপ্লোর গ্রিড" onclick="openMobileMenuDrawer()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

@@ -716,7 +716,7 @@
             <a href="/" class="fb-logo" title="Bondhoo হোম" style="background:transparent;box-shadow:none;padding:0;display:flex;align-items:center;text-decoration:none;">
                 <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo" style="height: 34px; max-width: 155px; width: auto; object-fit: contain; display: block;">
             </a>
-            <div class="search-box">
+            <div class="search-box" style="position: relative;">
                 <span class="search-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
@@ -724,6 +724,7 @@
                     </svg>
                 </span>
                 <input type="text" class="search-input" id="globalAppSearch" placeholder="Bondhoo-তে অনুসন্ধান করুন..." autocomplete="off">
+                <div id="globalAppSearchResultsDropdown" style="display: none; position: absolute; top: 46px; left: 0; width: 340px; background: var(--fb-card); border-radius: 12px; box-shadow: var(--shadow-lg); border: 1px solid var(--fb-border); z-index: 1000; max-height: 420px; overflow-y: auto;"></div>
             </div>
         </div>
 
@@ -779,6 +780,13 @@
 
         <!-- Right: Messages, Notifications, Avatar -->
         <div class="header-right">
+            <!-- Mobile Search Circular Icon Button (Visible on mobile screens) -->
+            <button type="button" class="circle-btn mobile-header-search-btn" id="mobileHeaderSearchBtn" title="অনুসন্ধান" onclick="openMobileSearchModal()" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </button>
             <a href="/messages" class="circle-btn {{ request()->is('messages*') ? 'active' : '' }}" title="মেসেঞ্জার" id="navbarMessengerBtn">
                 <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M14 2C7.373 2 2 7.155 2 13.518c0 3.626 1.745 6.862 4.475 8.974V26l3.37-1.85c1.28.355 2.646.549 4.155.549 6.627 0 12-5.155 12-11.518C26 7.155 20.627 2 14 2zm1.203 15.534l-3.08-3.284-6.012 3.284 6.613-7.02 3.155 3.284 5.937-3.284-6.613 7.02z" fill="url(#navMessengerGrad)"/>
@@ -1367,6 +1375,130 @@
                 }
             })();
         @endif
+
+        // Real-time desktop global search logic for app.blade.php
+        (function() {
+            let appSearchTimer = null;
+            const searchInput = document.getElementById('globalAppSearch');
+            const dropdown = document.getElementById('globalAppSearchResultsDropdown');
+            if (!searchInput || !dropdown) return;
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return String(str).replace(/[&<>"']/g, function(m) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+                });
+            }
+
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(appSearchTimer);
+                const q = e.target.value.trim();
+                if (!q) {
+                    dropdown.style.display = 'none';
+                    return;
+                }
+
+                dropdown.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--fb-text-secondary); font-size: 13px;">খোঁজা হচ্ছে...</div>';
+                dropdown.style.display = 'block';
+
+                appSearchTimer = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}&limit=15`, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            credentials: 'same-origin'
+                        });
+                        const data = await res.json();
+                        const results = (data && data.data && data.data.results) ? data.data.results : {};
+                        const users = results.users || [];
+                        const posts = results.posts || [];
+                        const groups = results.groups || [];
+                        const pages = results.pages || [];
+
+                        let html = '';
+                        if (users.length > 0) {
+                            html += '<div style="padding: 8px 12px; font-weight: 800; font-size: 11px; color: var(--fb-text-secondary); background: var(--fb-bg); text-transform: uppercase;">মানুষ ও প্রোফাইল (' + users.length + ')</div>';
+                            users.forEach(u => {
+                                const profileUrl = `/profile/${encodeURIComponent(u.username || u.id)}`;
+                                const avatar = u.avatar_url || (u.profile && u.profile.avatar_url) || '/images/default-avatar.svg';
+                                const name = u.name || u.username || 'ব্যবহারকারী';
+                                const handle = u.username ? `@${u.username}` : '';
+                                html += `<div style="padding: 9px 12px; display: flex; gap: 10px; align-items: center; cursor: pointer; border-bottom: 1px solid var(--fb-border); transition: background 0.15s ease;" onmouseover="this.style.background='var(--fb-hover)'" onmouseout="this.style.background='transparent'" onclick="document.getElementById('globalAppSearchResultsDropdown').style.display='none'; window.location.href='${profileUrl}';">
+                                    <img src="${avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0;" alt="${escapeHtml(name)}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                                    <div style="min-width: 0; flex: 1;">
+                                        <div style="font-weight: 700; font-size: 13.5px; color: var(--fb-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(name)}</div>
+                                        ${handle ? `<div style="font-size: 11.5px; color: var(--fb-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(handle)}</div>` : ''}
+                                    </div>
+                                </div>`;
+                            });
+                        }
+
+                        if (posts.length > 0) {
+                            html += '<div style="padding: 8px 12px; font-weight: 800; font-size: 11px; color: var(--fb-text-secondary); background: var(--fb-bg); text-transform: uppercase;">পোস্টসমূহ (' + posts.length + ')</div>';
+                            posts.forEach(p => {
+                                const authorName = (p.user && (p.user.name || p.user.username)) || 'ব্যবহারকারী';
+                                const snippet = (p.content || '').substring(0, 75);
+                                html += `<div style="padding: 9px 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--fb-border); transition: background 0.15s ease;" onmouseover="this.style.background='var(--fb-hover)'" onmouseout="this.style.background='transparent'" onclick="document.getElementById('globalAppSearchResultsDropdown').style.display='none'; window.location.href='/posts/${p.id}';">
+                                    <div style="font-weight: 700; font-size: 12px; color: var(--fb-primary); margin-bottom: 2px;">${escapeHtml(authorName)}</div>
+                                    <div style="color: var(--fb-text-primary); line-height: 1.35;">${escapeHtml(snippet)}${p.content && p.content.length > 75 ? '...' : ''}</div>
+                                </div>`;
+                            });
+                        }
+
+                        if (groups.length > 0) {
+                            html += '<div style="padding: 8px 12px; font-weight: 800; font-size: 11px; color: var(--fb-text-secondary); background: var(--fb-bg); text-transform: uppercase;">গ্রুপসমূহ (' + groups.length + ')</div>';
+                            groups.forEach(g => {
+                                html += `<div style="padding: 9px 12px; display: flex; gap: 10px; align-items: center; cursor: pointer; border-bottom: 1px solid var(--fb-border); transition: background 0.15s ease;" onmouseover="this.style.background='var(--fb-hover)'" onmouseout="this.style.background='transparent'" onclick="document.getElementById('globalAppSearchResultsDropdown').style.display='none'; window.location.href='/groups/${encodeURIComponent(g.slug || g.id)}';">
+                                    <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #1877f2, #00c6ff); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; flex-shrink: 0;">👥</div>
+                                    <div style="min-width: 0; flex: 1;">
+                                        <div style="font-weight: 700; font-size: 13.5px; color: var(--fb-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(g.name || 'গ্রুপ')}</div>
+                                        <div style="font-size: 11.5px; color: var(--fb-text-secondary);">${g.members_count || 1} জন সদস্য</div>
+                                    </div>
+                                </div>`;
+                            });
+                        }
+
+                        if (pages.length > 0) {
+                            html += '<div style="padding: 8px 12px; font-weight: 800; font-size: 11px; color: var(--fb-text-secondary); background: var(--fb-bg); text-transform: uppercase;">পেজসমূহ (' + pages.length + ')</div>';
+                            pages.forEach(pg => {
+                                const avatar = pg.avatar_url || '/images/default-avatar.svg';
+                                html += `<div style="padding: 9px 12px; display: flex; gap: 10px; align-items: center; cursor: pointer; border-bottom: 1px solid var(--fb-border); transition: background 0.15s ease;" onmouseover="this.style.background='var(--fb-hover)'" onmouseout="this.style.background='transparent'" onclick="document.getElementById('globalAppSearchResultsDropdown').style.display='none'; window.location.href='/pages/${encodeURIComponent(pg.slug || pg.id)}';">
+                                    <img src="${avatar}" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0;" alt="${escapeHtml(pg.name || 'পেজ')}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                                    <div style="min-width: 0; flex: 1;">
+                                        <div style="font-weight: 700; font-size: 13.5px; color: var(--fb-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(pg.name || 'পেজ')}</div>
+                                        <div style="font-size: 11.5px; color: var(--fb-text-secondary);">${escapeHtml(pg.category || 'পেজ')}</div>
+                                    </div>
+                                </div>`;
+                            });
+                        }
+
+                        if (!users.length && !posts.length && !groups.length && !pages.length) {
+                            html = '<div style="padding: 16px; text-align: center; color: var(--fb-text-secondary); font-size: 13px;">“' + escapeHtml(q) + '” এর জন্য কোনো ফলাফল পাওয়া যায়নি।</div>';
+                        }
+                        dropdown.innerHTML = html;
+                        dropdown.style.display = 'block';
+                    } catch (err) {
+                        console.error('App search error:', err);
+                        dropdown.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--fb-red); font-size: 13px;">অনুসন্ধানে সমস্যা হয়েছে। আবার চেষ্টা করুন।</div>';
+                    }
+                }, 250);
+            });
+
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const q = searchInput.value.trim();
+                    if (q) {
+                        window.location.href = `/search?q=${encodeURIComponent(q)}`;
+                    }
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (dropdown && !dropdown.contains(e.target) && e.target !== searchInput) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        })();
     </script>
     <style>
         @keyframes slideInToast {

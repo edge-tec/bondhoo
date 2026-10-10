@@ -16,10 +16,45 @@ class SearchService
     /**
      * সার্চ কোয়েরি অনুযায়ী ফলাফল রিটার্ন করে।
      */
-    public function search(string $query, string $type = 'all', ?User $viewer = null, int $limit = 10): array
+    public function search(string $query, string $type = 'all', ?User $viewer = null, int $limit = 10, bool $suggest = false): array
     {
         $term = trim($query);
         if (empty($term)) {
+            if ($suggest) {
+                return [
+                    'query' => '',
+                    'type' => $type,
+                    'is_suggestion' => true,
+                    'results' => [
+                        'users' => User::when($viewer, fn ($q) => $q->where('id', '!=', $viewer->id))
+                            ->with('profile')
+                            ->latest('id')
+                            ->limit(min($limit, 6))
+                            ->get()
+                            ->map(fn (User $u) => [
+                                'id' => $u->id,
+                                'name' => $u->name,
+                                'username' => $u->username,
+                                'avatar_url' => $u->profile?->avatar_url,
+                                'bio' => $u->profile?->bio,
+                            ])
+                            ->values(),
+                        'posts' => [],
+                        'groups' => Group::where('privacy', Group::PRIVACY_PUBLIC)
+                            ->latest('id')
+                            ->limit(min($limit, 4))
+                            ->get()
+                            ->map(fn (Group $g) => $g->toResponseArray($viewer))
+                            ->values(),
+                        'pages' => Page::latest('id')
+                            ->limit(min($limit, 4))
+                            ->get()
+                            ->map(fn (Page $p) => $p->toResponseArray($viewer))
+                            ->values(),
+                    ],
+                ];
+            }
+
             return [
                 'query' => $term,
                 'results' => [

@@ -18,6 +18,7 @@ use App\Http\Controllers\Web\TwoFactorWebController;
 use App\Http\Controllers\Web\WatchWebController;
 use App\Http\Requests\Auth\RegisterV2Request;
 use App\Models\Admin;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\AuthServiceV2;
 use App\Services\Email\SmtpConfigService;
@@ -267,8 +268,21 @@ Route::get('/friends', [FriendsWebController::class, 'index'])->name('friends.in
 
 Route::get('/notifications', [NotificationWebController::class, 'index'])->name('notifications.index');
 
-Route::get('/search', function (Request $request) {
+Route::get('/posts/{id}', function (int|string $id) {
+    $post = Post::with(['user.profile', 'media'])->find($id);
+    if (! $post) {
+        return redirect()->route('dashboard')->with('error', 'পোস্টটি পাওয়া যায়নি বা মুছে ফেলা হয়েছে।');
+    }
+
     return view('dashboard', [
-        'initialSearchQuery' => (string) ($request->query('q') ?? $request->query('query') ?? ''),
+        'highlightPostId' => (int) $id,
+    ]);
+})->name('posts.show')->whereNumber('id');
+
+Route::get('/search', function (Request $request) {
+    $query = (string) ($request->query('q') ?? $request->query('query') ?? $request->query('search') ?? '');
+
+    return view('dashboard', [
+        'initialSearchQuery' => $query,
     ]);
 })->name('search.web');
