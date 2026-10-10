@@ -9862,195 +9862,359 @@
         </div>
     </div>
 
-    <!-- PRIVACY SETTINGS MODAL -->
+    <!-- ADVANCED PRIVACY & SETTINGS CENTER MODAL (AS REQUESTED) -->
     <div class="fb-modal-overlay" id="privacyModal">
-        <div class="fb-modal-card" style="max-width: 600px;">
-            <div class="modal-header">
-                <span class="modal-title" style="display:flex;align-items:center;gap:8px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    <span>প্রোফাইল প্রাইভেসি ও নিরাপত্তা</span>
+        <div class="fb-modal-card" style="max-width: 660px;">
+            <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--fb-border); display:flex; align-items:center; justify-content:space-between;">
+                <span class="modal-title" style="display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:var(--fb-text-primary);">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:rgba(0,132,255,0.1);color:#0084ff;border-radius:10px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </span>
+                    <span>প্রোফাইল প্রাইভেসি ও নিরাপত্তা সেটিংস</span>
                 </span>
-                <button class="modal-close-btn" onclick="closeModal('privacyModal')">✕</button>
+                <button class="modal-close-btn" onclick="closeModal('privacyModal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--fb-text-secondary);">✕</button>
             </div>
+
+            <!-- Subtabs Nav Bar -->
+            <div class="privacy-subtabs-nav" style="display:flex;gap:4px;overflow-x:auto;padding:8px 16px;border-bottom:1px solid var(--fb-border);background:var(--fb-hover);">
+                <button type="button" class="privacy-subtab-btn active" onclick="switchPrivacySubtab('visibility', this)" style="padding:8px 14px;border:none;background:none;border-bottom:2px solid #0084ff;color:#0084ff;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                    <span>🌐 দৃশ্যমানতা ও তথ্য</span>
+                </button>
+                <button type="button" class="privacy-subtab-btn" onclick="switchPrivacySubtab('interactions', this)" style="padding:8px 14px;border:none;background:none;border-bottom:2px solid transparent;color:var(--fb-text-secondary);font-weight:500;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                    <span>👥 ফ্রেন্ড ও পোস্ট</span>
+                </button>
+                <button type="button" class="privacy-subtab-btn" onclick="switchPrivacySubtab('discovery', this)" style="padding:8px 14px;border:none;background:none;border-bottom:2px solid transparent;color:var(--fb-text-secondary);font-weight:500;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                    <span>🔍 অনুসন্ধান ও স্ট্যাটাস</span>
+                </button>
+                <button type="button" class="privacy-subtab-btn" onclick="switchPrivacySubtab('security', this)" style="padding:8px 14px;border:none;background:none;border-bottom:2px solid transparent;color:var(--fb-text-secondary);font-weight:500;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                    <span>🛡️ নিরাপত্তা ও ডিভাইস</span>
+                </button>
+                <button type="button" class="privacy-subtab-btn" onclick="switchPrivacySubtab('blocking', this)" style="padding:8px 14px;border:none;background:none;border-bottom:2px solid transparent;color:var(--fb-text-secondary);font-weight:500;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+                    <span>🚫 ব্লক তালিকা</span>
+                </button>
+            </div>
+
             <form id="privacyForm" onsubmit="submitPrivacySettings(event)">
-                <div class="modal-body" style="max-height: 68vh; overflow-y: auto; padding: 20px;">
-                    <div style="font-size: 13px; color: var(--fb-text-secondary); margin-bottom: 16px;">
+                <div class="modal-body" style="max-height: 65vh; overflow-y: auto; padding: 18px 20px;">
+                    <div style="font-size: 13px; color: var(--fb-text-secondary); margin-bottom: 14px;">
                         আপনার ব্যক্তিগত তথ্য, ফ্রেন্ড রিকোয়েস্ট ও পোস্ট কারা দেখতে পাবে তা পছন্দমত নির্ধারণ করুন:
                     </div>
 
-                    <!-- Category 1: Profile & Details Visibility -->
-                    <div style="margin-bottom: 20px; padding: 14px; background: var(--fb-bg); border-radius: var(--radius-md); border: 1px solid var(--fb-border);">
-                        <div style="font-weight: 700; font-size: 13px; color: var(--fb-text-primary); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                            <span>প্রোফাইল ও তথ্য দৃশ্যমানতা</span>
+                    <!-- TAB 1: VISIBILITY & INFO (EXACTLY MATCHING MOCKUP & USER SCREENSHOT) -->
+                    <div id="privacyTabContent-visibility" class="privacy-subtab-pane" style="display:block;">
+                        <div style="padding: 16px; background: var(--fb-bg); border-radius: var(--radius-md); border: 1px solid var(--fb-border); margin-bottom: 16px;">
+                            <div style="font-weight: 700; font-size: 13px; color: var(--fb-text-primary); text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0084ff" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                <span>প্রোফাইল ও তথ্য দৃশ্যমানতা</span>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">প্রোফাইল দৃশ্যমানতা (Profile Visibility)</label>
+                                <select name="profile_visibility" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="public" {{ ($privacySettings->profile_visibility ?? 'public') === 'public' ? 'selected' : '' }}>সবাই দেখতে পাবে (Public)</option>
+                                    <option value="friends" {{ ($privacySettings->profile_visibility ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা (Friends Only)</option>
+                                    <option value="only_me" {{ ($privacySettings->profile_visibility ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি (Only Me)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">বায়ো ও পরিচিতি তথ্যের প্রাইভেসি</label>
+                                <select name="bio_privacy" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="public" {{ ($privacySettings->bio_privacy ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (Public)</option>
+                                    <option value="friends" {{ ($privacySettings->bio_privacy ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
+                                    <option value="only_me" {{ ($privacySettings->bio_privacy ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">কর্মজীবন ও পেশার প্রাইভেসি</label>
+                                <select name="work_privacy" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="public" {{ ($privacySettings->work_privacy ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (Public)</option>
+                                    <option value="friends" {{ ($privacySettings->work_privacy ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
+                                    <option value="only_me" {{ ($privacySettings->work_privacy ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">শিক্ষা প্রতিষ্ঠানের তথ্যের প্রাইভেসি</label>
+                                <select name="education_privacy" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="public" {{ ($privacySettings->education_privacy ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (Public)</option>
+                                    <option value="friends" {{ ($privacySettings->education_privacy ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
+                                    <option value="only_me" {{ ($privacySettings->education_privacy ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">সোশ্যাল মিডিয়া লিংকসমূহের প্রাইভেসি</label>
+                                <select name="social_links_privacy" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="public" {{ ($privacySettings->social_links_privacy ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (Public)</option>
+                                    <option value="friends" {{ ($privacySettings->social_links_privacy ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
+                                    <option value="only_me" {{ ($privacySettings->social_links_privacy ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">বন্ধুদের তালিকা কে দেখতে পারবে (Friends List)</label>
+                                <select name="friends_list_visibility" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="public" {{ ($privacySettings->friends_list_visibility ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (সবাই)</option>
+                                    <option value="friends" {{ ($privacySettings->friends_list_visibility ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
+                                    <option value="only_me" {{ ($privacySettings->friends_list_visibility ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 6px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">জন্মদিনের দৃশ্যমানতা (Birthday Visibility)</label>
+                                <select name="birthday_visibility" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="public" {{ ($privacySettings->birthday_visibility ?? '') === 'public' ? 'selected' : '' }}>পাবলিক (সবাই)</option>
+                                    <option value="friends" {{ ($privacySettings->birthday_visibility ?? 'friends') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
+                                    <option value="only_me" {{ ($privacySettings->birthday_visibility ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">প্রোফাইল দৃশ্যমানতা (Profile Visibility)</label>
-                            <select name="profile_visibility" class="form-control">
-                                <option value="public" {{ ($privacySettings->profile_visibility ?? 'public') === 'public' ? 'selected' : '' }}>সবাই দেখতে পাবে (Public)</option>
-                                <option value="friends" {{ ($privacySettings->profile_visibility ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা (Friends Only)</option>
-                                <option value="only_me" {{ ($privacySettings->profile_visibility ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি (Only Me)</option>
-                            </select>
+                        <!-- Quick Profile Security Toggles -->
+                        <div style="padding:14px; background:var(--fb-hover); border-radius:var(--radius-md); border:1px solid var(--fb-border);">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                                <div>
+                                    <div style="font-size:13px;font-weight:700;color:var(--fb-text-primary);">🔒 প্রোফাইল লক (Profile Lock)</div>
+                                    <div style="font-size:12px;color:var(--fb-text-secondary);">অপরিচিতদের জন্য ফটো ও পোস্ট ফুল-ভিউ সম্পূর্ণ বন্ধ রাখুন</div>
+                                </div>
+                                <button type="button" class="fb-btn {{ ($profile['is_profile_locked'] ?? false) ? 'fb-btn-primary' : 'fb-btn-secondary' }}" style="padding:4px 12px;font-size:12px;" onclick="closeModal('privacyModal'); openProfileLockModal();">
+                                    {{ ($profile['is_profile_locked'] ?? false) ? 'আনলক করুন' : 'লক করুন' }}
+                                </button>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;">
+                                <div>
+                                    <div style="font-size:13px;font-weight:700;color:var(--fb-text-primary);">🛡️ অবতার প্রোটেকশন গার্ড (Avatar Guard)</div>
+                                    <div style="font-size:12px;color:var(--fb-text-secondary);">প্রোফাইল ছবি ডাউনলোড ও স্ক্রিনশট নেওয়া রোধ করুন</div>
+                                </div>
+                                <button type="button" class="fb-btn {{ ($profile['has_avatar_guard'] ?? false) ? 'fb-btn-primary' : 'fb-btn-secondary' }}" style="padding:4px 12px;font-size:12px;" onclick="toggleAvatarGuardAction();">
+                                    {{ ($profile['has_avatar_guard'] ?? false) ? 'সক্রিয় আছে' : 'গার্ড চালু করুন' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: INTERACTIONS & POSTS -->
+                    <div id="privacyTabContent-interactions" class="privacy-subtab-pane" style="display:none;">
+                        <div style="padding: 16px; background: var(--fb-bg); border-radius: var(--radius-md); border: 1px solid var(--fb-border);">
+                            <div style="font-weight: 700; font-size: 13px; color: var(--fb-text-primary); text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                                <span>পোস্ট ও ফ্রেন্ড রিকোয়েস্ট নিয়ন্ত্রণ</span>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">নতুন পোস্টের ডিফল্ট প্রাইভেসি</label>
+                                <select name="post_default_privacy" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="public" {{ ($privacySettings->post_default_privacy ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (Public)</option>
+                                    <option value="friends" {{ ($privacySettings->post_default_privacy ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
+                                    <option value="only_me" {{ ($privacySettings->post_default_privacy ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">কে বন্ধুত্বের অনুরোধ পাঠাতে পারবে</label>
+                                <select name="who_can_send_friend_requests" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="everyone" {{ ($privacySettings->who_can_send_friend_requests ?? 'everyone') === 'everyone' ? 'selected' : '' }}>যেকেউ (Everyone)</option>
+                                    <option value="friends_of_friends" {{ ($privacySettings->who_can_send_friend_requests ?? '') === 'friends_of_friends' ? 'selected' : '' }}>বন্ধুদের বন্ধুরা (Friends of Friends)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">কে আমাকে ফলো করতে পারবে</label>
+                                <select name="who_can_follow_me" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="everyone" {{ ($privacySettings->who_can_follow_me ?? 'everyone') === 'everyone' ? 'selected' : '' }}>সবাই (Everyone)</option>
+                                    <option value="friends" {{ ($privacySettings->who_can_follow_me ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 6px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">কে সরাসরি মেসেজ পাঠাতে পারবে</label>
+                                <select name="who_can_message_me" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="everyone" {{ ($privacySettings->who_can_message_me ?? 'everyone') === 'everyone' ? 'selected' : '' }}>সবাই (Everyone)</option>
+                                    <option value="friends" {{ ($privacySettings->who_can_message_me ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: DISCOVERY & STATUS -->
+                    <div id="privacyTabContent-discovery" class="privacy-subtab-pane" style="display:none;">
+                        <div style="padding: 16px; background: var(--fb-bg); border-radius: var(--radius-md); border: 1px solid var(--fb-border); margin-bottom: 14px;">
+                            <div style="font-weight: 700; font-size: 13px; color: var(--fb-text-primary); text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <span>যোগাযোগ ও অনুসন্ধান (Discovery)</span>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">ইমেইল ঠিকানার দৃশ্যমানতা</label>
+                                <select name="email_visibility" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="only_me" {{ ($privacySettings->email_visibility ?? 'only_me') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি (গোপন)</option>
+                                    <option value="friends" {{ ($privacySettings->email_visibility ?? '') === 'friends' ? 'selected' : '' }}>বন্ধুরা দেখতে পাবে</option>
+                                    <option value="public" {{ ($privacySettings->email_visibility ?? '') === 'public' ? 'selected' : '' }}>পাবলিক (সবাই)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label" style="font-weight:600;font-size:13px;color:var(--fb-text-primary);">ফোন নম্বরের দৃশ্যমানতা</label>
+                                <select name="phone_visibility" class="form-control" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--fb-border);background:var(--fb-card);color:var(--fb-text-primary);">
+                                    <option value="only_me" {{ ($privacySettings->phone_visibility ?? 'only_me') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি (গোপন)</option>
+                                    <option value="friends" {{ ($privacySettings->phone_visibility ?? '') === 'friends' ? 'selected' : '' }}>বন্ধুরা দেখতে পাবে</option>
+                                    <option value="public" {{ ($privacySettings->phone_visibility ?? '') === 'public' ? 'selected' : '' }}>পাবলিক (সবাই)</option>
+                                </select>
+                            </div>
+
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 6px;">
+                                <div>
+                                    <div style="font-size: 13px; font-weight: 600; color: var(--fb-text-primary);">সার্চ ইঞ্জিনে প্রোফাইল ইনডেক্সিং</div>
+                                    <div style="font-size: 12px; color: var(--fb-text-secondary);">Google বা অন্যান্য সার্চ ইঞ্জিনে প্রোফাইল রেজাল্ট আসবে</div>
+                                </div>
+                                <input type="checkbox" name="search_engine_indexing" value="1" {{ ($privacySettings->search_engine_indexing ?? true) ? 'checked' : '' }} style="width: 20px; height: 20px; accent-color:#0084ff;">
+                            </div>
                         </div>
 
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">বায়ো ও পরিচিতি তথ্যের প্রাইভেসি</label>
-                            <select name="bio_privacy" class="form-control">
-                                <option value="public" {{ ($privacySettings->bio_privacy ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (Public)</option>
-                                <option value="friends" {{ ($privacySettings->bio_privacy ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
-                                <option value="only_me" {{ ($privacySettings->bio_privacy ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
-                            </select>
-                        </div>
+                        <div style="padding: 16px; background: var(--fb-bg); border-radius: var(--radius-md); border: 1px solid var(--fb-border);">
+                            <div style="font-weight: 700; font-size: 13px; color: var(--fb-text-primary); text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                                <span>সক্রিয় স্ট্যাটাস ও রিড রিসিট</span>
+                            </div>
 
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">কর্মজীবন ও পেশার প্রাইভেসি</label>
-                            <select name="work_privacy" class="form-control">
-                                <option value="public" {{ ($privacySettings->work_privacy ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (Public)</option>
-                                <option value="friends" {{ ($privacySettings->work_privacy ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
-                                <option value="only_me" {{ ($privacySettings->work_privacy ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
-                            </select>
-                        </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                                <div>
+                                    <div style="font-size: 13px; font-weight: 600; color: var(--fb-text-primary);">সক্রিয় / অনলাইন স্ট্যাটাস প্রদর্শন</div>
+                                    <div style="font-size: 12px; color: var(--fb-text-secondary);">আপনি সক্রিয় থাকলে বন্ধুদের কাছে সবুজ সংকেত প্রদর্শিত হবে</div>
+                                </div>
+                                <input type="checkbox" name="show_online_status" value="1" {{ ($privacySettings->show_online_status ?? true) ? 'checked' : '' }} style="width: 20px; height: 20px; accent-color:#0084ff;">
+                            </div>
 
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">শিক্ষা প্রতিষ্ঠানের তথ্যের প্রাইভেসি</label>
-                            <select name="education_privacy" class="form-control">
-                                <option value="public" {{ ($privacySettings->education_privacy ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (Public)</option>
-                                <option value="friends" {{ ($privacySettings->education_privacy ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
-                                <option value="only_me" {{ ($privacySettings->education_privacy ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
-                            </select>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <div style="font-size: 13px; font-weight: 600; color: var(--fb-text-primary);">মেসেজ রিড রিসিট (Seen Indicators)</div>
+                                    <div style="font-size: 12px; color: var(--fb-text-secondary);">মেসেজ পড়া হলে প্রেরককে দৃশ্যমান করবে</div>
+                                </div>
+                                <input type="checkbox" name="read_receipts_enabled" value="1" {{ ($privacySettings->read_receipts_enabled ?? true) ? 'checked' : '' }} style="width: 20px; height: 20px; accent-color:#0084ff;">
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">সোশ্যাল মিডিয়া লিংকসমূহের প্রাইভেসি</label>
-                            <select name="social_links_privacy" class="form-control">
-                                <option value="public" {{ ($privacySettings->social_links_privacy ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (Public)</option>
-                                <option value="friends" {{ ($privacySettings->social_links_privacy ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
-                                <option value="only_me" {{ ($privacySettings->social_links_privacy ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
-                            </select>
+                    <!-- TAB 4: SECURITY & DEVICES -->
+                    <div id="privacyTabContent-security" class="privacy-subtab-pane" style="display:none;">
+                        <div style="padding:16px; background:var(--fb-bg); border-radius:var(--radius-md); border:1px solid var(--fb-border); margin-bottom:14px;">
+                            <div style="font-weight:700; font-size:13px; color:var(--fb-text-primary); text-transform:uppercase; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                <span>অ্যাকাউন্ট নিরাপত্তা ও সুরক্ষা</span>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--fb-border);">
+                                <div>
+                                    <div style="font-size:13px;font-weight:700;color:var(--fb-text-primary);">পাসওয়ার্ড পরিবর্তন</div>
+                                    <div style="font-size:12px;color:var(--fb-text-secondary);">আপনার বর্তমান পাসওয়ার্ড পরিবর্তন ও শক্তিশালী করুন</div>
+                                </div>
+                                <button type="button" class="fb-btn fb-btn-secondary" onclick="closeModal('privacyModal'); openSecurityModal(); switchSecuritySubtab('password');" style="padding:4px 12px;font-size:12px;">
+                                    পরিবর্তন ➔
+                                </button>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--fb-border);">
+                                <div>
+                                    <div style="font-size:13px;font-weight:700;color:var(--fb-text-primary);">টু-ফ্যাক্টর অথেনটিকেশন (2FA)</div>
+                                    <div style="font-size:12px;color:var(--fb-text-secondary);">লগইনের সময় ওটিপি বা প্রমাণীকরণ অ্যাপের মাধ্যমে অতিরিক্ত সুরক্ষা</div>
+                                </div>
+                                <a href="/settings/two-factor" class="fb-btn fb-btn-secondary" style="padding:4px 12px;font-size:12px;text-decoration:none;">
+                                    কনফিগারেশন ➔
+                                </a>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;">
+                                <div>
+                                    <div style="font-size:13px;font-weight:700;color:var(--fb-text-primary);">সক্রিয় ডিভাইস ও সেশন</div>
+                                    <div style="font-size:12px;color:var(--fb-text-secondary);">কোন কোন ব্রাউজার ও ডিভাইসে আপনার অ্যাকাউন্ট সক্রিয় আছে</div>
+                                </div>
+                                <a href="/devices" class="fb-btn fb-btn-secondary" style="padding:4px 12px;font-size:12px;text-decoration:none;">
+                                    ডিভাইস তালিকা ➔
+                                </a>
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">বন্ধুদের তালিকা কে দেখতে পারবে (Friends List)</label>
-                            <select name="friends_list_visibility" class="form-control">
-                                <option value="public" {{ ($privacySettings->friends_list_visibility ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (সবাই)</option>
-                                <option value="friends" {{ ($privacySettings->friends_list_visibility ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
-                                <option value="only_me" {{ ($privacySettings->friends_list_visibility ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
-                            </select>
+                    <!-- TAB 5: BLOCKING CENTER -->
+                    <div id="privacyTabContent-blocking" class="privacy-subtab-pane" style="display:none;">
+                        <div style="padding:16px; background:var(--fb-bg); border-radius:var(--radius-md); border:1px solid var(--fb-border);">
+                            <div style="font-weight:700; font-size:13px; color:var(--fb-text-primary); text-transform:uppercase; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                                <span>ব্লক করা ব্যবহারকারীদের তালিকা</span>
+                            </div>
+                            <div style="font-size:12px; color:var(--fb-text-secondary); margin-bottom:14px;">
+                                কোনো ব্যক্তিকে ব্লক করলে সে আপনার পোস্ট দেখতে পারবে না, মেসেজ বা রিকোয়েস্ট পাঠাতে পারবে না।
+                            </div>
+                            <div id="privacyBlockedUsersList" style="min-height:80px; display:flex; flex-direction:column; gap:8px;">
+                                <div style="text-align:center; padding:16px; color:var(--fb-text-secondary); font-size:13px;">
+                                    তালিকা লোড হচ্ছে...
+                                </div>
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label">জন্মদিনের দৃশ্যমানতা (Birthday Visibility)</label>
-                            <select name="birthday_visibility" class="form-control">
-                                <option value="public" {{ ($privacySettings->birthday_visibility ?? '') === 'public' ? 'selected' : '' }}>পাবলিক (সবাই)</option>
-                                <option value="friends" {{ ($privacySettings->birthday_visibility ?? 'friends') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
-                                <option value="only_me" {{ ($privacySettings->birthday_visibility ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
+                </div>
+                <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top:1px solid var(--fb-border);">
+                    <button type="button" class="fb-btn fb-btn-secondary" onclick="closeModal('privacyModal')">বাতিল</button>
+                    <button type="submit" class="fb-btn fb-btn-primary" id="savePrivacyBtn" style="background:#0084ff;color:#fff;border:none;font-weight:700;padding:8px 20px;border-radius:8px;">
+                        প্রাইভেসি সংরক্ষণ করুন
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- POST CREATION MODAL (FULL INTERACTIVE DESKTOP/MOBILE COMPOSER) -->
+    <div class="fb-modal-overlay" id="postModal">
+        <div class="fb-modal-card" style="max-width: 560px;">
+            <div class="modal-header" style="padding:14px 20px; border-bottom:1px solid var(--fb-border); display:flex; align-items:center; justify-content:space-between;">
+                <span class="modal-title" style="font-size:16px; font-weight:800; color:var(--fb-text-primary);">পোস্ট তৈরি করুন</span>
+                <button class="modal-close-btn" onclick="closeModal('postModal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--fb-text-secondary);">✕</button>
+            </div>
+            <form id="postCreateModalForm" onsubmit="submitPostModalForm(event)">
+                <div class="modal-body" style="padding:18px 20px;">
+                    <!-- User Info & Audience -->
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+                        <img src="{{ $profile['avatar'] ?? '/images/default-avatar.svg' }}" alt="{{ $profile['name'] }}" style="width:42px; height:42px; border-radius:50%; object-fit:cover;" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                        <div>
+                            <div style="font-size:14px; font-weight:700; color:var(--fb-text-primary);">{{ $profile['name'] }}</div>
+                            <select name="privacy" id="postModalPrivacy" style="padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; border:1px solid var(--fb-border); background:var(--fb-hover); color:var(--fb-text-primary); cursor:pointer;">
+                                <option value="public">🌐 সবাই (Public)</option>
+                                <option value="friends">👥 শুধুমাত্র বন্ধুরা</option>
+                                <option value="only_me">🔒 শুধুমাত্র আমি</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- Category 2: Interactions & Contacts -->
-                    <div style="margin-bottom: 20px; padding: 14px; background: var(--fb-bg); border-radius: var(--radius-md); border: 1px solid var(--fb-border);">
-                        <div style="font-weight: 700; font-size: 13px; color: var(--fb-text-primary); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-                            <span>পোস্ট ও ফ্রেন্ড রিকোয়েস্ট নিয়ন্ত্রণ</span>
-                        </div>
+                    <!-- Post Text Area -->
+                    <textarea name="content" id="postModalTextarea" placeholder="আপনার মনে কি চলছে, {{ explode(' ', $profile['name'])[0] }}?" style="width:100%; min-height:110px; border:none; resize:none; font-size:15px; font-family:inherit; background:transparent; color:var(--fb-text-primary); outline:none;" required></textarea>
 
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">নতুন পোস্টের ডিফল্ট প্রাইভেসি</label>
-                            <select name="post_default_privacy" class="form-control">
-                                <option value="public" {{ ($privacySettings->post_default_privacy ?? 'public') === 'public' ? 'selected' : '' }}>পাবলিক (Public)</option>
-                                <option value="friends" {{ ($privacySettings->post_default_privacy ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
-                                <option value="only_me" {{ ($privacySettings->post_default_privacy ?? '') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">কে বন্ধুত্বের অনুরোধ পাঠাতে পারবে</label>
-                            <select name="who_can_send_friend_requests" class="form-control">
-                                <option value="everyone" {{ ($privacySettings->who_can_send_friend_requests ?? 'everyone') === 'everyone' ? 'selected' : '' }}>যেকেউ (Everyone)</option>
-                                <option value="friends_of_friends" {{ ($privacySettings->who_can_send_friend_requests ?? '') === 'friends_of_friends' ? 'selected' : '' }}>বন্ধুদের বন্ধুরা (Friends of Friends)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">কে আমাকে ফলো করতে পারবে</label>
-                            <select name="who_can_follow_me" class="form-control">
-                                <option value="everyone" {{ ($privacySettings->who_can_follow_me ?? 'everyone') === 'everyone' ? 'selected' : '' }}>সবাই (Everyone)</option>
-                                <option value="friends" {{ ($privacySettings->who_can_follow_me ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label">কে সরাসরি মেসেজ পাঠাতে পারবে</label>
-                            <select name="who_can_message_me" class="form-control">
-                                <option value="everyone" {{ ($privacySettings->who_can_message_me ?? 'everyone') === 'everyone' ? 'selected' : '' }}>সবাই (Everyone)</option>
-                                <option value="friends" {{ ($privacySettings->who_can_message_me ?? '') === 'friends' ? 'selected' : '' }}>শুধুমাত্র বন্ধুরা</option>
-                            </select>
-                        </div>
+                    <!-- Media Upload Preview Box -->
+                    <div id="postModalMediaPreview" style="display:none; margin-top:12px; position:relative; border-radius:10px; overflow:hidden; max-height:220px; background:#000;">
+                        <img id="postModalImgPreview" src="" alt="Preview" style="width:100%; max-height:220px; object-fit:contain; display:none;">
+                        <video id="postModalVidPreview" src="" controls style="width:100%; max-height:220px; display:none;"></video>
+                        <button type="button" onclick="clearPostModalMedia()" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.7); color:#fff; border:none; width:26px; height:26px; border-radius:50%; cursor:pointer; font-weight:700;">✕</button>
                     </div>
 
-                    <!-- Category 3: Contact & Search Engines -->
-                    <div style="margin-bottom: 20px; padding: 14px; background: var(--fb-bg); border-radius: var(--radius-md); border: 1px solid var(--fb-border);">
-                        <div style="font-weight: 700; font-size: 13px; color: var(--fb-text-primary); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            <span>যোগাযোগ ও অনুসন্ধান (Discovery)</span>
-                        </div>
+                    <input type="file" id="postModalFileInput" name="media" accept="image/*,video/*" style="display:none;" onchange="previewPostModalFile(this)">
 
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">ইমেইল ঠিকানার দৃশ্যমানতা</label>
-                            <select name="email_visibility" class="form-control">
-                                <option value="only_me" {{ ($privacySettings->email_visibility ?? 'only_me') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি (গোপন)</option>
-                                <option value="friends" {{ ($privacySettings->email_visibility ?? '') === 'friends' ? 'selected' : '' }}>বন্ধুরা দেখতে পাবে</option>
-                                <option value="public" {{ ($privacySettings->email_visibility ?? '') === 'public' ? 'selected' : '' }}>পাবলিক (সবাই)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">ফোন নম্বরের দৃশ্যমানতা</label>
-                            <select name="phone_visibility" class="form-control">
-                                <option value="only_me" {{ ($privacySettings->phone_visibility ?? 'only_me') === 'only_me' ? 'selected' : '' }}>শুধুমাত্র আমি (গোপন)</option>
-                                <option value="friends" {{ ($privacySettings->phone_visibility ?? '') === 'friends' ? 'selected' : '' }}>বন্ধুরা দেখতে পাবে</option>
-                                <option value="public" {{ ($privacySettings->phone_visibility ?? '') === 'public' ? 'selected' : '' }}>পাবলিক (সবাই)</option>
-                            </select>
-                        </div>
-
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 6px;">
-                            <div>
-                                <div style="font-size: 13px; font-weight: 600; color: var(--fb-text-primary);">সার্চ ইঞ্জিনে প্রোফাইল ইনডেক্সিং</div>
-                                <div style="font-size: 12px; color: var(--fb-text-secondary);">Google বা অন্যান্য সার্চ ইঞ্জিনে প্রোফাইল রেজাল্ট আসবে</div>
-                            </div>
-                            <input type="checkbox" name="search_engine_indexing" value="1" {{ ($privacySettings->search_engine_indexing ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
-                        </div>
-                    </div>
-
-                    <!-- Category 4: Online Status & Receipts -->
-                    <div style="padding: 14px; background: var(--fb-bg); border-radius: var(--radius-md); border: 1px solid var(--fb-border);">
-                        <div style="font-weight: 700; font-size: 13px; color: var(--fb-text-primary); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                            <span>সক্রিয় স্ট্যাটাস ও রিড রিসিট</span>
-                        </div>
-
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                            <div>
-                                <div style="font-size: 13px; font-weight: 600; color: var(--fb-text-primary);">সক্রিয় / অনলাইন স্ট্যাটাস প্রদর্শন</div>
-                                <div style="font-size: 12px; color: var(--fb-text-secondary);">আপনি সক্রিয় থাকলে সবুজ সংকেত প্রদর্শিত হবে</div>
-                            </div>
-                            <input type="checkbox" name="show_online_status" value="1" {{ ($privacySettings->show_online_status ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
-                        </div>
-
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div>
-                                <div style="font-size: 13px; font-weight: 600; color: var(--fb-text-primary);">মেসেজ রিড রিসিট (Seen Indicators)</div>
-                                <div style="font-size: 12px; color: var(--fb-text-secondary);">মেসেজ পড়া হলে প্রেরককে দৃশ্যমান করবে</div>
-                            </div>
-                            <input type="checkbox" name="read_receipts_enabled" value="1" {{ ($privacySettings->read_receipts_enabled ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                    <!-- Action Attachments Toolbar -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border:1px solid var(--fb-border); border-radius:10px; margin-top:14px; background:var(--fb-hover);">
+                        <span style="font-size:13px; font-weight:600; color:var(--fb-text-primary);">পোস্টে যোগ করুন</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button type="button" onclick="document.getElementById('postModalFileInput').click()" style="background:none;border:none;cursor:pointer;display:inline-flex;align-items:center;padding:4px;" title="ফটো বা ভিডিও যোগ করুন">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            </button>
+                            <button type="button" onclick="closeModal('postModal'); openLifeEventModal();" style="background:none;border:none;cursor:pointer;display:inline-flex;align-items:center;padding:4px;" title="লাইভ ইভেন্ট">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="fb-btn fb-btn-secondary" onclick="closeModal('privacyModal')">বাতিল</button>
-                    <button type="submit" class="fb-btn fb-btn-primary" id="savePrivacyBtn">প্রাইভেসি সংরক্ষণ করুন</button>
+
+                <div class="modal-footer" style="padding:14px 20px; border-top:1px solid var(--fb-border);">
+                    <button type="submit" id="submitPostModalBtn" class="fb-btn fb-btn-primary" style="width:100%; background:#0084ff; color:#fff; border:none; padding:10px; border-radius:8px; font-size:14px; font-weight:700;">
+                        পোস্ট প্রকাশ করুন
+                    </button>
                 </div>
             </form>
         </div>
@@ -12357,7 +12521,108 @@
         }
 
         function openPostModal(type = 'text') {
-            document.getElementById('postModal').classList.add('active');
+            const modal = document.getElementById('postModal');
+            if (modal) {
+                modal.classList.add('active');
+                if (type === 'photo' || type === 'video') {
+                    const input = document.getElementById('postModalFileInput');
+                    if (input) {
+                        input.accept = type === 'video' ? 'video/*' : 'image/*';
+                        setTimeout(() => input.click(), 150);
+                    }
+                } else if (type === 'feeling') {
+                    const txt = document.getElementById('postModalTextarea');
+                    if (txt) {
+                        txt.value = '😊 অনুভূতি: চমৎকার লাগছে ';
+                        txt.focus();
+                    }
+                }
+            }
+        }
+
+        function previewPostModalFile(input) {
+            const file = input.files && input.files[0];
+            const previewBox = document.getElementById('postModalMediaPreview');
+            const imgPreview = document.getElementById('postModalImgPreview');
+            const vidPreview = document.getElementById('postModalVidPreview');
+            if (!file || !previewBox) return;
+
+            previewBox.style.display = 'block';
+            if (file.type.startsWith('video/')) {
+                if (imgPreview) imgPreview.style.display = 'none';
+                if (vidPreview) {
+                    vidPreview.src = URL.createObjectURL(file);
+                    vidPreview.style.display = 'block';
+                }
+            } else {
+                if (vidPreview) vidPreview.style.display = 'none';
+                if (imgPreview) {
+                    imgPreview.src = URL.createObjectURL(file);
+                    imgPreview.style.display = 'block';
+                }
+            }
+        }
+
+        function clearPostModalMedia() {
+            const input = document.getElementById('postModalFileInput');
+            if (input) input.value = '';
+            const previewBox = document.getElementById('postModalMediaPreview');
+            if (previewBox) previewBox.style.display = 'none';
+            const imgPreview = document.getElementById('postModalImgPreview');
+            if (imgPreview) imgPreview.src = '';
+            const vidPreview = document.getElementById('postModalVidPreview');
+            if (vidPreview) vidPreview.src = '';
+        }
+
+        async function submitPostModalForm(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitPostModalBtn');
+            const content = document.getElementById('postModalTextarea')?.value || '';
+            const privacy = document.getElementById('postModalPrivacy')?.value || 'public';
+            const fileInput = document.getElementById('postModalFileInput');
+            const file = fileInput?.files?.[0];
+
+            if (!content.trim() && !file) {
+                showToast('অনুগ্রহ করে কিছু লিখুন বা ফাইল সংযুক্ত করুন');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'পোস্ট হচ্ছে...';
+
+            const formData = new FormData();
+            formData.append('content', content);
+            formData.append('privacy', privacy);
+            if (file) {
+                formData.append('media', file);
+            }
+
+            try {
+                const res = await fetch('/api/v1/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                    },
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok && (data.success || data.status === 'success' || data.data)) {
+                    showToast('পোস্ট সফলভাবে তৈরি হয়েছে!');
+                    closeModal('postModal');
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    showToast(data.message || 'পোস্ট প্রকাশ করা যায়নি');
+                    btn.disabled = false;
+                    btn.innerText = 'পোস্ট প্রকাশ করুন';
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('সার্ভার যোগাযোগে সমস্যা হয়েছে');
+                btn.disabled = false;
+                btn.innerText = 'পোস্ট প্রকাশ করুন';
+            }
         }
 
         function openModal(id) {
@@ -14317,6 +14582,82 @@
             }
         }
 
+        // Privacy Settings Subtab Switcher
+        function switchPrivacySubtab(tab, btn) {
+            document.querySelectorAll('.privacy-subtab-pane').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.privacy-subtab-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.color = 'var(--fb-text-secondary)';
+                b.style.borderBottomColor = 'transparent';
+                b.style.fontWeight = '500';
+            });
+            const pane = document.getElementById(`privacyTabContent-${tab}`);
+            if (pane) pane.style.display = 'block';
+            if (btn) {
+                btn.classList.add('active');
+                btn.style.color = '#0084ff';
+                btn.style.borderBottomColor = '#0084ff';
+                btn.style.fontWeight = '700';
+            }
+            if (tab === 'blocking') {
+                loadBlockedUsersInPrivacyTab();
+            }
+        }
+
+        async function loadBlockedUsersInPrivacyTab() {
+            const listEl = document.getElementById('privacyBlockedUsersList');
+            if (!listEl) return;
+            listEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--fb-text-secondary);font-size:13px;">তালিকা লোড হচ্ছে...</div>';
+            try {
+                const res = await fetch('/api/v2/profile/blocked-users', {
+                    headers: getAuthHeaders()
+                });
+                const data = await res.json();
+                const users = (data.data && Array.isArray(data.data)) ? data.data : (Array.isArray(data) ? data : []);
+                if (users.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--fb-text-secondary);font-size:13px;">কোনো ব্যবহারকারীকে ব্লক করা হয়নি।</div>';
+                    return;
+                }
+                listEl.innerHTML = users.map(u => `
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--fb-hover);border-radius:8px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <img src="${u.avatar_url || '/images/default-avatar.svg'}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                            <div>
+                                <div style="font-size:13px;font-weight:700;color:var(--fb-text-primary);">${u.name || u.username}</div>
+                                <div style="font-size:11px;color:var(--fb-text-secondary);">@${u.username}</div>
+                            </div>
+                        </div>
+                        <button type="button" class="fb-btn fb-btn-secondary" style="font-size:12px;padding:4px 12px;" onclick="unblockUserFromPrivacyModal('${u.username}')">
+                            আনব্লক
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+                listEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--fb-text-secondary);font-size:13px;">তালিকা লোড করা যায়নি।</div>';
+            }
+        }
+
+        async function unblockUserFromPrivacyModal(username) {
+            if (!confirm(`আপনি কি @${username} কে আনব্লক করতে চান?`)) return;
+            try {
+                const res = await fetch(`/api/v2/profile/${username}/unblock`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                const data = await res.json();
+                if (res.ok && (data.success || data.status === 'success')) {
+                    showToast('সফলভাবে আনব্লক করা হয়েছে!');
+                    loadBlockedUsersInPrivacyTab();
+                } else {
+                    showToast(data.message || 'আনব্লক করা যায়নি।');
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('সার্ভার যোগাযোগে সমস্যা হয়েছে।');
+            }
+        }
+
         // Privacy Settings Submit
         async function submitPrivacySettings(e) {
             e.preventDefault();
@@ -14341,17 +14682,15 @@
                 });
                 const data = await res.json();
                 if (res.ok && (data.success || data.status === 'success')) {
-                    alert(data.message || 'প্রাইভেসি সেটিংস সফলভাবে আপডেট হয়েছে।');
+                    showToast(data.message || 'প্রাইভেসি সেটিংস সফলভাবে আপডেট হয়েছে!');
                     closeModal('privacyModal');
-                    window.location.reload();
                 } else {
-                    alert(data.message || 'প্রাইভেসি আপডেট করা যায়নি।');
-                    btn.disabled = false;
-                    btn.innerText = 'প্রাইভেসি সংরক্ষণ করুন';
+                    showToast(data.message || 'প্রাইভেসি আপডেট করা যায়নি।');
                 }
             } catch (err) {
                 console.error(err);
-                alert('সার্ভার যোগাযোগে সমস্যা হয়েছে।');
+                showToast('সার্ভার যোগাযোগে সমস্যা হয়েছে।');
+            } finally {
                 btn.disabled = false;
                 btn.innerText = 'প্রাইভেসি সংরক্ষণ করুন';
             }
