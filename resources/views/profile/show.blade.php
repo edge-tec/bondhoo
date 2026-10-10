@@ -300,22 +300,22 @@
         /* Profile Info Bar (Avatar + Info + Buttons) */
         .profile-main-bar {
             display: flex;
-            align-items: flex-start;
+            align-items: flex-end;
             justify-content: space-between;
-            padding-bottom: 16px;
+            padding-bottom: 20px;
             border-bottom: 1px solid var(--fb-divider);
             position: relative;
-            flex-wrap: wrap;
-            gap: 16px;
+            flex-wrap: nowrap;
+            gap: 24px;
         }
 
         .profile-avatar-and-names {
             display: flex;
-            align-items: flex-start;
+            align-items: flex-end;
             gap: 24px;
             margin-top: 0;
-            flex: 1;
-            min-width: 0;
+            flex: 1 1 auto;
+            min-width: 320px;
         }
 
         .avatar-wrapper {
@@ -367,20 +367,21 @@
         }
 
         .profile-names-block {
-            margin-top: 14px;
-            margin-bottom: 12px;
-            flex: 1;
-            min-width: 0;
+            margin-top: 0;
+            margin-bottom: 6px;
+            flex: 1 1 auto;
+            min-width: 280px;
         }
 
         .profile-fullname {
             font-size: 28px;
-            font-weight: 700;
+            font-weight: 800;
             color: var(--fb-text-primary);
             display: flex;
             align-items: center;
             gap: 8px;
-            line-height: 1.2;
+            line-height: 1.25;
+            white-space: nowrap;
         }
 
         .verified-badge {
@@ -415,16 +416,20 @@
         /* Action Buttons */
         .profile-actions-bar {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 18px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            align-self: flex-start;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+            margin-top: 0;
+            margin-bottom: 6px;
+            flex-shrink: 0;
         }
 
         .profile-actions-row {
-            display: contents;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
         }
 
         .fb-btn {
@@ -997,23 +1002,29 @@
         .profile-desktop-stats-box {
             display: flex;
             align-items: center;
-            gap: 16px;
-            margin-bottom: 10px;
-            padding: 2px 4px;
+            gap: 10px;
+            margin-bottom: 0;
+            padding: 2px 0;
         }
         .desktop-stat-counter {
-            display: flex;
-            align-items: baseline;
-            gap: 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             cursor: pointer;
             text-decoration: none;
-            transition: opacity 0.15s;
+            transition: all 0.15s ease;
         }
         .desktop-stat-counter:hover {
-            opacity: 0.8;
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
         }
         .desktop-stat-counter .stat-count {
-            font-size: 16.5px;
+            font-size: 16px;
             font-weight: 800;
             color: #0f172a;
         }
