@@ -3828,9 +3828,8 @@
     <!-- TOP NAVIGATION BAR -->
     <header>
         <div class="header-left">
-            <a href="/" class="fb-logo" title="Bondhoo Home" style="background:transparent;box-shadow:none;padding:0;display:inline-flex;align-items:center;gap:8px;height:40px;text-decoration:none;">
-                <img src="/images/bondhoo-icon.png" alt="Bondhoo" width="36" height="36" style="display:block;border-radius:10px;object-fit:contain;">
-                <span class="fb-logo-text" style="font-size: 20px; font-weight: 800; color: #1877f2; letter-spacing: -0.5px;">Bondhoo</span>
+            <a href="/" class="fb-logo" title="Bondhoo Home" style="background:transparent;box-shadow:none;padding:0;display:inline-flex;align-items:center;height:38px;text-decoration:none;">
+                <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo" style="height: 34px; max-width: 155px; width: auto; object-fit: contain; display: block;">
             </a>
             <div class="search-box">
                 <span class="search-icon">

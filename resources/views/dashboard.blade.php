@@ -82,6 +82,23 @@
             max-width: 320px;
         }
 
+        .bondhoo-main-brand-logo {
+            height: 38px;
+            max-width: 170px;
+            width: auto;
+            object-fit: contain;
+            display: block;
+            transition: transform 0.15s ease;
+        }
+
+        .fb-logo-brand:hover .bondhoo-main-brand-logo {
+            transform: scale(1.02);
+        }
+
+        [data-theme="dark"] .bondhoo-main-brand-logo {
+            content: url('/images/bondhoo-logo-white.png');
+        }
+
         .fb-logo {
             width: 40px;
             height: 40px;
@@ -1617,18 +1634,8 @@
     <header>
         <!-- Left: Logo & Search -->
         <div class="header-left">
-            <a href="/" class="fb-logo-brand" title="Bondhoo" style="text-decoration: none; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                <svg width="34" height="34" viewBox="0 0 64 64" fill="none" style="flex-shrink: 0;">
-                    <defs>
-                        <linearGradient id="bondhooBrandInfinityGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#4f46e5" />
-                            <stop offset="50%" stop-color="#7c3aed" />
-                            <stop offset="100%" stop-color="#ec4899" />
-                        </linearGradient>
-                    </defs>
-                    <path d="M19 19c-7.18 0-13 5.82-13 13s5.82 13 13 13c7.72 0 12.39-6.38 16.5-12 4.11 5.62 8.78 12 16.5 12 7.18 0 13-5.82 13-13s-5.82-13-13-13c-7.72 0-12.39 6.38-16.5 12-4.11-5.62-8.78-12-16.5-12zm0 6c4.68 0 8.35 4.67 11.5 9-3.15 4.33-6.82 9-11.5 9-3.87 0-7-3.13-7-7s3.13-7 7-7zm26 0c3.87 0 7 3.13 7 7s-3.13 7-7 7c-4.68 0-8.35-4.67-11.5-9 3.15-4.33 6.82-9 11.5-9z" fill="url(#bondhooBrandInfinityGrad)"/>
-                </svg>
-                <span class="bondhoo-brand-text" style="font-size: 22px; font-weight: 800; color: #1877f2; letter-spacing: -0.5px; font-family: 'Inter', sans-serif;">Bondhoo</span>
+            <a href="/" class="fb-logo-brand" title="Bondhoo" style="text-decoration: none; display: flex; align-items: center; flex-shrink: 0;">
+                <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo" style="height: 36px; max-width: 165px; width: auto; object-fit: contain; display: block;">
             </a>
             <div class="search-box desktop-only-search" style="position: relative;">
                 <span class="search-icon" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; color: var(--fb-text-secondary); pointer-events: none;">

@@ -713,7 +713,7 @@
         <!-- Left: Logo & Search -->
         <div class="header-left">
             <a href="/" class="fb-logo" title="Bondhoo হোম" style="background:transparent;box-shadow:none;padding:0;display:flex;align-items:center;text-decoration:none;">
-                <img src="/images/bondhoo-icon.png" alt="Bondhoo" width="40" height="40" style="display:block;border-radius:10px;object-fit:contain;">
+                <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo" style="height: 34px; max-width: 155px; width: auto; object-fit: contain; display: block;">
             </a>
             <div class="search-box">
                 <span class="search-icon">

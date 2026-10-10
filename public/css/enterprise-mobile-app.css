@@ -342,15 +342,16 @@ button, a, input, select, textarea, [role="button"] {
         justify-content: center !important;
     }
 
-    .fb-logo-brand svg {
-        width: 32px !important;
-        height: 32px !important;
+    .bondhoo-main-brand-logo {
+        height: 34px !important;
+        max-width: 155px !important;
+        width: auto !important;
+        object-fit: contain !important;
+        display: block !important;
     }
 
-    .bondhoo-brand-text {
-        font-size: 21px !important;
-        font-weight: 800 !important;
-        color: #1877f2 !important;
+    [data-theme="dark"] .bondhoo-main-brand-logo {
+        content: url('/images/bondhoo-logo-white.png') !important;
     }
 
     /* On mobile, collapse center desktop tabs */
