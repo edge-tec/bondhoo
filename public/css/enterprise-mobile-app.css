@@ -308,12 +308,21 @@ button, a, input, select, textarea, [role="button"] {
 /* ------------------------------------------------------------------------------
    4. MOBILE COMPACT TOP NAVIGATION BAR
    ------------------------------------------------------------------------------ */
+.mobile-subnav-bar {
+    display: none;
+}
+
 @media (max-width: 768px) {
     header,
     header.app-header {
         height: calc(var(--mobile-header-height) + var(--sat)) !important;
         padding: var(--sat) 12px 0 !important;
         gap: 8px !important;
+        background: #ffffff !important;
+        border-bottom: 1px solid var(--fb-border) !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 100 !important;
     }
 
     .header-left {
@@ -322,9 +331,26 @@ button, a, input, select, textarea, [role="button"] {
         gap: 8px !important;
     }
 
-    .fb-logo img {
-        width: 36px !important;
-        height: 36px !important;
+    .desktop-only-search,
+    .desktop-only-action {
+        display: none !important;
+    }
+
+    .mobile-header-search-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .fb-logo-brand svg {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .bondhoo-brand-text {
+        font-size: 21px !important;
+        font-weight: 800 !important;
+        color: #1877f2 !important;
     }
 
     /* On mobile, collapse center desktop tabs */
@@ -332,39 +358,178 @@ button, a, input, select, textarea, [role="button"] {
         display: none !important;
     }
 
-    .search-input {
-        height: 36px !important;
-        font-size: 13.5px !important;
-        padding: 0 12px 0 34px !important;
-    }
-
-    .search-box .search-icon {
-        left: 10px !important;
-    }
-
     .header-right {
-        gap: 6px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
     }
 
     .circle-btn {
-        width: 36px !important;
-        height: 36px !important;
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 50% !important;
+        background: #e4e6eb !important;
+        border: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        color: #050505 !important;
+        position: relative !important;
+        flex-shrink: 0 !important;
+        transition: transform 0.1s ease, background 0.15s ease !important;
+    }
+
+    .circle-btn:active {
+        transform: scale(0.92) !important;
     }
 
     .circle-btn svg {
-        width: 18px !important;
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .header-badge-count {
+        position: absolute !important;
+        top: -3px !important;
+        right: -3px !important;
+        border-radius: 50% !important;
+        min-width: 18px !important;
         height: 18px !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 4px !important;
+        border: 2px solid #ffffff !important;
+        line-height: 1 !important;
+    }
+
+    .header-badge-count.red {
+        background: #ef4444 !important;
+        color: #ffffff !important;
+    }
+
+    .header-badge-count.dark {
+        background: #0f172a !important;
+        color: #ffffff !important;
+    }
+
+    .mobile-header-avatar {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 50% !important;
+        position: relative !important;
+        flex-shrink: 0 !important;
+        cursor: pointer !important;
+    }
+
+    .mobile-header-avatar img {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+    }
+
+    .avatar-online-dot {
+        position: absolute !important;
+        bottom: 0 !important;
+        right: 0 !important;
+        width: 10px !important;
+        height: 10px !important;
+        background: #22c55e !important;
+        border: 2px solid #ffffff !important;
+        border-radius: 50% !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       MOBILE SUB-NAVIGATION BAR (Directly Below Top Header)
+       -------------------------------------------------------------------------- */
+    .mobile-subnav-bar {
+        position: sticky !important;
+        top: calc(var(--mobile-header-height) + var(--sat)) !important;
+        z-index: 99 !important;
+        background: #ffffff !important;
+        border-bottom: 1px solid var(--fb-border) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-around !important;
+        height: 48px !important;
+        padding: 0 4px !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+    }
+
+    .mobile-subnav-item {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 100% !important;
+        min-height: 44px !important;
+        border: none !important;
+        background: transparent !important;
+        color: var(--fb-text-secondary) !important;
+        cursor: pointer !important;
+        position: relative !important;
+        gap: 3px !important;
+        padding: 4px 0 !important;
+        text-decoration: none !important;
+        transition: color 0.15s ease, transform 0.1s ease !important;
+    }
+
+    .mobile-subnav-item:active {
+        transform: scale(0.92) !important;
+    }
+
+    .mobile-subnav-item svg {
+        width: 22px !important;
+        height: 22px !important;
+        stroke: currentColor !important;
+        fill: none !important;
+    }
+
+    .mobile-subnav-item span {
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        line-height: 1 !important;
+        letter-spacing: -0.2px !important;
+    }
+
+    .mobile-subnav-item.active {
+        color: #1877f2 !important;
+    }
+
+    .mobile-subnav-item.active svg {
+        stroke: #1877f2 !important;
+    }
+
+    .mobile-subnav-item.active::after {
+        content: '' !important;
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 12% !important;
+        right: 12% !important;
+        height: 3px !important;
+        background: #1877f2 !important;
+        border-radius: 3px 3px 0 0 !important;
     }
 }
 
 /* Small Mobile Screen (< 400px) */
 @media (max-width: 400px) {
     .header-left .search-box {
-        display: none; /* Hide wide input on very narrow screens */
+        display: none !important;
     }
 
     .mobile-search-toggle-btn {
         display: flex !important;
+    }
+
+    .mobile-subnav-item span {
+        font-size: 10px !important;
     }
 }
 
@@ -1257,9 +1422,107 @@ button, a, input, select, textarea, [role="button"] {
 /* ------------------------------------------------------------------------------
    8. MOBILE FEED POSTS & COMPOSER ENHANCEMENTS
    ------------------------------------------------------------------------------ */
+/* Post Composer Row (.create-post-card & .create-post-row) */
+.create-post-card {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    border: 1px solid var(--fb-border) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.create-post-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+}
+
+.create-post-avatar-wrap {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+}
+
+.create-post-trigger {
+    flex: 1 !important;
+    min-height: 40px !important;
+    background: #f0f2f5 !important;
+    border-radius: 50px !important;
+    padding: 8px 16px !important;
+    color: #65676b !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    user-select: none !important;
+    transition: background 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.create-post-trigger:hover {
+    background: #e4e6eb !important;
+}
+
+.create-post-trigger span {
+    color: #65676b !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.create-post-inline-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+}
+
+.post-inline-btn {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    padding: 4px 6px !important;
+    cursor: pointer !important;
+    border-radius: 8px !important;
+    min-width: 46px !important;
+    user-select: none !important;
+    transition: background 0.15s ease, transform 0.1s ease !important;
+}
+
+.post-inline-btn:hover {
+    background: #f2f2f2 !important;
+}
+
+.post-inline-btn:active {
+    transform: scale(0.92) !important;
+}
+
+.post-inline-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 22px !important;
+    height: 22px !important;
+}
+
+.post-inline-label {
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    color: #65676b !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+}
+
 @media (max-width: 768px) {
     .feed-container {
-        padding: 10px 8px !important;
+        padding: 8px 8px !important;
         max-width: 100% !important;
         gap: 10px !important;
     }
@@ -1269,17 +1532,39 @@ button, a, input, select, textarea, [role="button"] {
     }
 
     #feedPostsStream .post-card {
-        border-radius: 12px !important;
+        border-radius: 14px !important;
+        background: #ffffff !important;
+        border: 1px solid var(--fb-border) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
         margin-bottom: 0 !important;
+        overflow: hidden !important;
+    }
+
+    #feedPostsStream .post-header {
+        padding: 12px 14px 8px !important;
+    }
+
+    #feedPostsStream .post-body {
+        padding: 0 14px 10px !important;
+    }
+
+    #feedPostsStream .post-body img,
+    #feedPostsStream .post-body video {
+        border-radius: 10px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        object-fit: cover !important;
+        display: block !important;
     }
 
     .reactions-bar {
         padding: 8px 12px !important;
-        font-size: 12px !important;
+        font-size: 12.5px !important;
     }
 
     .post-buttons-bar {
         padding: 4px 6px !important;
+        border-top: 1px solid var(--fb-border) !important;
     }
 
     .post-buttons-bar .post-btn {
@@ -1292,24 +1577,108 @@ button, a, input, select, textarea, [role="button"] {
         width: 19px !important;
         height: 19px !important;
     }
-
-    /* Composer trigger box */
-    .create-post-card {
-        border-radius: 12px !important;
-        padding: 10px 12px !important;
-    }
 }
 
 @media (max-width: 480px) {
     #feedPostsStream .post-card {
-        border-radius: 0 !important;
-        border-left: none !important;
-        border-right: none !important;
+        border-radius: 14px !important;
     }
 
     .feed-container {
-        padding: 6px 0 !important;
+        padding: 6px 6px !important;
     }
+
+    .post-inline-btn {
+        min-width: 42px !important;
+        padding: 3px 4px !important;
+    }
+
+    .post-inline-label {
+        font-size: 9.5px !important;
+    }
+}
+
+/* ------------------------------------------------------------------------------
+   MOBILE LIVE SEARCH MODAL OVERLAY (#mobileSearchModal)
+   ------------------------------------------------------------------------------ */
+.mobile-search-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: #ffffff;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-search-modal-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    padding-top: var(--sat);
+}
+
+.mobile-search-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--fb-border);
+    background: #ffffff;
+}
+
+.mobile-search-back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fb-text-primary);
+}
+
+.mobile-search-input-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.mobile-search-input-wrap input {
+    width: 100%;
+    height: 40px;
+    background: #f0f2f5;
+    border: none;
+    border-radius: 50px;
+    padding: 0 36px 0 16px;
+    font-size: 14.5px;
+    outline: none;
+    color: var(--fb-text-primary);
+}
+
+.mobile-search-clear-btn {
+    position: absolute;
+    right: 10px;
+    background: #d1d5db;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #4b5563;
+    cursor: pointer;
+}
+
+.mobile-search-results-area {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px;
 }
 
 /* ------------------------------------------------------------------------------

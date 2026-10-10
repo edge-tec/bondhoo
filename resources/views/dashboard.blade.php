@@ -1601,7 +1601,7 @@
         }
 
         @media (max-width: 600px) {
-            #feedPostsStream .post-card { border-radius: 0 !important; }
+            #feedPostsStream .post-card { border-radius: 14px !important; }
             #feedPostsStream .post-header { padding: 12px 12px 8px !important; }
             #feedPostsStream .post-body { padding: 0 12px 10px !important; }
             #feedPostsStream .reactions-bar { margin: 0 12px !important; }
@@ -1617,10 +1617,20 @@
     <header>
         <!-- Left: Logo & Search -->
         <div class="header-left">
-            <a href="/" class="fb-logo" title="Bondhoo" style="background:transparent;box-shadow:none;padding:0;display:inline-flex;align-items:center;height:40px;text-decoration:none;">
-                <img src="/images/bondhoo-icon.png" alt="Bondhoo" width="40" height="40" style="display:block;border-radius:10px;object-fit:contain;">
+            <a href="/" class="fb-logo-brand" title="Bondhoo" style="text-decoration: none; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <svg width="34" height="34" viewBox="0 0 64 64" fill="none" style="flex-shrink: 0;">
+                    <defs>
+                        <linearGradient id="bondhooBrandInfinityGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#4f46e5" />
+                            <stop offset="50%" stop-color="#7c3aed" />
+                            <stop offset="100%" stop-color="#ec4899" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M19 19c-7.18 0-13 5.82-13 13s5.82 13 13 13c7.72 0 12.39-6.38 16.5-12 4.11 5.62 8.78 12 16.5 12 7.18 0 13-5.82 13-13s-5.82-13-13-13c-7.72 0-12.39 6.38-16.5 12-4.11-5.62-8.78-12-16.5-12zm0 6c4.68 0 8.35 4.67 11.5 9-3.15 4.33-6.82 9-11.5 9-3.87 0-7-3.13-7-7s3.13-7 7-7zm26 0c3.87 0 7 3.13 7 7s-3.13 7-7 7c-4.68 0-8.35-4.67-11.5-9 3.15-4.33 6.82-9 11.5-9z" fill="url(#bondhooBrandInfinityGrad)"/>
+                </svg>
+                <span class="bondhoo-brand-text" style="font-size: 22px; font-weight: 800; color: #1877f2; letter-spacing: -0.5px; font-family: 'Inter', sans-serif;">Bondhoo</span>
             </a>
-            <div class="search-box" style="position: relative;">
+            <div class="search-box desktop-only-search" style="position: relative;">
                 <span class="search-icon" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; color: var(--fb-text-secondary); pointer-events: none;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
@@ -1675,8 +1685,16 @@
 
         <!-- Right: Actions & Profile -->
         <div class="header-right" style="position: relative;">
+            <!-- Mobile Search Circular Icon Button (Visible on mobile screens) -->
+            <button type="button" class="circle-btn mobile-header-search-btn" id="mobileHeaderSearchBtn" title="অনুসন্ধান" onclick="openMobileSearchModal()" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </button>
+
             <!-- Global Feed Refresh Button (No Full Page Reload) -->
-            <button class="circle-btn" id="globalFeedRefreshBtn" title="ফিড ও ডাটা রিফ্রেশ করুন" onclick="triggerFeedRefresh(this)" style="position: relative;">
+            <button class="circle-btn desktop-only-action" id="globalFeedRefreshBtn" title="ফিড ও ডাটা রিফ্রেশ করুন" onclick="triggerFeedRefresh(this)" style="position: relative;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="23 4 23 10 17 10"></polyline>
                     <polyline points="1 20 1 14 7 14"></polyline>
@@ -1686,7 +1704,7 @@
 
             <!-- Floating Messenger Dropdown Menu -->
             <div style="position: relative;" id="topMessengerContainer">
-                <button type="button" class="circle-btn" id="topMessengerBtn" title="মেসেঞ্জার ও চ্যাটসমূহ" onclick="toggleMessengerDropdown(event)" style="position: relative;">
+                <button type="button" class="circle-btn mobile-header-messenger-btn" id="topMessengerBtn" title="মেসেঞ্জার ও চ্যাটসমূহ" onclick="toggleMessengerDropdown(event)" style="position: relative;">
                     <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
                         <path fill-rule="evenodd" clip-rule="evenodd" d="M14 2C7.373 2 2 7.155 2 13.518c0 3.626 1.745 6.862 4.475 8.974V26l3.37-1.85c1.28.355 2.646.549 4.155.549 6.627 0 12-5.155 12-11.518C26 7.155 20.627 2 14 2zm1.203 15.534l-3.08-3.284-6.012 3.284 6.613-7.02 3.155 3.284 5.937-3.284-6.613 7.02z" fill="url(#dashMessengerGrad)"/>
                         <defs>
@@ -1697,7 +1715,7 @@
                             </linearGradient>
                         </defs>
                     </svg>
-                    <span id="topMessengerBadge" style="display: none; position: absolute; top: -3px; right: -3px; background: #0084ff; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">0</span>
+                    <span id="topMessengerBadge" class="header-badge-count red" style="display: none; position: absolute; top: -3px; right: -3px; background: #ef4444; color: white; border-radius: 50%; min-width: 18px; height: 18px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 4px; border: 2px solid #ffffff;">0</span>
                 </button>
                 <div id="topMessengerDropdown" class="top-messenger-dropdown" style="display: none;">
                     <div class="top-messenger-header">
@@ -1745,12 +1763,12 @@
 
             <!-- Notifications Bell & Popover -->
             <div style="position: relative;">
-                <button class="circle-btn" title="নোটিফিকেশন" onclick="toggleNotificationsDropdown()" style="position: relative;">
+                <button class="circle-btn mobile-header-notif-btn" id="topNotifBtn" title="নোটিফিকেশন" onclick="toggleNotificationsDropdown()" style="position: relative;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
-                    <span id="notifBadge" style="display: none; position: absolute; top: -3px; right: -3px; background: #f02849; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">0</span>
+                    <span id="notifBadge" class="header-badge-count dark" style="display: none; position: absolute; top: -3px; right: -3px; background: #0f172a; color: white; border-radius: 50%; min-width: 18px; height: 18px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 4px; border: 2px solid #ffffff;">0</span>
                 </button>
                 <div id="notificationsDropdown" style="display: none; position: absolute; right: 0; top: 48px; width: 340px; background: white; border-radius: 12px; box-shadow: var(--shadow-lg); border: 1px solid var(--fb-border); z-index: 150; max-height: 420px; overflow-y: auto;">
                     <div style="padding: 12px 16px; border-bottom: 1px solid var(--fb-border); display: flex; justify-content: space-between; align-items: center;">
@@ -1772,7 +1790,10 @@
             <!-- User Avatar & Dropdown Menu -->
             <div style="position: relative;">
                 <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="toggleUserDropdown()">
-                    <div class="avatar" id="navUserAvatar"><img src="/images/default-avatar.svg" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="User"></div>
+                    <div class="avatar mobile-header-avatar" id="navUserAvatar" style="position: relative;">
+                        <img src="/images/default-avatar.svg" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="User">
+                        <span class="avatar-online-dot" style="position: absolute; bottom: 0; right: 0; width: 11px; height: 11px; background: #22c55e; border: 2px solid #ffffff; border-radius: 50%;"></span>
+                    </div>
                 </div>
                 <div id="userMenuDropdown" style="display: none; position: absolute; right: 0; top: 48px; width: 270px; background: white; border-radius: 12px; box-shadow: var(--shadow-lg); border: 1px solid var(--fb-border); z-index: 150; padding: 8px;">
                     <div style="display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 8px; cursor: pointer; border-bottom: 1px solid var(--fb-border); margin-bottom: 6px;" onclick="goToMyProfile(); toggleUserDropdown();">
@@ -1801,19 +1822,49 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Mobile Menu Drawer Toggle (Visible on mobile screens) -->
-            <button type="button" class="circle-btn mobile-menu-toggle-btn" id="mobileHeaderMenuBtn" title="মেনু ও এক্সপ্লোর" onclick="openMobileMenuDrawer()" aria-label="মেনু খুলুন" style="display: none;">
-                <svg class="mobile-menu-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path class="menu-bar menu-bar-top" d="M3.75 6.75h16.5" stroke-width="2.3" stroke-linecap="round"/>
-                    <path class="menu-bar menu-bar-mid" d="M3.75 12h11.5" stroke-width="2.3" stroke-linecap="round"/>
-                    <circle class="menu-bar-dot" cx="19.25" cy="12" r="1.4" fill="currentColor"/>
-                    <path class="menu-bar-bot" d="M3.75 17.25h16.5" stroke-width="2.3" stroke-linecap="round"/>
-                </svg>
-                <span class="mobile-menu-status-dot" id="mobileHeaderMenuDot" style="display: none;"></span>
-            </button>
         </div>
     </header>
+
+    <!-- 1.1 MOBILE SUB-NAVIGATION BAR (DIRECTLY BELOW HEADER) -->
+    <nav class="mobile-subnav-bar" id="bondhooMobileSubnavBar" aria-label="মোবাইল সাব-নেভিগেশন">
+        <button type="button" class="mobile-subnav-item active" id="subnav-feed" onclick="switchMainTab('feed')" title="নিউজ ফিড">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9.5L12 3l9 6.5V20a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 13 20v-5h-2v5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 3 20V9.5z"/>
+            </svg>
+            <span>নিউজ ফিড</span>
+        </button>
+        <button type="button" class="mobile-subnav-item" id="subnav-watch" onclick="switchMainTab('watch')" title="ভিডিও/রিলস">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <polygon points="10 8 16 10 10 12 10 8" fill="currentColor"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <span>ভিডিও/রিলস</span>
+        </button>
+        <button type="button" class="mobile-subnav-item" id="subnav-groups" onclick="switchMainTab('groups')" title="গ্রুপস">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span>গ্রুপস</span>
+        </button>
+        <button type="button" class="mobile-subnav-item" id="subnav-saved" onclick="openSavedPostsModal()" title="সেভ করা">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span>সেভ করা</span>
+        </button>
+        <button type="button" class="mobile-subnav-item mobile-menu-toggle-btn" id="subnav-menu" onclick="openMobileMenuDrawer()" title="মেনু">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <line x1="4" y1="12" x2="20" y2="12"/>
+                <line x1="4" y1="18" x2="20" y2="18"/>
+            </svg>
+        </button>
+    </nav>
 
     <!-- --------------------------------------------------------- -->
     <!-- 2. SOCIAL NETWORK USER DASHBOARD (3 COLUMNS) -->
@@ -1958,37 +2009,57 @@
 
                 <!-- What's on your mind? Post Creator Card -->
                 <div class="fb-card create-post-card">
-                    <div class="create-post-top">
-                        <div class="avatar" id="createPostAvatar"><img src="/images/default-avatar.svg" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="User"></div>
-                        <div class="create-post-trigger" onclick="openCreatePostModal()">
+                    <div class="create-post-row">
+                        <div class="avatar create-post-avatar-wrap" id="createPostAvatar" onclick="goToMyProfile()" title="আমার প্রোফাইল">
+                            <img src="/images/default-avatar.svg" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="User">
+                        </div>
+                        <div class="create-post-trigger" onclick="openCreatePostModal()" title="নতুন পোস্ট লিখুন">
                             <span id="createPostPlaceholder">আপনার মনে কী আছে?</span>
                         </div>
-                    </div>
-
-                    <div class="create-post-actions">
-                        <div class="action-item" onclick="openStartLiveFlow()" style="cursor: pointer;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
-                                <path d="m22 8-6 4 6 4V8Z"></path>
-                                <rect width="14" height="12" x="2" y="6" rx="2"></rect>
-                            </svg>
-                            <span style="font-weight: 600;">লাইভ ভিডিও</span>
-                        </div>
-                        <div class="action-item" onclick="openCreatePostModal('photo')">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                                <circle cx="9" cy="9" r="2"></circle>
-                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-                            </svg>
-                            <span style="font-weight: 600;">ছবি/ভিডিও</span>
-                        </div>
-                        <div class="action-item" onclick="openCreatePostModal('feeling')">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                            </svg>
-                            <span style="font-weight: 600;">অনুভূতি/কার্যকলাপ</span>
+                        <div class="create-post-inline-actions">
+                            <div class="post-inline-btn" onclick="openCreatePostModal('photo')" title="ছবি বা ভিডিও যুক্ত করুন">
+                                <span class="post-inline-icon">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                        <rect width="20" height="20" x="2" y="2" rx="5" fill="url(#composerPhotoGrad)"/>
+                                        <circle cx="8" cy="8" r="2.2" fill="#ffffff"/>
+                                        <path d="M22 15.5l-6-6a1.5 1.5 0 0 0-2.12 0L3.5 19.8" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                                        <defs>
+                                            <linearGradient id="composerPhotoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stop-color="#10b981"/>
+                                                <stop offset="100%" stop-color="#059669"/>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                </span>
+                                <span class="post-inline-label">ছবি/ভিডিও</span>
+                            </div>
+                            <div class="post-inline-btn" onclick="openCreatePostModal('feeling')" title="অনুভূতি বা কার্যকলাপ যুক্ত করুন">
+                                <span class="post-inline-icon">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="10" fill="#fbbf24"/>
+                                        <circle cx="8.5" cy="9.5" r="1.5" fill="#78350f"/>
+                                        <circle cx="15.5" cy="9.5" r="1.5" fill="#78350f"/>
+                                        <path d="M7.5 14c1.2 2.2 2.8 3.2 4.5 3.2s3.3-1 4.5-3.2" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </span>
+                                <span class="post-inline-label">অনুভূতি</span>
+                            </div>
+                            <div class="post-inline-btn" onclick="openStartLiveFlow()" title="সরাসরি লাইভ শুরু করুন">
+                                <span class="post-inline-icon">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="10" fill="url(#composerLiveGrad)"/>
+                                        <circle cx="12" cy="12" r="3.5" fill="#ffffff"/>
+                                        <path d="M7 7a7 7 0 0 1 10 0M5 5a10 10 0 0 1 14 0" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+                                        <defs>
+                                            <linearGradient id="composerLiveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stop-color="#ef4444"/>
+                                                <stop offset="100%" stop-color="#dc2626"/>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                </span>
+                                <span class="post-inline-label">লাইভ</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -8101,15 +8172,17 @@
                 });
                 const notifJson = await notifRes.json();
                 unreadNotif = notifJson.data?.count ?? notifJson.data?.unread_count ?? 0;
-                const notifBadge = document.getElementById('notifBadge');
-                if (notifBadge) {
-                    if (unreadNotif > 0) {
-                        notifBadge.style.display = 'flex';
-                        notifBadge.innerText = unreadNotif > 99 ? '99+' : unreadNotif;
-                    } else {
-                        notifBadge.style.display = 'none';
+                ['notifBadge', 'mobileNavNotifBadge'].forEach(id => {
+                    const badge = document.getElementById(id);
+                    if (badge) {
+                        if (unreadNotif > 0) {
+                            badge.style.display = 'flex';
+                            badge.innerText = unreadNotif > 99 ? '99+' : unreadNotif;
+                        } else {
+                            badge.style.display = 'none';
+                        }
                     }
-                }
+                });
             } catch (e) {}
 
             // 2. Unread messages
@@ -8119,7 +8192,7 @@
                 });
                 const msgJson = await msgRes.json();
                 unreadMsg = msgJson.data?.count ?? msgJson.data?.unread_count ?? 0;
-                ['topMessengerBadge', 'sidebarMsgBadge'].forEach(id => {
+                ['topMessengerBadge', 'sidebarMsgBadge', 'mobileNavMessengerBadge'].forEach(id => {
                     const badge = document.getElementById(id);
                     if (badge) {
                         if (unreadMsg > 0) {
@@ -8603,8 +8676,11 @@
         /* ------------------------------------------------------------- */
         function switchMainTab(tab) {
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.mobile-subnav-item').forEach(t => t.classList.remove('active'));
             const activeTabBtn = document.getElementById(`tab-${tab}`);
             if (activeTabBtn) activeTabBtn.classList.add('active');
+            const activeSubnavBtn = document.getElementById(`subnav-${tab}`);
+            if (activeSubnavBtn) activeSubnavBtn.classList.add('active');
 
             // Make sure user view is visible
             document.getElementById('userDashboardView').style.display = 'grid';

@@ -34,42 +34,36 @@
 <!-- 1. FIXED MOBILE BOTTOM NAVIGATION BAR -->
 <nav class="mobile-bottom-nav" id="bondhooMobileBottomNav" aria-label="মোবাইল নেভিগেশন">
     <!-- Home / Feed -->
-    <button type="button" class="mobile-nav-btn {{ $isHomeActive ? 'active' : '' }}" id="mobileNavHomeBtn" onclick="handleMobileNavHome(event)" aria-label="হোম ফিড">
+    <button type="button" class="mobile-nav-btn {{ $isHomeActive ? 'active' : '' }}" id="mobileNavHomeBtn" onclick="handleMobileNavHome(event)" aria-label="হোম ফিড" title="হোম ফিড">
         <span class="mobile-nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9.5L12 3l9 6.5V20a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 13 20v-5h-2v5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 3 20V9.5z"/>
             </svg>
         </span>
-        <span class="mobile-nav-label">হোম</span>
     </button>
 
-    <!-- Friends -->
-    <button type="button" class="mobile-nav-btn {{ $isFriendsActive ? 'active' : '' }}" id="mobileNavFriendsBtn" onclick="handleMobileNavFriends(event)" aria-label="বন্ধুরা">
+    <!-- Search -->
+    <button type="button" class="mobile-nav-btn {{ request()->is('search*') ? 'active' : '' }}" id="mobileNavSearchBtn" onclick="handleMobileNavSearch(event)" aria-label="অনুসন্ধান" title="অনুসন্ধান">
         <span class="mobile-nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <span class="mobile-nav-badge" id="mobileNavFriendsBadge" style="display: none;">0</span>
         </span>
-        <span class="mobile-nav-label">বন্ধুরা</span>
     </button>
 
     <!-- Create (Center Elevated Action Button) -->
-    <button type="button" class="mobile-nav-create-btn" id="mobileNavCreateBtn" onclick="openMobileCreateSheet()" aria-label="নতুন তৈরি করুন">
+    <button type="button" class="mobile-nav-create-btn" id="mobileNavCreateBtn" onclick="handleMobileCenterCreate(event)" aria-label="নতুন তৈরি করুন" title="নতুন তৈরি করুন">
         <div class="mobile-nav-create-bubble">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
         </div>
-        <span class="mobile-nav-create-label">তৈরি</span>
     </button>
 
     <!-- Notifications -->
-    <button type="button" class="mobile-nav-btn {{ $isNotifsActive ? 'active' : '' }}" id="mobileNavNotifBtn" onclick="handleMobileNavNotifications(event)" aria-label="নোটিফিকেশন">
+    <button type="button" class="mobile-nav-btn {{ $isNotifsActive ? 'active' : '' }}" id="mobileNavNotifBtn" onclick="handleMobileNavNotifications(event)" aria-label="বিজ্ঞপ্তি" title="বিজ্ঞপ্তি">
         <span class="mobile-nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -77,30 +71,16 @@
             </svg>
             <span class="mobile-nav-badge" id="mobileNavNotifBadge" style="display: none;">0</span>
         </span>
-        <span class="mobile-nav-label">বিজ্ঞপ্তি</span>
     </button>
 
-    <!-- Menu / More Drawer -->
-    <button type="button" class="mobile-nav-btn" id="mobileNavMenuBtn" onclick="openMobileMenuDrawer()" aria-label="মেনু ও অন্যান্য">
-        <span class="mobile-nav-icon mobile-nav-menu-icon-wrap">
-            <span class="mobile-bottom-menu-avatar-badge" id="mobileNavMenuAvatarBadge">
-                @if($navUserAvatar && $navUserAvatar !== '/images/default-avatar.svg')
-                    <img src="{{ $navUserAvatar }}" alt="{{ $navUserName }}" class="mobile-bottom-menu-avatar-img" onerror="this.style.display='none'; const fb = this.nextElementSibling; if(fb) fb.style.display='flex';">
-                    <span class="mobile-bottom-menu-avatar-fallback" style="display: none;">{{ $navUserInitial }}</span>
-                @else
-                    <span class="mobile-bottom-menu-avatar-fallback">{{ $navUserInitial }}</span>
-                @endif
-                <span class="mobile-bottom-menu-mini-icon" aria-hidden="true">
-                    <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <line x1="1.5" y1="2" x2="8.5" y2="2"></line>
-                        <line x1="1.5" y1="5" x2="6.5" y2="5"></line>
-                        <line x1="1.5" y1="8" x2="8.5" y2="8"></line>
-                    </svg>
-                </span>
-            </span>
-            <span class="mobile-nav-badge" id="mobileNavMenuBadge" style="display: none;">0</span>
+    <!-- Messenger -->
+    <button type="button" class="mobile-nav-btn {{ $isMessagesActive ? 'active' : '' }}" id="mobileNavMessengerBtn" onclick="handleMobileNavMessenger(event)" aria-label="মেসেঞ্জার" title="মেসেঞ্জার">
+        <span class="mobile-nav-icon">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="currentColor">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M14 2C7.373 2 2 7.155 2 13.518c0 3.626 1.745 6.862 4.475 8.974V26l3.37-1.85c1.28.355 2.646.549 4.155.549 6.627 0 12-5.155 12-11.518C26 7.155 20.627 2 14 2zm1.203 15.534l-3.08-3.284-6.012 3.284 6.613-7.02 3.155 3.284 5.937-3.284-6.613 7.02z"/>
+            </svg>
+            <span class="mobile-nav-badge" id="mobileNavMessengerBadge" style="display: none;">0</span>
         </span>
-        <span class="mobile-nav-label">মেনু</span>
     </button>
 </nav>
 
@@ -496,11 +476,28 @@
                 </div>
             </div>
 
-            <!-- Empty Search State -->
-            <div class="mobile-drawer-empty-search" id="mobileDrawerEmptySearch">
-                <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <p>কোনো অপশন বা ফিচার খুঁজে পাওয়া যায়নি</p>
-                <button type="button" onclick="clearMobileDrawerSearch()">অনুসন্ধান রিসেট করুন</button>
+<!-- 3. MOBILE SEARCH MODAL OVERLAY (#mobileSearchModal) -->
+<div class="mobile-search-modal-overlay" id="mobileSearchModal" style="display: none;">
+    <div class="mobile-search-modal-backdrop" onclick="closeMobileSearchModal()"></div>
+    <div class="mobile-search-modal-container">
+        <div class="mobile-search-modal-header">
+            <div class="mobile-search-input-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="mobileSearchModalInput" placeholder="Bondhoo-তে অনুসন্ধান করুন..." autocomplete="off">
+                <button type="button" id="mobileSearchClearBtn" style="display: none;" onclick="clearMobileSearchInput()">✕</button>
+            </div>
+            <button type="button" class="mobile-search-cancel-btn" onclick="closeMobileSearchModal()">বাতিল</button>
+        </div>
+        <div class="mobile-search-results-area" id="mobileSearchResultsArea">
+            <div class="mobile-search-hint">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <p>বন্ধু, প্রোফাইল বা পোস্ট খুঁজে পেতে সার্চ করুন</p>
             </div>
         </div>
     </div>
@@ -695,6 +692,130 @@
         }
     }
 
+    function handleMobileNavSearch(e) {
+        closeMobileMenuDrawer();
+        closeMobileCreateSheet();
+        openMobileSearchModal();
+        updateBottomNavActive('mobileNavSearchBtn');
+    }
+
+    function handleMobileCenterCreate(e) {
+        closeMobileMenuDrawer();
+        if (typeof openCreatePostModal === 'function') {
+            openCreatePostModal();
+        } else {
+            openMobileCreateSheet();
+        }
+    }
+
+    function openMobileSearchModal() {
+        const modal = document.getElementById('mobileSearchModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                const inp = document.getElementById('mobileSearchModalInput');
+                if (inp) inp.focus();
+            }, 120);
+        }
+    }
+
+    function closeMobileSearchModal() {
+        const modal = document.getElementById('mobileSearchModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    function clearMobileSearchInput() {
+        const inp = document.getElementById('mobileSearchModalInput');
+        const clearBtn = document.getElementById('mobileSearchClearBtn');
+        const area = document.getElementById('mobileSearchResultsArea');
+        if (inp) {
+            inp.value = '';
+            inp.focus();
+        }
+        if (clearBtn) clearBtn.style.display = 'none';
+        if (area) {
+            area.innerHTML = `
+                <div class="mobile-search-hint">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <p>বন্ধু, প্রোফাইল বা পোস্ট খুঁজে পেতে সার্চ করুন</p>
+                </div>`;
+        }
+    }
+
+    let mobileSearchTimer = null;
+    document.addEventListener('DOMContentLoaded', function() {
+        const inp = document.getElementById('mobileSearchModalInput');
+        const clearBtn = document.getElementById('mobileSearchClearBtn');
+        if (inp) {
+            inp.addEventListener('input', function(e) {
+                clearTimeout(mobileSearchTimer);
+                const q = e.target.value.trim();
+                const area = document.getElementById('mobileSearchResultsArea');
+                if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+                if (!area) return;
+                if (!q) {
+                    clearMobileSearchInput();
+                    return;
+                }
+
+                mobileSearchTimer = setTimeout(async () => {
+                    try {
+                        const tok = window.currentToken || (window.auth && window.auth.token) || '';
+                        const headers = { 'Accept': 'application/json' };
+                        if (tok) headers['Authorization'] = `Bearer ${tok}`;
+                        const res = await fetch(`/api/v1/search?query=${encodeURIComponent(q)}`, { headers });
+                        const json = await res.json();
+                        const results = json.data || {};
+                        const users = results.users || [];
+                        const posts = results.posts || [];
+
+                        let html = '';
+                        if (users.length > 0) {
+                            html += '<div class="mobile-search-section-title">ব্যবহারকারীগণ</div>';
+                            users.forEach(u => {
+                                const profileUrl = window.getUserProfileUrl ? window.getUserProfileUrl(u) : `/u/${encodeURIComponent(u.username || u.id)}`;
+                                const avatar = u.profile?.avatar_url || u.avatar_url || '/images/default-avatar.svg';
+                                html += `
+                                    <div class="mobile-search-user-item" onclick="closeMobileSearchModal(); window.location.href='${profileUrl}';">
+                                        <img src="${avatar}" class="mobile-search-user-avatar" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                                        <div class="mobile-search-user-meta">
+                                            <div class="mobile-search-user-name">${escapeHtml(u.name || u.username)}</div>
+                                            <div class="mobile-search-user-handle">@${escapeHtml(u.username || '')}</div>
+                                        </div>
+                                    </div>`;
+                            });
+                        }
+
+                        if (posts.length > 0) {
+                            html += '<div class="mobile-search-section-title">পোস্টসমূহ</div>';
+                            posts.forEach(p => {
+                                html += `
+                                    <div class="mobile-search-post-item" onclick="closeMobileSearchModal(); if(typeof showToast === 'function') showToast('পোস্ট ভিউ করা হচ্ছে');">
+                                        <p>${escapeHtml((p.content || '').substring(0, 90))}...</p>
+                                    </div>`;
+                            });
+                        }
+
+                        if (users.length === 0 && posts.length === 0) {
+                            html = '<div class="mobile-search-empty">কোনো ফলাফল পাওয়া যায়নি।</div>';
+                        }
+
+                        area.innerHTML = html;
+                    } catch (err) {
+                        console.error('Mobile search error:', err);
+                    }
+                }, 300);
+            });
+        }
+    });
+
     function handleMobileNavFriends(e) {
         closeMobileMenuDrawer();
         closeMobileCreateSheet();
@@ -868,9 +989,11 @@
         }
         if (counts.messages !== undefined) {
             const m = document.getElementById('mobileDrawerMsgBadge');
+            const mb = document.getElementById('mobileNavMessengerBadge');
             const show = counts.messages > 0;
             const text = counts.messages > 99 ? '99+' : counts.messages.toString();
             if (m) { m.style.display = show ? 'inline-block' : 'none'; m.innerText = text; }
+            if (mb) { mb.style.display = show ? 'flex' : 'none'; mb.innerText = text; }
         }
         if (counts.friends !== undefined) {
             const fb = document.getElementById('mobileNavFriendsBadge');

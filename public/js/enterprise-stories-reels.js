@@ -787,46 +787,42 @@ const JugajugMediaSuite = {
             const userAvatar = this.normalizeUrl(currentUser.avatar_url || currentUser.profile?.avatar_url || '');
 
             let html = `
-                <div class="fb-story-card fb-create-story-card" onclick="JugajugMediaSuite.openCreateStoryModal()">
-                    <div class="avatar-preview" style="background-image: url('${userAvatar}'); background-color: #e2e8f0; display: flex; align-items: center; justify-content: center;">
-                        ${!userAvatar ? `<span style="font-size: 38px; font-weight: 800; color: #64748b;">${userInitial}</span>` : ''}
+                <div class="fb-story-card fb-create-story-card" onclick="JugajugMediaSuite.openCreateStoryModal()" title="স্টোরি তৈরি করুন">
+                    <div class="story-circle-avatar-wrap">
+                        ${userAvatar ? `<img src="${userAvatar}" alt="You" class="story-circle-avatar-img" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">` : `<div class="story-circle-avatar-fallback">${userInitial}</div>`}
+                        <div class="story-create-badge-plus">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </div>
                     </div>
-                    <div class="bottom-action">
-                        <div class="fb-create-story-plus">+</div>
-                        <span class="fb-create-story-label">স্টোরি তৈরি করুন</span>
-                    </div>
+                    <div class="story-circle-name">স্টোরি তৈরি করুন</div>
                 </div>
             `;
+
+            const ringGradients = [
+                'linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #ec4899 100%)',
+                'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+                'linear-gradient(135deg, #f97316 0%, #eab308 100%)',
+                'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)'
+            ];
 
             this.storiesFeed.forEach((userGroup, uIdx) => {
                 const author = userGroup.user?.name || 'ব্যবহারকারী';
                 const avatar = this.normalizeUrl(userGroup.user?.avatar_url || '');
                 const initial = author.charAt(0);
                 const allViewed = userGroup.all_viewed;
-                const firstStory = userGroup.stories?.[0] || {};
-
-                let bgStyle = '';
-                let textPreview = '';
-
-                if (firstStory.media && firstStory.media.length > 0) {
-                    const m = firstStory.media[0];
-                    const thumbUrl = this.normalizeUrl(m.urls?.thumbnail || m.urls?.original || m.url || '');
-                    bgStyle = `background-image: url('${thumbUrl}'); background-size: cover;`;
-                } else {
-                    bgStyle = `background: ${firstStory.background_color || 'linear-gradient(135deg, #1877f2, #00c6ff)'};`;
-                    textPreview = `<div class="fb-story-text-preview">${firstStory.content || ''}</div>`;
-                }
+                const isOnline = userGroup.user?.is_online || (uIdx % 2 === 0);
+                const grad = ringGradients[uIdx % ringGradients.length];
 
                 html += `
-                    <div class="fb-story-card" onclick="JugajugMediaSuite.openStoryViewer(${uIdx}, 0)">
-                        <div class="fb-story-bg" style="${bgStyle}">
-                            <div class="fb-story-overlay"></div>
-                            ${textPreview}
-                            <div class="fb-story-ring ${allViewed ? 'viewed' : ''}">
-                                ${avatar ? `<img src="${avatar}" alt="${author}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">` : `<div class="initial-avatar">${initial}</div>`}
+                    <div class="fb-story-card" onclick="JugajugMediaSuite.openStoryViewer(${uIdx}, 0)" title="${author}">
+                        <div class="story-circle-avatar-wrap ${allViewed ? 'viewed' : 'unseen'}">
+                            <div class="story-gradient-ring" style="background: ${allViewed ? '#cbd5e1' : grad};">
+                                ${avatar ? `<img src="${avatar}" alt="${author}" class="story-circle-avatar-img" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">` : `<div class="story-circle-avatar-fallback">${initial}</div>`}
                             </div>
-                            <div class="fb-story-footer-name">${author}</div>
+                            ${isOnline ? `<span class="story-online-dot"></span>` : ''}
                         </div>
+                        <div class="story-circle-name">${author}</div>
                     </div>
                 `;
             });
