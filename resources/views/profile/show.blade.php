@@ -4315,57 +4315,57 @@
         </div>
     </aside>
 
-    <!-- MOBILE TOP NAVIGATION BAR (AS IN MOBILE SCREENSHOT) -->
+    <!-- MOBILE TOP NAVIGATION BAR (MATCHING MOCKUP DESIGN) -->
     <header class="mobile-profile-header-bar mobile-only">
         <div class="mobile-profile-header-top">
             <a href="/" class="mobile-profile-brand" title="Bondhoo">
                 <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo">
             </a>
             <div class="mobile-profile-top-actions">
-                <a href="/watch" class="mobile-head-icon-btn" title="লাইভ ও ভিডিও" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
-                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                <a href="/watch" class="mobile-head-icon-btn" title="ভিডিও ও লাইভ">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m22 8-6 4 6 4V8Z"></path>
+                        <rect width="14" height="12" x="2" y="6" rx="2" ry="2"></rect>
                     </svg>
                 </a>
-                <a href="/messages" class="mobile-head-icon-btn" title="মেসেঞ্জার" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
+                <a href="/messages" class="mobile-head-icon-btn" title="মেসেঞ্জার">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    <span class="mobile-head-badge">3</span>
+                    <span class="mobile-head-badge" id="mobileProfileMsgBadge" style="display:none;">0</span>
                 </a>
-                <a href="/friends" class="mobile-head-icon-btn" title="বন্ধুরা" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <a href="/friends" class="mobile-head-icon-btn" title="বন্ধুরা">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                         <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                 </a>
-                <a href="/watch" class="mobile-head-icon-btn" title="ওয়াচ" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
-                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                <a href="/watch" class="mobile-head-icon-btn" title="ওয়াচ">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="20" height="15" x="2" y="7" rx="2" ry="2"></rect>
                         <polyline points="17 2 12 7 7 2"></polyline>
                     </svg>
                 </a>
-                <a href="/saved" class="mobile-head-icon-btn" title="সংরক্ষিত" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
-                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                <a href="javascript:void(0)" onclick="switchTab('saved')" class="mobile-head-icon-btn" title="সংরক্ষিত">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
                     </svg>
                 </a>
-                <a href="/settings/devices" class="mobile-head-icon-btn" title="সেটিংস" style="width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;max-height:32px;overflow:visible;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;max-width:20px;max-height:20px;flex-shrink:0;display:block;">
+                <a href="javascript:void(0)" onclick="openPrivacyModal()" class="mobile-head-icon-btn" title="সেটিংস">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                 </a>
-                <a href="{{ getUserProfileUrl($user) }}" class="mobile-head-avatar-circle" title="প্রোফাইল" style="width:32px;height:32px;min-width:32px;min-height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;box-sizing:border-box;">
-                    <img src="{{ $profile['avatar'] ?? '/images/default-avatar.png' }}" alt="{{ $profile['name'] }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">
+                <a href="{{ getUserProfileUrl($user) }}" class="mobile-head-avatar-circle" title="প্রোফাইল">
+                    <img src="{{ $profile['avatar'] ?: '/images/default-avatar.svg' }}" alt="{{ $profile['name'] }}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
                 </a>
             </div>
         </div>
         <div class="mobile-profile-search-wrap">
-            <div class="mobile-profile-search-pill" onclick="if(typeof openMobileSearchModal === 'function'){ openMobileSearchModal(); } else { const m = document.getElementById('mobileSearchModal'); if(m) m.style.display='block'; }">
+            <div class="mobile-profile-search-pill" onclick="if(typeof openMobileSearchModal === 'function'){ openMobileSearchModal(); } else { const m = document.getElementById('mobileSearchModal'); if(m) m.style.display='block'; }" title="অনুসন্ধান করুন">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -4743,12 +4743,6 @@
                                     </span>
                                 </a>
                             @endif
-                            @if($profile['is_professional_mode'] ?? false)
-                                <span style="font-size:12px;background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                                    <span>প্রফেশনাল মোড</span>
-                                </span>
-                            @endif
                         </h1>
                         <div class="profile-username-id-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px;">
                             <span class="profile-username-sub">{{ '@' . $profile['username'] }}</span>
@@ -5096,31 +5090,18 @@
                                 if ($hlItems->isEmpty()) {
                                     $hlItems = collect([[
                                         'id' => 0,
-                                        'media_path' => $hl->cover_image_path ?: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600',
+                                        'media_path' => $hl->cover_image_path ?: ($profile['avatar_url'] ?? '/images/default-avatar.png'),
                                         'media_type' => 'image',
                                     ]]);
                                 }
                             @endphp
                             <div class="highlight-item" onclick='viewHighlight({{ $hl->id }}, @json($hl->title), @json($hl->cover_image_path), @json($hlItems))' title="{{ $hl->title }}">
                                 <div class="highlight-circle">
-                                    <img src="{{ $hl->cover_image_path ?: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120' }}" alt="{{ $hl->title }}">
+                                    <img src="{{ $hl->cover_image_path ?: ($profile['avatar_url'] ?? '/images/default-avatar.png') }}" alt="{{ $hl->title }}">
                                 </div>
                                 <span style="font-size:12px;font-weight:600;color:var(--fb-text-primary);max-width:72px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;">{{ $hl->title }}</span>
                             </div>
                         @endforeach
-                    @else
-                        <div class="highlight-item" onclick="switchTab('activity')" title="মেমোরি">
-                            <div class="highlight-circle" style="background:linear-gradient(135deg, #0284c7, #38bdf8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(2,132,199,0.25);">
-                                ⏱️
-                            </div>
-                            <span style="font-size:12px;font-weight:600;color:var(--fb-text-primary);max-width:72px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;">মেমোরি</span>
-                        </div>
-                        <div class="highlight-item" onclick="switchTab('saved')" title="সেভ করা">
-                            <div class="highlight-circle" style="background:linear-gradient(135deg, #059669, #34d399);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(5,150,105,0.25);">
-                                🔖
-                            </div>
-                            <span style="font-size:12px;font-weight:600;color:var(--fb-text-primary);max-width:72px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;">সেভ করা</span>
-                        </div>
                     @endif
                 </div>
             @endif
