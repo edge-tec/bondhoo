@@ -3429,16 +3429,57 @@
 
         @media (max-width: 640px) {
             .profile-header-container {
-                padding: 0 12px;
+                padding: 0 !important;
+                max-width: 100vw !important;
+                overflow-x: hidden !important;
+            }
+            .profile-main-bar {
+                padding: 0 12px 14px 12px !important;
+                box-sizing: border-box !important;
+                width: 100% !important;
+                max-width: 100vw !important;
+                overflow: hidden !important;
+            }
+            .profile-avatar-and-names {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .profile-names-block {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                word-break: break-word !important;
             }
             .profile-content-container {
-                padding: 0 12px;
-                margin-top: 10px;
+                padding: 0 10px !important;
+                margin-top: 10px !important;
+                max-width: 100vw !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
             }
             .fb-card {
-                padding: 12px 14px;
-                border-radius: var(--radius-sm);
-                margin-bottom: 12px;
+                padding: 12px 14px !important;
+                border-radius: var(--radius-sm) !important;
+                margin-bottom: 12px !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }
+            .card-header-bar {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+            }
+            .card-header-bar .card-header-title {
+                font-size: 16px !important;
+            }
+            .card-header-bar .fb-btn {
+                padding: 6px 12px !important;
+                font-size: 12px !important;
+                white-space: nowrap !important;
             }
 
             /* Responsive Cover Photo on Mobile */
@@ -3508,14 +3549,18 @@
                 display: flex !important;
                 flex-direction: column !important;
                 width: 100% !important;
-                gap: 8px !important;
-                margin-top: 12px !important;
-                margin-bottom: 12px !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                gap: 7px !important;
+                margin-top: 10px !important;
+                margin-bottom: 10px !important;
             }
             .profile-actions-row {
                 display: flex !important;
                 width: 100% !important;
-                gap: 8px !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                gap: 6px !important;
                 align-items: stretch !important;
             }
             .profile-actions-row-primary .btn-action-story,
@@ -3524,33 +3569,37 @@
             .profile-actions-row-primary .btn-action-message {
                 flex: 1 1 0 !important;
                 min-width: 0 !important;
-                height: 40px !important;
-                padding: 0 10px !important;
-                font-size: 13.5px !important;
+                height: 38px !important;
+                padding: 0 6px !important;
+                font-size: 12.5px !important;
                 font-weight: 600 !important;
                 border-radius: 8px !important;
                 white-space: nowrap !important;
+                text-overflow: ellipsis !important;
+                overflow: hidden !important;
                 text-align: center !important;
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                gap: 6px !important;
+                gap: 4px !important;
+                box-sizing: border-box !important;
             }
             .profile-actions-row-primary .profile-action-more-wrap {
                 position: relative !important;
                 flex-shrink: 0 !important;
             }
             .profile-actions-row-primary .btn-action-more {
-                width: 40px !important;
-                min-width: 40px !important;
-                height: 40px !important;
+                width: 38px !important;
+                min-width: 38px !important;
+                height: 38px !important;
                 padding: 0 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                font-size: 16px !important;
+                font-size: 15px !important;
                 font-weight: 800 !important;
                 border-radius: 8px !important;
+                box-sizing: border-box !important;
             }
             .profile-actions-row-secondary .btn-action-lock,
             .profile-actions-row-secondary .btn-action-share,
@@ -3558,17 +3607,20 @@
             .profile-actions-row-secondary .btn-action-dashboard {
                 flex: 1 1 0 !important;
                 min-width: 0 !important;
-                height: 38px !important;
-                padding: 0 10px !important;
-                font-size: 13px !important;
+                height: 36px !important;
+                padding: 0 4px !important;
+                font-size: 12px !important;
                 font-weight: 600 !important;
                 border-radius: 8px !important;
                 white-space: nowrap !important;
+                text-overflow: ellipsis !important;
+                overflow: hidden !important;
                 text-align: center !important;
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                gap: 6px !important;
+                gap: 4px !important;
+                box-sizing: border-box !important;
             }
 
             /* Native Bottom Sheet for Action More Menu, Avatar Menu, and Cover Menu on Mobile */
@@ -3628,7 +3680,9 @@
                 -webkit-overflow-scrolling: touch !important;
                 border-top: 1px solid var(--fb-divider) !important;
                 border-bottom: 1px solid var(--fb-divider) !important;
-                margin: 0 -12px !important;
+                margin: 0 !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
                 background: var(--fb-card) !important;
             }
             .highlight-add-circle {
@@ -3655,9 +3709,11 @@
                 scrollbar-width: none !important;
                 -webkit-overflow-scrolling: touch !important;
                 white-space: nowrap !important;
-                margin: 0 -12px !important;
+                margin: 0 !important;
                 padding: 8px 12px !important;
                 gap: 6px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
                 border-bottom: 1px solid var(--fb-divider) !important;
                 display: flex !important;
                 align-items: center !important;
@@ -3688,8 +3744,11 @@
         }
 
         @media (max-width: 480px) {
-            .profile-header-container, .profile-content-container {
-                padding: 0 10px;
+            .profile-header-container {
+                padding: 0 !important;
+            }
+            .profile-content-container {
+                padding: 0 8px !important;
             }
             .fb-modal-card {
                 width: 95% !important;
@@ -4190,20 +4249,20 @@
                 </div>
 
                 <!-- Action Buttons in One Sleek Flex Row -->
-                <div class="profile-actions-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;">
+                <div class="profile-actions-bar">
                     @if($isOwner)
                         <div class="profile-actions-row profile-actions-row-primary">
-                            <button class="fb-btn fb-btn-primary btn-action-story" onclick="openStoryModal()" style="display:inline-flex;align-items:center;gap:6px;background:#0084ff;color:white;border:none;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(0,132,255,0.3);">
+                            <button class="fb-btn fb-btn-primary btn-action-story" onclick="openStoryModal()" style="background:#0084ff;color:white;border:none;box-shadow:0 2px 8px rgba(0,132,255,0.3);">
                                 <span style="font-size:15px;line-height:1;">+</span>
                                 <span>স্টোরি যোগ করুন</span>
                             </button>
-                            <button class="fb-btn fb-btn-secondary btn-action-edit" onclick="openEditProfileModal()" style="border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;">
+                            <button class="fb-btn fb-btn-secondary btn-action-edit" onclick="openEditProfileModal()">
                                 <span>প্রোফাইল সম্পাদনা</span>
                             </button>
 
                             <!-- Facebook-style '...' More Options Dropdown -->
                             <div class="profile-action-more-wrap" id="profileActionMoreWrapper">
-                                <button class="fb-btn fb-btn-secondary btn-action-more" onclick="toggleProfileActionMoreMenu(event)" title="আরও বিকল্প" style="border-radius:8px;padding:8px 12px;font-weight:700;font-size:13px;">
+                                <button class="fb-btn fb-btn-secondary btn-action-more" onclick="toggleProfileActionMoreMenu(event)" title="আরও বিকল্প">
                                     •••
                                 </button>
                                 <div class="profile-nav-more-dropdown" id="profileActionMoreDropdown">
@@ -4271,14 +4330,14 @@
                         </div>
 
                         <div class="profile-actions-row profile-actions-row-secondary">
-                            <button id="lockToggleBtn" class="fb-btn btn-action-lock {{ $profile['is_profile_locked'] ? 'fb-btn-locked-active' : 'fb-btn-lock' }}" onclick="openProfileLockModal()" style="border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;">
+                            <button id="lockToggleBtn" class="fb-btn btn-action-lock {{ $profile['is_profile_locked'] ? 'fb-btn-locked-active' : 'fb-btn-lock' }}" onclick="openProfileLockModal()">
                                 <span>{{ $profile['is_profile_locked'] ? 'আনলক করুন' : 'প্রোফাইল লক' }}</span>
                             </button>
-                            <button class="fb-btn fb-btn-secondary btn-action-share" onclick="openProfileShareModal()" title="প্রোফাইল শেয়ার" style="border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px;">
+                            <button class="fb-btn fb-btn-secondary btn-action-share" onclick="openProfileShareModal()" title="প্রোফাইল শেয়ার" style="display:inline-flex;align-items:center;gap:5px;">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
                                 <span>শেয়ার</span>
                             </button>
-                            <button class="fb-btn fb-btn-secondary btn-action-dashboard" onclick="switchTab('professional')" title="প্রফেশনাল ড্যাশবোর্ড" style="border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px;">
+                            <button class="fb-btn fb-btn-secondary btn-action-dashboard" onclick="switchTab('professional')" title="প্রফেশনাল ড্যাশবোর্ড" style="display:inline-flex;align-items:center;gap:5px;">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
                                 <span>ড্যাশবোর্ড</span>
                             </button>
@@ -4491,7 +4550,8 @@
                 <li><a href="#about" class="profile-nav-tab" id="tab-about" onclick="switchTab('about')">পরিচিতি</a></li>
                 <li><a href="#friends" class="profile-nav-tab" id="tab-friends" onclick="switchTab('friends')">বন্ধুরা ({{ $profile['friends_count'] }})</a></li>
                 <li><a href="#photos" class="profile-nav-tab" id="tab-photos" onclick="switchTab('photos')">ছবি ও অ্যালবাম ({{ $profile['photos_count'] }})</a></li>
-                <li><a href="#videos" class="profile-nav-tab" id="tab-videos" onclick="switchTab('videos')">ভিডিও ও রিলস ({{ $profile['videos_count'] ?? 0 }})</a></li>
+                <li><a href="#videos" class="profile-nav-tab" id="tab-videos" onclick="switchTab('videos')">ভিডিও ({{ $profile['videos_count'] ?? 0 }})</a></li>
+                <li><a href="#reels" class="profile-nav-tab" id="tab-reels" onclick="switchTab('reels')">রিলস</a></li>
                 @if($isOwner)
                     <li class="desktop-only-nav-tab"><a href="#saved" class="profile-nav-tab" id="tab-saved" onclick="switchTab('saved')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
@@ -12385,7 +12445,19 @@
 
         function switchTab(tabName) {
             if (tabName === 'reels') {
-                switchTab('videos');
+                const tabs = ['posts', 'about', 'friends', 'photos', 'videos', 'saved', 'activity', 'professional', 'analytics'];
+                tabs.forEach(t => {
+                    const el = document.getElementById(`tabContent-${t}`);
+                    const btn = document.getElementById(`tab-${t}`);
+                    if (el) el.style.display = (t === 'videos') ? 'block' : 'none';
+                    if (btn) btn.classList.remove('active');
+                });
+                const reelsNavBtn = document.getElementById('tab-reels');
+                if (reelsNavBtn) {
+                    reelsNavBtn.classList.add('active');
+                    try { reelsNavBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch(e) {}
+                }
+                document.body.classList.add('tab-not-posts');
                 const reelsBtn = document.querySelector(".filter-chips-row button[onclick*='reels']");
                 if (typeof switchVideoSubtab === 'function') {
                     switchVideoSubtab('reels', reelsBtn);
