@@ -24,6 +24,14 @@ class UploadApiController extends Controller
      */
     public function init(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'লগইন সেশন পাওয়া যায়নি। অনুগ্রহ করে পুনরায় লগইন করুন।',
+            ], 401);
+        }
+
         $validated = $request->validate([
             'filename' => ['required', 'string', 'max:255'],
             'file_size' => ['required', 'integer', 'min:1'],
@@ -34,8 +42,16 @@ class UploadApiController extends Controller
             'metadata' => ['nullable', 'array'],
         ]);
 
+        // ক্লায়েন্ট নির্দিষ্ট সাইজ না পাঠালে সার্ভার লিমিটের সাথে সামঞ্জস্য রেখে নিরাপদ ১ মেগাবাইট ডিফল্ট
+        $serverMaxBytes = $this->parseBytes(ini_get('upload_max_filesize') ?: '2M');
+        $safeDefaultChunkSize = min(1048576, max(524288, (int) floor($serverMaxBytes * 0.75)));
+
+        if (empty($validated['chunk_size'])) {
+            $validated['chunk_size'] = $safeDefaultChunkSize;
+        }
+
         try {
-            $session = $this->uploadService->initSession($request->user(), $validated);
+            $session = $this->uploadService->initSession($user, $validated);
 
             return response()->json([
                 'success' => true,
@@ -60,6 +76,34 @@ class UploadApiController extends Controller
      */
     public function uploadChunk(Request $request, ?string $sessionId = null): JsonResponse
     {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'is_unauthorized' => true,
+                'message' => 'অননুমোদিত অ্যাক্সেস। অনুগ্রহ করে পুনরায় লগইন করুন।',
+            ], 401);
+        }
+
+        // পিএইচপি লেভেল আপলোড এরর হ্যান্ডলিং (UPLOAD_ERR_INI_SIZE ইত্যাদি)
+        if (isset($_FILES['chunk']['error']) && $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
+            $errorCode = (int) $_FILES['chunk']['error'];
+            $msg = match ($errorCode) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'চাঙ্ক ফাইলটি সার্ভার লিমিট (upload_max_filesize) অতিক্রম করেছে। অনুগ্রহ করে ১MB বা ছোট চাঙ্ক সাইজ ব্যবহার করুন।',
+                UPLOAD_ERR_PARTIAL => 'চাঙ্ক আংশিক আপলোড হয়েছে। পুনরায় চেষ্টা করুন।',
+                UPLOAD_ERR_NO_FILE => 'কোনো চাঙ্ক ফাইল পাওয়া যায়নি।',
+                UPLOAD_ERR_NO_TMP_DIR => 'সার্ভার টেম্পোরারি ডিরেক্টরি অনুপস্থিত।',
+                UPLOAD_ERR_CANT_WRITE => 'সার্ভার ডিস্কে চাঙ্ক লিখতে ব্যর্থ হয়েছে।',
+                default => "চাঙ্ক আপলোডে সমস্যা হয়েছে (ত্রুটি কোড: {$errorCode})।",
+            };
+
+            return response()->json([
+                'success' => false,
+                'is_permanent' => ($errorCode === UPLOAD_ERR_INI_SIZE),
+                'message' => $msg,
+            ], 422);
+        }
+
         $request->validate([
             'session_id' => ['nullable', 'string', 'max:64'],
             'chunk_number' => ['required', 'integer', 'min:1'],
@@ -78,7 +122,7 @@ class UploadApiController extends Controller
 
         try {
             $result = $this->uploadService->uploadChunk(
-                $request->user(),
+                $user,
                 $effectiveSessionId,
                 $chunkNumber,
                 $chunkFile,
@@ -95,6 +139,26 @@ class UploadApiController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    /**
+     * পিএইচপি সাইজ স্ট্রিং বাইটে কনভার্ট করা (যেমন: 2M -> 2097152)
+     */
+    protected function parseBytes(string $val): int
+    {
+        $val = trim($val);
+        if (empty($val)) {
+            return 2097152;
+        }
+        $last = strtolower($val[strlen($val) - 1]);
+        $num = (int) $val;
+
+        return match ($last) {
+            'g' => $num * 1024 * 1024 * 1024,
+            'm' => $num * 1024 * 1024,
+            'k' => $num * 1024,
+            default => (int) $val,
+        };
     }
 
     /**

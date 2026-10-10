@@ -72,7 +72,8 @@ class ResumableChunkUploader {
     constructor(file, options = {}) {
         this.file = file;
         this.collection = options.collection || 'reel';
-        this.chunkSize = options.chunkSize || (2 * 1024 * 1024); // 2 MB per chunk
+        // 1 MB chunks ensure 100% reliability under strict server limits (upload_max_filesize: 2M)
+        this.chunkSize = options.chunkSize || (1024 * 1024);
         this.totalChunks = Math.ceil(file.size / this.chunkSize) || 1;
         this.sessionId = null;
         this.isPaused = false;
@@ -122,7 +123,9 @@ class ResumableChunkUploader {
 
     async start() {
         try {
-            this.onStatusChange('আপলোড সেশন ভেরিফাই ও প্রস্তুত হচ্ছে...');
+            this.isCancelled = false;
+            this.isPaused = false;
+            this.onStatusChange('আপলোড সেশন প্রস্তুত হচ্ছে...');
             
             const initRes = await fetch('/api/v2/uploads/init', {
                 method: 'POST',
@@ -140,21 +143,30 @@ class ResumableChunkUploader {
                 })
             });
 
-            const initData = await initRes.json();
-            if (!initRes.ok || !initData.success) {
+            let initData = null;
+            try {
+                initData = await initRes.json();
+            } catch (je) {
+                throw new Error(`সার্ভার প্রতিক্রিয়া ত্রুটি (HTTP ${initRes.status})`);
+            }
+
+            if (!initRes.ok || !initData?.success) {
                 if (initRes.status === 401) {
                     throw new Error('অননুমোদিত অ্যাক্সেস। অনুগ্রহ করে পেজটি রিফ্রেশ করুন বা পুনরায় লগইন করুন।');
                 }
-                throw new Error(initData.message || 'আপলোড সেশন তৈরি করা সম্ভব হয়নি।');
+                throw new Error(initData?.message || 'আপলোড সেশন তৈরি করা সম্ভব হয়নি।');
             }
 
             this.sessionId = initData.data.session_id;
-            this.chunkSize = initData.data.chunk_size;
-            this.totalChunks = initData.data.total_chunks;
+            if (initData.data.chunk_size) {
+                this.chunkSize = initData.data.chunk_size;
+            }
+            this.totalChunks = initData.data.total_chunks || Math.ceil(this.file.size / this.chunkSize) || 1;
 
             this.onStatusChange('চাঙ্ক আপলোড শুরু হচ্ছে...');
             await this.uploadNextChunk();
         } catch (err) {
+            this.cleanupListeners();
             this.onError(err);
         }
     }
@@ -188,8 +200,17 @@ class ResumableChunkUploader {
                     body: formData
                 });
 
-                const data = await res.json();
-                if (res.ok && data.success) {
+                let data = null;
+                try {
+                    data = await res.json();
+                } catch (je) {
+                    if (res.status === 413) {
+                        throw new Error('সার্ভার ফাইল সাইজ সীমা (Payload Too Large) অতিক্রম করেছে।');
+                    }
+                    throw new Error(`সার্ভার প্রতিক্রিয়া ত্রুটি (HTTP ${res.status})`);
+                }
+
+                if (res.ok && data?.success) {
                     success = true;
                     this.uploadedChunks.add(this.currentChunk);
 
@@ -207,14 +228,32 @@ class ResumableChunkUploader {
 
                     this.currentChunk++;
                     await this.uploadNextChunk();
-                } else {
-                    throw new Error(data.message || 'চাঙ্ক আপলোড ব্যর্থ হয়েছে');
+                    return;
                 }
+
+                // স্থায়ী ত্রুটির ক্ষেত্রে (যেমন ভ্যালিডেশন বা অনুমোদন ত্রুটি) অপ্রয়োজনীয় রিট্রাই বন্ধ করা
+                const serverMsg = data?.message || (data?.errors ? Object.values(data.errors).flat().join(' ') : 'চাঙ্ক আপলোড ব্যর্থ হয়েছে');
+                if (res.status === 401 || res.status === 403) {
+                    this.cleanupListeners();
+                    this.onError(new Error(serverMsg || 'অননুমোদিত অ্যাক্সেস। অনুগ্রহ করে লগইন করুন।'));
+                    return;
+                }
+                if (res.status === 422 || data?.is_permanent) {
+                    this.cleanupListeners();
+                    this.onError(new Error(serverMsg));
+                    return;
+                }
+
+                throw new Error(serverMsg);
             } catch (err) {
+                if (this.isCancelled || this.isPaused) return;
+
                 if (attempt >= this.maxRetries) {
+                    this.cleanupListeners();
                     this.onError(new Error(`চাঙ্ক ${this.currentChunk} আপলোড ব্যর্থ হয়েছে: ${err.message}`));
                     return;
                 }
+
                 this.onStatusChange(`কানেকশন ব্যাহত। পুনরায় চেষ্টা চলছে (${attempt}/${this.maxRetries})...`);
                 await new Promise(r => setTimeout(r, 1200 * attempt));
             }
@@ -235,7 +274,26 @@ class ResumableChunkUploader {
                 headers: this.getHeaders()
             });
             const data = await res.json();
-            if (data.success && data.data.next_chunk) {
+            if (data?.success && data?.data?.next_chunk) {
+                this.currentChunk = data.data.next_chunk;
+            }
+        } catch (e) {}
+        await this.uploadNextChunk();
+    }
+
+    async retry() {
+        this.isPaused = false;
+        this.isCancelled = false;
+        if (!this.sessionId) {
+            return this.start();
+        }
+        this.onStatusChange('আপলোড পুনরায় শুরু হচ্ছে...');
+        try {
+            const res = await fetch(`/api/v2/uploads/${this.sessionId}/resume`, {
+                headers: this.getHeaders()
+            });
+            const data = await res.json();
+            if (data?.success && data?.data?.next_chunk) {
                 this.currentChunk = data.data.next_chunk;
             }
         } catch (e) {}
@@ -2546,6 +2604,11 @@ const JugajugMediaSuite = {
             return;
         }
 
+        if (file.size > 500 * 1024 * 1024) {
+            alert('ভিডিও ফাইলের সাইজ ৫০০ মেগাবাইট অতিক্রম করেছে। অনুগ্রহ করে ছোট ফাইল নির্বাচন করুন।');
+            return;
+        }
+
         this.selectedReelFile = file;
         this.reelVideoUrl = URL.createObjectURL(file);
 
@@ -2895,12 +2958,16 @@ const JugajugMediaSuite = {
                     const caption = document.getElementById('reelCaptionInput')?.value.trim() || '';
                     const privacy = document.getElementById('reelPrivacySelect')?.value || 'public';
                     const commentsEnabled = document.getElementById('reelCommentsEnabledCheck')?.checked ?? true;
+                    const duetEnabled = document.getElementById('reelDuetEnabledCheck')?.checked ?? true;
 
                     const payload = {
                         media_id: media.id,
                         caption: caption,
                         privacy: privacy,
+                        allow_comments: commentsEnabled,
                         comments_enabled: commentsEnabled ? 1 : 0,
+                        allow_duet: duetEnabled,
+                        duet_enabled: duetEnabled ? 1 : 0,
                         cover_image_path: coverPath,
                         trim_start: this.reelTrimStart,
                         trim_end: this.reelTrimEnd,
@@ -2924,14 +2991,21 @@ const JugajugMediaSuite = {
                     });
 
                     const data = await res.json();
-                    if (data.success) {
+                    if (data?.success) {
                         showToast(isDraft ? 'রিলটি ড্রাফট হিসেবে সংরক্ষণ করা হয়েছে!' : 'রিল সফলভাবে প্রকাশিত হয়েছে!', '✓');
                         this.closeCreateReelModal();
                         this.loadReels();
                     } else {
-                        alert(data.message || 'রিল সেভ করতে সমস্যা হয়েছে।');
+                        const errMsg = data?.message || (data?.errors ? Object.values(data.errors).flat().join(' ') : 'রিল সেভ করতে সমস্যা হয়েছে।');
+                        if (progressStatus) {
+                            progressStatus.innerHTML = `<span style="color:#ef4444;font-weight:700;">ত্রুটি: ${errMsg}</span>`;
+                        }
+                        alert(errMsg);
                     }
                 } catch (err) {
+                    if (progressStatus) {
+                        progressStatus.innerHTML = `<span style="color:#ef4444;font-weight:700;">ত্রুটি: ${err.message}</span>`;
+                    }
                     alert('ত্রুটি: ' + err.message);
                 } finally {
                     if (submitBtn) submitBtn.disabled = false;
@@ -2939,13 +3013,35 @@ const JugajugMediaSuite = {
                 }
             },
             onError: (err) => {
-                alert('রিল আপলোড ব্যর্থ হয়েছে: ' + err.message);
+                if (progressStatus) {
+                    progressStatus.innerHTML = `<span style="color:#ef4444;font-weight:700;">আপলোড ব্যর্থ: ${err.message}</span>`;
+                }
+                const retryBtn = document.getElementById('reelRetryUploadBtn');
+                if (retryBtn) retryBtn.style.display = 'inline-flex';
                 if (submitBtn) submitBtn.disabled = false;
                 if (draftBtn) draftBtn.disabled = false;
             }
         });
 
+        const retryBtn = document.getElementById('reelRetryUploadBtn');
+        if (retryBtn) retryBtn.style.display = 'none';
+
         this.currentUploader.start();
+    },
+
+    retryReelUpload() {
+        const retryBtn = document.getElementById('reelRetryUploadBtn');
+        if (retryBtn) retryBtn.style.display = 'none';
+        const submitBtn = document.getElementById('reelSubmitBtn');
+        const draftBtn = document.getElementById('reelDraftBtn');
+        if (submitBtn) submitBtn.disabled = true;
+        if (draftBtn) draftBtn.disabled = true;
+
+        if (this.currentUploader) {
+            this.currentUploader.retry();
+        } else {
+            this.submitReel(false);
+        }
     },
 
     /* =====================================================================

@@ -46,6 +46,15 @@ class ReelV2ApiController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $raw = $request->all();
+        if (! isset($raw['allow_comments']) && isset($raw['comments_enabled'])) {
+            $raw['allow_comments'] = filter_var($raw['comments_enabled'], FILTER_VALIDATE_BOOLEAN);
+        }
+        if (! isset($raw['allow_duet']) && isset($raw['duet_enabled'])) {
+            $raw['allow_duet'] = filter_var($raw['duet_enabled'], FILTER_VALIDATE_BOOLEAN);
+        }
+        $request->merge($raw);
+
         $validated = $request->validate([
             'media_id' => ['required', 'integer', 'exists:media,id'],
             'caption' => ['nullable', 'string', 'max:2000'],
@@ -64,7 +73,9 @@ class ReelV2ApiController extends Controller
             'privacy' => ['nullable', 'string', 'in:public,friends,only_me'],
             'location' => ['nullable', 'string', 'max:150'],
             'allow_comments' => ['nullable', 'boolean'],
+            'comments_enabled' => ['nullable', 'boolean'],
             'allow_duet' => ['nullable', 'boolean'],
+            'duet_enabled' => ['nullable', 'boolean'],
             'is_draft' => ['nullable', 'boolean'],
         ]);
 

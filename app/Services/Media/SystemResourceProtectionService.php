@@ -55,6 +55,12 @@ class SystemResourceProtectionService
      */
     public function ensureConcurrentSessionsLimit(User $user): void
     {
+        // ১৫ মিনিটের বেশি নিষ্ক্রিয়/অসম্পূর্ণ সেশন স্বয়ংক্রিয়ভাবে বাতিল (stale session cleanup)
+        MediaUploadSession::where('user_id', $user->id)
+            ->whereIn('status', ['initialized', 'uploading'])
+            ->where('updated_at', '<', now()->subMinutes(15))
+            ->update(['status' => 'cancelled']);
+
         $maxSessions = (int) MediaSystemSetting::get('max_user_concurrent_sessions', self::DEFAULT_MAX_USER_CONCURRENT_SESSIONS);
 
         $activeSessionsCount = MediaUploadSession::where('user_id', $user->id)
@@ -170,8 +176,9 @@ class SystemResourceProtectionService
             $load = sys_getloadavg();
             if (is_array($load) && isset($load[0])) {
                 $coreCount = (int) (@shell_exec('sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null') ?: 4);
-                $defaultMaxLoad = max(8.0, (float) ($coreCount * 2.5));
-                $maxLoad = (float) MediaSystemSetting::get('max_cpu_load', $defaultMaxLoad);
+                $defaultMaxLoad = max(12.0, (float) ($coreCount * 3.0));
+                $settingMaxLoad = (float) MediaSystemSetting::get('max_cpu_load', $defaultMaxLoad);
+                $maxLoad = max($defaultMaxLoad, $settingMaxLoad);
 
                 if ($load[0] > $maxLoad) {
                     Log::warning('SystemResourceProtection: CPU load critical threshold exceeded.', [

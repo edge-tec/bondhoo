@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Media;
+use App\Models\MediaUploadSession;
 use App\Models\Reel;
 use App\Models\ReelMedia;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -213,5 +215,82 @@ class ReelEnterpriseTest extends TestCase
             ->assertStatus(200);
 
         $this->assertDatabaseMissing('reels', ['id' => $reel->id]);
+    }
+
+    public function test_user_can_create_reel_with_comments_enabled_and_duet_enabled_aliases(): void
+    {
+        $user = User::factory()->create();
+
+        $media = Media::create([
+            'user_id' => $user->id,
+            'collection' => 'reel',
+            'disk' => 'public',
+            'original_path' => 'uploads/reel/video_vertical_2.mp4',
+            'thumbnail_path' => 'uploads/reel/video_vertical_thumb_2.webp',
+            'mime_type' => 'video/mp4',
+            'size' => 5242880,
+            'processing_status' => 'ready',
+            'metadata' => ['duration' => 15.0],
+            'width' => 720,
+            'height' => 1280,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v2/reels', [
+                'media_id' => $media->id,
+                'caption' => 'Testing aliases #Bondhoo #Reels',
+                'comments_enabled' => 1,
+                'duet_enabled' => 0,
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseHas('reels', [
+            'id' => $response->json('data.id'),
+            'allow_comments' => true,
+            'allow_duet' => false,
+        ]);
+    }
+
+    public function test_stale_upload_sessions_auto_cancel_and_prevent_lockout(): void
+    {
+        $user = User::factory()->create();
+
+        // Create 5 stale sessions older than 20 minutes
+        for ($i = 1; $i <= 5; $i++) {
+            MediaUploadSession::create([
+                'user_id' => $user->id,
+                'session_id' => (string) Str::uuid(),
+                'collection' => 'reel',
+                'filename' => "stale_{$i}.mp4",
+                'original_name' => "stale_{$i}.mp4",
+                'mime_type' => 'video/mp4',
+                'file_size' => 1048576,
+                'chunk_size' => 1048576,
+                'total_chunks' => 1,
+                'uploaded_chunks_count' => 0,
+                'status' => 'initialized',
+                'temp_dir' => storage_path("app/chunks/test_{$i}"),
+                'expires_at' => now()->addHours(24),
+            ]);
+        }
+        MediaUploadSession::where('user_id', $user->id)
+            ->update(['updated_at' => now()->subMinutes(25)]);
+
+        // Now initializing a new session must succeed because stale sessions are auto-cancelled
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v2/uploads/init', [
+                'filename' => 'new_fresh_reel.mp4',
+                'file_size' => 2097152,
+                'mime_type' => 'video/mp4',
+                'collection' => 'reel',
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true);
+
+        // Previous 5 sessions should now be cancelled
+        $this->assertEquals(5, MediaUploadSession::where('user_id', $user->id)->where('status', 'cancelled')->count());
     }
 }

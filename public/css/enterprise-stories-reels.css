@@ -2162,3 +2162,198 @@
     font-weight: 700;
 }
 
+/* =========================================================================
+   REEL STUDIO ENHANCEMENTS & SAFE MOBILE LAYOUT
+   ========================================================================= */
+.modal-box.reel-studio-modal .modal-header {
+    position: relative !important;
+    padding: 14px 18px 8px 18px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.modal-box.reel-studio-modal .reel-studio-close-btn {
+    position: static !important;
+    transform: none !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.modal-box.reel-studio-modal .reel-studio-close-btn:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+.reel-upload-dropzone.dragover {
+    background: #eff6ff !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15) !important;
+    transform: scale(1.01) !important;
+}
+
+.reel-selected-file-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+}
+
+.reel-file-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.reel-file-meta-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.reel-file-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.reel-file-sub {
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* Upload progress card upgrades */
+.upload-resumable-progress-card {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 14px !important;
+    padding: 14px !important;
+    margin-top: 10px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+}
+
+.upload-resumable-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 8px !important;
+}
+
+.upload-resumable-filename {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+}
+
+.upload-resumable-stat {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #2563eb !important;
+}
+
+.upload-progress-track {
+    width: 100% !important;
+    height: 8px !important;
+    background: #e2e8f0 !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    margin-bottom: 8px !important;
+}
+
+.upload-progress-fill {
+    height: 100% !important;
+    width: 0%;
+    background: linear-gradient(90deg, #2563eb, #8b5cf6) !important;
+    border-radius: 6px !important;
+    transition: width 0.3s ease !important;
+}
+
+.upload-resumable-status-text {
+    font-size: 12px !important;
+    color: #64748b !important;
+    margin-bottom: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.upload-resumable-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.upload-ctrl-btn {
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    color: #334155 !important;
+    transition: all 0.2s ease !important;
+}
+
+.upload-ctrl-btn:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+.upload-ctrl-btn.upload-ctrl-cancel {
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #dc2626 !important;
+}
+
+.upload-ctrl-btn.upload-ctrl-cancel:hover {
+    background: #fee2e2 !important;
+}
+
+@media (max-width: 640px) {
+    .modal-box.reel-studio-modal {
+        border-radius: 16px !important;
+        margin: 6px !important;
+        max-height: calc(100vh - 12px) !important;
+        max-height: calc(100dvh - 12px) !important;
+    }
+    .reel-studio-title-full {
+        display: none !important;
+    }
+    .reel-studio-title-short {
+        display: inline-block !important;
+        font-size: 15px !important;
+    }
+    .reel-step-pill {
+        padding: 5px 10px !important;
+        font-size: 11.5px !important;
+    }
+    .reel-upload-dropzone {
+        padding: 24px 12px !important;
+    }
+}
+

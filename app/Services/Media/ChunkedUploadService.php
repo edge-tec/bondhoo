@@ -43,8 +43,15 @@ class ChunkedUploadService
         // ১. সার্ভার ও ইউজার ক্যাপাসিটি যাচাই
         $this->resourceProtection->validateUploadCapacity($user, $fileSize, $collection);
 
-        // ২. চাঙ্ক সাইজ নির্ধারণ (ডিফল্ট ২ মেগাবাইট)
-        $chunkSize = max(1, (int) ($params['chunk_size'] ?? 2097152)); // 2 MB default
+        // পূর্ববর্তী নিষ্ক্রিয়/অসম্পূর্ণ সেশন স্বয়ংক্রিয়ভাবে বাতিল (stale sessions cleanup)
+        MediaUploadSession::where('user_id', $user->id)
+            ->where('collection', $collection)
+            ->whereIn('status', ['initialized', 'uploading'])
+            ->where('updated_at', '<', now()->subMinutes(15))
+            ->update(['status' => 'cancelled']);
+
+        // ২. চাঙ্ক সাইজ নির্ধারণ (ডিফল্ট ১ মেগাবাইট - cPanel ও Nginx безопасен)
+        $chunkSize = max(1, (int) ($params['chunk_size'] ?? 1048576)); // 1 MB default (1048576 bytes)
 
         $totalChunks = (int) ceil($fileSize / $chunkSize);
         if ($totalChunks <= 0) {
@@ -120,6 +127,11 @@ class ChunkedUploadService
         }
 
         $chunkPath = "{$tempDir}/chunk_{$chunkNumber}.part";
+
+        // পূর্ববর্তী কোনো আংশিক ফাইল থাকলে নিরাপদ রিমুভ
+        if (file_exists($chunkPath)) {
+            @unlink($chunkPath);
+        }
 
         // চাঙ্ক ফাইল সেভ করা
         $chunkFile->move($tempDir, "chunk_{$chunkNumber}.part");
@@ -438,10 +450,14 @@ class ChunkedUploadService
             'video/mp4' => str_contains(substr($header, 4, 8), 'ftyp') ||
                            str_contains(substr($header, 4, 12), 'isom') ||
                            str_contains(substr($header, 4, 12), 'mp42') ||
-                           str_contains(substr($header, 4, 12), 'MSNV'),
+                           str_contains(substr($header, 4, 12), 'MSNV') ||
+                           str_contains(substr($header, 4, 8), 'moov') ||
+                           str_contains(substr($header, 4, 8), 'wide') ||
+                           str_contains(substr($header, 0, 16), 'ftyp'),
             'video/quicktime' => str_contains(substr($header, 4, 8), 'ftyp') ||
                                  str_contains(substr($header, 4, 8), 'moov') ||
-                                 str_contains(substr($header, 4, 8), 'wide'),
+                                 str_contains(substr($header, 4, 8), 'wide') ||
+                                 str_contains(substr($header, 0, 16), 'ftyp'),
             'video/webm', 'video/x-matroska' => str_starts_with($header, "\x1A\x45\xDF\xA3"),
             'image/jpeg' => str_starts_with($header, "\xFF\xD8\xFF"),
             'image/png' => str_starts_with($header, "\x89PNG\r\n\x1a\n"),

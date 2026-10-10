@@ -2940,7 +2940,7 @@
         <div class="modal-box reel-studio-modal">
             <!-- Studio Header with Stepper Tabs -->
             <div class="modal-header" style="flex-direction: column; align-items: stretch; gap: 8px;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
                     <div style="font-size: 16px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
                         <span class="reel-studio-brand-icon">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -2958,7 +2958,7 @@
                         <span class="reel-studio-title-full">Bondhoo রিল স্টুডিও — নতুন রিল তৈরি ও সম্পাদনা</span>
                         <span class="reel-studio-title-short">Bondhoo রিল স্টুডিও</span>
                     </div>
-                    <button type="button" class="modal-close" onclick="JugajugMediaSuite.closeCreateReelModal()">
+                    <button type="button" class="modal-close reel-studio-close-btn" style="position: static !important; transform: none !important; margin-left: auto !important; flex-shrink: 0 !important;" onclick="JugajugMediaSuite.closeCreateReelModal()" title="বন্ধ করুন">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
@@ -3017,7 +3017,7 @@
                     <div>
                         <!-- STEP 1: MEDIA SOURCE -->
                         <div id="reelStudioStep_media">
-                            <div class="reel-upload-dropzone" onclick="document.getElementById('reelVideoFileInput').click()">
+                            <div class="reel-upload-dropzone" onclick="document.getElementById('reelVideoFileInput').click()" ondragover="event.preventDefault(); this.classList.add('dragover');" ondragleave="this.classList.remove('dragover');" ondrop="event.preventDefault(); this.classList.remove('dragover'); if(event.dataTransfer?.files?.[0]) JugajugMediaSuite.loadReelVideoFile(event.dataTransfer.files[0]);">
                                 <div class="reel-dropzone-icon-box">
                                     <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
                                         <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#reelDropGrad)"/>
@@ -3241,6 +3241,7 @@
                                 <div class="upload-resumable-status-text" id="reelProgressStatusText">চাঙ্ক আপলোড শুরু হচ্ছে...</div>
                                 <div class="upload-resumable-actions">
                                     <button type="button" class="upload-ctrl-btn upload-ctrl-pause" onclick="JugajugMediaSuite.currentUploader?.isPaused ? JugajugMediaSuite.currentUploader.resume() : JugajugMediaSuite.currentUploader.pause()">বিরতি / চালু</button>
+                                    <button type="button" class="upload-ctrl-btn" id="reelRetryUploadBtn" style="display: none; background: #2563eb !important; color: #fff !important; border-color: #2563eb !important;" onclick="JugajugMediaSuite.retryReelUpload()">পুনরায় চেষ্টা করুন</button>
                                     <button type="button" class="upload-ctrl-btn upload-ctrl-cancel" onclick="JugajugMediaSuite.currentUploader?.cancel()">বাতিল</button>
                                 </div>
                             </div>
