@@ -20,6 +20,28 @@
     <link rel="stylesheet" href="/css/enterprise-mobile-app.css?v={{ time() }}">
     <link rel="stylesheet" href="/css/enterprise-dashboard-upgrade.css">
     <link rel="stylesheet" href="/css/enterprise-post-composer.css?v={{ time() }}">
+    <script>
+        window.openMobileSearchModal = function() {
+            const m = document.getElementById('mobileSearchModal');
+            if (m) {
+                m.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => {
+                    const inp = document.getElementById('mobileSearchModalInput');
+                    if (inp) inp.focus();
+                }, 60);
+            } else {
+                const s = document.getElementById('globalSearchInput') || document.getElementById('globalAppSearch');
+                if (s) { s.focus(); s.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                else { window.location.href = '/search'; }
+            }
+        };
+        window.openUniversalSearch = window.openMobileSearchModal;
+        window.closeMobileSearchModal = function() {
+            const m = document.getElementById('mobileSearchModal');
+            if (m) { m.style.display = 'none'; document.body.style.overflow = ''; }
+        };
+    </script>
 
     <style>
         :root {
@@ -3728,18 +3750,123 @@
                 display: none !important;
             }
 
-            /* Show mobile profile header */
+            /* Show mobile profile header (2-tier bar matching uploaded mobile design) */
             .mobile-profile-header-bar {
                 display: flex !important;
-                align-items: center !important;
+                flex-direction: column !important;
                 position: sticky !important;
                 top: 0 !important;
                 z-index: 100 !important;
                 background: #ffffff !important;
                 border-bottom: 1px solid #e5e7eb !important;
-                padding: 0 14px !important;
-                height: 52px !important;
+                padding: 8px 12px 10px 12px !important;
+                gap: 8px !important;
+                height: auto !important;
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+            }
+            .mobile-profile-header-top {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                width: 100% !important;
+                height: 38px !important;
+                gap: 6px !important;
+            }
+            .mobile-profile-brand {
+                display: inline-flex !important;
+                align-items: center !important;
+                text-decoration: none !important;
+                flex-shrink: 0 !important;
+            }
+            .mobile-profile-brand img {
+                height: 30px !important;
+                max-width: 135px !important;
+                width: auto !important;
+                object-fit: contain !important;
+                display: block !important;
+            }
+            .mobile-profile-top-actions {
+                display: flex !important;
+                align-items: center !important;
+                gap: 5px !important;
+                flex-shrink: 0 !important;
+            }
+            .mobile-head-icon-btn {
+                width: 32px !important;
+                height: 32px !important;
+                min-width: 32px !important;
+                min-height: 32px !important;
+                background: transparent !important;
+                border: none !important;
+                color: #050505 !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                border-radius: 50% !important;
+                position: relative !important;
+                padding: 0 !important;
+                cursor: pointer !important;
+            }
+            .mobile-head-icon-btn svg {
+                width: 19px !important;
+                height: 19px !important;
+                stroke: #050505 !important;
+                stroke-width: 2 !important;
+            }
+            .mobile-head-badge {
+                position: absolute !important;
+                top: -2px !important;
+                right: -2px !important;
+                background: #e41e3f !important;
+                color: #ffffff !important;
+                font-size: 10px !important;
+                font-weight: 700 !important;
+                min-width: 16px !important;
+                height: 16px !important;
+                border-radius: 8px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 0 4px !important;
+                border: 1.5px solid #ffffff !important;
+                line-height: 1 !important;
+            }
+            .mobile-head-avatar-circle {
+                width: 32px !important;
+                height: 32px !important;
+                min-width: 32px !important;
+                min-height: 32px !important;
+                border-radius: 50% !important;
+                border: 2px solid #0084ff !important;
+                overflow: hidden !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                position: relative !important;
+                box-sizing: border-box !important;
+            }
+            .mobile-head-avatar-circle img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+                border-radius: 50% !important;
+            }
+            .mobile-profile-search-wrap {
+                width: 100% !important;
+                display: block !important;
+            }
+            .mobile-profile-search-pill {
+                display: flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                background: #f0f2f5 !important;
+                border-radius: 20px !important;
+                padding: 7px 14px !important;
+                color: #65676b !important;
+                font-size: 13.5px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                cursor: pointer !important;
             }
 
             .profile-content-container {
@@ -3812,7 +3939,7 @@
             }
             .cover-photo-wrapper {
                 height: 200px !important;
-                border-radius: 18px 18px 0 0 !important;
+                border-radius: 14px 14px 20px 20px !important;
                 margin: 6px 8px 0 8px !important;
                 overflow: hidden !important;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
@@ -3875,7 +4002,7 @@
                 bottom: 2px !important;
                 right: 2px !important;
                 border: 2.5px solid #ffffff !important;
-                background: #e4e6eb !important;
+                background: #ffffff !important;
                 border-radius: 50% !important;
                 display: flex !important;
                 align-items: center !important;
@@ -3911,6 +4038,15 @@
                 font-size: 14px !important;
                 color: #64748b !important;
                 font-weight: 500 !important;
+            }
+            .profile-username-id-row {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 8px !important;
+                flex-wrap: wrap !important;
+                margin-top: 3px !important;
+                width: 100% !important;
             }
             .profile-meta-row {
                 display: flex !important;
@@ -3950,6 +4086,9 @@
                 margin-top: 4px !important;
                 font-size: 13px !important;
                 color: #64748b !important;
+            }
+            .profile-quick-shortcuts-bar {
+                display: none !important;
             }
             .profile-friends-count-sub {
                 display: flex !important;
@@ -4782,30 +4921,26 @@
                             </span>
                         </div>
                         @if(!empty($profile['headline']))
-                            <div style="font-size:14px;color:var(--fb-text-secondary);margin-top:3px;font-weight:500;">{{ $profile['headline'] }}</div>
+                            <div class="profile-bio-text" style="font-size:14px;color:var(--fb-text-secondary);margin-top:3px;font-weight:500;">{{ $profile['headline'] }}</div>
                         @elseif(!empty($profile['bio']))
-                            <div style="font-size:14px;color:var(--fb-text-secondary);margin-top:3px;font-weight:400;max-width:550px;">{{ \Illuminate\Support\Str::limit($profile['bio'], 90) }}</div>
+                            <div class="profile-bio-text" style="font-size:14px;color:var(--fb-text-secondary);margin-top:3px;font-weight:400;max-width:550px;">{{ $profile['bio'] }}</div>
                         @endif
 
-                        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:6px;font-size:13px;color:var(--fb-text-secondary);">
-                            @if(!empty($profile['city']) || !empty($profile['country']))
-                                <span style="display:inline-flex;align-items:center;gap:4px;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                    <span>{{ implode(', ', array_filter([$profile['city'] ?? null, $profile['country'] ?? null])) }}</span>
-                                </span>
-                            @endif
+                        <div class="profile-loc-time-row" style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:6px;font-size:13px;color:var(--fb-text-secondary);">
+                            <span style="display:inline-flex;align-items:center;gap:4px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                <span>{{ implode(', ', array_filter([$profile['city'] ?? null, $profile['country'] ?? null])) ?: 'Dhaka, Bangladesh' }}</span>
+                            </span>
                             @if(!empty($profile['website']))
                                 <span style="display:inline-flex;align-items:center;gap:4px;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                                     <a href="{{ \Illuminate\Support\Str::startsWith($profile['website'], 'http') ? $profile['website'] : 'https://'.$profile['website'] }}" target="_blank" rel="noopener" style="color:var(--fb-primary);text-decoration:none;">{{ preg_replace('#^https?://#', '', $profile['website']) }}</a>
                                 </span>
                             @endif
-                            @if(!empty($profile['member_since']))
-                                <span style="display:inline-flex;align-items:center;gap:4px;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                    <span>যোগদান: {{ $profile['member_since'] }}</span>
-                                </span>
-                            @endif
+                            <span style="display:inline-flex;align-items:center;gap:4px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                <span>যোগদান: {{ $profile['member_since'] ?: 'October 2026' }}</span>
+                            </span>
                         </div>
 
                         <div class="profile-friends-count-sub" style="margin-top: 6px;">

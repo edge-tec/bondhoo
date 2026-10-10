@@ -21,6 +21,28 @@
     <link rel="stylesheet" href="/css/enterprise-mobile-app.css?v={{ time() }}">
     <link rel="stylesheet" href="/css/enterprise-dashboard-upgrade.css?v={{ time() }}">
     <link rel="stylesheet" href="/css/enterprise-post-composer.css?v={{ time() }}">
+    <script>
+        window.openMobileSearchModal = function() {
+            const m = document.getElementById('mobileSearchModal');
+            if (m) {
+                m.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => {
+                    const inp = document.getElementById('mobileSearchModalInput');
+                    if (inp) inp.focus();
+                }, 60);
+            } else {
+                const s = document.getElementById('globalSearchInput') || document.getElementById('globalAppSearch');
+                if (s) { s.focus(); s.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                else { window.location.href = '/search'; }
+            }
+        };
+        window.openUniversalSearch = window.openMobileSearchModal;
+        window.closeMobileSearchModal = function() {
+            const m = document.getElementById('mobileSearchModal');
+            if (m) { m.style.display = 'none'; document.body.style.overflow = ''; }
+        };
+    </script>
     <style>
         :root {
             --fb-bg: #f0f2f5;
@@ -511,6 +533,7 @@
 
         .create-post-trigger {
             flex: 1;
+            min-width: 0 !important;
             height: 42px;
             background: var(--fb-bg);
             border-radius: 50px;
@@ -521,6 +544,16 @@
             font-size: 15px;
             cursor: pointer;
             transition: background 0.15s;
+            overflow: hidden !important;
+        }
+
+        .create-post-trigger span,
+        #createPostPlaceholder {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            display: block !important;
+            max-width: 100% !important;
         }
 
         .create-post-trigger:hover {
@@ -4626,7 +4659,16 @@
             if (jjAuthor) jjAuthor.innerText = name;
             const placeholder = document.getElementById('createPostPlaceholder');
             if (placeholder) {
-                placeholder.innerText = (window.innerWidth <= 600) ? 'আপনার মনে কী আছে?' : `আপনার মনে কী আছে, ${name}?`;
+                placeholder.innerText = (window.innerWidth <= 992) ? 'আপনার মনে কী আছে?' : `আপনার মনে কী আছে, ${name}?`;
+            }
+            if (!window.__postPlaceholderResizeBound) {
+                window.__postPlaceholderResizeBound = true;
+                window.addEventListener('resize', () => {
+                    const p = document.getElementById('createPostPlaceholder');
+                    if (p && window.currentUser) {
+                        p.innerText = (window.innerWidth <= 992) ? 'আপনার মনে কী আছে?' : `আপনার মনে কী আছে, ${window.currentUser.name}?`;
+                    }
+                });
             }
         }
 

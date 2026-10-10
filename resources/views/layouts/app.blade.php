@@ -19,6 +19,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/enterprise-mobile-app.css?v={{ time() }}">
     <link rel="stylesheet" href="/css/enterprise-dashboard-upgrade.css?v={{ time() }}">
+    <script>
+        window.openMobileSearchModal = function() {
+            const m = document.getElementById('mobileSearchModal');
+            if (m) {
+                m.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => {
+                    const inp = document.getElementById('mobileSearchModalInput');
+                    if (inp) inp.focus();
+                }, 60);
+            } else {
+                const s = document.getElementById('globalSearchInput') || document.getElementById('globalAppSearch');
+                if (s) { s.focus(); s.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                else { window.location.href = '/search'; }
+            }
+        };
+        window.openUniversalSearch = window.openMobileSearchModal;
+        window.closeMobileSearchModal = function() {
+            const m = document.getElementById('mobileSearchModal');
+            if (m) { m.style.display = 'none'; document.body.style.overflow = ''; }
+        };
+    </script>
     <style>
         :root {
             --fb-bg: #f0f2f5;

@@ -763,11 +763,20 @@
                 const inp = document.getElementById('mobileSearchModalInput');
                 if (inp) {
                     inp.focus();
-                    if (inp.value.trim()) {
+                    if (inp.value && inp.value.trim()) {
                         triggerRealtimeMobileSearch(inp.value.trim());
                     }
                 }
-            }, 80);
+            }, 60);
+        } else {
+            // Desktop fallback: if desktop search exists, focus it
+            const desktopSearch = document.getElementById('globalSearchInput');
+            if (desktopSearch) {
+                desktopSearch.focus();
+                desktopSearch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                window.location.href = '/search';
+            }
         }
     }
 
@@ -778,6 +787,12 @@
             document.body.style.overflow = '';
         }
     }
+
+    // Expose globally on window so any button, script, or inline onclick can always invoke them
+    window.openMobileSearchModal = openMobileSearchModal;
+    window.openUniversalSearch = openMobileSearchModal;
+    window.closeMobileSearchModal = closeMobileSearchModal;
+    window.escapeHtml = escapeHtml;
 
     function clearMobileSearchInput() {
         const inp = document.getElementById('mobileSearchModalInput');
@@ -981,6 +996,20 @@
                 e.preventDefault();
                 clearTimeout(mobileSearchTimer);
                 triggerRealtimeMobileSearch(e.target.value);
+            }
+        });
+
+        // Bind all search trigger buttons across the application
+        document.querySelectorAll('#mobileHeaderSearchBtn, .mobile-header-search-btn, .mobile-profile-search-pill').forEach(btn => {
+            btn.onclick = function(e) {
+                e.preventDefault();
+                openMobileSearchModal();
+            };
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeMobileSearchModal();
             }
         });
     }

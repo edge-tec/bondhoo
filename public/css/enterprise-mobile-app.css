@@ -1460,6 +1460,10 @@ button, a, input, select, textarea, [role="button"] {
     padding: 12px 14px !important;
     border: 1px solid var(--fb-border) !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
 }
 
 .create-post-row {
@@ -1467,6 +1471,10 @@ button, a, input, select, textarea, [role="button"] {
     align-items: center !important;
     gap: 10px !important;
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
 }
 
 .create-post-avatar-wrap {
@@ -1719,17 +1727,57 @@ button, a, input, select, textarea, [role="button"] {
     position: fixed;
     inset: 0;
     background: #ffffff;
-    z-index: 99999;
+    z-index: 999999;
     display: flex;
     flex-direction: column;
 }
 
+.mobile-search-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1;
+}
+
 .mobile-search-modal-container {
+    position: relative;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     height: 100%;
     width: 100%;
+    background: #ffffff;
     padding-top: var(--sat);
+}
+
+@media (min-width: 769px) {
+    .mobile-search-modal-overlay {
+        background: transparent !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding-top: 50px !important;
+    }
+
+    .mobile-search-modal-container {
+        max-width: 620px !important;
+        height: auto !important;
+        max-height: 85vh !important;
+        border-radius: 16px !important;
+        box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid var(--fb-border) !important;
+        overflow: hidden !important;
+    }
+
+    .mobile-search-modal-header {
+        border-radius: 16px 16px 0 0 !important;
+    }
+
+    .mobile-search-results-area {
+        max-height: 60vh !important;
+        overflow-y: auto !important;
+    }
 }
 
 .mobile-search-modal-header {
