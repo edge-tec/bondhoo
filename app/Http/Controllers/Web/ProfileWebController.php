@@ -188,7 +188,7 @@ class ProfileWebController extends Controller
         $activityLogs = $isOwnerForView ? $enterpriseService->getActivityLogs($targetUser, null, 20) : null;
         $avatarHistory = $isOwnerForView ? $enterpriseService->getAvatarHistory($targetUser) : collect();
         $coverHistory = $isOwnerForView ? $enterpriseService->getCoverHistory($targetUser) : collect();
-        $friendSuggestions = $isOwnerForView ? $enterpriseService->getFriendSuggestions($targetUser, 8) : collect();
+        $friendSuggestions = $enterpriseService->getFriendSuggestions($viewer ?? $targetUser, 8);
         $followers = $targetUser->followers()->with('profile')->take(50)->get();
         $following = $targetUser->following()->with('profile')->take(50)->get();
 

@@ -87,22 +87,11 @@
         }
 
         /* ------------------------------------------------------------- */
-        /* TOP NAVIGATION BAR */
+        /* TOP NAVIGATION BAR - HIDDEN (DOCK SIDEBAR IS PRIMARY AS IN MOCKUP) */
         /* ------------------------------------------------------------- */
-        header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            backdrop-filter: blur(16px) saturate(1.6);
-            -webkit-backdrop-filter: blur(16px) saturate(1.6);
-            background: rgba(255, 255, 255, 0.82);
-            border-bottom: 1px solid rgba(229, 231, 235, 0.6);
-            height: 60px;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+        header.desktop-header,
+        .desktop-header {
+            display: none !important;
         }
 
         .header-left {
@@ -3580,37 +3569,41 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
+            gap: 12px;
             width: 100%;
-            margin-bottom: 8px;
+            margin-bottom: 0;
             box-sizing: border-box;
+            height: 48px;
         }
         .mobile-profile-brand {
             display: inline-flex;
             align-items: center;
             text-decoration: none;
             flex-shrink: 0;
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
         }
         .mobile-profile-brand img {
             height: 28px;
             width: auto;
-            max-width: 120px;
+            max-width: 135px;
             object-fit: contain;
             display: block;
+            background: transparent !important;
         }
         .mobile-profile-top-actions {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 10px;
             flex-shrink: 0;
         }
         .mobile-head-icon-btn {
-            width: 32px !important;
-            height: 32px !important;
-            min-width: 32px !important;
-            min-height: 32px !important;
-            max-width: 32px !important;
-            max-height: 32px !important;
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
             border-radius: 50% !important;
             display: inline-flex !important;
             align-items: center !important;
@@ -3618,24 +3611,39 @@
             color: #1c1e21 !important;
             text-decoration: none !important;
             position: relative !important;
-            background: transparent;
-            transition: background 0.15s ease;
+            background: #f0f2f5 !important;
+            border: none !important;
+            cursor: pointer !important;
+            transition: all 0.15s ease;
             flex-shrink: 0 !important;
-            overflow: visible !important;
         }
         .mobile-head-icon-btn:active {
-            background: #f0f2f5 !important;
+            background: #e4e6eb !important;
+            transform: scale(0.96);
         }
         .mobile-head-icon-btn svg {
-            width: 20px !important;
-            height: 20px !important;
-            min-width: 20px !important;
-            min-height: 20px !important;
-            max-width: 20px !important;
-            max-height: 20px !important;
+            width: 19px !important;
+            height: 19px !important;
             stroke: #1c1e21 !important;
-            stroke-width: 2.1 !important;
+            stroke-width: 2.2 !important;
+            display: block !important;
+        }
+        .mobile-head-avatar-circle {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 50% !important;
+            overflow: hidden !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border: 2px solid #ffffff !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
             flex-shrink: 0 !important;
+        }
+        .mobile-head-avatar-circle img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
             display: block !important;
         }
         .mobile-head-badge {
@@ -3722,13 +3730,15 @@
 
             /* Show mobile profile header */
             .mobile-profile-header-bar {
-                display: block !important;
+                display: flex !important;
+                align-items: center !important;
                 position: sticky !important;
                 top: 0 !important;
                 z-index: 100 !important;
                 background: #ffffff !important;
                 border-bottom: 1px solid #e5e7eb !important;
-                padding: 8px 12px 10px 12px !important;
+                padding: 0 14px !important;
+                height: 52px !important;
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
             }
 
