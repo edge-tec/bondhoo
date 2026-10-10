@@ -21,6 +21,7 @@ use App\Models\Admin;
 use App\Models\User;
 use App\Services\AuthServiceV2;
 use App\Services\Email\SmtpConfigService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -265,3 +266,9 @@ Route::middleware(['admin.web'])->group(function () {
 Route::get('/friends', [FriendsWebController::class, 'index'])->name('friends.index');
 
 Route::get('/notifications', [NotificationWebController::class, 'index'])->name('notifications.index');
+
+Route::get('/search', function (Request $request) {
+    return view('dashboard', [
+        'initialSearchQuery' => (string) ($request->query('q') ?? $request->query('query') ?? ''),
+    ]);
+})->name('search.web');

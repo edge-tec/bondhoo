@@ -128,6 +128,9 @@ Route::prefix('v1')->group(function () {
     // Authenticated voice audio stream (self-authenticates via bearer, query token, cookie, or session)
     Route::get('/messages/{id}/voice', [VoiceMessageController::class, 'stream'])->whereNumber('id');
 
+    // Universal Real-Time Search (Public & Authenticated)
+    Route::get('/search', [SearchController::class, 'search']);
+
     // Authenticated API endpoints
     Route::middleware(['auth:sanctum,web'])->group(function () {
         // Auth session & token management

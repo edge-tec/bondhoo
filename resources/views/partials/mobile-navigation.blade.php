@@ -34,32 +34,38 @@
 <!-- 1. FIXED MOBILE BOTTOM NAVIGATION BAR -->
 <nav class="mobile-bottom-nav" id="bondhooMobileBottomNav" aria-label="মোবাইল নেভিগেশন">
     <!-- Home / Feed -->
-    <button type="button" class="mobile-nav-btn {{ $isHomeActive ? 'active' : '' }}" id="mobileNavHomeBtn" onclick="handleMobileNavHome(event)" aria-label="হোম ফিড" title="হোম ফিড">
+    <button type="button" class="mobile-nav-btn {{ $isHomeActive ? 'active' : '' }}" id="mobileNavHomeBtn" onclick="handleMobileNavHome(event)" aria-label="হোম" title="হোম">
         <span class="mobile-nav-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9.5L12 3l9 6.5V20a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 13 20v-5h-2v5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 3 20V9.5z"/>
             </svg>
         </span>
+        <span class="mobile-nav-label">হোম</span>
     </button>
 
-    <!-- Search -->
-    <button type="button" class="mobile-nav-btn {{ request()->is('search*') ? 'active' : '' }}" id="mobileNavSearchBtn" onclick="handleMobileNavSearch(event)" aria-label="অনুসন্ধান" title="অনুসন্ধান">
+    <!-- Friends -->
+    <button type="button" class="mobile-nav-btn {{ $isFriendsActive ? 'active' : '' }}" id="mobileNavFriendsBtn" onclick="window.location.href='/friends'" aria-label="বন্ধুরা" title="বন্ধুরা">
         <span class="mobile-nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
+            <span class="mobile-nav-badge" id="mobileNavFriendsBadge" style="display: none;">0</span>
         </span>
+        <span class="mobile-nav-label">বন্ধুরা</span>
     </button>
 
     <!-- Create (Center Elevated Action Button) -->
-    <button type="button" class="mobile-nav-create-btn" id="mobileNavCreateBtn" onclick="handleMobileCenterCreate(event)" aria-label="নতুন তৈরি করুন" title="নতুন তৈরি করুন">
+    <button type="button" class="mobile-nav-create-btn" id="mobileNavCreateBtn" onclick="handleMobileCenterCreate(event)" aria-label="তৈরি" title="তৈরি">
         <div class="mobile-nav-create-bubble">
             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
         </div>
+        <span class="mobile-nav-label" style="margin-top: 3px;">তৈরি</span>
     </button>
 
     <!-- Notifications -->
@@ -71,16 +77,21 @@
             </svg>
             <span class="mobile-nav-badge" id="mobileNavNotifBadge" style="display: none;">0</span>
         </span>
+        <span class="mobile-nav-label">বিজ্ঞপ্তি</span>
     </button>
 
-    <!-- Messenger -->
-    <button type="button" class="mobile-nav-btn {{ $isMessagesActive ? 'active' : '' }}" id="mobileNavMessengerBtn" onclick="handleMobileNavMessenger(event)" aria-label="মেসেঞ্জার" title="মেসেঞ্জার">
-        <span class="mobile-nav-icon">
-            <svg width="24" height="24" viewBox="0 0 28 28" fill="currentColor">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M14 2C7.373 2 2 7.155 2 13.518c0 3.626 1.745 6.862 4.475 8.974V26l3.37-1.85c1.28.355 2.646.549 4.155.549 6.627 0 12-5.155 12-11.518C26 7.155 20.627 2 14 2zm1.203 15.534l-3.08-3.284-6.012 3.284 6.613-7.02 3.155 3.284 5.937-3.284-6.613 7.02z"/>
-            </svg>
-            <span class="mobile-nav-badge" id="mobileNavMessengerBadge" style="display: none;">0</span>
+    <!-- Menu -->
+    <button type="button" class="mobile-nav-btn" id="mobileNavMenuBtn" onclick="openMobileMenuDrawer()" aria-label="মেনু" title="মেনু">
+        <span class="mobile-nav-icon" style="position:relative;">
+            <div style="width:24px;height:24px;border-radius:50%;background:#0084ff;color:#ffffff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;line-height:1;position:relative;box-shadow:0 1px 3px rgba(0,132,255,0.3);">
+                B
+                <span style="position:absolute;bottom:-2px;right:-3px;width:11px;height:11px;background:#ffffff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,0.15);">
+                    <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#0084ff" stroke-width="3.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </span>
+            </div>
+            <span class="mobile-nav-badge" id="mobileNavMenuBadge" style="display: none;">0</span>
         </span>
+        <span class="mobile-nav-label">মেনু</span>
     </button>
 </nav>
 
@@ -481,15 +492,28 @@
     <div class="mobile-search-modal-backdrop" onclick="closeMobileSearchModal()"></div>
     <div class="mobile-search-modal-container">
         <div class="mobile-search-modal-header">
+            <button type="button" class="mobile-search-back-btn" onclick="closeMobileSearchModal()" aria-label="ফিরে যান" title="ফিরে যান">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
             <div class="mobile-search-input-wrap">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" class="search-input-icon">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="text" id="mobileSearchModalInput" placeholder="Bondhoo-তে অনুসন্ধান করুন..." autocomplete="off">
-                <button type="button" id="mobileSearchClearBtn" style="display: none;" onclick="clearMobileSearchInput()">✕</button>
+                <input type="search" id="mobileSearchModalInput" placeholder="Bondhoo-তে অনুসন্ধান করুন..." autocomplete="off">
+                <button type="button" id="mobileSearchClearBtn" style="display: none;" onclick="clearMobileSearchInput()" title="মুছুন">✕</button>
             </div>
             <button type="button" class="mobile-search-cancel-btn" onclick="closeMobileSearchModal()">বাতিল</button>
+        </div>
+        <div class="mobile-search-filter-pills" id="mobileSearchFilterPills">
+            <button type="button" class="search-filter-pill active" data-type="all" onclick="setMobileSearchType('all', this)">সব</button>
+            <button type="button" class="search-filter-pill" data-type="users" onclick="setMobileSearchType('users', this)">মানুষ</button>
+            <button type="button" class="search-filter-pill" data-type="posts" onclick="setMobileSearchType('posts', this)">পোস্ট</button>
+            <button type="button" class="search-filter-pill" data-type="groups" onclick="setMobileSearchType('groups', this)">গ্রুপ</button>
+            <button type="button" class="search-filter-pill" data-type="pages" onclick="setMobileSearchType('pages', this)">পেজ</button>
         </div>
         <div class="mobile-search-results-area" id="mobileSearchResultsArea">
             <div class="mobile-search-hint">
@@ -497,7 +521,7 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <p>বন্ধু, প্রোফাইল বা পোস্ট খুঁজে পেতে সার্চ করুন</p>
+                <p>বন্ধু, প্রোফাইল, পোস্ট, গ্রুপ বা পেজ খুঁজে পেতে সার্চ করুন</p>
             </div>
         </div>
     </div>
@@ -708,6 +732,21 @@
         }
     }
 
+    let currentMobileSearchType = 'all';
+    let mobileSearchTimer = null;
+
+    function setMobileSearchType(type, btn) {
+        currentMobileSearchType = type;
+        const pills = document.querySelectorAll('.mobile-search-filter-pills .search-filter-pill');
+        pills.forEach(p => p.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        const inp = document.getElementById('mobileSearchModalInput');
+        if (inp && inp.value.trim()) {
+            triggerRealtimeMobileSearch(inp.value.trim());
+        }
+    }
+
     function openMobileSearchModal() {
         const modal = document.getElementById('mobileSearchModal');
         if (modal) {
@@ -715,8 +754,13 @@
             document.body.style.overflow = 'hidden';
             setTimeout(() => {
                 const inp = document.getElementById('mobileSearchModalInput');
-                if (inp) inp.focus();
-            }, 120);
+                if (inp) {
+                    inp.focus();
+                    if (inp.value.trim()) {
+                        triggerRealtimeMobileSearch(inp.value.trim());
+                    }
+                }
+            }, 80);
         }
     }
 
@@ -744,77 +788,201 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <p>বন্ধু, প্রোফাইল বা পোস্ট খুঁজে পেতে সার্চ করুন</p>
+                    <p>বন্ধু, প্রোফাইল, পোস্ট, গ্রুপ বা পেজ খুঁজে পেতে সার্চ করুন</p>
                 </div>`;
         }
     }
 
-    let mobileSearchTimer = null;
-    document.addEventListener('DOMContentLoaded', function() {
+    async function triggerRealtimeMobileSearch(rawQ) {
+        const q = (rawQ || '').trim();
+        const area = document.getElementById('mobileSearchResultsArea');
+        const clearBtn = document.getElementById('mobileSearchClearBtn');
+        if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
+
+        if (!area) return;
+        if (!q) {
+            clearMobileSearchInput();
+            return;
+        }
+
+        area.innerHTML = `
+            <div class="mobile-search-loading">
+                <div class="search-loading-spinner"></div>
+                <p>অনুসন্ধান করা হচ্ছে...</p>
+            </div>`;
+
+        try {
+            const tok = window.currentToken || (window.auth && window.auth.token) || localStorage.getItem('bondhoo_token') || localStorage.getItem('token') || '';
+            const headers = {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            if (csrfMeta) headers['X-CSRF-TOKEN'] = csrfMeta.content;
+            if (tok) headers['Authorization'] = `Bearer ${tok}`;
+
+            const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}&type=${encodeURIComponent(currentMobileSearchType)}&limit=15`, {
+                headers,
+                credentials: 'same-origin'
+            });
+
+            if (!res.ok) {
+                throw new Error('Search request failed with status ' + res.status);
+            }
+
+            const json = await res.json();
+            const results = (json && json.data && json.data.results) ? json.data.results : {};
+            const users = results.users || [];
+            const posts = results.posts || [];
+            const groups = results.groups || [];
+            const pages = results.pages || [];
+
+            let html = '';
+
+            // 1. Users
+            if (users.length > 0) {
+                html += '<div class="mobile-search-section-title">মানুষ ও প্রোফাইল (' + users.length + ')</div>';
+                users.forEach(u => {
+                    const profileUrl = window.getUserProfileUrl ? window.getUserProfileUrl(u) : `/profile/${encodeURIComponent(u.username || u.id)}`;
+                    const avatar = u.profile?.avatar_url || u.avatar_url || '/images/default-avatar.svg';
+                    const name = u.name || u.username || 'ব্যবহারকারী';
+                    const handle = u.username ? `@${u.username}` : '';
+                    const bio = u.bio || (u.profile && u.profile.bio) || '';
+
+                    html += `
+                        <div class="mobile-search-user-item" onclick="closeMobileSearchModal(); window.location.href='${profileUrl}';">
+                            <img src="${avatar}" class="mobile-search-user-avatar" alt="${escapeHtml(name)}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                            <div class="mobile-search-user-meta">
+                                <div class="mobile-search-user-name">${escapeHtml(name)}</div>
+                                ${handle ? `<div class="mobile-search-user-handle">${escapeHtml(handle)}</div>` : ''}
+                                ${bio ? `<div class="mobile-search-user-bio">${escapeHtml(bio)}</div>` : ''}
+                            </div>
+                        </div>`;
+                });
+            }
+
+            // 2. Posts
+            if (posts.length > 0) {
+                html += '<div class="mobile-search-section-title">পোস্টসমূহ (' + posts.length + ')</div>';
+                posts.forEach(p => {
+                    const authorName = (p.user && (p.user.name || p.user.username)) || 'ব্যবহারকারী';
+                    const authorAvatar = (p.user && p.user.avatar_url) || '/images/default-avatar.svg';
+                    const snippet = (p.content || '').substring(0, 140);
+                    const likesCount = p.reactions_count || (p.reactions && p.reactions.length) || 0;
+                    const commentsCount = p.comments_count || 0;
+                    const postUrl = `/posts/${p.id}`;
+
+                    html += `
+                        <div class="mobile-search-post-item" onclick="closeMobileSearchModal(); window.location.href='${postUrl}';">
+                            <div class="mobile-search-post-author">
+                                <img src="${authorAvatar}" alt="${escapeHtml(authorName)}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                                <span>${escapeHtml(authorName)}</span>
+                            </div>
+                            <div class="mobile-search-post-content">${escapeHtml(snippet)}${p.content && p.content.length > 140 ? '...' : ''}</div>
+                            <div class="mobile-search-post-meta">
+                                <span>👍 ${likesCount} রিঅ্যাকশন</span>
+                                <span>💬 ${commentsCount} মন্তব্য</span>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            // 3. Groups
+            if (groups.length > 0) {
+                html += '<div class="mobile-search-section-title">কমিউনিটি ও গ্রুপ (' + groups.length + ')</div>';
+                groups.forEach(g => {
+                    const groupUrl = `/groups/${encodeURIComponent(g.slug || g.id)}`;
+                    const groupName = g.name || 'গ্রুপ';
+                    const membersCount = g.members_count || 1;
+
+                    html += `
+                        <div class="mobile-search-group-item" onclick="closeMobileSearchModal(); window.location.href='${groupUrl}';">
+                            <div style="width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #1877f2, #00c6ff); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 18px; flex-shrink: 0;">
+                                👥
+                            </div>
+                            <div class="mobile-search-user-meta">
+                                <div class="mobile-search-user-name">${escapeHtml(groupName)}</div>
+                                <div class="mobile-search-user-handle">${membersCount} জন সদস্য</div>
+                            </div>
+                            <span class="mobile-search-item-badge">গ্রুপ</span>
+                        </div>`;
+                });
+            }
+
+            // 4. Pages
+            if (pages.length > 0) {
+                html += '<div class="mobile-search-section-title">পাবলিক পেজ (' + pages.length + ')</div>';
+                pages.forEach(pg => {
+                    const pageUrl = `/pages/${encodeURIComponent(pg.slug || pg.id)}`;
+                    const pageName = pg.name || 'পেজ';
+                    const category = pg.category || 'পেজ';
+                    const avatar = pg.avatar_url || '/images/default-avatar.svg';
+
+                    html += `
+                        <div class="mobile-search-page-item" onclick="closeMobileSearchModal(); window.location.href='${pageUrl}';">
+                            <img src="${avatar}" class="mobile-search-user-avatar" style="border-radius: 10px;" alt="${escapeHtml(pageName)}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                            <div class="mobile-search-user-meta">
+                                <div class="mobile-search-user-name">${escapeHtml(pageName)}</div>
+                                <div class="mobile-search-user-handle">${escapeHtml(category)}</div>
+                            </div>
+                            <span class="mobile-search-item-badge">পেজ</span>
+                        </div>`;
+                });
+            }
+
+            if (users.length === 0 && posts.length === 0 && groups.length === 0 && pages.length === 0) {
+                html = `
+                    <div class="mobile-search-empty">
+                        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.8">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <p>“${escapeHtml(q)}” এর জন্য কোনো ফলাফল পাওয়া যায়নি।</p>
+                    </div>`;
+            }
+
+            area.innerHTML = html;
+        } catch (err) {
+            console.error('Mobile search error:', err);
+            area.innerHTML = `
+                <div class="mobile-search-empty">
+                    <p style="color: #ef4444;">অনুসন্ধানে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।</p>
+                </div>`;
+        }
+    }
+
+    function initMobileSearchHandlers() {
         const inp = document.getElementById('mobileSearchModalInput');
         const clearBtn = document.getElementById('mobileSearchClearBtn');
-        if (inp) {
-            inp.addEventListener('input', function(e) {
+        if (!inp) return;
+
+        inp.addEventListener('input', function(e) {
+            clearTimeout(mobileSearchTimer);
+            const val = e.target.value;
+            if (clearBtn) clearBtn.style.display = val.trim() ? 'flex' : 'none';
+            if (!val.trim()) {
+                clearMobileSearchInput();
+                return;
+            }
+            mobileSearchTimer = setTimeout(() => {
+                triggerRealtimeMobileSearch(val);
+            }, 250);
+        });
+
+        inp.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
                 clearTimeout(mobileSearchTimer);
-                const q = e.target.value.trim();
-                const area = document.getElementById('mobileSearchResultsArea');
-                if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
-                if (!area) return;
-                if (!q) {
-                    clearMobileSearchInput();
-                    return;
-                }
+                triggerRealtimeMobileSearch(e.target.value);
+            }
+        });
+    }
 
-                mobileSearchTimer = setTimeout(async () => {
-                    try {
-                        const tok = window.currentToken || (window.auth && window.auth.token) || '';
-                        const headers = { 'Accept': 'application/json' };
-                        if (tok) headers['Authorization'] = `Bearer ${tok}`;
-                        const res = await fetch(`/api/v1/search?query=${encodeURIComponent(q)}`, { headers });
-                        const json = await res.json();
-                        const results = json.data || {};
-                        const users = results.users || [];
-                        const posts = results.posts || [];
-
-                        let html = '';
-                        if (users.length > 0) {
-                            html += '<div class="mobile-search-section-title">ব্যবহারকারীগণ</div>';
-                            users.forEach(u => {
-                                const profileUrl = window.getUserProfileUrl ? window.getUserProfileUrl(u) : `/u/${encodeURIComponent(u.username || u.id)}`;
-                                const avatar = u.profile?.avatar_url || u.avatar_url || '/images/default-avatar.svg';
-                                html += `
-                                    <div class="mobile-search-user-item" onclick="closeMobileSearchModal(); window.location.href='${profileUrl}';">
-                                        <img src="${avatar}" class="mobile-search-user-avatar" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
-                                        <div class="mobile-search-user-meta">
-                                            <div class="mobile-search-user-name">${escapeHtml(u.name || u.username)}</div>
-                                            <div class="mobile-search-user-handle">@${escapeHtml(u.username || '')}</div>
-                                        </div>
-                                    </div>`;
-                            });
-                        }
-
-                        if (posts.length > 0) {
-                            html += '<div class="mobile-search-section-title">পোস্টসমূহ</div>';
-                            posts.forEach(p => {
-                                html += `
-                                    <div class="mobile-search-post-item" onclick="closeMobileSearchModal(); if(typeof showToast === 'function') showToast('পোস্ট ভিউ করা হচ্ছে');">
-                                        <p>${escapeHtml((p.content || '').substring(0, 90))}...</p>
-                                    </div>`;
-                            });
-                        }
-
-                        if (users.length === 0 && posts.length === 0) {
-                            html = '<div class="mobile-search-empty">কোনো ফলাফল পাওয়া যায়নি।</div>';
-                        }
-
-                        area.innerHTML = html;
-                    } catch (err) {
-                        console.error('Mobile search error:', err);
-                    }
-                }, 300);
-            });
-        }
-    });
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMobileSearchHandlers);
+    } else {
+        initMobileSearchHandlers();
+    }
 
     function handleMobileNavFriends(e) {
         closeMobileMenuDrawer();

@@ -3483,7 +3483,9 @@
 
             /* Responsive Cover Photo on Mobile */
             .cover-photo-wrapper {
-                height: 195px !important;
+                height: 200px !important;
+                border-radius: 0 0 18px 18px !important;
+                overflow: hidden !important;
             }
             #coverActionsWrapper {
                 bottom: 12px !important;
@@ -3492,67 +3494,137 @@
             .cover-photo-edit-btn {
                 bottom: auto !important;
                 right: auto !important;
-                padding: 6px 12px !important;
-                font-size: 12px !important;
-                font-weight: 600 !important;
-                border-radius: 20px !important;
-                gap: 5px !important;
-                white-space: nowrap !important;
-                background: rgba(15, 23, 42, 0.78) !important;
-                color: #ffffff !important;
-                border: 1px solid rgba(255, 255, 255, 0.25) !important;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28) !important;
-                backdrop-filter: blur(8px) !important;
-                -webkit-backdrop-filter: blur(8px) !important;
-                display: inline-flex !important;
+                width: 38px !important;
+                height: 38px !important;
+                border-radius: 50% !important;
+                padding: 0 !important;
+                display: flex !important;
                 align-items: center !important;
+                justify-content: center !important;
+                background: #ffffff !important;
+                color: #111827 !important;
+                border: 1px solid rgba(0, 0, 0, 0.08) !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22) !important;
+            }
+            .cover-photo-edit-btn span {
+                display: none !important;
             }
             .cover-photo-edit-btn svg {
-                width: 14px !important;
-                height: 14px !important;
-                stroke: #ffffff !important;
+                width: 18px !important;
+                height: 18px !important;
+                stroke: #111827 !important;
             }
 
-            /* Mobile Profile Avatar & Buttons */
+            /* Mobile Profile Avatar & Hero Information */
+            .profile-avatar-and-names {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                width: 100% !important;
+            }
             .avatar-wrapper {
-                width: 120px !important;
-                height: 120px !important;
-                margin-top: -60px !important;
-                border-width: 4px !important;
-                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16) !important;
+                width: 128px !important;
+                height: 128px !important;
+                margin: -64px auto 0 !important;
+                border: 4px solid #ffffff !important;
+                border-radius: 50% !important;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14) !important;
+                position: relative !important;
+            }
+            .avatar-img {
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 50% !important;
+                object-fit: cover !important;
             }
             .avatar-edit-btn {
-                width: 34px !important;
-                height: 34px !important;
-                bottom: 3px !important;
-                right: 3px !important;
-                border: 2px solid #fff !important;
+                width: 36px !important;
+                height: 36px !important;
+                bottom: 2px !important;
+                right: 2px !important;
+                border: 2.5px solid #ffffff !important;
+                background: #e4e6eb !important;
+                border-radius: 50% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+            }
+            .avatar-edit-btn svg {
+                width: 18px !important;
+                height: 18px !important;
+                stroke: #050505 !important;
             }
 
+            .profile-names-block {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                width: 100% !important;
+                margin-top: 8px !important;
+            }
             .profile-fullname {
-                font-size: 21px !important;
-                line-height: 1.25 !important;
+                font-size: 22px !important;
+                line-height: 1.3 !important;
+                font-weight: 700 !important;
                 margin-top: 4px !important;
+                text-align: center !important;
+                justify-content: center !important;
             }
             .profile-username-sub {
+                font-size: 14px !important;
+            }
+            .profile-meta-row {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 8px !important;
+                flex-wrap: wrap !important;
+                margin-top: 3px !important;
+            }
+            .profile-bio-text {
                 font-size: 13.5px !important;
+                color: var(--fb-text-secondary) !important;
+                text-align: center !important;
+                max-width: 92% !important;
+                margin: 4px auto !important;
+                line-height: 1.4 !important;
+            }
+            .profile-loc-time-row {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 12px !important;
+                flex-wrap: wrap !important;
+                margin-top: 4px !important;
+                font-size: 13px !important;
+                color: var(--fb-text-secondary) !important;
             }
             .profile-friends-count-sub {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                flex-wrap: wrap !important;
+                gap: 4px !important;
                 font-size: 12.5px !important;
                 line-height: 1.45 !important;
                 color: var(--fb-text-secondary) !important;
+                margin-top: 6px !important;
+                text-align: center !important;
             }
 
-            /* Mobile Action Buttons Bar (Clean 2-Row Facebook Layout) */
+            /* Mobile Action Buttons Bar (Clean 2-Row Layout matching screenshot) */
             .profile-actions-bar {
                 display: flex !important;
                 flex-direction: column !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 box-sizing: border-box !important;
-                gap: 7px !important;
-                margin-top: 10px !important;
-                margin-bottom: 10px !important;
+                gap: 8px !important;
+                margin-top: 12px !important;
+                margin-bottom: 12px !important;
             }
             .profile-actions-row {
                 display: flex !important;
@@ -3560,23 +3632,38 @@
                 max-width: 100% !important;
                 box-sizing: border-box !important;
                 gap: 6px !important;
-                align-items: stretch !important;
+                align-items: center !important;
             }
-            .profile-actions-row-primary .btn-action-story,
+            .profile-actions-row-primary .btn-action-story {
+                flex: 1.2 1 0 !important;
+                min-width: 0 !important;
+                height: 40px !important;
+                padding: 0 8px !important;
+                font-size: 13px !important;
+                font-weight: 600 !important;
+                border-radius: 8px !important;
+                background: #0084ff !important;
+                color: #ffffff !important;
+                border: none !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 4px !important;
+                box-sizing: border-box !important;
+            }
             .profile-actions-row-primary .btn-action-edit,
             .profile-actions-row-primary .btn-action-friend,
             .profile-actions-row-primary .btn-action-message {
                 flex: 1 1 0 !important;
                 min-width: 0 !important;
-                height: 38px !important;
-                padding: 0 6px !important;
-                font-size: 12.5px !important;
+                height: 40px !important;
+                padding: 0 8px !important;
+                font-size: 13px !important;
                 font-weight: 600 !important;
                 border-radius: 8px !important;
-                white-space: nowrap !important;
-                text-overflow: ellipsis !important;
-                overflow: hidden !important;
-                text-align: center !important;
+                background: #e4e6eb !important;
+                color: #050505 !important;
+                border: none !important;
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -3588,33 +3675,51 @@
                 flex-shrink: 0 !important;
             }
             .profile-actions-row-primary .btn-action-more {
-                width: 38px !important;
-                min-width: 38px !important;
-                height: 38px !important;
+                width: 44px !important;
+                min-width: 44px !important;
+                height: 40px !important;
                 padding: 0 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                font-size: 15px !important;
+                font-size: 16px !important;
                 font-weight: 800 !important;
                 border-radius: 8px !important;
+                background: #e4e6eb !important;
+                color: #050505 !important;
+                border: none !important;
                 box-sizing: border-box !important;
             }
-            .profile-actions-row-secondary .btn-action-lock,
+            .profile-actions-row-secondary .btn-action-lock {
+                flex: 1 1 0 !important;
+                min-width: 0 !important;
+                height: 38px !important;
+                padding: 0 6px !important;
+                font-size: 12.5px !important;
+                font-weight: 600 !important;
+                border-radius: 8px !important;
+                background: #ede9fe !important;
+                color: #7c3aed !important;
+                border: none !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 4px !important;
+                box-sizing: border-box !important;
+            }
             .profile-actions-row-secondary .btn-action-share,
             .profile-actions-row-secondary .btn-action-follow,
             .profile-actions-row-secondary .btn-action-dashboard {
                 flex: 1 1 0 !important;
                 min-width: 0 !important;
-                height: 36px !important;
-                padding: 0 4px !important;
-                font-size: 12px !important;
+                height: 38px !important;
+                padding: 0 6px !important;
+                font-size: 12.5px !important;
                 font-weight: 600 !important;
                 border-radius: 8px !important;
-                white-space: nowrap !important;
-                text-overflow: ellipsis !important;
-                overflow: hidden !important;
-                text-align: center !important;
+                background: #e4e6eb !important;
+                color: #050505 !important;
+                border: none !important;
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -3686,17 +3791,39 @@
                 background: var(--fb-card) !important;
             }
             .highlight-add-circle {
-                width: 58px !important;
-                height: 58px !important;
-                font-size: 22px !important;
+                width: 62px !important;
+                height: 62px !important;
+                border-radius: 50% !important;
+                border: 2px dashed #7c3aed !important;
+                color: #7c3aed !important;
+                font-size: 26px !important;
+                background: rgba(124, 58, 237, 0.04) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                margin: 0 auto 5px !important;
             }
             .highlight-circle {
-                width: 58px !important;
-                height: 58px !important;
+                width: 62px !important;
+                height: 62px !important;
+                border-radius: 50% !important;
+                overflow: hidden !important;
+                margin: 0 auto 5px !important;
+            }
+            .highlight-item {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                flex-shrink: 0 !important;
             }
             .highlight-item span {
-                font-size: 11px !important;
-                max-width: 62px !important;
+                font-size: 11.5px !important;
+                font-weight: 600 !important;
+                color: var(--fb-text-primary) !important;
+                max-width: 66px !important;
+                line-height: 1.2 !important;
+                text-align: center !important;
             }
 
             /* Mobile Navigation Tabs: Sticky Touch-Friendly Pill Bar */
@@ -3759,6 +3886,130 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+
+            /* Mobile Profile Top Header (Matching user screenshot) */
+            header.desktop-header {
+                display: none !important;
+            }
+            .mobile-profile-header-bar {
+                display: block !important;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                background: #ffffff;
+                border-bottom: 1px solid #e5e7eb;
+                padding: 8px 12px 10px 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            }
+            .mobile-profile-header-top {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            .mobile-profile-brand {
+                display: inline-flex;
+                align-items: center;
+                text-decoration: none;
+                flex-shrink: 0;
+            }
+            .mobile-profile-brand img {
+                height: 28px;
+                width: auto;
+                max-width: 120px;
+                object-fit: contain;
+                display: block;
+            }
+            .mobile-profile-top-actions {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                flex-shrink: 0;
+            }
+            .mobile-head-icon-btn {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #1c1e21;
+                text-decoration: none;
+                position: relative;
+                background: transparent;
+                transition: background 0.15s ease;
+            }
+            .mobile-head-icon-btn:active {
+                background: #f0f2f5;
+            }
+            .mobile-head-icon-btn svg {
+                width: 20px;
+                height: 20px;
+                stroke: #1c1e21;
+                stroke-width: 2.1;
+            }
+            .mobile-head-badge {
+                position: absolute;
+                top: -2px;
+                right: -2px;
+                background: #e41e3f;
+                color: #ffffff;
+                font-size: 10px;
+                font-weight: 700;
+                min-width: 16px;
+                height: 16px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 4px;
+                border: 1.5px solid #ffffff;
+                line-height: 1;
+            }
+            .mobile-head-avatar-circle {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                overflow: hidden;
+                border: 1.5px solid #0084ff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            .mobile-head-avatar-circle img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .mobile-profile-search-wrap {
+                width: 100%;
+            }
+            .mobile-profile-search-pill {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: #f0f2f5;
+                border-radius: 20px;
+                padding: 7px 14px;
+                cursor: pointer;
+                color: #65676b;
+                font-size: 13.5px;
+                user-select: none;
+                transition: background 0.15s ease;
+            }
+            .mobile-profile-search-pill:active {
+                background: #e4e6eb;
+            }
+            .mobile-profile-search-pill svg {
+                stroke: #65676b;
+                flex-shrink: 0;
+            }
+        }
+        .mobile-profile-header-bar {
+            display: none;
         }
     </style>
 </head>
@@ -3825,8 +4076,68 @@
         </div>
     </aside>
 
+    <!-- MOBILE TOP NAVIGATION BAR (AS IN MOBILE SCREENSHOT) -->
+    <header class="mobile-profile-header-bar mobile-only">
+        <div class="mobile-profile-header-top">
+            <a href="/" class="mobile-profile-brand" title="Bondhoo">
+                <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo">
+            </a>
+            <div class="mobile-profile-top-actions">
+                <a href="/watch" class="mobile-head-icon-btn" title="লাইভ ও ভিডিও">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                    </svg>
+                </a>
+                <a href="/messages" class="mobile-head-icon-btn" title="মেসেঞ্জার">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="mobile-head-badge">3</span>
+                </a>
+                <a href="/friends" class="mobile-head-icon-btn" title="বন্ধুরা">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </a>
+                <a href="/watch" class="mobile-head-icon-btn" title="ওয়াচ">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                        <polyline points="17 2 12 7 7 2"></polyline>
+                    </svg>
+                </a>
+                <a href="/saved" class="mobile-head-icon-btn" title="সংরক্ষিত">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </a>
+                <a href="/settings/devices" class="mobile-head-icon-btn" title="সেটিংস">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </a>
+                <a href="{{ getUserProfileUrl($user) }}" class="mobile-head-avatar-circle" title="প্রোফাইল">
+                    <img src="{{ $profile['avatar'] ?? '/images/default-avatar.png' }}" alt="{{ $profile['name'] }}">
+                </a>
+            </div>
+        </div>
+        <div class="mobile-profile-search-wrap">
+            <div class="mobile-profile-search-pill" onclick="if(typeof openMobileSearchModal === 'function'){ openMobileSearchModal(); } else { const m = document.getElementById('mobileSearchModal'); if(m) m.style.display='block'; }">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <span>অনুসন্ধান করুন...</span>
+            </div>
+        </div>
+    </header>
+
     <!-- TOP NAVIGATION BAR -->
-    <header>
+    <header class="desktop-header">
         <div class="header-left">
             <a href="/" class="fb-logo" title="Bondhoo Home" style="background:transparent;box-shadow:none;padding:0;display:inline-flex;align-items:center;height:38px;text-decoration:none;">
                 <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo" style="height: 34px; max-width: 155px; width: auto; object-fit: contain; display: block;">

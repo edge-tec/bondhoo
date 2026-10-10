@@ -4625,7 +4625,9 @@
             const jjAuthor = document.getElementById('jjAuthorName');
             if (jjAuthor) jjAuthor.innerText = name;
             const placeholder = document.getElementById('createPostPlaceholder');
-            if (placeholder) placeholder.innerText = `আপনার মনে কী আছে, ${name}?`;
+            if (placeholder) {
+                placeholder.innerText = (window.innerWidth <= 600) ? 'আপনার মনে কী আছে?' : `আপনার মনে কী আছে, ${name}?`;
+            }
         }
 
         async function handleManualLogin(e) {
@@ -8404,44 +8406,98 @@
                 dropdown.style.display = 'none';
                 return;
             }
+
+            dropdown.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--fb-text-secondary); font-size: 13px;">খোঁজা হচ্ছে...</div>';
+            dropdown.style.display = 'block';
+
             searchTimer = setTimeout(async () => {
                 try {
-                    const headers = { 'Accept': 'application/json' };
+                    const headers = { 
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    };
+                    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                    if (csrfMeta) headers['X-CSRF-TOKEN'] = csrfMeta.content;
                     if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
-                    const res = await fetch(`/api/v1/search?query=${encodeURIComponent(q)}`, { headers });
+
+                    const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}&limit=15`, { 
+                        headers,
+                        credentials: 'same-origin'
+                    });
                     const data = await res.json();
-                    const results = data.data || {};
+                    const results = (data && data.data && data.data.results) ? data.data.results : {};
                     const posts = results.posts || [];
                     const users = results.users || [];
+                    const groups = results.groups || [];
+                    const pages = results.pages || [];
 
                     let html = '';
                     if (users.length > 0) {
-                        html += '<div style="padding: 6px 12px; font-weight: 700; font-size: 12px; color: #65676b; background: #f0f2f5;">ব্যবহারকারীগণ</div>';
+                        html += '<div style="padding: 8px 12px; font-weight: 800; font-size: 11px; color: #64748b; background: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px;">মানুষ ও প্রোফাইল (' + users.length + ')</div>';
                         users.forEach(u => {
-                            const profileUrl = window.getUserProfileUrl ? window.getUserProfileUrl(u) : `/u/${encodeURIComponent(u.username || u.id)}`;
-                            html += `<div style="padding: 8px 12px; display: flex; gap: 8px; align-items: center; cursor: pointer; border-bottom: 1px solid #f0f2f5;" onclick="document.getElementById('searchResultsDropdown').style.display='none'; window.location.href='${profileUrl}';">
-                                <div class="avatar" style="width: 28px; height: 28px;">${(u.name || u.username || 'U').charAt(0)}</div>
-                                <div><div style="font-weight: 700; font-size: 13px;">${escapeHtml(u.name || u.username)}</div><div style="font-size: 11px; color: #65676b;">@${escapeHtml(u.username || '')}</div></div>
+                            const profileUrl = window.getUserProfileUrl ? window.getUserProfileUrl(u) : `/profile/${encodeURIComponent(u.username || u.id)}`;
+                            const avatar = u.avatar_url || (u.profile && u.profile.avatar_url) || '/images/default-avatar.svg';
+                            const name = u.name || u.username || 'ব্যবহারকারী';
+                            const handle = u.username ? `@${u.username}` : '';
+                            html += `<div style="padding: 9px 12px; display: flex; gap: 10px; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="document.getElementById('searchResultsDropdown').style.display='none'; window.location.href='${profileUrl}';">
+                                <img src="${avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0;" alt="${escapeHtml(name)}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                                <div style="min-width: 0; flex: 1;">
+                                    <div style="font-weight: 700; font-size: 13.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(name)}</div>
+                                    ${handle ? `<div style="font-size: 11.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(handle)}</div>` : ''}
+                                </div>
                             </div>`;
                         });
                     }
+
                     if (posts.length > 0) {
-                        html += '<div style="padding: 6px 12px; font-weight: 700; font-size: 12px; color: #65676b; background: #f0f2f5;">পোস্টসমূহ</div>';
+                        html += '<div style="padding: 8px 12px; font-weight: 800; font-size: 11px; color: #64748b; background: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px;">পোস্টসমূহ (' + posts.length + ')</div>';
                         posts.forEach(p => {
-                            html += `<div style="padding: 8px 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f0f2f5;" onclick="document.getElementById('searchResultsDropdown').style.display='none'; showToast('পোস্ট লোড হয়েছে')">
-                                ${p.content.substring(0, 60)}...
+                            const authorName = (p.user && (p.user.name || p.user.username)) || 'ব্যবহারকারী';
+                            const snippet = (p.content || '').substring(0, 75);
+                            html += `<div style="padding: 9px 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="document.getElementById('searchResultsDropdown').style.display='none'; window.location.href='/posts/${p.id}';">
+                                <div style="font-weight: 700; font-size: 12px; color: #1877f2; margin-bottom: 2px;">${escapeHtml(authorName)}</div>
+                                <div style="color: #334155; line-height: 1.35;">${escapeHtml(snippet)}${p.content && p.content.length > 75 ? '...' : ''}</div>
                             </div>`;
                         });
                     }
-                    if (!users.length && !posts.length) {
-                        html = '<div style="padding: 12px; text-align: center; color: #65676b; font-size: 13px;">কোনো ফলাফল পাওয়া যায়নি।</div>';
+
+                    if (groups.length > 0) {
+                        html += '<div style="padding: 8px 12px; font-weight: 800; font-size: 11px; color: #64748b; background: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px;">গ্রুপসমূহ (' + groups.length + ')</div>';
+                        groups.forEach(g => {
+                            html += `<div style="padding: 9px 12px; display: flex; gap: 10px; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="document.getElementById('searchResultsDropdown').style.display='none'; window.location.href='/groups/${encodeURIComponent(g.slug || g.id)}';">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #1877f2, #00c6ff); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; flex-shrink: 0;">👥</div>
+                                <div style="min-width: 0; flex: 1;">
+                                    <div style="font-weight: 700; font-size: 13.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(g.name || 'গ্রুপ')}</div>
+                                    <div style="font-size: 11.5px; color: #64748b;">${g.members_count || 1} জন সদস্য</div>
+                                </div>
+                            </div>`;
+                        });
+                    }
+
+                    if (pages.length > 0) {
+                        html += '<div style="padding: 8px 12px; font-weight: 800; font-size: 11px; color: #64748b; background: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px;">পেজসমূহ (' + pages.length + ')</div>';
+                        pages.forEach(pg => {
+                            const avatar = pg.avatar_url || '/images/default-avatar.svg';
+                            html += `<div style="padding: 9px 12px; display: flex; gap: 10px; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="document.getElementById('searchResultsDropdown').style.display='none'; window.location.href='/pages/${encodeURIComponent(pg.slug || pg.id)}';">
+                                <img src="${avatar}" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; flex-shrink: 0;" alt="${escapeHtml(pg.name || 'পেজ')}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                                <div style="min-width: 0; flex: 1;">
+                                    <div style="font-weight: 700; font-size: 13.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(pg.name || 'পেজ')}</div>
+                                    <div style="font-size: 11.5px; color: #64748b;">${escapeHtml(pg.category || 'পেজ')}</div>
+                                </div>
+                            </div>`;
+                        });
+                    }
+
+                    if (!users.length && !posts.length && !groups.length && !pages.length) {
+                        html = '<div style="padding: 16px; text-align: center; color: #64748b; font-size: 13px;">“' + escapeHtml(q) + '” এর জন্য কোনো ফলাফল পাওয়া যায়নি।</div>';
                     }
                     dropdown.innerHTML = html;
                     dropdown.style.display = 'block';
                 } catch (err) {
                     console.error('Search error:', err);
+                    dropdown.innerHTML = '<div style="padding: 16px; text-align: center; color: #ef4444; font-size: 13px;">অনুসন্ধানে সমস্যা হয়েছে। আবার চেষ্টা করুন।</div>';
                 }
-            }, 300);
+            }, 250);
         });
 
         // Close search dropdown when clicking outside

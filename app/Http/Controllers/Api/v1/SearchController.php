@@ -22,10 +22,10 @@ class SearchController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $query = (string) $request->query('q', '');
+        $user = $request->user('sanctum') ?? $request->user('web') ?? auth('sanctum')->user() ?? auth('web')->user();
+        $query = (string) ($request->query('q') ?? $request->query('query') ?? $request->query('search') ?? $request->input('q') ?? $request->input('query') ?? '');
         $type = (string) $request->query('type', 'all');
-        $limit = (int) $request->query('limit', 10);
+        $limit = min((int) ($request->query('limit', 15)), 50);
 
         $results = $this->searchService->search($query, $type, $user, $limit);
 
