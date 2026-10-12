@@ -996,6 +996,7 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
             Route::get('/{page}/team', [PageTeamV2ApiController::class, 'index']);
             Route::post('/{page}/team/invite', [PageTeamV2ApiController::class, 'invite']);
             Route::post('/team/accept', [PageTeamV2ApiController::class, 'accept']);
+            Route::post('/team/decline', [PageTeamV2ApiController::class, 'decline']);
             Route::put('/{page}/team/{memberId}', [PageTeamV2ApiController::class, 'updateRole']);
             Route::delete('/{page}/team/{memberId}', [PageTeamV2ApiController::class, 'remove']);
 

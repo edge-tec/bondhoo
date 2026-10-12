@@ -3,6 +3,7 @@
 @section('title', 'নতুন এন্টারপ্রাইজ পেইজ তৈরি করুন — Bondhoo')
 
 @section('styles')
+<link rel="stylesheet" href="{{ asset('css/enterprise-pages-redesign.css') }}?v={{ time() }}">
 <style>
     :root {
         --primary-brand: #059669;

@@ -8,6 +8,7 @@ use App\Models\Page;
 use App\Models\PageCreationDraft;
 use App\Models\PageEvent;
 use App\Models\PageFollower;
+use App\Models\PageMember;
 use App\Models\PageProduct;
 use App\Models\PageType;
 use App\Models\Post;
@@ -78,13 +79,16 @@ class PageWebController extends Controller
 
         $followedPages = collect();
         $managedPages = collect();
+        $pendingInvitations = collect();
+        $pageNotifications = collect();
+
         if ($user) {
             $managedPages = Page::where(function ($q) use ($user) {
                 $q->where('owner_id', $user->id)
                     ->orWhereHas('members', fn ($mq) => $mq->where('user_id', $user->id)->where('status', 'active'));
             })
                 ->where('status', '!=', Page::STATUS_TRASH)
-                ->with('owner')
+                ->with(['owner', 'members' => fn ($mq) => $mq->where('user_id', $user->id)])
                 ->latest('id')
                 ->get();
 
@@ -93,13 +97,39 @@ class PageWebController extends Controller
                 ->with('owner')
                 ->latest('id')
                 ->get();
+
+            $pendingInvitations = PageMember::where('user_id', $user->id)
+                ->where('status', 'invited')
+                ->with(['page.owner', 'inviter'])
+                ->latest('id')
+                ->get();
+
+            if (method_exists($user, 'notifications')) {
+                $pageNotifications = $user->notifications()
+                    ->where(function ($nq) {
+                        $nq->where('type', 'like', 'page.%')
+                            ->orWhere('data', 'like', '%page_id%');
+                    })
+                    ->latest('id')
+                    ->take(20)
+                    ->get();
+            }
         }
+
+        $totalFollowersManaged = $managedPages->sum('followers_count');
+        $totalPostsManaged = $managedPages->sum('posts_count');
+        $totalPagesCount = Page::where('status', '!=', Page::STATUS_TRASH)->count();
 
         return view('pages.index', [
             'currentUser' => $user,
             'allPages' => $allPages,
             'managedPages' => $managedPages,
             'followedPages' => $followedPages,
+            'pendingInvitations' => $pendingInvitations,
+            'pageNotifications' => $pageNotifications,
+            'totalFollowersManaged' => $totalFollowersManaged,
+            'totalPostsManaged' => $totalPostsManaged,
+            'totalPagesCount' => $totalPagesCount,
             'searchQuery' => $search,
             'categories' => $categories,
             'selectedCategory' => $selectedCategory,

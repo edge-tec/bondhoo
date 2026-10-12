@@ -24,6 +24,8 @@ class Page extends Model
 
     public const ROLE_MANAGER = 'manager';
 
+    public const ROLE_EDITOR = 'editor';
+
     public const ROLE_CONTENT_MANAGER = 'content_manager';
 
     public const ROLE_MODERATOR = 'moderator';

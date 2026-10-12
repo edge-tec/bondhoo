@@ -1,420 +1,680 @@
 @extends('layouts.app')
 
-@section('title', 'পেইজসমূহ — Bondhoo')
+@section('title', 'পেইজসমূহ — Bondhoo Enterprise Social Pages')
 
 @section('styles')
-<style>
-    .pages-header-banner {
-        background: linear-gradient(135deg, #10b981, #0284c7);
-        color: white;
-        border-radius: 12px;
-        padding: 32px 24px;
-        margin-bottom: 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-    }
-
-    .pages-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 18px;
-    }
-
-    .page-card {
-        background: var(--fb-card);
-        border-radius: 10px;
-        border: 1px solid var(--fb-border);
-        box-shadow: var(--shadow-sm);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        transition: transform 0.2s, box-shadow 0.2s;
-        text-decoration: none;
-        color: inherit;
-    }
-
-    .page-card:hover {
-        transform: translateY(-3px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .page-cover-box {
-        height: 100px;
-        background: linear-gradient(45deg, #059669, #0284c7);
-        position: relative;
-    }
-
-    .page-cover-box img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .page-avatar-overlap {
-        position: absolute;
-        bottom: -24px;
-        left: 16px;
-        border: 3px solid var(--fb-card);
-    }
-
-    .page-card-body {
-        padding: 32px 16px 16px;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .page-name {
-        font-size: 17px;
-        font-weight: 700;
-        color: var(--fb-text-primary);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .page-category {
-        font-size: 13px;
-        color: var(--fb-text-secondary);
-        margin: 4px 0 8px;
-    }
-
-    .page-bio {
-        font-size: 13px;
-        color: var(--fb-text-secondary);
-        line-height: 1.4;
-        margin-bottom: 14px;
-        flex: 1;
-    }
-
-    /* Modal */
-    .modal-backdrop {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .modal-box {
-        background: var(--fb-card);
-        border-radius: 12px;
-        width: 480px;
-        max-width: min(94vw, 480px);
-        max-height: calc(100dvh - 32px);
-        overflow-y: auto;
-        box-shadow: var(--shadow-lg);
-    }
-
-    @media (max-width: 768px) {
-        .pages-header-banner {
-            padding: 22px 18px;
-            border-radius: 10px;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 14px;
-        }
-        .pages-header-banner .btn-fb-primary {
-            width: 100%;
-            justify-content: center;
-        }
-        .pages-grid {
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 14px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .pages-grid {
-            grid-template-columns: 1fr;
-        }
-        .pages-header-banner h1 {
-            font-size: 20px;
-        }
-    }
-
-    @media (max-width: 374px) {
-        .pages-header-banner {
-            padding: 16px 14px;
-        }
-        .pages-header-banner h1 {
-            font-size: 18px;
-        }
-        .page-cover-box {
-            height: 80px;
-        }
-        .page-card-body {
-            padding: 28px 12px 12px;
-        }
-    }
-</style>
+<link rel="stylesheet" href="/css/enterprise-pages-redesign.css?v={{ time() }}">
 @endsection
 
 @section('content')
-<div class="pages-header-banner">
-    <div>
-        <h1 style="font-size: 26px; font-weight: 800; margin-bottom: 6px;">📄 পেইজ ও পাবলিক এন্টিটি</h1>
-        <p style="font-size: 14px; opacity: 0.9;">আপনার ব্র্যান্ড, ব্যবসা, সংগঠন বা ব্যক্তিত্বের জন্য পেইজ তৈরি ও অনুসরণ করুন।</p>
-    </div>
-    <div>
-        <a href="{{ route('pages.create') }}" class="btn-fb-primary" style="background: white; color: #059669; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            <span>নতুন পেইজ তৈরি করুন</span>
-        </a>
-    </div>
-</div>
+<div class="ep-container" style="max-width: 1240px; margin: 0 auto; padding: 0 16px 40px 16px;">
 
-<!-- Search Bar & Filters -->
-<div class="fb-card" style="margin-bottom: 20px;">
-    <form action="{{ route('pages.index') }}" method="GET" style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <input type="text" name="q" value="{{ $searchQuery }}" class="search-input" placeholder="পেইজের নাম, ক্যাটাগরি বা বিষয় খুঁজুন..." style="flex: 1; min-width: 220px; background: var(--fb-bg); border: 1px solid var(--fb-border);">
-        @if($selectedCategory)
-            <input type="hidden" name="category" value="{{ $selectedCategory }}">
+    <!-- 1. EXECUTIVE DASHBOARD HERO BANNER -->
+    <div class="ep-dashboard-hero">
+        <div>
+            <h1 class="ep-dashboard-hero-title">
+                @include('pages.partials.icon', ['name' => 'page', 'size' => 26])
+                <span>পেইজ ও পাবলিক এন্টারপ্রাইজ হাব</span>
+            </h1>
+            <p class="ep-dashboard-hero-desc">
+                আপনার ব্র্যান্ড, ব্যবসা, সংগঠন বা পাবলিক প্রেজেন্সের জন্য প্রফেশনাল পেইজ পরিচালনা করুন এবং নতুন অডিয়েন্সের সাথে যুক্ত হন।
+            </p>
+        </div>
+        <div class="ep-hero-actions">
+            <a href="{{ route('pages.create') }}" class="ep-btn-create-hero">
+                @include('pages.partials.icon', ['name' => 'plus', 'size' => 16, 'strokeWidth' => 2.5])
+                <span>নতুন পেইজ তৈরি করুন</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. OVERVIEW METRICS DECK -->
+    <div class="ep-overview-grid">
+        <div class="ep-stat-card">
+            <div class="ep-stat-icon-wrap">
+                @include('pages.partials.icon', ['name' => 'compass', 'size' => 22])
+            </div>
+            <div class="ep-stat-body">
+                <div class="ep-stat-number">{{ number_format($totalPagesCount ?? $allPages->total()) }}</div>
+                <div class="ep-stat-label">ইকোসিস্টেমের মোট পেইজ</div>
+            </div>
+        </div>
+
+        <div class="ep-stat-card">
+            <div class="ep-stat-icon-wrap indigo">
+                @include('pages.partials.icon', ['name' => 'briefcase', 'size' => 22])
+            </div>
+            <div class="ep-stat-body">
+                <div class="ep-stat-number">{{ number_format($managedPages->count()) }}</div>
+                <div class="ep-stat-label">পরিচালিত পেইজসমূহ</div>
+            </div>
+        </div>
+
+        <div class="ep-stat-card">
+            <div class="ep-stat-icon-wrap amber">
+                @include('pages.partials.icon', ['name' => 'users', 'size' => 22])
+            </div>
+            <div class="ep-stat-body">
+                <div class="ep-stat-number">{{ number_format($totalFollowersManaged ?? 0) }}</div>
+                <div class="ep-stat-label">সর্বমোট ফলোয়ার সংখ্যা</div>
+            </div>
+        </div>
+
+        <div class="ep-stat-card">
+            <div class="ep-stat-icon-wrap cyan">
+                @include('pages.partials.icon', ['name' => 'file-text', 'size' => 22])
+            </div>
+            <div class="ep-stat-body">
+                <div class="ep-stat-number">{{ number_format($totalPostsManaged ?? 0) }}</div>
+                <div class="ep-stat-label">পরিচালিত মোট পোস্ট</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. SEARCH & ADVANCED FILTER CONTROLS -->
+    <div class="ep-controls-card">
+        <form action="{{ route('pages.index') }}" method="GET">
+            <div class="ep-search-row">
+                <div class="ep-search-input-box">
+                    <span class="ep-search-icon">
+                        @include('pages.partials.icon', ['name' => 'search', 'size' => 16])
+                    </span>
+                    <input type="text"
+                           name="q"
+                           value="{{ $searchQuery }}"
+                           class="ep-search-input"
+                           placeholder="পেইজের নাম, ইউজারনেম বা ক্যাটাগরি দিয়ে খুঁজুন..."
+                           autocomplete="off">
+                </div>
+
+                @if($selectedCategory)
+                    <input type="hidden" name="category" value="{{ $selectedCategory }}">
+                @endif
+                <input type="hidden" name="sort" value="{{ $sort }}">
+
+                <button type="submit" class="ep-search-btn">
+                    @include('pages.partials.icon', ['name' => 'search', 'size' => 15])
+                    <span>অনুসন্ধান</span>
+                </button>
+
+                <div class="ep-sort-group">
+                    <a href="{{ route('pages.index', array_filter(array_merge(request()->query(), ['sort' => 'popular']))) }}"
+                       class="ep-sort-btn {{ $sort === 'popular' ? 'active' : '' }}">
+                        @include('pages.partials.icon', ['name' => 'sparkles', 'size' => 13])
+                        <span>জনপ্রিয়</span>
+                    </a>
+                    <a href="{{ route('pages.index', array_filter(array_merge(request()->query(), ['sort' => 'recent']))) }}"
+                       class="ep-sort-btn {{ $sort === 'recent' ? 'active' : '' }}">
+                        @include('pages.partials.icon', ['name' => 'calendar', 'size' => 13])
+                        <span>নতুন</span>
+                    </a>
+                    @if($searchQuery || $selectedCategory)
+                        <a href="{{ route('pages.index') }}" class="ep-sort-btn" style="color: var(--ep-danger);">
+                            @include('pages.partials.icon', ['name' => 'x', 'size' => 13])
+                            <span>রিসেট</span>
+                        </a>
+                    @endif
+                </div>
+            </div>
+
+            @if(isset($categories) && $categories->isNotEmpty())
+                <div class="ep-category-chips-row">
+                    <span style="font-size: 12.5px; font-weight: 700; color: var(--ep-text-muted); display: inline-flex; align-items: center; gap: 4px;">
+                        @include('pages.partials.icon', ['name' => 'filter', 'size' => 13])
+                        <span>ক্যাটাগরি:</span>
+                    </span>
+                    <a href="{{ route('pages.index', array_filter(array_merge(request()->query(), ['category' => null]))) }}"
+                       class="ep-cat-chip {{ !$selectedCategory ? 'active' : '' }}">
+                        সকল
+                    </a>
+                    @foreach($categories as $cat)
+                        <a href="{{ route('pages.index', array_filter(array_merge(request()->query(), ['category' => $cat]))) }}"
+                           class="ep-cat-chip {{ $selectedCategory === $cat ? 'active' : '' }}">
+                            {{ $cat }}
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </form>
+    </div>
+
+    <!-- 4. DOCK-STYLE NAVIGATION TABS -->
+    <ul class="ep-nav-dock" id="epNavTabs">
+        <li>
+            <button type="button" class="ep-nav-tab-btn active" id="tabBtn-overview" onclick="switchDashboardTab('overview')">
+                @include('pages.partials.icon', ['name' => 'compass', 'size' => 16])
+                <span>ওভারভিউ ও সব পেইজ</span>
+            </button>
+        </li>
+        @if($currentUser)
+            <li>
+                <button type="button" class="ep-nav-tab-btn" id="tabBtn-my-pages" onclick="switchDashboardTab('my-pages')">
+                    @include('pages.partials.icon', ['name' => 'briefcase', 'size' => 16])
+                    <span>আমার পেইজসমূহ</span>
+                    <span class="ep-nav-badge">{{ $managedPages->count() }}</span>
+                </button>
+            </li>
+            <li>
+                <button type="button" class="ep-nav-tab-btn" id="tabBtn-saved" onclick="switchDashboardTab('saved')">
+                    @include('pages.partials.icon', ['name' => 'bookmark', 'size' => 16])
+                    <span>সংরক্ষিত ও ফলো করা</span>
+                    <span class="ep-nav-badge">{{ $followedPages->count() }}</span>
+                </button>
+            </li>
+            <li>
+                <button type="button" class="ep-nav-tab-btn" id="tabBtn-invitations" onclick="switchDashboardTab('invitations')">
+                    @include('pages.partials.icon', ['name' => 'mail', 'size' => 16])
+                    <span>আমন্ত্রণসমূহ</span>
+                    @if($pendingInvitations->isNotEmpty())
+                        <span class="ep-nav-badge" id="invitationsBadge" style="background: var(--ep-danger); color: #ffffff;">{{ $pendingInvitations->count() }}</span>
+                    @else
+                        <span class="ep-nav-badge" id="invitationsBadge">0</span>
+                    @endif
+                </button>
+            </li>
+            <li>
+                <button type="button" class="ep-nav-tab-btn" id="tabBtn-notifications" onclick="switchDashboardTab('notifications')">
+                    @include('pages.partials.icon', ['name' => 'bell', 'size' => 16])
+                    <span>পেইজ বিজ্ঞপ্তি</span>
+                    <span class="ep-nav-badge">{{ $pageNotifications->count() }}</span>
+                </button>
+            </li>
         @endif
-        <input type="hidden" name="sort" value="{{ $sort }}">
-        <button type="submit" class="btn-fb-primary" style="display: inline-flex; align-items: center; gap: 6px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <span>খুঁজুন</span>
-        </button>
-        <div style="display: flex; gap: 6px; align-items: center; margin-left: auto;">
-            <a href="{{ route('pages.index', array_filter(array_merge(request()->query(), ['sort' => 'popular']))) }}" class="{{ $sort === 'popular' ? 'btn-fb-primary' : 'btn-fb-secondary' }}" style="font-size: 13px; text-decoration: none; padding: 6px 12px;">🔥 জনপ্রিয়</a>
-            <a href="{{ route('pages.index', array_filter(array_merge(request()->query(), ['sort' => 'recent']))) }}" class="{{ $sort === 'recent' ? 'btn-fb-primary' : 'btn-fb-secondary' }}" style="font-size: 13px; text-decoration: none; padding: 6px 12px;">✨ নতুন</a>
-            @if($searchQuery || $selectedCategory)
-                <a href="{{ route('pages.index') }}" class="btn-fb-secondary" style="font-size: 13px; text-decoration: none; padding: 6px 12px;">রিসেট</a>
+    </ul>
+
+    <!-- 5. TAB PANES -->
+
+    <!-- PANE: OVERVIEW & ALL PAGES -->
+    <div id="pane-overview" class="ep-tab-pane">
+        @if($currentUser && $managedPages->isNotEmpty() && !$searchQuery && !$selectedCategory)
+            <!-- Quick Managed Pages Slider Strip -->
+            <div style="margin-bottom: 28px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                    <h2 style="font-size: 18px; font-weight: 800; color: var(--ep-text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                        @include('pages.partials.icon', ['name' => 'briefcase', 'size' => 18])
+                        <span>আপনার পরিচালিত পেইজসমূহ ({{ $managedPages->count() }})</span>
+                    </h2>
+                    <button type="button" onclick="switchDashboardTab('my-pages')" style="background: none; border: none; color: var(--ep-primary); font-size: 13px; font-weight: 700; cursor: pointer;">
+                        সবগুলো দেখুন →
+                    </button>
+                </div>
+                <div class="ep-pages-grid">
+                    @foreach($managedPages->take(3) as $page)
+                        @include('pages.partials.page-card', ['page' => $page])
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        <!-- Popular & Directory Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="font-size: 18px; font-weight: 800; color: var(--ep-text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                @include('pages.partials.icon', ['name' => 'compass', 'size' => 18])
+                <span>{{ $searchQuery ? "অনুসন্ধান ফলাফল: '{$searchQuery}'" : 'এক্সপ্লোর ও জনপ্রিয় পেইজসমূহ' }}</span>
+            </h2>
+        </div>
+
+        @if($allPages->isNotEmpty())
+            <div class="ep-pages-grid" id="allPagesGrid">
+                @foreach($allPages as $page)
+                    @include('pages.partials.page-card', ['page' => $page])
+                @endforeach
+            </div>
+            <div style="margin-top: 28px;">
+                {{ $allPages->links() }}
+            </div>
+        @else
+            <div class="ep-empty-state">
+                <div class="ep-empty-icon-wrap">
+                    @include('pages.partials.icon', ['name' => 'file-text', 'size' => 32])
+                </div>
+                <h3 class="ep-empty-title">কোনো পেইজ পাওয়া যায়নি</h3>
+                <p class="ep-empty-desc">আপনার নির্বাচিত অনুসন্ধান বা ফিল্টারের সাথে মিলে এমন কোনো পেইজ খুঁজে পাওয়া যায়নি।</p>
+                <a href="{{ route('pages.index') }}" class="ep-btn-view" style="display: inline-flex;">
+                    @include('pages.partials.icon', ['name' => 'compass', 'size' => 15])
+                    <span>সকল পেইজ দেখুন</span>
+                </a>
+            </div>
+        @endif
+    </div>
+
+    @if($currentUser)
+        <!-- PANE: MY MANAGED PAGES -->
+        <div id="pane-my-pages" class="ep-tab-pane" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="font-size: 18px; font-weight: 800; color: var(--ep-text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    @include('pages.partials.icon', ['name' => 'briefcase', 'size' => 18])
+                    <span>আপনার মালিকানাধীন ও পরিচালিত পেইজসমূহ</span>
+                </h2>
+                <a href="{{ route('pages.create') }}" class="ep-btn-follow" style="text-decoration: none; display: inline-flex; width: auto;">
+                    @include('pages.partials.icon', ['name' => 'plus', 'size' => 14])
+                    <span>নতুন পেইজ তৈরি</span>
+                </a>
+            </div>
+
+            @if($managedPages->isNotEmpty())
+                <div class="ep-pages-grid">
+                    @foreach($managedPages as $page)
+                        @include('pages.partials.page-card', ['page' => $page])
+                    @endforeach
+                </div>
+            @else
+                <div class="ep-empty-state">
+                    <div class="ep-empty-icon-wrap">
+                        @include('pages.partials.icon', ['name' => 'briefcase', 'size' => 32])
+                    </div>
+                    <h3 class="ep-empty-title">আপনি এখনো কোনো পেইজ পরিচালনা করছেন না</h3>
+                    <p class="ep-empty-desc">একটি নতুন সোশ্যাল পেইজ খুলে আপনার ব্র্যান্ড, ব্যবসা বা সংগঠনের উপস্থিতি নিশ্চিত করুন।</p>
+                    <a href="{{ route('pages.create') }}" class="ep-btn-create-hero" style="display: inline-flex; background: var(--ep-primary); color: #ffffff;">
+                        @include('pages.partials.icon', ['name' => 'plus', 'size' => 16])
+                        <span>প্রথম পেইজ তৈরি করুন</span>
+                    </a>
+                </div>
             @endif
         </div>
-    </form>
 
-    @if(isset($categories) && $categories->isNotEmpty())
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--fb-border); align-items: center;">
-            <span style="font-size: 12px; font-weight: 700; color: var(--fb-text-secondary); margin-right: 4px;">ফিল্টার:</span>
-            <a href="{{ route('pages.index', array_filter(array_merge(request()->query(), ['category' => null]))) }}"
-               style="text-decoration: none; padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; {{ !$selectedCategory ? 'background: #059669; color: white;' : 'background: var(--fb-bg); color: var(--fb-text-primary); border: 1px solid var(--fb-border);' }}">
-                সকল
-            </a>
-            @foreach($categories as $cat)
-                <a href="{{ route('pages.index', array_filter(array_merge(request()->query(), ['category' => $cat]))) }}"
-                   style="text-decoration: none; padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; {{ $selectedCategory === $cat ? 'background: #059669; color: white;' : 'background: var(--fb-bg); color: var(--fb-text-primary); border: 1px solid var(--fb-border);' }}">
-                    {{ $cat }}
-                </a>
-            @endforeach
-        </div>
-    @endif
-</div>
+        <!-- PANE: SAVED / FOLLOWED PAGES -->
+        <div id="pane-saved" class="ep-tab-pane" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 18px; font-weight: 800; color: var(--ep-text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    @include('pages.partials.icon', ['name' => 'bookmark-check', 'size' => 18])
+                    <span>আপনার সংরক্ষিত ও ফলো করা পেইজসমূহ</span>
+                </h2>
+            </div>
 
-@if($currentUser && $managedPages->isNotEmpty())
-    <div style="margin-bottom: 32px;">
-        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 16px; color: var(--fb-text-primary); display: flex; align-items: center; gap: 8px;">
-            <span>💼</span>
-            <span>আপনার পরিচালিত পেইজসমূহ ({{ $managedPages->count() }})</span>
-        </h2>
-        <div class="pages-grid">
-            @foreach($managedPages as $page)
-                <div class="page-card">
-                    <div class="page-cover-box">
-                        @if($page->cover_image_url)
-                            <img src="{{ $page->cover_image_url }}" alt="{{ $page->name }}">
-                        @endif
-                        <div class="avatar page-avatar-overlap" style="width: 50px; height: 50px;">
-                            @if($page->avatar_url)
-                                <img src="{{ $page->avatar_url }}" alt="{{ $page->name }}">
-                            @else
-                                {{ mb_substr($page->name, 0, 1) }}
-                            @endif
-                        </div>
-                    </div>
-                    <div class="page-card-body">
-                        <div class="page-name">
-                            <span>{{ $page->name }}</span>
-                            @if($page->is_verified)
-                                <span title="ভেরিফাইড পেইজ" style="color: var(--fb-primary);">✓</span>
-                            @endif
-                        </div>
-                        <div class="page-category">🏷️ {{ $page->category }} • 👥 {{ number_format($page->followers_count) }} ফলোয়ার</div>
-                        <div class="page-bio">{{ Str::limit($page->bio, 60) }}</div>
-                        <div style="display: flex; gap: 8px; margin-top: auto;">
-                            <a href="{{ route('pages.manage', ['slug' => $page->slug]) }}" class="btn-fb-primary" style="flex: 1; text-align: center; text-decoration: none; font-size: 13px; padding: 8px;">
-                                ⚙️ স্টুডিও
-                            </a>
-                            <a href="{{ route('pages.show', ['slug' => $page->slug]) }}" class="btn-fb-secondary" style="flex: 1; text-align: center; text-decoration: none; font-size: 13px; padding: 8px;">
-                                পাবলিক ভিউ
-                            </a>
-                        </div>
-                    </div>
+            @if($followedPages->isNotEmpty())
+                <div class="ep-pages-grid">
+                    @foreach($followedPages as $page)
+                        @include('pages.partials.page-card', ['page' => $page])
+                    @endforeach
                 </div>
-            @endforeach
+            @else
+                <div class="ep-empty-state">
+                    <div class="ep-empty-icon-wrap">
+                        @include('pages.partials.icon', ['name' => 'bookmark', 'size' => 32])
+                    </div>
+                    <h3 class="ep-empty-title">কোনো ফলো করা পেইজ নেই</h3>
+                    <p class="ep-empty-desc">পাবলিক ডিরেক্টরি থেকে আপনার পছন্দের বিষয় বা ব্র্যান্ডের পেইজগুলো ফলো করে এখানে সংরক্ষণ করুন।</p>
+                    <button type="button" class="ep-btn-view" onclick="switchDashboardTab('overview')" style="display: inline-flex;">
+                        @include('pages.partials.icon', ['name' => 'compass', 'size' => 15])
+                        <span>পেইজ এক্সপ্লোর করুন</span>
+                    </button>
+                </div>
+            @endif
         </div>
-    </div>
-@endif
 
-@if($currentUser && $followedPages->isNotEmpty())
-    <div style="margin-bottom: 32px;">
-        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 16px;">⭐ আপনার ফলো করা পেইজসমূহ ({{ $followedPages->count() }})</h2>
-        <div class="pages-grid">
-            @foreach($followedPages as $page)
-                <a href="{{ route('pages.show', ['slug' => $page->slug]) }}" class="page-card">
-                    <div class="page-cover-box">
-                        @if($page->cover_image_url)
-                            <img src="{{ $page->cover_image_url }}" alt="{{ $page->name }}">
-                        @endif
-                        <div class="avatar page-avatar-overlap" style="width: 50px; height: 50px;">
-                            @if($page->avatar_url)
-                                <img src="{{ $page->avatar_url }}" alt="{{ $page->name }}">
-                            @else
-                                {{ mb_substr($page->name, 0, 1) }}
-                            @endif
-                        </div>
-                    </div>
-                    <div class="page-card-body">
-                        <div class="page-name">
-                            <span>{{ $page->name }}</span>
-                            @if($page->is_verified)
-                                <span title="ভেরিফাইড পেইজ" style="color: var(--fb-primary);">✓</span>
-                            @endif
-                        </div>
-                        <div class="page-category">🏷️ {{ $page->category }} • 👥 {{ number_format($page->followers_count) }} ফলোয়ার</div>
-                        <div class="page-bio">{{ Str::limit($page->bio, 60) }}</div>
-                        <span class="btn-fb-secondary" style="width: 100%; justify-content: center;">পেইজে যান</span>
-                    </div>
-                </a>
-            @endforeach
-        </div>
-    </div>
-@endif
+        <!-- PANE: INVITATIONS -->
+        <div id="pane-invitations" class="ep-tab-pane" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 18px; font-weight: 800; color: var(--ep-text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    @include('pages.partials.icon', ['name' => 'mail', 'size' => 18])
+                    <span>পেইজ টিম আমন্ত্রণসমূহ (Page Team Invitations)</span>
+                </h2>
+            </div>
 
-<!-- Discover All Pages -->
-<div>
-    <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 16px;">🌐 জনপ্রিয় পেইজসমূহ এক্সপ্লোর করুন</h2>
-    @if($allPages->isNotEmpty())
-        <div class="pages-grid">
-            @foreach($allPages as $page)
-                <a href="{{ route('pages.show', ['slug' => $page->slug]) }}" class="page-card">
-                    <div class="page-cover-box">
-                        @if($page->cover_image_url)
-                            <img src="{{ $page->cover_image_url }}" alt="{{ $page->name }}">
-                        @endif
-                        <div class="avatar page-avatar-overlap" style="width: 50px; height: 50px;">
-                            @if($page->avatar_url)
-                                <img src="{{ $page->avatar_url }}" alt="{{ $page->name }}">
-                            @else
-                                {{ mb_substr($page->name, 0, 1) }}
-                            @endif
+            @if($pendingInvitations->isNotEmpty())
+                <div style="display: flex; flex-direction: column; gap: 14px;" id="invitationsList">
+                    @foreach($pendingInvitations as $invite)
+                        @php
+                            $pageInvited = $invite->page;
+                        @endphp
+                        <div class="ep-invitation-card" id="invitationCard-{{ $invite->id }}">
+                            <div class="ep-invitation-info">
+                                <img src="{{ $pageInvited->avatar_url ?? '/images/default-avatar.svg' }}"
+                                     alt="{{ $pageInvited->name }}"
+                                     class="ep-invitation-avatar"
+                                     onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                                <div>
+                                    <div style="font-size: 16px; font-weight: 800; color: var(--ep-text-primary);">
+                                        {{ $pageInvited->name }}
+                                    </div>
+                                    <div style="font-size: 13px; color: var(--ep-text-secondary); margin-top: 2px;">
+                                        আমন্ত্রণকারী: <strong>{{ $invite->inviter->name ?? 'অ্যাডমিন' }}</strong> •
+                                        নির্ধারিত রোল: <span class="badge-role" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0284c7; font-weight: 700;">{{ strtoupper($invite->role) }}</span>
+                                    </div>
+                                    <div style="font-size: 11.5px; color: var(--ep-text-muted); margin-top: 4px;">
+                                        {{ $invite->created_at?->diffForHumans() }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ep-invitation-actions">
+                                <button type="button"
+                                        class="ep-btn-accept"
+                                        onclick="handleAcceptInvitation('{{ $invite->invitation_token }}', {{ $invite->id }}, this)">
+                                    @include('pages.partials.icon', ['name' => 'check', 'size' => 14])
+                                    <span>আমন্ত্রণ গ্রহণ করুন</span>
+                                </button>
+                                <button type="button"
+                                        class="ep-btn-decline"
+                                        onclick="handleDeclineInvitation('{{ $invite->invitation_token }}', {{ $invite->id }}, this)">
+                                    @include('pages.partials.icon', ['name' => 'x', 'size' => 14])
+                                    <span>প্রত্যাখ্যান</span>
+                                </button>
+                            </div>
                         </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="ep-empty-state">
+                    <div class="ep-empty-icon-wrap">
+                        @include('pages.partials.icon', ['name' => 'mail', 'size' => 32])
                     </div>
-                    <div class="page-card-body">
-                        <div class="page-name">
-                            <span>{{ $page->name }}</span>
-                            @if($page->is_verified)
-                                <span title="ভেরিফাইড পেইজ" style="color: var(--fb-primary);">✓</span>
-                            @endif
-                        </div>
-                        <div class="page-category">🏷️ {{ $page->category }} • 👥 {{ number_format($page->followers_count) }} ফলোয়ার</div>
-                        <div class="page-bio">{{ Str::limit($page->bio, 70) }}</div>
-                        <span class="btn-fb-primary" style="width: 100%; justify-content: center;">পেইজ দেখুন ও ফলো করুন</span>
+                    <h3 class="ep-empty-title">কোনো অপেক্ষমাণ আমন্ত্রণ নেই</h3>
+                    <p class="ep-empty-desc">কেউ আপনাকে তাদের পেইজের দায়িত্ব বা মেম্বার হিসেবে আমন্ত্রণ জানালে তা এখানে দেখতে পাবেন।</p>
+                </div>
+            @endif
+        </div>
+
+        <!-- PANE: NOTIFICATIONS -->
+        <div id="pane-notifications" class="ep-tab-pane" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 18px; font-weight: 800; color: var(--ep-text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    @include('pages.partials.icon', ['name' => 'bell', 'size' => 18])
+                    <span>পেইজ সংক্রান্ত নোটিফিকেশন ও সাম্প্রতিক কার্যকলাপ</span>
+                </h2>
+            </div>
+
+            @if($pageNotifications->isNotEmpty())
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    @foreach($pageNotifications as $notif)
+                        @php
+                            $nData = $notif->data ?? [];
+                            $actionUrl = $nData['action_url'] ?? ($nData['url'] ?? '/pages');
+                        @endphp
+                        <a href="{{ $actionUrl }}" class="ep-notification-item">
+                            <div class="ep-notif-icon-circle">
+                                @if(str_contains($notif->type, 'follow'))
+                                    @include('pages.partials.icon', ['name' => 'user-plus', 'size' => 18])
+                                @elseif(str_contains($notif->type, 'role'))
+                                    @include('pages.partials.icon', ['name' => 'shield', 'size' => 18])
+                                @else
+                                    @include('pages.partials.icon', ['name' => 'file-text', 'size' => 18])
+                                @endif
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 14.5px; font-weight: 700; color: var(--ep-text-primary);">
+                                    {{ $nData['title'] ?? 'পেইজ আপডেট' }}
+                                </div>
+                                <div style="font-size: 13px; color: var(--ep-text-secondary); margin-top: 3px;">
+                                    {{ $nData['message'] ?? 'আপনার পেইজে নতুন কার্যক্রম রেকর্ড করা হয়েছে।' }}
+                                </div>
+                                <div style="font-size: 11.5px; color: var(--ep-text-muted); margin-top: 5px;">
+                                    {{ $notif->created_at?->diffForHumans() }}
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            @else
+                <div class="ep-empty-state">
+                    <div class="ep-empty-icon-wrap">
+                        @include('pages.partials.icon', ['name' => 'bell', 'size' => 32])
                     </div>
-                </a>
-            @endforeach
-        </div>
-        <div style="margin-top: 24px;">
-            {{ $allPages->links() }}
-        </div>
-    @else
-        <div class="fb-card" style="text-align: center; padding: 40px; color: var(--fb-text-secondary);">
-            <div style="font-size: 40px; margin-bottom: 10px;">📄</div>
-            <div style="font-size: 16px; font-weight: 700;">কোনো পেইজ পাওয়া যায়নি</div>
-            <div style="font-size: 13px; margin-top: 4px;">নতুন কোনো পেইজ তৈরি করতে পারেন বা অন্য কি-ওয়ার্ড দিয়ে খুঁজুন।</div>
+                    <h3 class="ep-empty-title">কোনো পেইজ নোটিফিকেশন নেই</h3>
+                    <p class="ep-empty-desc">পেইজের নতুন ফলোয়ার, পোস্ট বা মেম্বার কার্যকলাপ সংক্রান্ত নোটিফিকেশন এখানে প্রদর্শিত হবে।</p>
+                </div>
+            @endif
         </div>
     @endif
 </div>
 
-<!-- Create Page Modal -->
-<div class="modal-backdrop" id="createPageModal">
-    <div class="modal-box">
-        <div style="padding: 16px 20px; border-bottom: 1px solid var(--fb-border); display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-weight: 800; font-size: 18px;">নতুন পেইজ তৈরি করুন</h3>
-            <button onclick="closeCreatePageModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--fb-text-secondary);">✕</button>
+<!-- SHARE MODAL -->
+<div class="ep-modal-backdrop" id="epShareModal" onclick="if(event.target===this) closeSharePageModal()">
+    <div class="ep-modal-card">
+        <div class="ep-modal-header">
+            <h3 class="ep-modal-title">
+                @include('pages.partials.icon', ['name' => 'share-2', 'size' => 18])
+                <span>পেইজ শেয়ার করুন</span>
+            </h3>
+            <button type="button" class="ep-modal-close-btn" onclick="closeSharePageModal()">✕</button>
         </div>
-        <form id="createPageForm" onsubmit="submitCreatePage(event)" style="padding: 20px;">
-            <div style="margin-bottom: 14px;">
-                <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px;">পেইজের নাম *</label>
-                <input type="text" id="pageName" required class="search-input" style="border: 1px solid var(--fb-border);" placeholder="উদাঃ বাংলা টেক নিউজ">
+        <div class="ep-modal-body">
+            <p id="sharePageTitleDisplay" style="font-size: 14px; font-weight: 600; color: var(--ep-text-primary); margin-bottom: 16px;"></p>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="sharePageUrlInput" readonly class="ep-form-control" style="font-size: 13px;">
+                <button type="button" class="ep-btn-follow" onclick="copyShareModalUrl()" style="flex: 0 0 100px;">
+                    @include('pages.partials.icon', ['name' => 'copy', 'size' => 14])
+                    <span>কপি করুন</span>
+                </button>
             </div>
-            <div style="margin-bottom: 14px;">
-                <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px;">ক্যাটাগরি</label>
-                <select id="pageCat" class="search-input" style="border: 1px solid var(--fb-border); width: 100%;">
-                    <option value="প্রযুক্তি ও মিডিয়া">প্রযুক্তি ও মিডিয়া</option>
-                    <option value="ব্যবসা ও ই-কমার্স">ব্যবসা ও ই-কমার্স</option>
-                    <option value="বিনোদন ও আর্ট">বিনোদন ও আর্ট</option>
-                    <option value="শিক্ষা ও ক্যারিয়ার">শিক্ষা ও ক্যারিয়ার</option>
-                    <option value="ব্যক্তিগত ব্লগ">ব্যক্তিগত ব্লগ</option>
-                </select>
+            <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                <a href="#" id="shareWaLink" target="_blank" rel="noopener" class="ep-btn-view" style="flex: 1; justify-content: center; background: #e8f9ef; color: #15803d; border-color: #86efac;">
+                    💬 WhatsApp
+                </a>
+                <a href="#" id="shareTgLink" target="_blank" rel="noopener" class="ep-btn-view" style="flex: 1; justify-content: center; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd;">
+                    ✈️ Telegram
+                </a>
             </div>
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px;">পেইজের বিবরণ</label>
-                <textarea id="pageBio" rows="3" class="search-input" style="border: 1px solid var(--fb-border); width: 100%; height: auto; border-radius: 8px; padding: 10px;" placeholder="এই পেইজটি সম্পর্কে সংক্ষেপে লিখুন..."></textarea>
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn-fb-secondary" onclick="closeCreatePageModal()">বাতিল</button>
-                <button type="submit" class="btn-fb-primary" id="btnSubmitPage">তৈরি করুন</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 @endsection
 
 @section('scripts')
 <script>
-    function openCreatePageModal() {
+    // Real-Time Icon Mapping for dynamic JS updates
+    const SVG_ICONS = {
+        userPlus: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>`,
+        userCheck: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg>`,
+        loader: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ep-spin"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>`
+    };
+
+    // Tab Switching
+    function switchDashboardTab(tabId) {
+        document.querySelectorAll('.ep-tab-pane').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.ep-nav-tab-btn').forEach(b => b.classList.remove('active'));
+
+        const targetPane = document.getElementById(`pane-${tabId}`);
+        const targetBtn = document.getElementById(`tabBtn-${tabId}`);
+
+        if (targetPane) targetPane.style.display = 'block';
+        if (targetBtn) targetBtn.classList.add('active');
+
+        // Close any open card dropdowns
+        closeAllCardDropdowns();
+    }
+
+    // Real-Time Follow / Unfollow Toggle
+    function handleRealtimeCardFollow(pageId, btn) {
         @if(!$currentUser)
             window.location.href = '/login';
             return;
         @endif
-        document.getElementById('createPageModal').style.display = 'flex';
-    }
 
-    function closeCreatePageModal() {
-        document.getElementById('createPageModal').style.display = 'none';
-    }
+        if (btn.disabled) return;
 
-    function submitCreatePage(e) {
-        e.preventDefault();
-        const name = document.getElementById('pageName').value.trim();
-        const category = document.getElementById('pageCat').value;
-        const bio = document.getElementById('pageBio').value.trim();
-        const btn = document.getElementById('btnSubmitPage');
+        const isFollowing = btn.getAttribute('data-following') === '1';
+        const counterEl = document.getElementById(`card-followers-${pageId}`);
+        const iconSpan = document.getElementById(`cardFollowIcon-${pageId}`);
+        const textSpan = document.getElementById(`cardFollowText-${pageId}`);
+
+        // Optimistic UI updates
+        const nextFollowingState = !isFollowing;
+        btn.setAttribute('data-following', nextFollowingState ? '1' : '0');
+        if (nextFollowingState) {
+            btn.classList.add('is-following');
+            if (iconSpan) iconSpan.innerHTML = SVG_ICONS.userCheck;
+            if (textSpan) textSpan.textContent = 'ফলো করা হয়েছে';
+        } else {
+            btn.classList.remove('is-following');
+            if (iconSpan) iconSpan.innerHTML = SVG_ICONS.userPlus;
+            if (textSpan) textSpan.textContent = 'ফলো করুন';
+        }
+
         btn.disabled = true;
-        btn.textContent = 'তৈরি হচ্ছে...';
 
-        fetch('/api/v1/pages', {
+        fetch(`/api/v1/pages/${pageId}/follow`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(res => {
+            btn.disabled = false;
+            if (res.status === 'success' || res.data) {
+                const count = res.data?.followers_count ?? (res.followers_count ?? null);
+                if (count !== null && counterEl) {
+                    counterEl.textContent = new Intl.NumberFormat('bn-BD').format(count);
+                }
+            } else {
+                // Rollback on server rejection
+                btn.setAttribute('data-following', isFollowing ? '1' : '0');
+                if (isFollowing) {
+                    btn.classList.add('is-following');
+                    if (iconSpan) iconSpan.innerHTML = SVG_ICONS.userCheck;
+                    if (textSpan) textSpan.textContent = 'ফলো করা হয়েছে';
+                } else {
+                    btn.classList.remove('is-following');
+                    if (iconSpan) iconSpan.innerHTML = SVG_ICONS.userPlus;
+                    if (textSpan) textSpan.textContent = 'ফলো করুন';
+                }
+                alert(res.message || 'অনুরোধটি সম্পন্ন করা যায়নি।');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.setAttribute('data-following', isFollowing ? '1' : '0');
+            if (isFollowing) {
+                btn.classList.add('is-following');
+                if (iconSpan) iconSpan.innerHTML = SVG_ICONS.userCheck;
+                if (textSpan) textSpan.textContent = 'ফলো করা হয়েছে';
+            } else {
+                btn.classList.remove('is-following');
+                if (iconSpan) iconSpan.innerHTML = SVG_ICONS.userPlus;
+                if (textSpan) textSpan.textContent = 'ফলো করুন';
+            }
+        });
+    }
+
+    // Card More Actions Dropdown
+    function toggleCardDropdown(pageId, event) {
+        event.stopPropagation();
+        const menu = document.getElementById(`cardDropdown-${pageId}`);
+        const isShown = menu.classList.contains('show');
+        closeAllCardDropdowns();
+        if (!isShown) menu.classList.add('show');
+    }
+
+    function closeAllCardDropdowns() {
+        document.querySelectorAll('.ep-dropdown-menu').forEach(m => m.classList.remove('show'));
+    }
+
+    document.addEventListener('click', closeAllCardDropdowns);
+
+    // Share & Copy Link Helpers
+    function copyPageUrl(url) {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('পেইজের লিংক সফলভাবে কপি করা হয়েছে!');
+            closeAllCardDropdowns();
+        }).catch(() => {
+            prompt('নিচের লিংকটি কপি করুন:', url);
+        });
+    }
+
+    function openSharePageModal(pageName, url) {
+        closeAllCardDropdowns();
+        const m = document.getElementById('epShareModal');
+        document.getElementById('sharePageTitleDisplay').textContent = `${pageName} — পেইজটি বন্ধুদের সাথে শেয়ার করুন`;
+        document.getElementById('sharePageUrlInput').value = url;
+        document.getElementById('shareWaLink').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(pageName + ' ' + url)}`;
+        document.getElementById('shareTgLink').href = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(pageName)}`;
+        m.classList.add('show');
+    }
+
+    function closeSharePageModal() {
+        document.getElementById('epShareModal').classList.remove('show');
+    }
+
+    function copyShareModalUrl() {
+        const inp = document.getElementById('sharePageUrlInput');
+        copyPageUrl(inp.value);
+    }
+
+    // Accept & Decline Team Invitations with Real-Time DOM Removal
+    function handleAcceptInvitation(token, inviteId, btn) {
+        btn.disabled = true;
+        btn.textContent = 'যুক্ত হচ্ছে...';
+
+        fetch('/api/v2/pages/team/accept', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ name, category, bio })
+            body: JSON.stringify({ token })
         })
         .then(res => res.json())
         .then(res => {
-            if (res.status === 'success' || res.data) {
-                const slug = res.data?.slug || '';
-                window.location.href = `/pages/${slug}`;
+            if (res.success || res.status === 'success') {
+                const card = document.getElementById(`invitationCard-${inviteId}`);
+                if (card) {
+                    card.style.transition = 'opacity 0.3s, transform 0.3s';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(-10px)';
+                    setTimeout(() => card.remove(), 300);
+                }
+                decrementBadge('invitationsBadge');
+                alert('অভিনন্দন! আপনি সফলভাবে পেইজ টিমে যুক্ত হয়েছেন।');
             } else {
-                alert(res.message || 'পেইজ তৈরি ব্যর্থ হয়েছে।');
+                alert(res.message || 'আমন্ত্রণ গ্রহণ ব্যর্থ হয়েছে।');
                 btn.disabled = false;
-                btn.textContent = 'তৈরি করুন';
+                btn.textContent = 'আমন্ত্রণ গ্রহণ করুন';
             }
         })
         .catch(err => {
-            alert('পেইজ তৈরি করতে একটি ত্রুটি ঘটেছে।');
+            alert('নেটওয়ার্ক ত্রুটি ঘটেছে।');
             btn.disabled = false;
-            btn.textContent = 'তৈরি করুন';
+            btn.textContent = 'আমন্ত্রণ গ্রহণ করুন';
         });
+    }
+
+    function handleDeclineInvitation(token, inviteId, btn) {
+        if (!confirm('আপনি কি নিশ্চিত যে এই পেইজ পরিচালনার আমন্ত্রণ প্রত্যাখ্যান করতে চান?')) return;
+        btn.disabled = true;
+
+        fetch('/api/v2/pages/team/decline', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ token })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.success || res.status === 'success') {
+                const card = document.getElementById(`invitationCard-${inviteId}`);
+                if (card) {
+                    card.style.transition = 'opacity 0.3s, transform 0.3s';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(-10px)';
+                    setTimeout(() => card.remove(), 300);
+                }
+                decrementBadge('invitationsBadge');
+            } else {
+                alert(res.message || 'প্রত্যাখ্যান সম্পন্ন করা যায়নি।');
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+        });
+    }
+
+    function decrementBadge(badgeId) {
+        const b = document.getElementById(badgeId);
+        if (b) {
+            let val = parseInt(b.textContent, 10) || 0;
+            val = Math.max(0, val - 1);
+            b.textContent = val;
+            if (val === 0) b.style.background = 'rgba(15, 23, 42, 0.08)';
+        }
     }
 </script>
 @endsection

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v2\Page;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
+use App\Models\PageMember;
 use App\Services\Page\EnterprisePageService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -106,6 +107,46 @@ class PageTeamV2ApiController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    /**
+     * আমন্ত্রণ প্রত্যাখ্যান করা (ইনভাইটেড ইউজার কর্তৃক)
+     */
+    public function declineInvite(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+        ]);
+
+        $member = PageMember::where('invitation_token', $validated['token'])
+            ->where('user_id', $user->id)
+            ->where('status', 'invited')
+            ->first();
+
+        if (! $member) {
+            return response()->json([
+                'success' => false,
+                'message' => 'আমন্ত্রণটি খুঁজে পাওয়া যায়নি বা ইতোমধ্যে প্রক্রিয়াধীন রয়েছে।',
+            ], 404);
+        }
+
+        $member->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'আমন্ত্রণ প্রত্যাখ্যান করা হয়েছে।',
+        ]);
+    }
+
+    public function accept(Request $request): JsonResponse
+    {
+        return $this->acceptInvite($request);
+    }
+
+    public function decline(Request $request): JsonResponse
+    {
+        return $this->declineInvite($request);
     }
 
     /**

@@ -3,6 +3,7 @@
 @section('title', $page->name . ' — অফিসিয়াল পেইজ — Bondhoo')
 
 @section('styles')
+<link rel="stylesheet" href="{{ asset('css/enterprise-pages-redesign.css') }}?v={{ time() }}">
 <style>
     .page-hero {
         background: var(--fb-card);
@@ -437,7 +438,7 @@
         @endif
         @if($canManage)
             <label class="cover-upload-btn" title="কভার ছবি পরিবর্তন করুন">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                @include('pages.partials.icon', ['name' => 'camera', 'size' => 16])
                 <span>কভার পরিবর্তন</span>
                 <input type="file" id="coverFileInput" accept="image/*" style="display: none;" onchange="uploadPageBrandingImage('cover', event)">
             </label>
@@ -456,7 +457,7 @@
                 </div>
                 @if($canManage)
                     <label class="avatar-upload-btn" title="প্রোফাইল ছবি পরিবর্তন করুন">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        @include('pages.partials.icon', ['name' => 'camera', 'size' => 18])
                         <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="uploadPageBrandingImage('avatar', event)">
                     </label>
                 @endif
@@ -466,7 +467,9 @@
                 <h1 class="page-hero-title">
                     <span>{{ $page->name }}</span>
                     @if($page->is_verified)
-                        <span title="ভেরিফাইড অফিসিয়াল পেইজ" style="color: #059669; font-size: 22px;">✓</span>
+                        <span title="ভেরিফাইড অফিসিয়াল পেইজ" style="color: #059669; display: inline-flex; align-items: center;" aria-label="Verified">
+                            @include('pages.partials.icon', ['name' => 'badge-check', 'size' => 22])
+                        </span>
                     @endif
                 </h1>
                 <div class="page-hero-meta">
@@ -475,12 +478,12 @@
                         <span>•</span>
                     @endif
                     <span style="display: inline-flex; align-items: center; gap: 4px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                        @include('pages.partials.icon', ['name' => 'tag', 'size' => 14])
                         <span>{{ $page->category }}</span>
                     </span>
                     <span>•</span>
                     <span style="display: inline-flex; align-items: center; gap: 4px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        @include('pages.partials.icon', ['name' => 'users', 'size' => 14])
                         <strong id="headerFollowersCount">{{ number_format($page->followers_count) }}</strong> জন ফলোয়ার
                     </span>
                     <span>•</span>
@@ -496,29 +499,29 @@
             @else
                 @if($canManage)
                     <a href="/pages/{{ $page->slug }}/manage" class="btn-fb-primary" style="display: inline-flex; align-items: center; gap: 8px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        @include('pages.partials.icon', ['name' => 'settings', 'size' => 16])
                         <span>পেইজ পরিচালনা ({{ strtoupper($userRole ?? 'ADMIN') }})</span>
                     </a>
                 @endif
 
                 <button class="{{ $isFollowing ? 'btn-fb-secondary' : 'btn-fb-primary' }}" id="btnPageFollow" onclick="handlePageFollowToggle()" style="display: inline-flex; align-items: center; gap: 6px;">
-                    <span id="followIcon">
+                    <span id="followIcon" style="display: inline-flex; align-items: center;">
                         @if($isFollowing)
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            @include('pages.partials.icon', ['name' => 'user-check', 'size' => 16, 'strokeWidth' => 2.5])
                         @else
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            @include('pages.partials.icon', ['name' => 'user-plus', 'size' => 16, 'strokeWidth' => 2.5])
                         @endif
                     </span>
                     <span id="followText">{{ $isFollowing ? 'ফলো করা হয়েছে' : 'ফলো করুন' }}</span>
                 </button>
 
                 <button class="btn-fb-secondary" onclick="openPageMessageModal()" style="display: inline-flex; align-items: center; gap: 6px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    @include('pages.partials.icon', ['name' => 'message-square', 'size' => 16])
                     <span>বার্তা পাঠান</span>
                 </button>
 
                 <button class="btn-fb-secondary" onclick="openPageShareModal()" style="display: inline-flex; align-items: center; gap: 6px;" title="পেইজ শেয়ার করুন">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                    @include('pages.partials.icon', ['name' => 'share-2', 'size' => 16])
                     <span>শেয়ার</span>
                 </button>
             @endif
@@ -528,30 +531,30 @@
     <!-- Navigation Tabs -->
     <div class="page-nav-tabs">
         <button class="page-nav-tab {{ $activeTab === 'posts' ? 'active' : '' }}" onclick="switchPageTab('posts')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            @include('pages.partials.icon', ['name' => 'file-text', 'size' => 16])
             <span>পোস্টসমূহ</span>
         </button>
         <button class="page-nav-tab {{ $activeTab === 'about' ? 'active' : '' }}" onclick="switchPageTab('about')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            @include('pages.partials.icon', ['name' => 'info', 'size' => 16])
             <span>পরিচিতি ও বিবরণ</span>
         </button>
         <button class="page-nav-tab {{ $activeTab === 'photos' ? 'active' : '' }}" onclick="switchPageTab('photos')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            @include('pages.partials.icon', ['name' => 'image', 'size' => 16])
             <span>ছবি ও ভিডিও ({{ $mediaItems->count() }})</span>
         </button>
         <button class="page-nav-tab {{ $activeTab === 'followers' ? 'active' : '' }}" onclick="switchPageTab('followers')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            @include('pages.partials.icon', ['name' => 'users', 'size' => 16])
             <span>ফলোয়ারবৃন্দ ({{ number_format($page->followers_count) }})</span>
         </button>
         @if($events->isNotEmpty() || $canManage)
             <button class="page-nav-tab {{ $activeTab === 'events' ? 'active' : '' }}" onclick="switchPageTab('events')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                @include('pages.partials.icon', ['name' => 'calendar', 'size' => 16])
                 <span>ইভেন্টস ({{ $events->count() }})</span>
             </button>
         @endif
         @if($products->isNotEmpty() || $canManage)
             <button class="page-nav-tab {{ $activeTab === 'shop' ? 'active' : '' }}" onclick="switchPageTab('shop')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                @include('pages.partials.icon', ['name' => 'shopping-bag', 'size' => 16])
                 <span>পণ্য ও শপ ({{ $products->count() }})</span>
             </button>
         @endif
@@ -583,19 +586,21 @@
                         <!-- Media Preview Container -->
                         <div id="composerMediaPreview" style="display: none; margin-bottom: 12px; position: relative;">
                             <div id="previewMediaBox" style="max-height: 200px; overflow: hidden; border-radius: 8px; border: 1px solid var(--fb-border);"></div>
-                            <button type="button" onclick="clearSelectedComposerMedia()" style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+                            <button type="button" onclick="clearSelectedComposerMedia()" style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                                @include('pages.partials.icon', ['name' => 'x', 'size' => 14])
+                            </button>
                         </div>
 
                         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--fb-border); padding-top: 10px;">
                             <div>
                                 <label class="btn-fb-secondary" style="font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                    @include('pages.partials.icon', ['name' => 'image', 'size' => 16])
                                     <span>ছবি / ভিডিও যোগ করুন</span>
                                     <input type="file" id="composerMediaInput" accept="image/*,video/*" style="display: none;" onchange="handleComposerMediaSelect(event)">
                                 </label>
                             </div>
                             <button type="submit" class="btn-fb-primary" id="btnPagePostSubmit" style="display: inline-flex; align-items: center; gap: 6px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                @include('pages.partials.icon', ['name' => 'send', 'size' => 16])
                                 <span>পোস্ট প্রকাশ করুন</span>
                             </button>
                         </div>
@@ -623,11 +628,16 @@
                                     <div style="font-weight: 700; font-size: 15px; color: var(--fb-text-primary); display: flex; align-items: center; gap: 4px;">
                                         <span>{{ $page->name }}</span>
                                         @if($page->is_verified)
-                                            <span style="color: #059669; font-size: 14px;" title="ভেরিফাইড">✓</span>
+                                            <span style="color: #059669; display: inline-flex; align-items: center;" title="ভেরিফাইড">
+                                                @include('pages.partials.icon', ['name' => 'badge-check', 'size' => 14])
+                                            </span>
                                         @endif
                                     </div>
-                                    <div style="font-size: 12px; color: var(--fb-text-secondary);">
-                                        {{ $post->created_at ? $post->created_at->diffForHumans() : 'সম্প্রতি' }} • 🌐 পাবলিক
+                                    <div style="font-size: 12px; color: var(--fb-text-secondary); display: flex; align-items: center; gap: 4px;">
+                                        <span>{{ $post->created_at ? $post->created_at->diffForHumans() : 'সম্প্রতি' }}</span>
+                                        <span>•</span>
+                                        @include('pages.partials.icon', ['name' => 'globe', 'size' => 12])
+                                        <span>পাবলিক</span>
                                     </div>
                                 </div>
                             </div>
@@ -677,15 +687,15 @@
                         <!-- Action Buttons -->
                         <div class="post-actions-row">
                             <button class="post-action-btn {{ ($post->reactions && $currentUser && $post->reactions->contains('user_id', $currentUser->id)) ? 'active-liked' : '' }}" id="btn-react-{{ $post->id }}" onclick="handlePostReactionToggle({{ $post->id }})">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                                @include('pages.partials.icon', ['name' => 'thumbs-up', 'size' => 18])
                                 <span>লাইক</span>
                             </button>
                             <button class="post-action-btn" onclick="togglePostCommentsSection({{ $post->id }})">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                @include('pages.partials.icon', ['name' => 'message-square', 'size' => 18])
                                 <span>মন্তব্য</span>
                             </button>
                             <button class="post-action-btn" onclick="openSharePostModal({{ $post->id }}, '{{ addslashes($post->content) }}')">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                                @include('pages.partials.icon', ['name' => 'share-2', 'size' => 18])
                                 <span>শেয়ার</span>
                             </button>
                         </div>
@@ -714,7 +724,9 @@
                 </div>
             @else
                 <div class="fb-card" style="text-align: center; padding: 48px; color: var(--fb-text-secondary);">
-                    <div style="font-size: 40px; margin-bottom: 8px;">📄</div>
+                    <div style="color: var(--fb-text-secondary); margin-bottom: 12px; display: flex; justify-content: center;">
+                        @include('pages.partials.icon', ['name' => 'file-text', 'size' => 44])
+                    </div>
                     <div style="font-size: 17px; font-weight: 700; color: var(--fb-text-primary);">এই পেইজে এখনও কোনো পোস্ট নেই</div>
                     <div style="font-size: 13px; margin-top: 4px;">নতুন কোনো ঘোষণা বা কন্টেন্টের জন্য নিয়মিত চোখ রাখুন।</div>
                 </div>
@@ -726,7 +738,7 @@
             <!-- About Card -->
             <div class="fb-card" style="margin-bottom: 20px;">
                 <h3 style="font-weight: 800; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    @include('pages.partials.icon', ['name' => 'info', 'size' => 18])
                     <span>পেইজ পরিচিতি</span>
                 </h3>
                 <p style="font-size: 14px; line-height: 1.5; color: var(--fb-text-secondary); margin-bottom: 16px;">
@@ -734,20 +746,38 @@
                 </p>
 
                 <div style="border-top: 1px solid var(--fb-border); padding-top: 12px; font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
-                    <div>🏷️ ক্যাটাগরি: <strong>{{ $page->category }}</strong></div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        @include('pages.partials.icon', ['name' => 'tag', 'size' => 14])
+                        <span>ক্যাটাগরি: <strong>{{ $page->category }}</strong></span>
+                    </div>
                     @if($page->website)
-                        <div style="word-break: break-all;">🌐 ওয়েবসাইট: <a href="{{ $page->website }}" target="_blank" rel="noopener" style="color: var(--fb-primary); text-decoration: none; font-weight: 600;">{{ $page->website }}</a></div>
+                        <div style="display: flex; align-items: center; gap: 8px; word-break: break-all;">
+                            @include('pages.partials.icon', ['name' => 'globe', 'size' => 14])
+                            <span>ওয়েবসাইট: <a href="{{ $page->website }}" target="_blank" rel="noopener" style="color: var(--fb-primary); text-decoration: none; font-weight: 600;">{{ $page->website }}</a></span>
+                        </div>
                     @endif
                     @if($page->email)
-                        <div>✉️ ইমেইল: <a href="mailto:{{ $page->email }}" style="color: var(--fb-text-primary); text-decoration: none;">{{ $page->email }}</a></div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            @include('pages.partials.icon', ['name' => 'mail', 'size' => 14])
+                            <span>ইমেইল: <a href="mailto:{{ $page->email }}" style="color: var(--fb-text-primary); text-decoration: none;">{{ $page->email }}</a></span>
+                        </div>
                     @endif
                     @if($page->phone)
-                        <div>📞 ফোন: <strong>{{ $page->phone }}</strong></div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            @include('pages.partials.icon', ['name' => 'phone', 'size' => 14])
+                            <span>ফোন: <strong>{{ $page->phone }}</strong></span>
+                        </div>
                     @endif
                     @if($page->city || $page->country)
-                        <div>📍 অবস্থান: <strong>{{ implode(', ', array_filter([$page->address, $page->city, $page->country])) }}</strong></div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            @include('pages.partials.icon', ['name' => 'map-pin', 'size' => 14])
+                            <span>অবস্থান: <strong>{{ implode(', ', array_filter([$page->address, $page->city, $page->country])) }}</strong></span>
+                        </div>
                     @endif
-                    <div>🗓️ যাত্রা শুরু: {{ $page->created_at ? $page->created_at->format('d M, Y') : 'অজানা' }}</div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        @include('pages.partials.icon', ['name' => 'calendar', 'size' => 14])
+                        <span>যাত্রা শুরু: {{ $page->created_at ? $page->created_at->format('d M, Y') : 'অজানা' }}</span>
+                    </div>
                 </div>
 
                 <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--fb-border);">
@@ -780,8 +810,9 @@
 <!-- TAB: ABOUT -->
 <div id="tab-pane-about" class="page-tab-pane" style="{{ $activeTab === 'about' ? '' : 'display: none;' }}">
     <div class="fb-card" style="max-width: 900px; margin: 0 auto;">
-        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px;">
-            ℹ️ পেইজের সম্পূর্ণ পরিচিতি ও বিবরণ
+        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; border-bottom: 1px solid var(--fb-border); padding-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            @include('pages.partials.icon', ['name' => 'info', 'size' => 20])
+            <span>পেইজের সম্পূর্ণ পরিচিতি ও বিবরণ</span>
         </h2>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
@@ -841,8 +872,9 @@
 <!-- TAB: PHOTOS & MEDIA -->
 <div id="tab-pane-photos" class="page-tab-pane" style="{{ $activeTab === 'photos' ? '' : 'display: none;' }}">
     <div class="fb-card">
-        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 18px;">
-            🖼️ আপলোডকৃত ছবি ও ভিডিও গ্যালারি ({{ $mediaItems->count() }})
+        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+            @include('pages.partials.icon', ['name' => 'image', 'size' => 20])
+            <span>আপলোডকৃত ছবি ও ভিডিও গ্যালারি ({{ $mediaItems->count() }})</span>
         </h2>
 
         @if($mediaItems->isNotEmpty())
@@ -859,7 +891,9 @@
             </div>
         @else
             <div style="text-align: center; padding: 48px; color: var(--fb-text-secondary);">
-                <div style="font-size: 38px; margin-bottom: 8px;">🖼️</div>
+                <div style="color: var(--fb-text-secondary); margin-bottom: 8px; display: flex; justify-content: center;">
+                    @include('pages.partials.icon', ['name' => 'image', 'size' => 44])
+                </div>
                 <div style="font-weight: 700; font-size: 16px;">এখনও কোনো ছবি বা ভিডিও আপলোড করা হয়নি</div>
                 <div style="font-size: 13px;">পেইজে পোস্ট করার সময় ছবি যুক্ত করলে এখানে প্রদর্শিত হবে।</div>
             </div>
@@ -870,8 +904,9 @@
 <!-- TAB: FOLLOWERS -->
 <div id="tab-pane-followers" class="page-tab-pane" style="{{ $activeTab === 'followers' ? '' : 'display: none;' }}">
     <div class="fb-card">
-        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 18px;">
-            👥 পেইজ ফলোয়ারবৃন্দ ({{ number_format($page->followers_count) }})
+        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+            @include('pages.partials.icon', ['name' => 'users', 'size' => 20])
+            <span>পেইজ ফলোয়ারবৃন্দ ({{ number_format($page->followers_count) }})</span>
         </h2>
 
         @if($followers->isNotEmpty())
@@ -900,7 +935,9 @@
             </div>
         @else
             <div style="text-align: center; padding: 48px; color: var(--fb-text-secondary);">
-                <div style="font-size: 38px; margin-bottom: 8px;">👥</div>
+                <div style="color: var(--fb-text-secondary); margin-bottom: 8px; display: flex; justify-content: center;">
+                    @include('pages.partials.icon', ['name' => 'users', 'size' => 44])
+                </div>
                 <div style="font-weight: 700; font-size: 16px;">এখনও কোনো ফলোয়ার নেই</div>
                 <div style="font-size: 13px;">প্রথম ব্যক্তি হিসেবে এই পেইজটি ফলো করুন!</div>
             </div>
@@ -911,8 +948,9 @@
 <!-- TAB: EVENTS -->
 <div id="tab-pane-events" class="page-tab-pane" style="{{ $activeTab === 'events' ? '' : 'display: none;' }}">
     <div class="fb-card">
-        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 18px;">
-            📅 পেইজের আনুষ্ঠানিক ইভেন্টস
+        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+            @include('pages.partials.icon', ['name' => 'calendar', 'size' => 20])
+            <span>পেইজের আনুষ্ঠানিক ইভেন্টস</span>
         </h2>
 
         @if($events->isNotEmpty())
@@ -923,21 +961,25 @@
                             {{ $event->start_time ? $event->start_time->format('d M, Y • h:i A') : 'তারিখ নির্ধারিত হয়নি' }}
                         </div>
                         <h4 style="font-size: 16px; font-weight: 800; margin: 8px 0 6px;">{{ $event->title }}</h4>
-                        <div style="font-size: 13px; color: var(--fb-text-secondary); margin-bottom: 12px;">
-                            📍 {{ $event->location ?: 'অনলাইন ইভেন্ট' }}
+                        <div style="font-size: 13px; color: var(--fb-text-secondary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            @include('pages.partials.icon', ['name' => 'map-pin', 'size' => 14])
+                            <span>{{ $event->location ?: 'অনলাইন ইভেন্ট' }}</span>
                         </div>
                         <p style="font-size: 13px; line-height: 1.4; color: var(--fb-text-secondary); margin-bottom: 14px;">
                             {{ Str::limit($event->description, 100) }}
                         </p>
-                        <button class="btn-fb-primary" style="width: 100%; justify-content: center; font-size: 13px;" onclick="handleEventRsvp({{ $event->id }})">
-                            ✓ অংশ গ্রহণ করুন (Going)
+                        <button class="btn-fb-primary" style="width: 100%; justify-content: center; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;" onclick="handleEventRsvp({{ $event->id }})">
+                            @include('pages.partials.icon', ['name' => 'check', 'size' => 14])
+                            <span>অংশ গ্রহণ করুন (Going)</span>
                         </button>
                     </div>
                 @endforeach
             </div>
         @else
             <div style="text-align: center; padding: 48px; color: var(--fb-text-secondary);">
-                <div style="font-size: 38px; margin-bottom: 8px;">📅</div>
+                <div style="color: var(--fb-text-secondary); margin-bottom: 8px; display: flex; justify-content: center;">
+                    @include('pages.partials.icon', ['name' => 'calendar', 'size' => 44])
+                </div>
                 <div style="font-weight: 700; font-size: 16px;">বর্তমানে কোনো নির্ধারিত ইভেন্ট নেই</div>
                 <div style="font-size: 13px;">ভবিষ্যতের কোনো ইভেন্ট আয়োজন করা হলে এখানে পাওয়া যাবে।</div>
             </div>
@@ -948,8 +990,9 @@
 <!-- TAB: SHOP & PRODUCTS -->
 <div id="tab-pane-shop" class="page-tab-pane" style="{{ $activeTab === 'shop' ? '' : 'display: none;' }}">
     <div class="fb-card">
-        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 18px;">
-            🛍️ পেইজের পণ্য ও সেবা সম্ভার
+        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+            @include('pages.partials.icon', ['name' => 'shopping-bag', 'size' => 20])
+            <span>পেইজের পণ্য ও সেবা সম্ভার</span>
         </h2>
 
         @if($products->isNotEmpty())
@@ -969,8 +1012,9 @@
                             <p style="font-size: 12px; color: var(--fb-text-secondary); line-height: 1.4; margin-bottom: 14px; flex: 1;">
                                 {{ Str::limit($product->description, 80) }}
                             </p>
-                            <button class="btn-fb-primary" style="width: 100%; justify-content: center; font-size: 13px;" onclick="openPageMessageModal('{{ addslashes($product->name) }} পণ্যটি সম্পর্কে বিস্তারিত জানতে চাই')">
-                                💬 মেসেজে অর্ডার করুন
+                            <button class="btn-fb-primary" style="width: 100%; justify-content: center; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;" onclick="openPageMessageModal('{{ addslashes($product->name) }} পণ্যটি সম্পর্কে বিস্তারিত জানতে চাই')">
+                                @include('pages.partials.icon', ['name' => 'message-square', 'size' => 14])
+                                <span>মেসেজে অর্ডার করুন</span>
                             </button>
                         </div>
                     </div>
@@ -978,7 +1022,9 @@
             </div>
         @else
             <div style="text-align: center; padding: 48px; color: var(--fb-text-secondary);">
-                <div style="font-size: 38px; margin-bottom: 8px;">🛍️</div>
+                <div style="color: var(--fb-text-secondary); margin-bottom: 8px; display: flex; justify-content: center;">
+                    @include('pages.partials.icon', ['name' => 'shopping-bag', 'size' => 44])
+                </div>
                 <div style="font-weight: 700; font-size: 16px;">বর্তমানে কোনো পণ্য তালিকায় নেই</div>
                 <div style="font-size: 13px;">পেইজ অ্যাডমিন পণ্য যুক্ত করলে এখানে প্রদর্শিত হবে।</div>
             </div>
@@ -991,19 +1037,24 @@
     <div class="page-modal-box">
         <div style="padding: 16px 20px; border-bottom: 1px solid var(--fb-border); display: flex; justify-content: space-between; align-items: center;">
             <h3 style="font-weight: 800; font-size: 17px; margin: 0;">শেয়ার করুন</h3>
-            <button onclick="closeShareModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--fb-text-secondary);">✕</button>
+            <button onclick="closeShareModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--fb-text-secondary); display: flex; align-items: center;">
+                @include('pages.partials.icon', ['name' => 'x', 'size' => 20])
+            </button>
         </div>
         <div style="padding: 20px;">
             <div id="sharePostPreviewText" style="padding: 10px; background: var(--fb-bg); border-radius: 8px; font-size: 13px; color: var(--fb-text-secondary); margin-bottom: 16px; border: 1px solid var(--fb-border);"></div>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button class="btn-fb-primary" id="btnShareTimeline" style="width: 100%; justify-content: center; padding: 12px;">
-                    📢 আপনার টাইমলাইনে শেয়ার করুন
+                <button class="btn-fb-primary" id="btnShareTimeline" style="width: 100%; justify-content: center; padding: 12px; display: inline-flex; align-items: center; gap: 8px;">
+                    @include('pages.partials.icon', ['name' => 'share-2', 'size' => 16])
+                    <span>আপনার টাইমলাইনে শেয়ার করুন</span>
                 </button>
-                <button class="btn-fb-secondary" id="btnShareMessenger" style="width: 100%; justify-content: center; padding: 12px;">
-                    💬 মেসেঞ্জারে বন্ধুদের পাঠান
+                <button class="btn-fb-secondary" id="btnShareMessenger" style="width: 100%; justify-content: center; padding: 12px; display: inline-flex; align-items: center; gap: 8px;">
+                    @include('pages.partials.icon', ['name' => 'message-square', 'size' => 16])
+                    <span>মেসেঞ্জারে বন্ধুদের পাঠান</span>
                 </button>
-                <button class="btn-fb-secondary" id="btnShareCopyLink" style="width: 100%; justify-content: center; padding: 12px;">
-                    🔗 লিঙ্ক কপি করুন
+                <button class="btn-fb-secondary" id="btnShareCopyLink" style="width: 100%; justify-content: center; padding: 12px; display: inline-flex; align-items: center; gap: 8px;">
+                    @include('pages.partials.icon', ['name' => 'copy', 'size' => 16])
+                    <span>লিঙ্ক কপি করুন</span>
                 </button>
             </div>
         </div>
@@ -1015,7 +1066,9 @@
     <div class="page-modal-box">
         <div style="padding: 16px 20px; border-bottom: 1px solid var(--fb-border); display: flex; justify-content: space-between; align-items: center;">
             <h3 style="font-weight: 800; font-size: 17px; margin: 0;">{{ $page->name }} কে বার্তা পাঠান</h3>
-            <button onclick="closePageMessageModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--fb-text-secondary);">✕</button>
+            <button onclick="closePageMessageModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--fb-text-secondary); display: flex; align-items: center;">
+                @include('pages.partials.icon', ['name' => 'x', 'size' => 20])
+            </button>
         </div>
         <form onsubmit="handleSendPageMessage(event)" style="padding: 20px;">
             <div style="margin-bottom: 14px;">
@@ -1083,11 +1136,11 @@
                 const isFollowing = data.data.is_following;
                 if (isFollowing) {
                     btn.className = 'btn-fb-secondary';
-                    icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                    icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg>';
                     text.textContent = 'ফলো করা হয়েছে';
                 } else {
                     btn.className = 'btn-fb-primary';
-                    icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+                    icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>';
                     text.textContent = 'ফলো করুন';
                 }
                 if (countSpan && typeof data.data.followers_count !== 'undefined') {
@@ -1430,7 +1483,7 @@
                 alert('সার্ভার ত্রুটি।');
             } finally {
                 btn.disabled = false;
-                btn.textContent = '📢 আপনার টাইমলাইনে শেয়ার করুন';
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg><span>আপনার টাইমলাইনে শেয়ার করুন</span>';
             }
         };
 
@@ -1557,7 +1610,10 @@
                         newPostEl.className = 'post-card';
                         newPostEl.style.borderLeft = '4px solid #059669';
                         newPostEl.innerHTML = `
-                            <div style="font-size: 12px; color: #059669; font-weight: 700; margin-bottom: 6px;">✨ নতুন পোস্ট লাইভ প্রকাশিত হয়েছে</div>
+                            <div style="font-size: 12px; color: #059669; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
+                                <span>নতুন পোস্ট লাইভ প্রকাশিত হয়েছে</span>
+                            </div>
                             <div style="font-size: 15px; color: var(--fb-text-primary); line-height: 1.6;">${escapeHtml(e.post.content || '')}</div>
                             <div style="margin-top: 10px; font-size: 12px; color: var(--fb-text-secondary); text-align: right;">এখনই রিফ্রেশ করুন সম্পূর্ণ দেখতে</div>
                         `;

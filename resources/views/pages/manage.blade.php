@@ -3,6 +3,7 @@
 @section('title', 'স্টুডিও — ' . $page->name . ' — Bondhoo Enterprise Page Operating System')
 
 @section('styles')
+<link rel="stylesheet" href="{{ asset('css/enterprise-pages-redesign.css') }}?v={{ time() }}">
 <style>
     .studio-container {
         max-width: 1280px;
