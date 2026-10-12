@@ -251,6 +251,69 @@
         gap: 12px;
         flex-wrap: wrap;
     }
+
+    .page-create-grid {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .form-grid-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .form-grid-3col {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 14px;
+    }
+
+    @media (max-width: 992px) {
+        .page-create-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .preview-card-sticky {
+            position: static;
+            margin-top: 20px;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .form-grid-2col,
+        .form-grid-3col {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .hours-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .hours-row > div {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .step-item {
+            min-width: 64px;
+        }
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+        }
+        .step-label {
+            font-size: 11px;
+        }
+        .form-section-card {
+            padding: 16px 14px;
+        }
+    }
 </style>
 @endsection
 
@@ -344,7 +407,7 @@
     </div>
 
     <!-- Main Grid: Form Formats & Live Dynamic Preview -->
-    <div style="display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start;">
+    <div class="page-create-grid">
         
         <!-- Form Left Column -->
         <div id="formStepsContainer">
@@ -463,7 +526,7 @@
                 <!-- Generic Business Registration Information -->
                 <div id="generalBusinessSection" style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--fb-border);">
                     <h3 style="font-size: 16px; font-weight: 700; color: var(--fb-text); margin: 0 0 14px 0;">অফিশিয়াল ব্যবসা নিবন্ধন (ঐচ্ছিক)</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <div class="form-grid-2col">
                         <div>
                             <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: var(--fb-text);">আইনি নাম (Legal Business Name)</label>
                             <input type="text" id="legalNameInput" placeholder="নিবন্ধিত আইনি নাম" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--fb-border); background: var(--fb-bg); color: var(--fb-text); box-sizing: border-box;">
@@ -491,7 +554,7 @@
                     <p style="font-size: 14px; color: var(--fb-text-secondary); margin: 0;">গ্রাহক ও দর্শকদের সাথে সংযোগ স্থাপনের অফিশিয়াল তথ্য প্রদান করুন।</p>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-grid-2col">
                     <div>
                         <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: var(--fb-text);">পাবলিক ইমেইল (Public Email)</label>
                         <input type="email" id="publicEmailInput" oninput="updatePreview()" placeholder="contact@yourdomain.com" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--fb-border); background: var(--fb-bg); color: var(--fb-text); box-sizing: border-box;">
@@ -524,7 +587,7 @@
                         <input type="text" id="streetAddressInput" oninput="updatePreview()" placeholder="যেমন: হাউজ #১২, রোড #৫, গুলশান-২" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--fb-border); background: var(--fb-bg); color: var(--fb-text); box-sizing: border-box;">
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+                    <div class="form-grid-3col">
                         <div>
                             <label style="display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: var(--fb-text);">শহর (City)</label>
                             <input type="text" id="cityInput" oninput="updatePreview()" placeholder="ঢাকা / চট্টগ্রাম / সিলেট" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--fb-border); background: var(--fb-bg); color: var(--fb-text); box-sizing: border-box;">
@@ -633,7 +696,7 @@
                     <!-- Social Media Links -->
                     <div style="margin-top: 14px; padding-top: 18px; border-top: 1px dashed var(--fb-border);">
                         <strong style="display: block; font-size: 15px; margin-bottom: 12px; color: var(--fb-text);">সোশ্যাল মিডিয়া প্রোফাইল লিংকসমূহ:</strong>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                        <div class="form-grid-2col">
                             <div>
                                 <label style="display: block; font-size: 13px; margin-bottom: 4px; color: var(--fb-text);">Facebook Page / Profile</label>
                                 <input type="url" id="socialFbInput" placeholder="https://facebook.com/..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--fb-border); background: var(--fb-bg); color: var(--fb-text); box-sizing: border-box;">
@@ -723,7 +786,7 @@
                     <!-- Summary Review Box -->
                     <div style="border: 1px solid #059669; border-radius: 10px; padding: 18px; background: rgba(5, 150, 105, 0.04);">
                         <h3 style="font-size: 16px; font-weight: 700; color: #059669; margin: 0 0 10px 0;">রেজিস্ট্রেশন সারাংশ:</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
+                        <div class="form-grid-2col" style="gap: 10px; font-size: 14px;">
                             <div>পেইজ নাম: <strong id="reviewPageName">-</strong></div>
                             <div>ইউজারনেম: <strong id="reviewUsername">-</strong></div>
                             <div>পেইজ টাইপ: <strong id="reviewPageType">-</strong></div>

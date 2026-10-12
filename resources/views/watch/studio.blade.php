@@ -170,6 +170,41 @@
         }
     }
 
+    @media (max-width: 480px) {
+        .stage-monitor {
+            height: auto;
+            aspect-ratio: 16 / 9;
+            max-height: 250px;
+        }
+        .studio-navbar {
+            padding: 10px 14px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+        .studio-header-actions {
+            width: 100%;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+        .pip-cam-card {
+            width: 120px;
+            height: 80px;
+            bottom: 10px;
+            right: 10px;
+        }
+    }
+
+    @media (max-width: 374px) {
+        .studio-root {
+            padding: 8px;
+            gap: 10px;
+        }
+        .studio-navbar {
+            padding: 8px 10px;
+        }
+    }
+
     #mainVideoPreview, #screenVideoPreview {
         width: 100%;
         height: 100%;

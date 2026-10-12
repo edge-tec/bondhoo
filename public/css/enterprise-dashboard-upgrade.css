@@ -1945,7 +1945,8 @@ header {
     }
     #aiFloatingBtn {
         right: 16px !important;
-        bottom: 16px !important;
+        bottom: calc(var(--mobile-nav-height, 60px) + env(safe-area-inset-bottom, 0px) + 16px) !important;
+        z-index: 990 !important;
     }
 }
 

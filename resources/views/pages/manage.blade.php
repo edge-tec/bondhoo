@@ -380,6 +380,90 @@
         display: inline-block;
         vertical-align: middle;
     }
+
+    .studio-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    @media (max-width: 768px) {
+        .studio-container {
+            padding: 0 10px 40px 10px;
+        }
+        .studio-header {
+            padding: 16px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 14px;
+        }
+        .studio-header-left {
+            gap: 12px;
+        }
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .metric-card {
+            padding: 14px;
+        }
+        .metric-value {
+            font-size: 22px;
+        }
+        .panel-card {
+            padding: 16px 14px;
+        }
+        .studio-table {
+            min-width: 560px;
+        }
+        .studio-modal {
+            max-width: min(94vw, 560px);
+            max-height: calc(100dvh - 32px);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+        .studio-header-left {
+            flex-direction: column;
+            text-align: center;
+        }
+        .studio-title-area h1 {
+            font-size: 19px;
+            justify-content: center;
+        }
+        .studio-header-meta {
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .panel-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .btn-action-primary,
+        .btn-action-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 374px) {
+        .studio-avatar {
+            width: 48px;
+            height: 48px;
+            font-size: 20px;
+        }
+        .studio-title-area h1 {
+            font-size: 17px;
+        }
+        .studio-tab-btn {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+    }
 </style>
 @endsection
 

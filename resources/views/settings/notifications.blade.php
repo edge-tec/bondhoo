@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ইমেইল ও নোটিফিকেশন সেটিংস — Bondhoo</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
@@ -23,29 +23,35 @@
             --fb-text-secondary: #65676b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Hind Siliguri', 'Inter', sans-serif; }
-        body { background: var(--fb-bg); color: var(--fb-text-primary); min-height: 100vh; padding: 24px 16px; }
-        .container { max-width: 760px; margin: 0 auto; }
-        .header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--fb-border); }
+        body {
+            background: var(--fb-bg);
+            color: var(--fb-text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: max(20px, env(safe-area-inset-top, 20px)) max(14px, env(safe-area-inset-right, 14px)) max(20px, env(safe-area-inset-bottom, 20px)) max(14px, env(safe-area-inset-left, 14px));
+        }
+        .container { max-width: 760px; margin: 0 auto; width: 100%; }
+        .header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--fb-border); flex-wrap: wrap; gap: 12px; }
         .logo { font-size: 26px; font-weight: 800; color: var(--fb-primary); text-decoration: none; }
-        .nav-links { display: flex; gap: 10px; }
-        .nav-link { font-size: 14px; font-weight: 600; color: var(--fb-text-secondary); text-decoration: none; padding: 6px 12px; border-radius: 6px; background: #e4e6eb; transition: background 0.2s; }
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
+        .nav-link { font-size: 13.5px; font-weight: 600; color: var(--fb-text-secondary); text-decoration: none; padding: 6px 12px; border-radius: 6px; background: #e4e6eb; transition: background 0.2s; white-space: nowrap; }
         .nav-link:hover { background: #d8dadf; }
 
-        .page-title { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+        .page-title { font-size: 24px; font-weight: 800; margin-bottom: 6px; word-break: break-word; }
         .page-subtitle { font-size: 14px; color: var(--fb-text-secondary); margin-bottom: 24px; line-height: 1.5; }
 
-        .card { background: var(--fb-card-bg); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #dddfe2; padding: 24px; margin-bottom: 20px; }
-        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid #f0f2f5; padding-bottom: 12px; }
-        .card-title { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; color: #1e293b; }
+        .card { background: var(--fb-card-bg); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #dddfe2; padding: 24px; margin-bottom: 20px; word-break: break-word; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid #f0f2f5; padding-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+        .card-title { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; color: #1e293b; flex-wrap: wrap; }
 
-        .switch-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f1f5f9; }
+        .switch-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f1f5f9; gap: 12px; }
         .switch-row:last-child { border-bottom: none; }
-        .switch-info { flex: 1; padding-right: 20px; }
+        .switch-info { flex: 1; padding-right: 12px; word-break: break-word; }
         .switch-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 2px; }
         .switch-desc { font-size: 12px; color: #64748b; line-height: 1.4; }
 
         /* Custom Toggle Switch */
-        .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
         .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
@@ -53,9 +59,22 @@
         input:checked + .slider:before { transform: translateX(20px); }
         input:disabled + .slider { opacity: 0.6; cursor: not-allowed; background-color: #94a3b8; }
 
-        .btn-save { background: var(--fb-primary); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 6px rgba(24,119,242,0.3); }
+        .btn-save { background: var(--fb-primary); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 6px rgba(24,119,242,0.3); display: inline-flex; align-items: center; justify-content: center; }
         .btn-save:hover { background: #166fe5; }
-        .alert-box { padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: none; }
+        .alert-box { padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: none; word-break: break-word; }
+
+        @media (max-width: 480px) {
+            .card { padding: 16px 14px; border-radius: 8px; }
+            .page-title { font-size: 20px; }
+            .btn-save { width: 100%; }
+        }
+
+        @media (max-width: 374px) {
+            .card { padding: 14px 10px; }
+            .page-title { font-size: 18px; }
+            .switch-title { font-size: 13px; }
+            .switch-desc { font-size: 11.5px; }
+        }
     </style>
 </head>
 <body>

@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>অথেন্টিকেশন ও সিকিউরিটি অ্যাডমিন ড্যাশবোর্ড — Bondhoo</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
@@ -28,24 +28,35 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Hind Siliguri', 'Inter', sans-serif; }
-        body { background: var(--fb-bg); color: var(--fb-text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+        body {
+            background: var(--fb-bg);
+            color: var(--fb-text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+        }
 
-        header { background: white; border-bottom: 1px solid var(--fb-border); height: 64px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-        .logo-box { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        header { background: white; border-bottom: 1px solid var(--fb-border); min-height: 64px; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.06); gap: 12px; }
+        .logo-box { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-wrap: wrap; }
         .logo-circle { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1877f2, #0052cc); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; box-shadow: 0 2px 6px rgba(24,119,242,0.4); }
         .logo-title { font-weight: 700; font-size: 20px; color: var(--fb-primary); }
         .badge-gov { background: #e7f3ff; color: var(--fb-primary); border: 1px solid #1877f2; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; letter-spacing: 0.3px; }
 
-        .header-actions { display: flex; align-items: center; gap: 12px; }
-        .btn-back { color: var(--fb-text-secondary); text-decoration: none; font-weight: 600; font-size: 13px; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--fb-border); background: white; transition: all 0.2s; }
+        .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .btn-back { color: var(--fb-text-secondary); text-decoration: none; font-weight: 600; font-size: 13px; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--fb-border); background: white; transition: all 0.2s; display: inline-flex; align-items: center; }
         .btn-back:hover { background: #f0f2f5; color: var(--fb-primary); }
 
         .container { max-width: 1440px; width: 100%; margin: 0 auto; padding: 24px 16px; flex: 1; }
 
         /* Section Header */
         .section-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-        .section-title { font-size: 22px; font-weight: 800; color: #1c1e21; }
-        .section-subtitle { font-size: 13px; color: var(--fb-text-secondary); }
+        .section-title { font-size: 22px; font-weight: 800; color: #1c1e21; word-break: break-word; }
+        .section-subtitle { font-size: 13px; color: var(--fb-text-secondary); line-height: 1.5; }
 
         /* 8 Required Widgets Grid */
         .widgets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
@@ -65,39 +76,39 @@
         .widget-sub { font-size: 11px; color: var(--fb-text-secondary); margin-top: 4px; }
 
         /* Tabs & Controls */
-        .tabs-header { display: flex; gap: 6px; border-bottom: 1px solid var(--fb-border); margin-bottom: 20px; overflow-x: auto; padding-bottom: 2px; }
-        .tab-btn { padding: 10px 16px; font-size: 14px; font-weight: 600; border: none; background: none; cursor: pointer; color: var(--fb-text-secondary); border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; }
+        .tabs-header { display: flex; gap: 6px; border-bottom: 1px solid var(--fb-border); margin-bottom: 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+        .tab-btn { padding: 10px 16px; font-size: 14px; font-weight: 600; border: none; background: none; cursor: pointer; color: var(--fb-text-secondary); border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; flex-shrink: 0; }
         .tab-btn:hover { color: var(--fb-primary); }
         .tab-btn.active { color: var(--fb-primary); border-bottom-color: var(--fb-primary); }
 
         .controls-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; justify-content: space-between; align-items: center; }
-        .search-input { height: 38px; padding: 0 12px; border: 1px solid var(--fb-border); border-radius: 6px; font-size: 13px; width: 280px; }
+        .search-input { height: 38px; padding: 0 12px; border: 1px solid var(--fb-border); border-radius: 6px; font-size: 13px; width: 280px; max-width: 100%; }
         .filter-select { height: 38px; padding: 0 10px; border: 1px solid var(--fb-border); border-radius: 6px; font-size: 13px; background: white; }
 
         /* Export Button Group */
-        .export-group { display: flex; gap: 8px; }
-        .btn-export { height: 38px; padding: 0 14px; background: var(--fb-primary); color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
+        .export-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-export { height: 38px; padding: 0 14px; background: var(--fb-primary); color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: background 0.2s; white-space: nowrap; }
         .btn-export:hover { background: var(--fb-primary-hover); }
         .btn-export.secondary { background: white; color: var(--fb-text-primary); border: 1px solid var(--fb-border); }
         .btn-export.secondary:hover { background: #f0f2f5; }
 
         /* Data Tables */
-        .table-card { background: white; border: 1px solid var(--fb-border); border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-        th { background: #f7f8fa; padding: 12px 14px; font-weight: 700; color: #4b4f56; border-bottom: 1px solid var(--fb-border); font-size: 12px; text-transform: uppercase; }
-        td { padding: 12px 14px; border-bottom: 1px solid var(--fb-border); vertical-align: middle; }
+        .table-card { background: white; border: 1px solid var(--fb-border); border-radius: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; min-width: 650px; }
+        th { background: #f7f8fa; padding: 12px 14px; font-weight: 700; color: #4b4f56; border-bottom: 1px solid var(--fb-border); font-size: 12px; text-transform: uppercase; white-space: nowrap; }
+        td { padding: 12px 14px; border-bottom: 1px solid var(--fb-border); vertical-align: middle; word-break: break-word; }
         tr:hover { background: #fafbfc; }
 
         .user-cell { display: flex; align-items: center; gap: 10px; }
-        .avatar { width: 34px; height: 34px; border-radius: 50%; background: #e4e6eb; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--fb-primary); font-size: 14px; }
-        .status-badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .avatar { width: 34px; height: 34px; border-radius: 50%; background: #e4e6eb; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--fb-primary); font-size: 14px; flex-shrink: 0; }
+        .status-badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; white-space: nowrap; }
         .status-active { background: #eafbe7; color: var(--fb-green); }
         .status-pending { background: #fffbe6; color: #d48806; }
         .status-suspended { background: #fff1f0; color: var(--fb-red); }
         .status-banned { background: #333; color: white; }
 
         .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-        .btn-act { padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 4px; border: 1px solid var(--fb-border); background: white; cursor: pointer; transition: all 0.15s; }
+        .btn-act { padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 4px; border: 1px solid var(--fb-border); background: white; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
         .btn-act:hover { background: #f0f2f5; }
         .btn-act.red { color: var(--fb-red); border-color: #ffa39e; }
         .btn-act.red:hover { background: #fff1f0; }
@@ -113,11 +124,36 @@
         .stat-bar-fill { height: 100%; background: var(--fb-primary); border-radius: 3px; }
 
         /* Modal */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 8px; padding: 24px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+        .modal-content { background: white; width: 100%; max-width: min(94vw, 500px); max-height: calc(100dvh - 32px); overflow-y: auto; border-radius: 12px; padding: 22px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .modal-title { font-size: 18px; font-weight: 700; }
-        .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; }
+        .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px; }
+
+        @media (max-width: 768px) {
+            header { padding: 10px 14px; }
+            .header-actions { width: 100%; justify-content: flex-start; }
+            .widgets-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .controls-bar { flex-direction: column; align-items: stretch; }
+            .search-input { width: 100%; }
+            .export-group { width: 100%; justify-content: flex-start; }
+            .container { padding: 16px 10px; }
+        }
+
+        @media (max-width: 480px) {
+            .widgets-grid { grid-template-columns: 1fr; }
+            .widget-val { font-size: 24px; }
+            .section-title { font-size: 18px; }
+            .logo-title { font-size: 17px; }
+            .badge-gov { font-size: 10px; padding: 2px 6px; }
+            .btn-back { font-size: 12px; padding: 6px 10px; }
+        }
+
+        @media (max-width: 374px) {
+            .widget-card { padding: 12px; }
+            .modal-content { padding: 16px 12px; }
+            .section-title { font-size: 16px; }
+        }
     </style>
 </head>
 <body>

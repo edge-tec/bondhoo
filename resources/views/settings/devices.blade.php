@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>আমার ডিভাইসসমূহ — Bondhoo</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
@@ -23,25 +23,31 @@
             --fb-text-secondary: #65676b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Hind Siliguri', 'Inter', sans-serif; }
-        body { background: var(--fb-bg); color: var(--fb-text-primary); min-height: 100vh; padding: 24px 16px; }
-        .container { max-width: 760px; margin: 0 auto; }
-        .header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--fb-border); }
+        body {
+            background: var(--fb-bg);
+            color: var(--fb-text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: max(20px, env(safe-area-inset-top, 20px)) max(14px, env(safe-area-inset-right, 14px)) max(20px, env(safe-area-inset-bottom, 20px)) max(14px, env(safe-area-inset-left, 14px));
+        }
+        .container { max-width: 760px; margin: 0 auto; width: 100%; }
+        .header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--fb-border); flex-wrap: wrap; gap: 12px; }
         .logo { font-size: 26px; font-weight: 800; color: var(--fb-primary); text-decoration: none; letter-spacing: -0.5px; }
-        .back-link { font-size: 14px; font-weight: 600; color: var(--fb-text-secondary); text-decoration: none; padding: 6px 12px; border-radius: 6px; background: #e4e6eb; transition: background 0.2s; }
+        .back-link { font-size: 14px; font-weight: 600; color: var(--fb-text-secondary); text-decoration: none; padding: 6px 12px; border-radius: 6px; background: #e4e6eb; transition: background 0.2s; white-space: nowrap; }
         .back-link:hover { background: #d8dadf; }
         
-        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; word-break: break-word; }
         .page-subtitle { font-size: 14px; color: var(--fb-text-secondary); margin-bottom: 20px; line-height: 1.4; }
 
-        .alert { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+        .alert { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; word-break: break-word; }
         .alert-success { background: #e7f3ff; color: #1877f2; border: 1px solid #1877f2; }
         .alert-error { background: #ffebe8; color: #e41e3f; border: 1px solid #e41e3f; }
 
-        .card { background: var(--fb-card-bg); border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: 1px solid #dddfe2; padding: 20px; margin-bottom: 20px; }
-        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .card-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .card { background: var(--fb-card-bg); border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: 1px solid #dddfe2; padding: 20px; margin-bottom: 20px; word-break: break-word; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        .card-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         
-        .pulse-badge { display: inline-flex; align-items: center; gap: 6px; background: #e7f8ec; color: #1e8e3e; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; }
+        .pulse-badge { display: inline-flex; align-items: center; gap: 6px; background: #e7f8ec; color: #1e8e3e; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; white-space: nowrap; }
         .pulse-dot { width: 8px; height: 8px; background: #1e8e3e; border-radius: 50%; box-shadow: 0 0 0 0 rgba(30, 142, 62, 0.7); animation: pulse 1.6s infinite; }
         @keyframes pulse {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30, 142, 62, 0.7); }
@@ -49,15 +55,15 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(30, 142, 62, 0); }
         }
 
-        .device-item { display: flex; align-items: center; justify-content: space-between; padding: 14px; border-radius: 8px; background: #f7f8fa; margin-bottom: 12px; border: 1px solid #ebedf0; }
+        .device-item { display: flex; align-items: center; justify-content: space-between; padding: 14px; border-radius: 8px; background: #f7f8fa; margin-bottom: 12px; border: 1px solid #ebedf0; gap: 12px; flex-wrap: wrap; }
         .device-item.current { background: #f0f7ff; border-color: #b2d7ff; }
-        .device-icon { font-size: 28px; width: 44px; height: 44px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex-shrink: 0; margin-right: 14px; }
-        .device-info { flex-grow: 1; }
+        .device-icon { font-size: 28px; width: 44px; height: 44px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex-shrink: 0; }
+        .device-info { flex: 1; min-width: 200px; word-break: break-word; }
         .device-name { font-size: 15px; font-weight: 700; color: #050505; margin-bottom: 2px; }
         .device-meta { font-size: 13px; color: var(--fb-text-secondary); display: flex; flex-wrap: wrap; gap: 10px; }
         .device-meta span { display: inline-flex; align-items: center; gap: 4px; }
 
-        .btn-action { padding: 6px 14px; font-size: 13px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .btn-action { padding: 6px 14px; font-size: 13px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; }
         .btn-danger { background: #ffebe8; color: var(--fb-red); }
         .btn-danger:hover { background: #fcdbd8; }
         .btn-primary { background: var(--fb-primary); color: white; }
@@ -67,13 +73,30 @@
         .btn-rotate { background: #e7f3ff; color: var(--fb-primary); font-size: 13px; }
         .btn-rotate:hover { background: #dbeafe; }
 
-        .logout-all-box { display: flex; align-items: center; justify-content: space-between; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; padding: 18px 20px; margin-top: 24px; }
+        .logout-all-box { display: flex; align-items: center; justify-content: space-between; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; padding: 18px 20px; margin-top: 24px; gap: 14px; flex-wrap: wrap; }
         .logout-all-text h4 { font-size: 16px; font-weight: 700; color: #9b2c2c; margin-bottom: 4px; }
         .logout-all-text p { font-size: 13px; color: #742a2a; }
-        .btn-logout-all { background: var(--fb-red); color: white; font-weight: 700; padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; transition: background 0.2s; }
+        .btn-logout-all { background: var(--fb-red); color: white; font-weight: 700; padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
         .btn-logout-all:hover { background: #cc1836; }
 
         .empty-state { text-align: center; padding: 24px; color: var(--fb-text-secondary); font-size: 14px; }
+
+        @media (max-width: 480px) {
+            .card { padding: 16px 12px; border-radius: 8px; }
+            .page-title { font-size: 20px; }
+            .device-item { padding: 12px 10px; }
+            .device-info { min-width: 100%; }
+            .btn-action { width: 100%; }
+            .logout-all-box { padding: 14px; }
+            .btn-logout-all { width: 100%; }
+        }
+
+        @media (max-width: 374px) {
+            .card { padding: 14px 10px; }
+            .page-title { font-size: 18px; }
+            .device-meta { font-size: 12px; }
+            .device-icon { width: 38px; height: 38px; }
+        }
     </style>
 </head>
 <body>

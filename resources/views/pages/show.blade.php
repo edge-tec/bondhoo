@@ -368,6 +368,63 @@
             margin: -60px auto 10px;
         }
     }
+
+    @media (max-width: 480px) {
+        .page-hero-cover {
+            height: 150px;
+        }
+        .cover-upload-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+            bottom: 8px;
+            right: 8px;
+        }
+        .page-avatar-large {
+            width: 90px;
+            height: 90px;
+            font-size: 32px;
+        }
+        .avatar-upload-btn {
+            width: 30px;
+            height: 30px;
+        }
+        .page-hero-title {
+            font-size: 20px;
+            justify-content: center;
+            word-break: break-word;
+        }
+        .page-hero-info {
+            padding: 0 14px 16px;
+        }
+        .page-nav-tabs {
+            padding: 0 10px;
+        }
+        .page-nav-tab {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+        .post-card {
+            padding: 14px 12px;
+        }
+    }
+
+    @media (max-width: 374px) {
+        .page-hero-cover {
+            height: 120px;
+        }
+        .page-avatar-large {
+            width: 76px;
+            height: 76px;
+            font-size: 26px;
+        }
+        .page-hero-title {
+            font-size: 17px;
+        }
+        .page-nav-tab {
+            padding: 8px 10px;
+            font-size: 12px;
+        }
+    }
 </style>
 @endsection
 

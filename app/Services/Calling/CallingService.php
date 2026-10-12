@@ -689,6 +689,30 @@ class CallingService
     }
 
     /**
+     * Get active incoming call where the user is a ringing/invited callee.
+     */
+    public function getActiveIncomingCall(User $user): ?Call
+    {
+        // Auto-expire stale ringing calls older than 45 seconds
+        Call::where('status', Call::STATUS_RINGING)
+            ->where('started_at', '<', now()->subSeconds(45))
+            ->update([
+                'status' => Call::STATUS_MISSED,
+                'ended_at' => now(),
+            ]);
+
+        return Call::whereIn('status', [Call::STATUS_RINGING, Call::STATUS_INITIATING])
+            ->where('caller_id', '!=', $user->id)
+            ->whereHas('participants', function ($q) use ($user): void {
+                $q->where('user_id', $user->id)
+                    ->whereIn('status', [CallParticipant::STATUS_RINGING, CallParticipant::STATUS_ACCEPTED]);
+            })
+            ->with(['caller.profile', 'participants.user.profile', 'conversation'])
+            ->latest('id')
+            ->first();
+    }
+
+    /**
      * Get user's call history with pagination.
      */
     public function getCallHistory(User $user, int $perPage = 20): LengthAwarePaginator

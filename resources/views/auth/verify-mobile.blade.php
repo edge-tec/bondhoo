@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>মোবাইল নম্বর যাচাই — Bondhoo</title>
     <meta name="description" content="Bondhoo অ্যাকাউন্টের সুরক্ষার জন্য আপনার মোবাইল নম্বর যাচাই করুন।">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -142,6 +142,19 @@
         .alert-box { padding: 12px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; line-height: 1.4; }
         .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
         .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+
+        @media (max-width: 480px) {
+            body { padding: 16px 12px calc(20px + env(safe-area-inset-bottom, 0px)); }
+            .card { padding: 24px 18px; border-radius: 14px; }
+            .title { font-size: 20px; }
+            .otp-input { height: 48px; font-size: 20px; letter-spacing: 6px; }
+            .btn-verify { height: 44px; font-size: 15px; }
+        }
+        @media (max-width: 374px) {
+            .card { padding: 18px 12px; }
+            .title { font-size: 18px; }
+            .otp-input { height: 44px; font-size: 18px; letter-spacing: 4px; }
+        }
     </style>
 </head>
 <body>

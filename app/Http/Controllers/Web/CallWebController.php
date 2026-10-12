@@ -26,9 +26,16 @@ class CallWebController extends Controller
     protected function resolveUser(Request $request): ?User
     {
         $user = $request->user();
-        if (! $user && $request->hasCookie('jugajug_token')) {
-            $rawToken = (string) $request->cookie('jugajug_token');
+        if (! $user && ($request->hasCookie('jugajug_token') || $request->hasCookie('bondhoo_token'))) {
+            $rawToken = (string) ($request->cookie('jugajug_token') ?: $request->cookie('bondhoo_token'));
             $pat = PersonalAccessToken::findToken($rawToken);
+            if ($pat && $pat->tokenable instanceof User) {
+                $user = $pat->tokenable;
+                auth('web')->login($user);
+            }
+        }
+        if (! $user && $request->bearerToken()) {
+            $pat = PersonalAccessToken::findToken($request->bearerToken());
             if ($pat && $pat->tokenable instanceof User) {
                 $user = $pat->tokenable;
                 auth('web')->login($user);
@@ -69,8 +76,9 @@ class CallWebController extends Controller
 
         $iceServers = $this->callingService->getIceServers($user);
 
-        // Callee / Specific Call mode: validate authoritative status
+        // Callee / Caller / Specific Call mode: validate authoritative status
         $answerCallId = null;
+        $callerCallId = null;
         if ($request->filled('call_id')) {
             $call = Call::where('id', (int) $request->query('call_id'))
                 ->where('conversation_id', $conversation->id)
@@ -82,26 +90,27 @@ class CallWebController extends Controller
                     ->with('info', 'কলটি ইতোমধ্যে সমাপ্ত হয়েছে।');
             }
 
-            if ($request->boolean('answer')) {
-                if ($call && in_array($call->status, [Call::STATUS_RINGING, Call::STATUS_INITIATING, Call::STATUS_ACTIVE]) && $call->participants()->where('user_id', $user->id)->exists()) {
+            if ($call && in_array($call->status, [Call::STATUS_RINGING, Call::STATUS_INITIATING, Call::STATUS_ACTIVE])) {
+                if ((int) $call->caller_id === (int) $user->id) {
+                    $callerCallId = $call->id;
+                    $callType = in_array($call->call_type, [Call::TYPE_VIDEO, Call::TYPE_GROUP_VIDEO], true) ? 'video' : 'audio';
+                } elseif ($call->participants()->where('user_id', $user->id)->exists()) {
                     $answerCallId = $call->id;
                     $callType = in_array($call->call_type, [Call::TYPE_VIDEO, Call::TYPE_GROUP_VIDEO], true) ? 'video' : 'audio';
-                } else {
-                    return redirect()->route('messages.show', ['id' => $conversation->id])
-                        ->with('info', 'কলটি আর সক্রিয় নেই।');
                 }
-            } elseif ($call && in_array($call->status, [Call::STATUS_RINGING, Call::STATUS_INITIATING, Call::STATUS_ACTIVE])) {
-                $answerCallId = $call->id;
-                $callType = in_array($call->call_type, [Call::TYPE_VIDEO, Call::TYPE_GROUP_VIDEO], true) ? 'video' : 'audio';
+            } elseif ($request->boolean('answer')) {
+                return redirect()->route('messages.show', ['id' => $conversation->id])
+                    ->with('info', 'কলটি আর সক্রিয় নেই।');
             }
         }
 
+        $relevantCallId = $answerCallId ?? $callerCallId;
         $syncCursor = 0;
-        if ($answerCallId) {
+        if ($relevantCallId) {
             $minEventId = MessengerSyncEvent::where('conversation_id', $conversation->id)
-                ->where(function ($q) use ($answerCallId) {
-                    $q->where('payload->call_id', $answerCallId)
-                        ->orWhere('payload->call_id', (string) $answerCallId);
+                ->where(function ($q) use ($relevantCallId) {
+                    $q->where('payload->call_id', $relevantCallId)
+                        ->orWhere('payload->call_id', (string) $relevantCallId);
                 })
                 ->min('id');
             $syncCursor = $minEventId ? max(0, $minEventId - 1) : max(0, ((int) MessengerSyncEvent::max('id')) - 30);
@@ -118,12 +127,14 @@ class CallWebController extends Controller
             'callType' => $callType,
             'iceServers' => $iceServers,
             'answerCallId' => $answerCallId,
+            'callerCallId' => $callerCallId,
             'syncCursor' => $syncCursor,
             'apiToken' => $apiToken,
         ])
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0')
             ->header('Pragma', 'no-cache')
             ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT')
-            ->withCookie(cookie('jugajug_token', $apiToken, 60 * 24));
+            ->withCookie(cookie('jugajug_token', $apiToken, 60 * 24))
+            ->withCookie(cookie('bondhoo_token', $apiToken, 60 * 24));
     }
 }

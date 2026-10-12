@@ -281,6 +281,60 @@
         align-items: center;
         gap: 10px;
     }
+
+    @media (max-width: 768px) {
+        .admin-dashboard-container {
+            padding: 0 12px 30px 12px;
+            margin: 14px auto;
+        }
+        .admin-header-card {
+            padding: 16px 20px;
+            border-radius: 12px;
+            gap: 12px;
+        }
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .metric-card {
+            padding: 14px 16px;
+        }
+        .metric-value-num {
+            font-size: 24px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .admin-heading {
+            font-size: 18px;
+        }
+        .admin-shield-icon {
+            width: 40px;
+            height: 40px;
+        }
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+        .enterprise-table {
+            min-width: 580px;
+        }
+    }
+
+    @media (max-width: 374px) {
+        .admin-header-card {
+            padding: 14px;
+        }
+        .admin-heading {
+            font-size: 16px;
+        }
+        .admin-subheading {
+            font-size: 12px;
+        }
+        .tab-nav-btn {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+    }
 </style>
 @endsection
 

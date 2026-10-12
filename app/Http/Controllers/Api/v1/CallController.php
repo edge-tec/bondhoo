@@ -281,6 +281,19 @@ class CallController extends Controller
     }
 
     /**
+     * Get the active incoming ringing call for the authenticated user, if any.
+     */
+    public function active(Request $request): JsonResponse
+    {
+        $call = $this->callingService->getActiveIncomingCall($request->user());
+
+        return $this->successResponse(
+            data: $call ? $call->toResponseArray($request->user()) : null,
+            message: $call ? 'Active incoming call retrieved.' : 'No active incoming call.'
+        );
+    }
+
+    /**
      * Fetch details of a single call.
      */
     public function show(Request $request, int $id): JsonResponse

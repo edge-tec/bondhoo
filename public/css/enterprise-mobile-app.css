@@ -122,13 +122,20 @@ button, a, input, select, textarea, [role="button"] {
         -webkit-user-select: none;
     }
 
-    /* Reserve space at page bottom so content is never hidden behind bottom nav */
-    body {
+    /* Reserve space at page bottom so content is never hidden behind bottom nav (except full-height pages) */
+    body:not(.is-messenger-page):not(.call-room) {
         padding-bottom: calc(var(--mobile-nav-height) + var(--sab) + 12px) !important;
     }
 
-    .main-container,
-    .main-app-container {
+    body.is-messenger-page,
+    html.is-messenger-page body,
+    body.call-room,
+    html.is-call-page body {
+        padding-bottom: 0 !important;
+    }
+
+    .main-container:not(.main-messenger-mode),
+    .main-app-container:not(.main-messenger-mode) {
         padding-bottom: calc(var(--mobile-nav-height) + var(--sab) + 16px) !important;
     }
 
@@ -2498,3 +2505,184 @@ button, a, input, select, textarea, [role="button"] {
         scroll-behavior: auto !important;
     }
 }
+
+/* ------------------------------------------------------------------------------
+   13. COMPREHENSIVE FULL-PLATFORM CROSS-DEVICE RESPONSIVE ENGINE
+   Covers 320px–374px, 375px–479px, 480px–767px, 768px–1023px, 1024px–1279px, 1280px–1599px, 1600px+
+   ------------------------------------------------------------------------------ */
+
+/* Universal Fluid Wrapping & Anti-Blowout */
+.post-card, .fb-card, .community-card, .friend-card, .page-card, .product-card, .nc-card, .card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+}
+
+/* Universal Table Horizontal Scroll Engine */
+.table-responsive,
+.table-card,
+.table-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    position: relative !important;
+}
+
+/* Universal Viewport-Aware Modal & Dialog Engine */
+.modal-box,
+.modal-content,
+.jj-modal,
+.fb-modal-card,
+.community-modal-card,
+.report-modal-card,
+.modal-card,
+.app-modal-card {
+    width: 100% !important;
+    max-width: min(94vw, 560px) !important;
+    max-height: calc(100dvh - 32px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    box-sizing: border-box !important;
+}
+
+/* Small Mobile Phones (320px – 374px) */
+@media (max-width: 374px) {
+    :root {
+        --mobile-nav-height: 56px;
+    }
+
+    body:not(.is-messenger-page):not(.call-room) {
+        padding-bottom: calc(56px + var(--sab) + 8px) !important;
+    }
+
+    .mobile-nav-btn {
+        min-width: 0 !important;
+        padding: 2px 0 !important;
+    }
+
+    .mobile-nav-label {
+        font-size: 10px !important;
+        letter-spacing: -0.2px !important;
+    }
+
+    .mobile-nav-create-bubble {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    .mobile-nav-create-bubble svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    .mobile-nav-badge {
+        width: 16px !important;
+        height: 16px !important;
+        font-size: 9.5px !important;
+        top: -3px !important;
+        right: -6px !important;
+    }
+
+    .mobile-create-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+
+    .mobile-drawer-quick-row {
+        gap: 5px !important;
+    }
+
+    .mobile-drawer-quick-chip {
+        padding: 6px 8px !important;
+        font-size: 11px !important;
+    }
+
+    .header-left {
+        max-width: 160px !important;
+    }
+
+    .bondhoo-main-brand-logo {
+        max-width: 120px !important;
+        height: 30px !important;
+    }
+
+    .feed-container {
+        padding: 10px 8px !important;
+        gap: 12px !important;
+    }
+
+    .fb-card {
+        padding: 12px 10px !important;
+    }
+
+    .modal-box,
+    .modal-content,
+    .jj-modal,
+    .fb-modal-card {
+        max-width: calc(100vw - 16px) !important;
+        margin: 6px auto !important;
+        padding: 14px 12px !important;
+    }
+}
+
+/* Standard Mobile Phones (375px – 479px) */
+@media (min-width: 375px) and (max-width: 479px) {
+    .feed-container {
+        padding: 12px 10px !important;
+    }
+
+    .modal-box,
+    .modal-content,
+    .jj-modal,
+    .fb-modal-card {
+        max-width: calc(100vw - 20px) !important;
+        margin: 10px auto !important;
+        padding: 18px 16px !important;
+    }
+}
+
+/* Large Mobile Phones (480px – 767px) */
+@media (min-width: 480px) and (max-width: 767px) {
+    .feed-container {
+        padding: 14px 12px !important;
+    }
+}
+
+/* Tablets (768px – 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .main-container {
+        grid-template-columns: 220px minmax(0, 1fr) !important;
+    }
+
+    .feed-container {
+        max-width: 680px !important;
+        padding: 18px 16px !important;
+    }
+}
+
+/* Small Laptops (1024px – 1279px) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+    .main-container {
+        grid-template-columns: 240px minmax(0, 1fr) 260px !important;
+    }
+}
+
+/* Large Desktops & Monitors (1600px+) */
+@media (min-width: 1600px) {
+    .main-app-container {
+        max-width: 1520px !important;
+    }
+
+    .main-container {
+        grid-template-columns: 340px minmax(0, 780px) 340px !important;
+        justify-content: center !important;
+    }
+
+    .feed-container {
+        max-width: 780px !important;
+    }
+}
+

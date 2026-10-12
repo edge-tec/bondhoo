@@ -99,6 +99,7 @@
             min-height: 100% !important;
             max-height: 100% !important;
             overflow: hidden !important;
+            padding-bottom: 0 !important;
         }
 
         /* TOP NAVIGATION BAR */
@@ -626,6 +627,14 @@
                 right: 8px;
                 width: auto;
                 max-width: none;
+            }
+            .dropdown-menu-box {
+                position: fixed;
+                top: 56px;
+                right: 8px;
+                left: auto;
+                width: min(290px, calc(100vw - 16px));
+                max-width: calc(100vw - 16px);
             }
         }
 

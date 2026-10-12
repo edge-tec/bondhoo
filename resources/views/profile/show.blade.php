@@ -4376,6 +4376,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/css/enterprise-profile-redesign.css?v={{ time() }}">
 </head>
 <body class="has-slim-dock">
 
@@ -4957,19 +4958,23 @@
 
                 <!-- Action Buttons in One Sleek Flex Row -->
                 <div class="profile-actions-bar">
-                    <!-- Desktop Header Stats Counters (As in Desktop Mockup) -->
-                    <div class="profile-desktop-stats-box desktop-only">
-                        <div class="desktop-stat-counter" onclick="switchTab('friends')">
+                    <!-- Header Statistics Metric Deck -->
+                    <div class="profile-desktop-stats-box profile-stats-deck">
+                        <div class="desktop-stat-counter" onclick="switchTab('friends')" title="বন্ধুরা">
                             <span class="stat-count">{{ number_format($profile['friends_count']) }}</span>
-                            <span class="stat-label">জন বন্ধু</span>
+                            <span class="stat-label">বন্ধু</span>
                         </div>
-                        <div class="desktop-stat-counter" onclick="openFollowModal('followers')">
+                        <div class="desktop-stat-counter" onclick="openFollowModal('followers')" title="ফলোয়ার">
                             <span class="stat-count">{{ number_format($profile['followers_count'] ?? 0) }}</span>
-                            <span class="stat-label">জন ফলোয়ার</span>
+                            <span class="stat-label">ফলোয়ার</span>
                         </div>
-                        <div class="desktop-stat-counter" onclick="switchTab('posts')">
+                        <div class="desktop-stat-counter" onclick="openFollowModal('following')" title="ফলোয়িং">
+                            <span class="stat-count">{{ number_format($profile['following_count'] ?? 0) }}</span>
+                            <span class="stat-label">ফলোয়িং</span>
+                        </div>
+                        <div class="desktop-stat-counter" onclick="switchTab('posts')" title="পোস্টসমূহ">
                             <span class="stat-count">{{ number_format($profile['posts_count'] ?? 0) }}</span>
-                            <span class="stat-label">টি পোস্ট</span>
+                            <span class="stat-label">পোস্ট</span>
                         </div>
                     </div>
 

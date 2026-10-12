@@ -695,8 +695,64 @@
             border-right: none;
             border-bottom: 1px solid var(--fb-border);
         }
+        .friends-nav-group {
+            flex-direction: row;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 8px 12px;
+            gap: 8px;
+        }
+        .friends-nav-item {
+            white-space: nowrap;
+            flex-shrink: 0;
+            padding: 8px 12px;
+            font-size: 13.5px;
+        }
         .friends-content {
-            padding: 16px;
+            padding: 16px 14px;
+        }
+        .friends-grid {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .friends-content {
+            padding: 12px 8px;
+        }
+        .friends-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .friends-sidebar-header {
+            padding: 12px 14px;
+        }
+        .friends-sidebar-title {
+            font-size: 20px;
+        }
+        .bulk-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .bulk-btn-group {
+            width: 100%;
+            flex-wrap: wrap;
+        }
+    }
+
+    @media (max-width: 374px) {
+        .friends-sidebar-title {
+            font-size: 18px;
+        }
+        .friends-nav-item {
+            font-size: 12.5px;
+            padding: 6px 10px;
+        }
+        .friends-nav-icon {
+            width: 28px;
+            height: 28px;
         }
     }
 </style>

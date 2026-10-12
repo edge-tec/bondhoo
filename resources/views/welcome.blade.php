@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <title>Bondhoo — Next-Generation Social Network</title>
         <meta name="description" content="Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্ক। বন্ধু ও পরিজনদের সাথে যুক্ত থাকুন, মনের ভাব প্রকাশ করুন নিরাপদে।">
         <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -33,10 +33,12 @@
                 background-color: var(--bg);
                 color: var(--text);
                 min-height: 100vh;
+                min-height: 100dvh;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
                 overflow-x: hidden;
+                padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
             }
             .glow-bg {
                 position: fixed;
@@ -44,6 +46,7 @@
                 left: 50%;
                 transform: translateX(-50%);
                 width: 900px;
+                max-width: 100vw;
                 height: 500px;
                 background: radial-gradient(ellipse at center, var(--primary-glow) 0%, rgba(9, 13, 22, 0) 70%);
                 z-index: 0;
@@ -139,6 +142,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: 3rem;
+                width: 100%;
             }
             .hero {
                 text-align: center;
@@ -148,13 +152,14 @@
                 gap: 1.25rem;
             }
             .hero h1 {
-                font-size: clamp(2.5rem, 5vw, 4rem);
+                font-size: clamp(2rem, 5vw, 4rem);
                 font-weight: 800;
                 letter-spacing: -0.03em;
                 line-height: 1.15;
                 background: linear-gradient(180deg, #ffffff 40%, #9ca3af 100%);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
+                word-break: break-word;
             }
             .hero p {
                 max-width: 650px;
@@ -171,7 +176,7 @@
             }
             .grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
                 gap: 1.5rem;
             }
             .card {
@@ -181,6 +186,7 @@
                 padding: 1.75rem;
                 backdrop-filter: blur(8px);
                 transition: transform 0.2s ease, border-color 0.2s ease;
+                word-break: break-word;
             }
             .card:hover {
                 border-color: rgba(99, 102, 241, 0.4);
@@ -193,6 +199,7 @@
                 font-size: 1.1rem;
                 font-weight: 600;
                 margin-bottom: 0.75rem;
+                flex-wrap: wrap;
             }
             .endpoint-badge {
                 display: inline-block;
@@ -222,15 +229,84 @@
                 background: rgba(15, 23, 42, 0.6);
                 border-radius: 8px;
                 border: 1px solid rgba(255, 255, 255, 0.05);
+                gap: 8px;
+                word-break: break-all;
             }
             footer {
                 position: relative;
                 z-index: 10;
-                padding: 2rem;
+                padding: 2rem 1.5rem;
                 text-align: center;
                 font-size: 0.85rem;
                 color: var(--text-muted);
                 border-top: 1px solid var(--border);
+            }
+
+            @media (max-width: 768px) {
+                header {
+                    padding: 1rem 1.25rem;
+                    gap: 0.75rem;
+                }
+                main {
+                    padding: 2.5rem 1.25rem;
+                    gap: 2rem;
+                }
+                .grid {
+                    grid-template-columns: 1fr;
+                    gap: 1.25rem;
+                }
+            }
+
+            @media (max-width: 480px) {
+                header {
+                    padding: 0.75rem 1rem;
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+                .header-actions {
+                    justify-content: space-between;
+                    width: 100%;
+                }
+                .badge-live {
+                    display: none;
+                }
+                .hero h1 {
+                    font-size: 1.85rem;
+                }
+                .hero p {
+                    font-size: 1rem;
+                }
+                .hero-cta {
+                    flex-direction: column;
+                    width: 100%;
+                }
+                .hero-cta a {
+                    width: 100%;
+                    text-align: center;
+                    justify-content: center;
+                }
+                .card {
+                    padding: 1.25rem;
+                }
+            }
+
+            @media (max-width: 374px) {
+                header {
+                    padding: 0.5rem 0.75rem;
+                }
+                .logo-img {
+                    height: 32px;
+                }
+                .hero h1 {
+                    font-size: 1.6rem;
+                }
+                .card {
+                    padding: 1rem 0.75rem;
+                }
+                .endpoint-item {
+                    font-size: 0.75rem;
+                    padding: 0.5rem 0.6rem;
+                }
             }
         </style>
     </head>

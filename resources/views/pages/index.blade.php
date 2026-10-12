@@ -105,9 +105,52 @@
         background: var(--fb-card);
         border-radius: 12px;
         width: 480px;
-        max-width: 90vw;
+        max-width: min(94vw, 480px);
+        max-height: calc(100dvh - 32px);
+        overflow-y: auto;
         box-shadow: var(--shadow-lg);
-        overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+        .pages-header-banner {
+            padding: 22px 18px;
+            border-radius: 10px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 14px;
+        }
+        .pages-header-banner .btn-fb-primary {
+            width: 100%;
+            justify-content: center;
+        }
+        .pages-grid {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .pages-grid {
+            grid-template-columns: 1fr;
+        }
+        .pages-header-banner h1 {
+            font-size: 20px;
+        }
+    }
+
+    @media (max-width: 374px) {
+        .pages-header-banner {
+            padding: 16px 14px;
+        }
+        .pages-header-banner h1 {
+            font-size: 18px;
+        }
+        .page-cover-box {
+            height: 80px;
+        }
+        .page-card-body {
+            padding: 28px 12px 12px;
+        }
     }
 </style>
 @endsection

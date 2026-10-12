@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>টু-ফ্যাক্টর অথেন্টিকেশন — Bondhoo</title>
     <meta name="description" content="Bondhoo টু-ফ্যাক্টর নিরাপত্তা যাচাই">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -31,11 +31,12 @@
         body {
             background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px 16px;
+            padding: max(20px, env(safe-area-inset-top, 20px)) max(16px, env(safe-area-inset-right, 16px)) max(20px, env(safe-area-inset-bottom, 20px)) max(16px, env(safe-area-inset-left, 16px));
         }
         .brand-header {
             margin-bottom: 24px;
@@ -57,6 +58,7 @@
             border: 1px solid var(--bh-border);
             padding: 32px 28px;
             text-align: center;
+            word-break: break-word;
         }
         .icon-shield {
             width: 56px;
@@ -103,6 +105,9 @@
             cursor: pointer;
             box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .btn-verify:hover:not(:disabled) {
             transform: translateY(-1px);
@@ -112,12 +117,28 @@
             opacity: 0.7;
             cursor: not-allowed;
         }
-        .backup-link { margin-top: 20px; font-size: 13px; }
+        .backup-link { margin-top: 20px; font-size: 13px; line-height: 1.4; }
         .backup-link a { color: var(--bh-primary); text-decoration: none; cursor: pointer; font-weight: 600; }
         .backup-link a:hover { text-decoration: underline; }
         .alert-box { padding: 12px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; line-height: 1.4; }
         .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
         .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+
+        @media (max-width: 480px) {
+            .card { padding: 24px 18px; border-radius: 14px; }
+            .title { font-size: 20px; }
+            .desc { font-size: 13.5px; margin-bottom: 18px; }
+            .code-input { height: 50px; font-size: 21px; letter-spacing: 5px; }
+            .logo-img { height: 42px; }
+        }
+        @media (max-width: 374px) {
+            .card { padding: 20px 14px; border-radius: 12px; }
+            .title { font-size: 18px; }
+            .desc { font-size: 13px; }
+            .code-input { height: 46px; font-size: 18px; letter-spacing: 3px; }
+            .logo-img { height: 36px; }
+            .icon-shield { width: 48px; height: 48px; }
+        }
     </style>
 </head>
 <body>

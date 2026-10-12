@@ -965,9 +965,13 @@
     .jj-composer-card {
         max-width: 100%;
         max-height: 100vh;
+        max-height: 100dvh;
         height: 100vh;
+        height: 100dvh;
         border-radius: 0;
         border: none;
+        padding-top: env(safe-area-inset-top, 0px);
+        box-sizing: border-box;
     }
 
     .jj-composer-header {
@@ -976,17 +980,33 @@
 
     .jj-composer-body {
         padding: 12px 16px;
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .jj-composer-toolbar {
         padding: 8px 12px;
+        flex-wrap: wrap;
+        gap: 6px;
     }
 
     .jj-composer-footer {
-        padding: 8px 16px 20px;
+        padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
     }
 
     .jj-gif-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 374px) {
+    .jj-composer-header-title h3 {
+        font-size: 15px !important;
+    }
+
+    .jj-composer-toolbar-btn {
+        padding: 6px 8px !important;
+        font-size: 11.5px !important;
     }
 }

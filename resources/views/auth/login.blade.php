@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>লগইন করুন — Bondhoo সোশ্যাল নেটওয়ার্ক</title>
     <meta name="description" content="Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্কে লগইন করুন। বন্ধু ও পরিজনদের সাথে যুক্ত থাকুন, মনের কথা শেয়ার করুন।">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -404,6 +404,45 @@
                 width: 100%;
                 max-width: 420px;
                 padding: 24px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-container {
+                padding: 24px 12px calc(24px + env(safe-area-inset-bottom, 0px));
+            }
+            .auth-wrapper {
+                gap: 20px;
+            }
+            .brand-headline {
+                font-size: 20px;
+            }
+            .brand-subtext {
+                font-size: 13px;
+            }
+            .form-card {
+                padding: 20px 16px;
+                border-radius: 14px;
+            }
+            .input-group input {
+                height: 44px;
+                font-size: 14px;
+            }
+            .btn-submit {
+                height: 46px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 374px) {
+            .main-container {
+                padding: 16px 8px calc(16px + env(safe-area-inset-bottom, 0px));
+            }
+            .form-card {
+                padding: 16px 12px;
+            }
+            .brand-headline {
+                font-size: 18px;
             }
         }
     </style>

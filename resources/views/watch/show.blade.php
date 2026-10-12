@@ -714,6 +714,50 @@
             justify-content: center;
         }
     }
+
+    @media (max-width: 480px) {
+        .video-viewport {
+            height: auto;
+            aspect-ratio: 16 / 9;
+            max-height: 260px;
+        }
+        .viewer-chat-sidebar {
+            height: 420px;
+        }
+        .stream-info-text h1 {
+            font-size: 15px;
+            word-break: break-word;
+        }
+        .broadcaster-bar {
+            padding: 12px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+        .top-left-badges, .top-right-badges {
+            gap: 6px;
+        }
+        .live-status-pill {
+            padding: 4px 10px;
+            font-size: 11px;
+        }
+    }
+
+    @media (max-width: 374px) {
+        .viewer-layout {
+            padding: 4px;
+            gap: 8px;
+        }
+        .broadcaster-bar {
+            padding: 10px;
+        }
+        .viewer-chat-sidebar {
+            height: 380px;
+        }
+        .stream-info-text h1 {
+            font-size: 14px;
+        }
+    }
 </style>
 @endsection
 

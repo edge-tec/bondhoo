@@ -1657,6 +1657,31 @@
             #feedPostsStream .reactions-bar { margin: 0 12px !important; }
             #feedPostsStream .post-buttons-bar .post-btn span { font-size: 13px !important; }
         }
+
+        @media (max-width: 480px) {
+            .feed-container { padding: 10px 8px !important; gap: 12px !important; }
+            #feedPostsStream .post-header { padding: 10px 10px 6px !important; }
+            #feedPostsStream .post-body { padding: 0 10px 8px !important; }
+            #feedPostsStream .reactions-bar { margin: 0 10px !important; padding: 8px 4px !important; font-size: 12px !important; }
+            #feedPostsStream .post-buttons-bar { padding: 4px 6px !important; }
+            #feedPostsStream .post-buttons-bar .post-btn { padding: 6px 4px !important; gap: 4px !important; }
+            #feedPostsStream .post-buttons-bar .post-btn span { font-size: 12px !important; }
+            .jj-reaction-popover { max-width: calc(100vw - 20px) !important; left: 0 !important; gap: 5px !important; padding: 4px 6px !important; }
+            .jj-reaction-pop-item { font-size: 21px !important; }
+            .bondhoo-main-brand-logo { max-width: 135px !important; height: 32px !important; }
+            .header-left { max-width: 200px !important; }
+            .header-right { gap: 6px !important; }
+            .circle-btn { width: 36px !important; height: 36px !important; }
+        }
+
+        @media (max-width: 374px) {
+            .feed-container { padding: 8px 6px !important; gap: 10px !important; }
+            #feedPostsStream .post-buttons-bar .post-btn span { font-size: 11px !important; }
+            .jj-reaction-pop-item { font-size: 19px !important; }
+            .bondhoo-main-brand-logo { max-width: 120px !important; height: 28px !important; }
+            .header-left { max-width: 155px !important; }
+            .circle-btn { width: 34px !important; height: 34px !important; }
+        }
     </style>
 </head>
 <body>
@@ -4546,6 +4571,8 @@
         let currentUser = __injectedServerUser || JSON.parse(localStorage.getItem('bondhoo_user') || localStorage.getItem('jugajug_user') || 'null');
         window.currentToken = currentToken;
         window.currentUser = currentUser;
+        window.highlightPostId = {{ isset($highlightPostId) ? (int)$highlightPostId : 'null' }};
+        window.initialSearchQuery = {!! isset($initialSearchQuery) ? json_encode($initialSearchQuery) : 'null' !!};
 
         /**
          * Harden every same-origin API request: always attach CSRF + session credentials,
@@ -5191,6 +5218,27 @@
                 }
 
                 container.innerHTML = liveCardsHtml + posts.map(p => renderFeedPostCard(p)).join('');
+
+                if (window.highlightPostId) {
+                    setTimeout(() => {
+                        const target = document.getElementById(`post-card-${window.highlightPostId}`);
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            target.style.boxShadow = '0 0 0 3px var(--fb-primary)';
+                            setTimeout(() => { target.style.boxShadow = ''; }, 4000);
+                        }
+                    }, 250);
+                }
+
+                if (window.initialSearchQuery) {
+                    setTimeout(() => {
+                        const s = document.getElementById('globalAppSearch');
+                        if (s) {
+                            s.value = window.initialSearchQuery;
+                            s.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    }, 200);
+                }
             } catch (err) {
                 console.error('Feed error:', err);
                 container.innerHTML = `<div class="fb-card" style="padding: 16px; color: #ef4444; text-align: center;">ফিড লোড হতে সমস্যা হয়েছে। অনুগ্রহ করে রিফ্রেশ করুন।</div>`;

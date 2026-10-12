@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>নতুন অ্যাকাউন্ট তৈরি করুন — Bondhoo সোশ্যাল নেটওয়ার্ক</title>
     <meta name="description" content="Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্কে যুক্ত হোন। সহজে ও নিরাপদে আপনার নতুন অ্যাকাউন্ট তৈরি করুন।">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -444,6 +444,38 @@
             }
             .logo-img {
                 height: 36px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px 12px calc(20px + env(safe-area-inset-bottom, 0px));
+            }
+            .card {
+                padding: 20px 14px;
+            }
+            .card-title {
+                font-size: 20px;
+            }
+            .form-input, .form-select {
+                height: 44px;
+                font-size: 13.5px;
+            }
+            .btn-submit {
+                height: 46px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 374px) {
+            .container {
+                padding: 12px 8px calc(16px + env(safe-area-inset-bottom, 0px));
+            }
+            .card {
+                padding: 16px 10px;
+            }
+            .card-title {
+                font-size: 18px;
             }
         }
     </style>

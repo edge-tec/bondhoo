@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>অ্যাডমিন সিকিউরিটি লগইন — Bondhoo Enterprise Console</title>
     <meta name="description" content="Bondhoo সোশ্যাল নেটওয়ার্ক সেন্ট্রাল অ্যাডমিনিস্ট্রেটিভ ও সিকিউরিটি কনসোল প্রবেশদ্বার।">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -36,9 +36,11 @@
             background: radial-gradient(circle at 50% 20%, #172554 0%, #090d16 100%);
             color: var(--adm-text-main);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
         }
 
         .header-strip {
@@ -49,6 +51,7 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             background: rgba(11, 19, 41, 0.7);
             backdrop-filter: blur(12px);
+            gap: 12px;
         }
 
         .brand-badge {
@@ -309,6 +312,58 @@
             font-size: 12px;
             color: #475569;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        @media (max-width: 480px) {
+            .header-strip {
+                padding: 12px 16px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .sec-level-tag {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+            .login-wrap {
+                padding: 24px 12px;
+            }
+            .login-box {
+                padding: 24px 18px;
+                border-radius: 12px;
+            }
+            .login-title {
+                font-size: 19px;
+            }
+            .login-subtitle {
+                font-size: 12.5px;
+            }
+            .btn-admin-submit {
+                height: 44px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 374px) {
+            .header-strip {
+                padding: 10px 12px;
+            }
+            .brand-title {
+                font-size: 16px;
+            }
+            .sec-level-tag {
+                font-size: 9.5px;
+                padding: 2px 6px;
+            }
+            .login-box {
+                padding: 18px 14px;
+            }
+            .login-title {
+                font-size: 17px;
+            }
+            .shield-icon {
+                width: 48px;
+                height: 48px;
+            }
         }
     </style>
 </head>

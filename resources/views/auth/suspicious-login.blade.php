@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>সন্দেহজনক লগইন সতর্কতা — Bondhoo</title>
     <meta name="description" content="Bondhoo অ্যাকাউন্টে সন্দেহজনক লগইন কার্যকলাপ শনাক্ত হয়েছে।">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -30,11 +30,12 @@
         body {
             background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px 16px;
+            padding: max(20px, env(safe-area-inset-top, 20px)) max(16px, env(safe-area-inset-right, 16px)) max(20px, env(safe-area-inset-bottom, 20px)) max(16px, env(safe-area-inset-left, 16px));
         }
         .brand-header {
             margin-bottom: 24px;
@@ -56,6 +57,7 @@
             border: 1px solid var(--bh-border);
             padding: 32px 28px;
             text-align: center;
+            word-break: break-word;
         }
         .icon-warn {
             width: 60px;
@@ -80,6 +82,7 @@
             line-height: 1.6;
             margin-bottom: 22px;
             color: #92400e;
+            word-break: break-word;
         }
         .btn-group { display: flex; gap: 12px; }
         .btn-confirm {
@@ -94,6 +97,9 @@
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .btn-confirm:hover {
             transform: translateY(-1px);
@@ -117,6 +123,23 @@
         }
         .btn-deny:hover {
             background: #dc2626;
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 24px 18px; border-radius: 14px; }
+            .title { font-size: 20px; }
+            .desc { font-size: 13.5px; }
+            .btn-group { flex-direction: column; gap: 10px; }
+            .btn-confirm, .btn-deny { width: 100%; }
+            .logo-img { height: 42px; }
+        }
+        @media (max-width: 374px) {
+            .card { padding: 20px 14px; border-radius: 12px; }
+            .title { font-size: 18px; }
+            .desc { font-size: 13px; }
+            .info-card { font-size: 12.5px; padding: 12px; }
+            .logo-img { height: 36px; }
+            .icon-warn { width: 50px; height: 50px; }
         }
     </style>
 </head>

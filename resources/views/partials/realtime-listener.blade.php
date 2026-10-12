@@ -3,10 +3,25 @@
     $jjSyncCursor = 0;
     try {
         if (\Illuminate\Support\Facades\Schema::hasTable('messenger_sync_events')) {
-            $jjSyncCursor = (int) \App\Models\MessengerSyncEvent::max('id');
+            $maxId = (int) \App\Models\MessengerSyncEvent::max('id');
+            $jjSyncCursor = max(0, $maxId - 30);
         }
     } catch (\Throwable $e) {}
     $jjAuthUser = auth('web')->user();
+    if (! $jjAuthUser && request()->hasCookie('jugajug_token')) {
+        $rawToken = (string) request()->cookie('jugajug_token');
+        $pat = \Laravel\Sanctum\PersonalAccessToken::findToken($rawToken);
+        if ($pat && $pat->tokenable instanceof \App\Models\User) {
+            $jjAuthUser = $pat->tokenable;
+        }
+    }
+    if (! $jjAuthUser && request()->hasCookie('bondhoo_token')) {
+        $rawToken = (string) request()->cookie('bondhoo_token');
+        $pat = \Laravel\Sanctum\PersonalAccessToken::findToken($rawToken);
+        if ($pat && $pat->tokenable instanceof \App\Models\User) {
+            $jjAuthUser = $pat->tokenable;
+        }
+    }
     $jjAuthUserId = $jjAuthUser?->id;
     $jjServerToken = $jjAuthUser ? ($jjAuthUser->createToken('realtime_listener')->plainTextToken ?? '') : '';
 @endphp
@@ -85,9 +100,11 @@
         let cursor = {{ $jjSyncCursor }};
         let myUserId = {{ $jjAuthUserId ? (int) $jjAuthUserId : 'null' }};
         let ringingCall = null;
+        let callTimeoutTimer = null;
         let inFlight = false;
         let failures = 0;
         let alertTimer = null;
+        let pollIteration = 0;
         const isCallRoom = window.location.pathname.startsWith('/call/');
         const isMessengerPage = window.location.pathname.startsWith('/messages');
 
@@ -130,6 +147,10 @@
         }
 
         function hideIncoming() {
+            if (callTimeoutTimer) {
+                clearTimeout(callTimeoutTimer);
+                callTimeoutTimer = null;
+            }
             stopRingtone();
             ringingCall = null;
             const box = document.getElementById('jjIncomingCall');
@@ -155,9 +176,37 @@
             box.style.display = 'flex';
             startRingtone(payload.call_id);
 
+            // Auto-dismiss if not answered within 45 seconds
+            if (callTimeoutTimer) clearTimeout(callTimeoutTimer);
+            callTimeoutTimer = setTimeout(() => {
+                if (ringingCall && Number(ringingCall.call_id) === Number(payload.call_id)) {
+                    hideIncoming();
+                }
+            }, 45000);
+
             if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
                 try { new Notification(`${payload.caller?.name || 'কেউ'} আপনাকে কল করছেন`, { body: isVideo ? 'ভিডিও কল' : 'অডিও কল', tag: `call-${payload.call_id}` }); } catch (e) {}
             }
+        }
+
+        async function checkActiveIncomingCall() {
+            if (isCallRoom) return;
+            try {
+                const res = await apiFetch('/api/v1/calls/active');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.success && data.data && data.data.id) {
+                    const call = data.data;
+                    showIncoming({
+                        call_id: call.id,
+                        conversation_id: call.conversation_id,
+                        caller: call.caller,
+                        call_type: call.call_type
+                    });
+                } else if (ringingCall && (!data.data || data.data.status !== 'ringing')) {
+                    hideIncoming();
+                }
+            } catch (e) {}
         }
 
         window.showIncomingCall = showIncoming;
@@ -250,12 +299,13 @@
             const p = evt.payload || {};
 
             if (evt.event_type === 'call.incoming') {
-                if (isCallRoom || ringingCall) return;
+                if (isCallRoom) return;
+                if (ringingCall && Number(ringingCall.call_id) === Number(p.call_id)) return;
                 if (myUserId && Number(p.caller?.id) === Number(myUserId)) return;
-                // Avoid stale invitations (more than 3 minutes old, accounting for clock skew)
+                // Avoid stale invitations (more than 45 seconds old)
                 if (evt.timestamp) {
                     const age = Math.abs(Date.now() - new Date(evt.timestamp).getTime());
-                    if (age > 180000) return;
+                    if (age > 45000) return;
                 }
                 showIncoming(p);
             } else if ((evt.event_type === 'call.ended' || evt.event_type === 'call.rejected') && ringingCall && Number(p.call_id) === Number(ringingCall.call_id)) {
@@ -340,7 +390,13 @@
         async function poll() {
             if (inFlight) return;
             inFlight = true;
+            pollIteration++;
             try {
+                // Periodically check active incoming call every 4 poll iterations (every ~8-10 seconds)
+                if (pollIteration % 4 === 1 && !ringingCall) {
+                    checkActiveIncomingCall();
+                }
+
                 const res = await apiFetch(`/api/v1/messenger/sync?since_id=${cursor}&limit=200`);
                 if (res.status === 401 || res.status === 419) {
                     failures++;
@@ -361,7 +417,7 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        function initListeners() {
             document.getElementById('jjIncomingCallAccept')?.addEventListener('click', acceptCall);
             document.getElementById('jjIncomingCallDecline')?.addEventListener('click', declineCall);
             if ('Notification' in window && Notification.permission === 'default') {
@@ -379,7 +435,17 @@
                     .listen('.call.ended', () => hideIncoming())
                     .listen('.call.rejected', () => hideIncoming());
             }
-        });
+
+            if (!isCallRoom) {
+                checkActiveIncomingCall();
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initListeners);
+        } else {
+            initListeners();
+        }
 
         if (!isCallRoom) {
             setTimeout(poll, 1200);

@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>নতুন পাসওয়ার্ড নির্ধারণ — Bondhoo</title>
     <meta name="description" content="Bondhoo অ্যাকাউন্টের জন্য নতুন শক্তিশালী পাসওয়ার্ড নির্ধারণ করুন।">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -152,6 +152,18 @@
         }
         .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
         .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+
+        @media (max-width: 480px) {
+            body { padding: 16px 12px calc(20px + env(safe-area-inset-bottom, 0px)); }
+            .card { padding: 24px 18px; border-radius: 14px; }
+            .title { font-size: 20px; }
+            .form-input { height: 44px; font-size: 14px; }
+            .btn-submit { height: 44px; font-size: 15px; }
+        }
+        @media (max-width: 374px) {
+            .card { padding: 18px 12px; }
+            .title { font-size: 18px; }
+        }
     </style>
 </head>
 <body>

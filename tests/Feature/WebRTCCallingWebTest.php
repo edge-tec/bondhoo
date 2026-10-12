@@ -396,4 +396,92 @@ class WebRTCCallingWebTest extends TestCase
         $incomingEvents = $events->where('event_type', 'call.incoming');
         $this->assertNotEmpty($incomingEvents);
     }
+
+    public function test_callee_retrieves_active_incoming_call_from_endpoint(): void
+    {
+        // 1. Initially no active incoming call
+        $initResp = $this->actingAs($this->user2, 'sanctum')->getJson('/api/v1/calls/active');
+        $initResp->assertStatus(200);
+        $this->assertNull($initResp->json('data'));
+
+        // 2. User1 initiates call to User2
+        $callResp = $this->actingAs($this->user1, 'sanctum')->postJson('/api/v1/calls', [
+            'conversation_id' => $this->conversation->id,
+            'receiver_id' => $this->user2->id,
+            'call_type' => 'audio',
+        ]);
+        $callResp->assertStatus(201);
+        $callId = $callResp->json('data.id');
+
+        // 3. User2 queries /api/v1/calls/active and receives the active ringing call
+        $activeResp = $this->actingAs($this->user2, 'sanctum')->getJson('/api/v1/calls/active');
+        $activeResp->assertStatus(200);
+        $this->assertNotNull($activeResp->json('data'));
+        $this->assertSame($callId, $activeResp->json('data.id'));
+        $this->assertSame($this->user1->id, $activeResp->json('data.caller.id'));
+        $this->assertSame('ringing', $activeResp->json('data.status'));
+
+        // 4. Caller querying /api/v1/calls/active gets null (they are caller, not incoming callee)
+        $callerResp = $this->actingAs($this->user1, 'sanctum')->getJson('/api/v1/calls/active');
+        $callerResp->assertStatus(200);
+        $this->assertNull($callerResp->json('data'));
+
+        // 5. When User2 declines the call, /api/v1/calls/active returns null
+        $this->actingAs($this->user2, 'sanctum')->postJson("/api/v1/calls/{$callId}/respond", [
+            'action' => 'reject',
+        ])->assertStatus(200);
+
+        $endedResp = $this->actingAs($this->user2, 'sanctum')->getJson('/api/v1/calls/active');
+        $endedResp->assertStatus(200);
+        $this->assertNull($endedResp->json('data'));
+    }
+
+    public function test_call_web_controller_distinguishes_caller_and_callee_call_ids(): void
+    {
+        $call = Call::create([
+            'conversation_id' => $this->conversation->id,
+            'caller_id' => $this->user1->id,
+            'call_type' => 'video',
+            'status' => 'ringing',
+            'room_id' => 'room-test-123',
+            'started_at' => now(),
+        ]);
+
+        CallParticipant::create([
+            'call_id' => $call->id,
+            'user_id' => $this->user1->id,
+            'role' => 'caller',
+            'status' => 'accepted',
+        ]);
+
+        CallParticipant::create([
+            'call_id' => $call->id,
+            'user_id' => $this->user2->id,
+            'role' => 'callee',
+            'status' => 'ringing',
+        ]);
+
+        // Caller User1 accessing /call/{id}?call_id={id} gets callerCallId and NO answerCallId
+        $callerResponse = $this->actingAs($this->user1)->get("/call/{$this->conversation->id}?call_id={$call->id}");
+        $callerResponse->assertStatus(200);
+        $callerResponse->assertViewHas('callerCallId', $call->id);
+        $callerResponse->assertViewHas('answerCallId', null);
+
+        // Callee User2 accessing /call/{id}?call_id={id}&answer=1 gets answerCallId and NO callerCallId
+        $calleeResponse = $this->actingAs($this->user2)->get("/call/{$this->conversation->id}?call_id={$call->id}&answer=1");
+        $calleeResponse->assertStatus(200);
+        $calleeResponse->assertViewHas('answerCallId', $call->id);
+        $calleeResponse->assertViewHas('callerCallId', null);
+    }
+
+    public function test_bondhoo_token_cookie_authenticates_user_in_call_web_controller(): void
+    {
+        $token = $this->user1->createToken('test_auth')->plainTextToken;
+
+        $response = $this->withUnencryptedCookie('bondhoo_token', $token)
+            ->get("/call/{$this->conversation->id}?type=audio");
+
+        $response->assertStatus(200);
+        $response->assertSee('সাকিব আল হাসান');
+    }
 }

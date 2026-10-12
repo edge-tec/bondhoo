@@ -500,6 +500,68 @@
                 border-radius: 14px;
             }
         }
+
+        @media (max-width: 374px) {
+            .call-controls-dock {
+                padding: 8px 10px;
+                gap: 7px;
+                max-width: 98vw;
+            }
+            .control-btn {
+                width: 38px;
+                height: 38px;
+            }
+            .control-btn.hangup {
+                width: 44px;
+                height: 44px;
+            }
+            .local-video-pip {
+                width: 88px;
+                height: 120px;
+                right: 8px;
+                border-radius: 10px;
+            }
+            .peer-avatar {
+                width: 34px;
+                height: 34px;
+            }
+            .peer-text h2 {
+                font-size: 13.5px;
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 500px) {
+            .call-header {
+                padding: calc(6px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) 6px calc(14px + env(safe-area-inset-left, 0px));
+            }
+            .call-controls-dock {
+                bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+                padding: 6px 14px;
+                gap: 8px;
+            }
+            .control-btn {
+                width: 38px;
+                height: 38px;
+            }
+            .control-btn.hangup {
+                width: 42px;
+                height: 42px;
+            }
+            .local-video-pip {
+                top: calc(48px + env(safe-area-inset-top, 0px));
+                right: calc(12px + env(safe-area-inset-right, 0px));
+                width: 120px;
+                height: 84px;
+                border-radius: 10px;
+            }
+            .peer-avatar {
+                width: 32px;
+                height: 32px;
+            }
+            .peer-text h2 {
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -673,10 +735,14 @@
         const CSRF_TOKEN = '{{ csrf_token() }}';
         const ICE_SERVERS = @json($iceServers);
         const ANSWER_CALL_ID = @json($answerCallId ?? null);
+        const CALLER_CALL_ID = @json($callerCallId ?? null);
         const PEER_USER_ID = @json($peerUser?->id ?? null);
         const SERVER_AUTH_TOKEN = @json($apiToken ?? null);
         if (SERVER_AUTH_TOKEN) {
-            try { localStorage.setItem('jugajug_token', SERVER_AUTH_TOKEN); } catch (e) {}
+            try {
+                localStorage.setItem('jugajug_token', SERVER_AUTH_TOKEN);
+                localStorage.setItem('bondhoo_token', SERVER_AUTH_TOKEN);
+            } catch (e) {}
         }
 
         let activeCallId = null;
@@ -1424,6 +1490,25 @@
                     return;
                 }
 
+                if (CALLER_CALL_ID) {
+                    // Caller with existing active/ringing call session (multi-friend or launched with call_id)
+                    activeCallId = CALLER_CALL_ID;
+                    setCallStatus('কল রিং হচ্ছে...');
+                    startRingbackTone();
+                    startFastSignalPolling();
+
+                    // Caller sends offer immediately
+                    sendOffer();
+
+                    clearTimeout(ringTimeoutTimer);
+                    ringTimeoutTimer = setTimeout(() => {
+                        if (!isCallAnswered) {
+                            hangUpCall('উত্তর মেলেনি (কল টাইমআউট)');
+                        }
+                    }, 45000);
+                    return;
+                }
+
                 // Caller: create call session and ring peer
                 const res = await apiFetch('/api/v1/calls', {
                     method: 'POST',
@@ -1900,6 +1985,7 @@
                 stopRingbackTone();
                 setCallStatus('সংযুক্ত (Connected)');
                 showToast('নতুন অংশগ্রহণকারী কলে যুক্ত হয়েছেন! 🎉');
+                onCallConnected();
                 if (!ANSWER_CALL_ID) {
                     if (!offerSent) {
                         sendOffer();

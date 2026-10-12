@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>টু-ফ্যাক্টর অথেনটিকেশন — Bondhoo</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
@@ -23,26 +23,32 @@
             --fb-text-secondary: #65676b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Hind Siliguri', 'Inter', sans-serif; }
-        body { background: var(--fb-bg); color: var(--fb-text-primary); min-height: 100vh; padding: 24px 16px; }
-        .container { max-width: 720px; margin: 0 auto; }
-        .header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--fb-border); }
+        body {
+            background: var(--fb-bg);
+            color: var(--fb-text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: max(20px, env(safe-area-inset-top, 20px)) max(14px, env(safe-area-inset-right, 14px)) max(20px, env(safe-area-inset-bottom, 20px)) max(14px, env(safe-area-inset-left, 14px));
+        }
+        .container { max-width: 720px; margin: 0 auto; width: 100%; }
+        .header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--fb-border); flex-wrap: wrap; gap: 12px; }
         .logo { font-size: 26px; font-weight: 800; color: var(--fb-primary); text-decoration: none; }
-        .nav-links { display: flex; gap: 10px; }
-        .nav-link { font-size: 14px; font-weight: 600; color: var(--fb-text-secondary); text-decoration: none; padding: 6px 12px; border-radius: 6px; background: #e4e6eb; transition: background 0.2s; }
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
+        .nav-link { font-size: 13.5px; font-weight: 600; color: var(--fb-text-secondary); text-decoration: none; padding: 6px 12px; border-radius: 6px; background: #e4e6eb; transition: background 0.2s; white-space: nowrap; }
         .nav-link:hover { background: #d8dadf; }
 
-        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; word-break: break-word; }
         .page-subtitle { font-size: 14px; color: var(--fb-text-secondary); margin-bottom: 20px; line-height: 1.4; }
 
-        .alert { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 18px; }
+        .alert { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 18px; word-break: break-word; }
         .alert-success { background: #e7f3ff; color: #1877f2; border: 1px solid #1877f2; }
         .alert-error { background: #ffebe8; color: #e41e3f; border: 1px solid #e41e3f; }
 
-        .card { background: var(--fb-card-bg); border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: 1px solid #dddfe2; padding: 22px; margin-bottom: 20px; }
-        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .card-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .card { background: var(--fb-card-bg); border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: 1px solid #dddfe2; padding: 22px; margin-bottom: 20px; word-break: break-word; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        .card-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-        .status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 12px; white-space: nowrap; }
         .badge-active { background: #e7f8ec; color: #1e8e3e; }
         .badge-disabled { background: #f0f2f5; color: var(--fb-text-secondary); }
 
@@ -55,8 +61,8 @@
         .btn-secondary:hover { background: #d8dadf; }
 
         .qr-section { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px dashed var(--fb-border); margin-bottom: 20px; }
-        .qr-img { width: 180px; height: 180px; border-radius: 8px; border: 1px solid #ccd0d5; background: white; padding: 8px; margin-bottom: 14px; }
-        .secret-box { background: white; border: 1px solid #ccd0d5; border-radius: 6px; padding: 8px 14px; font-family: monospace; font-size: 16px; font-weight: 700; color: #1c1e21; letter-spacing: 2px; margin-bottom: 8px; word-break: break-all; }
+        .qr-img { width: 180px; height: 180px; max-width: 100%; border-radius: 8px; border: 1px solid #ccd0d5; background: white; padding: 8px; margin-bottom: 14px; }
+        .secret-box { background: white; border: 1px solid #ccd0d5; border-radius: 6px; padding: 8px 14px; font-family: monospace; font-size: 16px; font-weight: 700; color: #1c1e21; letter-spacing: 2px; margin-bottom: 8px; word-break: break-all; max-width: 100%; }
 
         .code-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 16px 0; }
         .code-pill { background: #f0f2f5; border: 1px solid #ccd0d5; border-radius: 6px; padding: 8px; text-align: center; font-family: monospace; font-weight: 700; font-size: 14px; color: #050505; }
@@ -64,8 +70,27 @@
         .input-field { width: 100%; height: 44px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 12px; font-size: 15px; outline: none; margin-bottom: 14px; }
         .input-field:focus { border-color: var(--fb-primary); }
 
-        .apps-list { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0 18px; }
+        .apps-list { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 18px; }
         .app-badge { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: #e7f3ff; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--fb-primary); }
+
+        .inline-submit-wrap { display: flex; gap: 10px; max-width: 360px; }
+
+        @media (max-width: 480px) {
+            .card { padding: 16px 14px; border-radius: 8px; }
+            .page-title { font-size: 20px; }
+            .code-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .code-pill { font-size: 12.5px; padding: 6px 4px; }
+            .inline-submit-wrap { flex-direction: column; width: 100%; max-width: 100%; }
+            .inline-submit-wrap .btn { width: 100%; }
+        }
+
+        @media (max-width: 374px) {
+            .card { padding: 14px 10px; }
+            .page-title { font-size: 18px; }
+            .qr-img { width: 150px; height: 150px; }
+            .secret-box { font-size: 14px; letter-spacing: 1px; padding: 6px 10px; }
+            .code-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -189,7 +214,7 @@
                 <form action="{{ route('settings.two-factor.enable') }}" method="POST">
                     @csrf
                     <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">৬ সংখ্যার ওটিপি কোড দিয়ে নিশ্চিত করুন:</h3>
-                    <div style="display: flex; gap: 10px; max-width: 360px;">
+                    <div class="inline-submit-wrap">
                         <input type="text" name="code" class="input-field" placeholder="যেমন: 123456" maxlength="8" required autocomplete="one-time-code" style="margin-bottom: 0;">
                         <button type="submit" class="btn btn-primary">চালু করুন</button>
                     </div>

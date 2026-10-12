@@ -142,9 +142,69 @@
         background: var(--fb-card);
         border-radius: 12px;
         width: 500px;
-        max-width: 90vw;
+        max-width: min(94vw, 500px);
+        max-height: calc(100dvh - 32px);
+        overflow-y: auto;
         box-shadow: var(--shadow-lg);
-        overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+        .market-banner {
+            padding: 22px 18px;
+            border-radius: 10px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 14px;
+        }
+        .market-banner button {
+            width: 100%;
+            justify-content: center;
+        }
+        .products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .market-banner h1 {
+            font-size: 20px;
+        }
+        .products-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .product-thumb {
+            height: 140px;
+        }
+        .product-body {
+            padding: 10px;
+        }
+        .product-price {
+            font-size: 15px;
+        }
+        .product-title {
+            font-size: 13px;
+        }
+        .cat-pill {
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+    }
+
+    @media (max-width: 374px) {
+        .market-banner {
+            padding: 16px 14px;
+        }
+        .market-banner h1 {
+            font-size: 18px;
+        }
+        .products-grid {
+            grid-template-columns: 1fr;
+        }
+        .product-thumb {
+            height: 160px;
+        }
     }
 </style>
 @endsection

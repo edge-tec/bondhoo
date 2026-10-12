@@ -71,6 +71,30 @@
             height: 300px;
         }
     }
+
+    @media (max-width: 480px) {
+        .gallery-box {
+            height: 240px;
+        }
+        .product-info-pane {
+            padding: 16px 14px;
+        }
+        .product-price-tag {
+            font-size: 24px;
+        }
+    }
+
+    @media (max-width: 374px) {
+        .gallery-box {
+            height: 200px;
+        }
+        .product-info-pane h1 {
+            font-size: 19px;
+        }
+        .product-price-tag {
+            font-size: 21px;
+        }
+    }
 </style>
 @endsection
 

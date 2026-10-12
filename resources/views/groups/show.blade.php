@@ -421,6 +421,69 @@
             padding: 30px 20px 16px 20px;
         }
     }
+
+    @media (max-width: 480px) {
+        .community-hero-cover {
+            height: 160px;
+        }
+        .community-hero-avatar {
+            width: 58px;
+            height: 58px;
+            font-size: 24px;
+            bottom: -16px;
+            left: 14px;
+            border-radius: 14px;
+        }
+        .community-hero-info {
+            padding: 24px 14px 14px 14px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+        .community-hero-title {
+            font-size: 20px;
+            word-break: break-word;
+        }
+        .community-hero-info .btn-jj-primary,
+        .community-hero-info .btn-jj-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+        .community-nav-tabs {
+            padding: 0 10px;
+        }
+        .community-tab-btn {
+            padding: 12px 14px;
+            font-size: 13px;
+        }
+        .post-card, .post-box-card {
+            padding: 14px 12px;
+            border-radius: 10px;
+        }
+        .post-actions-bar {
+            flex-wrap: wrap;
+        }
+    }
+
+    @media (max-width: 374px) {
+        .community-hero-cover {
+            height: 130px;
+        }
+        .community-hero-avatar {
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            bottom: -14px;
+            left: 10px;
+        }
+        .community-hero-title {
+            font-size: 17px;
+        }
+        .community-tab-btn {
+            padding: 10px 10px;
+            font-size: 12.5px;
+        }
+    }
 </style>
 @endsection
 

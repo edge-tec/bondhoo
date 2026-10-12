@@ -349,6 +349,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/calls', [CallController::class, 'initiate']);
         Route::get('/calls/history', [CallController::class, 'history']);
         Route::get('/calls/ice-servers', [CallController::class, 'iceServers']);
+        Route::get('/calls/active', [CallController::class, 'active']);
         Route::get('/calls/{id}', [CallController::class, 'show']);
         Route::get('/calls/{id}/signals', [CallController::class, 'signals']);
         Route::post('/calls/{id}/respond', [CallController::class, 'respond']);
