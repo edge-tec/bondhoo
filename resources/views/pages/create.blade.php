@@ -416,8 +416,11 @@
             <!-- STEP 1: Page Type Selection -->
             <div class="form-section-card step-panel" id="stepPanel1">
                 <div style="margin-bottom: 20px;">
-                    <h2 style="font-size: 20px; font-weight: 700; color: var(--fb-text); margin: 0 0 6px 0;">১. আপনার পেইজের ধরন (Page Type) নির্বাচন করুন</h2>
-                    <p style="font-size: 14px; color: var(--fb-text-secondary); margin: 0;">আপনার প্রতিষ্ঠানের সাথে মানানসই পেইজ টাইপ সিলেক্ট করুন যাতে প্রাসঙ্গিক ফিচার সক্রিয় করা যায়।</p>
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <h2 style="font-size: 20px; font-weight: 700; color: var(--fb-text); margin: 0;">১. আপনার পেইজের ধরন (Page Type) নির্বাচন করুন</h2>
+                        <span style="font-size: 13px; color: #059669; background: rgba(5,150,105,0.08); padding: 4px 10px; border-radius: 20px; font-weight: 500;">পেইজের নাম ও বিবরণ ধাপ ৩-এ নির্ধারণ করবেন</span>
+                    </div>
+                    <p style="font-size: 14px; color: var(--fb-text-secondary); margin: 6px 0 0 0;">আপনার প্রতিষ্ঠানের সাথে মানানসই পেইজ টাইপ সিলেক্ট করুন যাতে প্রাসঙ্গিক ফিচার সক্রিয় করা যায়। এরপর পরবর্তী ধাপে ক্লিক করুন।</p>
                 </div>
 
                 <!-- Page Type Search Input -->
@@ -430,7 +433,7 @@
 
                 <!-- Types Grid -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;" id="pageTypesGrid">
-                    @foreach($pageTypes as $pType)
+                    @forelse($pageTypes as $pType)
                     <div class="type-card" onclick="selectPageType({{ $pType->id }}, '{{ addslashes($pType->name) }}', '{{ $pType->slug }}')" data-type-id="{{ $pType->id }}" data-type-name="{{ strtolower($pType->name) }}" data-type-desc="{{ strtolower($pType->description) }}">
                         <div class="type-card-badge">✓</div>
                         <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(5, 150, 105, 0.1); color: #059669; display: flex; align-items: center; justify-content: center;">
@@ -439,7 +442,14 @@
                         <strong style="font-size: 15px; color: var(--fb-text);">{{ $pType->name }}</strong>
                         <p style="font-size: 12px; color: var(--fb-text-secondary); margin: 0; line-height: 1.4;">{{ $pType->description }}</p>
                     </div>
-                    @endforeach
+                    @empty
+                    <div style="grid-column: 1 / -1; padding: 24px; text-align: center; background: rgba(5, 150, 105, 0.05); border: 1px dashed #059669; border-radius: 12px;">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" style="margin: 0 auto 10px auto; display: block;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <h4 style="font-size: 15px; font-weight: 600; color: var(--fb-text); margin: 0 0 6px 0;">পেইজ টাইপ ডাটাবেজে যুক্ত করা হচ্ছে...</h4>
+                        <p style="font-size: 13px; color: var(--fb-text-secondary); margin: 0 0 12px 0;">অনুগ্রহ করে পেজটি একবার রিফ্রেশ করুন অথবা টার্মিনালে রান করুন: <code style="background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px;">php artisan db:seed --class=PageTaxonomySeeder</code></p>
+                        <button type="button" onclick="window.location.reload()" class="btn-brand-primary" style="font-size: 13px; padding: 6px 14px;">রিফ্রেশ করুন</button>
+                    </div>
+                    @endforelse
                 </div>
             </div>
 

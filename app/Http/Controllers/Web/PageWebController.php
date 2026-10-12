@@ -14,8 +14,10 @@ use App\Models\PageType;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\PageService;
+use Database\Seeders\PageTaxonomySeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -272,6 +274,18 @@ class PageWebController extends Controller
             ->with(['categories' => fn ($q) => $q->where('is_active', true)->with('subcategories')])
             ->orderBy('sort_order')
             ->get();
+
+        if ($pageTypes->isEmpty()) {
+            try {
+                app(PageTaxonomySeeder::class)->run();
+                $pageTypes = PageType::where('is_active', true)
+                    ->with(['categories' => fn ($q) => $q->where('is_active', true)->with('subcategories')])
+                    ->orderBy('sort_order')
+                    ->get();
+            } catch (\Throwable $e) {
+                Log::warning('Automatic page taxonomy seeding failed: '.$e->getMessage());
+            }
+        }
 
         $latestDraft = PageCreationDraft::where('user_id', $user->id)
             ->latest('updated_at')

@@ -12,6 +12,7 @@ use App\Models\PageSubcategory;
 use App\Models\PageType;
 use App\Models\PageVerificationRequest;
 use App\Models\User;
+use Database\Seeders\PageTaxonomySeeder;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -45,10 +46,24 @@ class PageRegistrationService
      */
     public function getPageTypes(): Collection
     {
-        return PageType::where('is_active', true)
+        $types = PageType::where('is_active', true)
             ->withCount('categories')
             ->orderBy('sort_order')
             ->get();
+
+        if ($types->isEmpty()) {
+            try {
+                app(PageTaxonomySeeder::class)->run();
+                $types = PageType::where('is_active', true)
+                    ->withCount('categories')
+                    ->orderBy('sort_order')
+                    ->get();
+            } catch (\Throwable $e) {
+                // Ignore gracefully if seeder cannot be run
+            }
+        }
+
+        return $types;
     }
 
     /**
