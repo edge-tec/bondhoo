@@ -248,7 +248,14 @@ Route::get('/groups/{slug}', [GroupWebController::class, 'show'])->name('groups.
 Route::get('/pages', [PageWebController::class, 'index'])->name('pages.index');
 Route::get('/pages/create', [PageWebController::class, 'create'])->name('pages.create');
 Route::get('/pages/{slug}/manage', [PageWebController::class, 'manage'])->name('pages.manage');
+Route::get('/pages/{slug}/posts', [PageWebController::class, 'posts'])->name('pages.posts');
+Route::post('/pages/{slug}/posts', [PageWebController::class, 'storePost'])->name('pages.posts.store');
+Route::put('/pages/{slug}/posts/{postId}', [PageWebController::class, 'updatePost'])->name('pages.posts.update')->whereNumber('postId');
+Route::delete('/pages/{slug}/posts/{postId}', [PageWebController::class, 'deletePost'])->name('pages.posts.delete')->whereNumber('postId');
+Route::post('/pages/{slug}/posts/{postId}/pin', [PageWebController::class, 'togglePinPost'])->name('pages.posts.pin')->whereNumber('postId');
+Route::post('/pages/{slug}/posts/{postId}/visibility', [PageWebController::class, 'updatePostVisibility'])->name('pages.posts.visibility')->whereNumber('postId');
 Route::get('/pages/{slug}', [PageWebController::class, 'show'])->name('pages.show');
+Route::post('/pages/{id}/follow', [PageWebController::class, 'toggleFollow'])->name('pages.follow')->whereNumber('id');
 
 Route::get('/marketplace', [MarketplaceWebController::class, 'index'])->name('marketplace.index');
 Route::get('/marketplace/{id}', [MarketplaceWebController::class, 'show'])->name('marketplace.show')->whereNumber('id');

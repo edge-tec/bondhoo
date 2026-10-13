@@ -647,6 +647,47 @@
             padding: 16px;
         }
 
+        .main-app-container.is-pages-dashboard {
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: #f8fafc;
+        }
+
+        .user-profile-header-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 8px 3px 3px;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .user-profile-header-pill:hover {
+            background: var(--fb-hover);
+        }
+
+        .user-header-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--fb-text-primary);
+            white-space: nowrap;
+        }
+
+        .user-header-caret {
+            color: var(--fb-text-secondary);
+        }
+
+        @media (max-width: 900px) {
+            .user-header-name, .user-header-caret {
+                display: none !important;
+            }
+            .user-profile-header-pill {
+                padding: 0;
+            }
+        }
+
         .main-app-container.main-messenger-mode {
             width: 100% !important;
             max-width: 100% !important;
@@ -754,7 +795,7 @@
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                 </span>
-                <input type="text" class="search-input" id="globalAppSearch" placeholder="Bondhoo-তে অনুসন্ধান করুন..." autocomplete="off">
+                <input type="text" class="search-input" id="globalAppSearch" placeholder="Search for people, pages, groups and more..." autocomplete="off">
                 <div id="globalAppSearchResultsDropdown" style="display: none; position: absolute; top: 46px; left: 0; width: 340px; background: var(--fb-card); border-radius: 12px; box-shadow: var(--shadow-lg); border: 1px solid var(--fb-border); z-index: 1000; max-height: 420px; overflow-y: auto;"></div>
             </div>
         </div>
@@ -784,12 +825,10 @@
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
             </a>
-            <a href="/pages" class="nav-tab {{ request()->is('pages*') ? 'active' : '' }}" title="পেইজসমূহ">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                    <line x1="9" y1="7" x2="16" y2="7"></line>
-                    <line x1="9" y1="11" x2="14" y2="11"></line>
+            <a href="/pages" class="nav-tab {{ request()->is('pages*') ? 'active' : '' }}" title="Pages — পেইজসমূহ" id="navPagesTab">
+                <svg viewBox="0 0 24 24" fill="{{ request()->is('pages*') ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
                 </svg>
             </a>
             <a href="/watch" class="nav-tab {{ request()->is('watch*') || request()->is('live*') ? 'active' : '' }}" title="ওয়াচ ও লাইভ স্ট্রিমিং">
@@ -896,8 +935,14 @@
 
             <!-- User Menu -->
             <div style="position: relative;">
-                <div class="avatar" onclick="toggleGlobalUserDropdown()" title="{{ $userName }}">
-                    <img src="{{ $userAvatar }}" alt="{{ $userName }}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                <div class="user-profile-header-pill" onclick="toggleGlobalUserDropdown()" title="{{ $userName }}">
+                    <div class="avatar" style="width: 36px; height: 36px;">
+                        <img src="{{ $userAvatar }}" alt="{{ $userName }}" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
+                    </div>
+                    @if($currentUser)
+                        <span class="user-header-name">{{ $userName }}</span>
+                        <svg class="user-header-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    @endif
                 </div>
 
                 <div class="dropdown-menu-box" id="globalUserDropdown">
@@ -965,7 +1010,7 @@
         </div>
     </header>
 
-    <main class="main-app-container {{ request()->is('messages*') ? 'main-messenger-mode' : '' }}">
+    <main class="main-app-container {{ request()->is('messages*') ? 'main-messenger-mode' : '' }} {{ request()->routeIs('pages.index', 'pages.manage') ? 'is-pages-dashboard' : '' }}">
         @yield('content')
     </main>
 
