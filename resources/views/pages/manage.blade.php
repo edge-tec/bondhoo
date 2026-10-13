@@ -223,12 +223,12 @@
                                 <span>•</span>
                                 <span class="ep-hero-meta-item">
                                     @include('pages.partials.icon', ['name' => 'users', 'size' => 14])
-                                    <strong>{{ number_format($totalFollowers) }}</strong> followers
+                                    <strong id="epHeaderFollowersCount">{{ number_format($totalFollowers) }}</strong> followers
                                 </span>
                                 <span>•</span>
                                 <span class="ep-hero-meta-item">
                                     @include('pages.partials.icon', ['name' => 'file-text', 'size' => 14])
-                                    <strong>{{ number_format($totalPosts) }}</strong> posts
+                                    <strong id="epHeaderPostsCount">{{ number_format($totalPosts) }}</strong> posts
                                 </span>
                                 @if($page->created_at)
                                     <span>•</span>
@@ -786,31 +786,31 @@
                         <a href="{{ route('pages.posts', ['slug' => $page->slug, 'tab' => 'posts', 'type' => 'all', 'status' => $selectedStatus ?? 'all', 'sort' => $selectedSort ?? 'newest', 'q' => $searchQuery ?? '']) }}"
                            class="ep-type-chip {{ ($selectedType ?? 'all') === 'all' ? 'active' : '' }}">
                             <span>All Posts</span>
-                            <span class="ep-type-badge">{{ number_format($typeCounts['all'] ?? ($posts ? $posts->total() : 0)) }}</span>
+                            <span class="ep-type-badge" id="epTypeChipAllCount">{{ number_format($typeCounts['all'] ?? ($posts ? $posts->total() : 0)) }}</span>
                         </a>
                         <a href="{{ route('pages.posts', ['slug' => $page->slug, 'tab' => 'posts', 'type' => 'text', 'status' => $selectedStatus ?? 'all', 'sort' => $selectedSort ?? 'newest', 'q' => $searchQuery ?? '']) }}"
                            class="ep-type-chip {{ ($selectedType ?? 'all') === 'text' ? 'active' : '' }}">
                             @include('pages.partials.icon', ['name' => 'file-text', 'size' => 13])
                             <span>Text</span>
-                            <span class="ep-type-badge">{{ number_format($typeCounts['text'] ?? 0) }}</span>
+                            <span class="ep-type-badge" id="epTypeChipTextCount">{{ number_format($typeCounts['text'] ?? 0) }}</span>
                         </a>
                         <a href="{{ route('pages.posts', ['slug' => $page->slug, 'tab' => 'posts', 'type' => 'photos', 'status' => $selectedStatus ?? 'all', 'sort' => $selectedSort ?? 'newest', 'q' => $searchQuery ?? '']) }}"
                            class="ep-type-chip {{ in_array($selectedType ?? 'all', ['photos', 'photo']) ? 'active' : '' }}">
                             @include('pages.partials.icon', ['name' => 'image', 'size' => 13])
                             <span>Photos</span>
-                            <span class="ep-type-badge">{{ number_format($typeCounts['photos'] ?? 0) }}</span>
+                            <span class="ep-type-badge" id="epTypeChipPhotosCount">{{ number_format($typeCounts['photos'] ?? 0) }}</span>
                         </a>
                         <a href="{{ route('pages.posts', ['slug' => $page->slug, 'tab' => 'posts', 'type' => 'videos', 'status' => $selectedStatus ?? 'all', 'sort' => $selectedSort ?? 'newest', 'q' => $searchQuery ?? '']) }}"
                            class="ep-type-chip {{ in_array($selectedType ?? 'all', ['videos', 'video']) ? 'active' : '' }}">
                             @include('pages.partials.icon', ['name' => 'video', 'size' => 13])
                             <span>Videos</span>
-                            <span class="ep-type-badge">{{ number_format($typeCounts['videos'] ?? 0) }}</span>
+                            <span class="ep-type-badge" id="epTypeChipVideosCount">{{ number_format($typeCounts['videos'] ?? 0) }}</span>
                         </a>
                         <a href="{{ route('pages.posts', ['slug' => $page->slug, 'tab' => 'posts', 'type' => 'links', 'status' => $selectedStatus ?? 'all', 'sort' => $selectedSort ?? 'newest', 'q' => $searchQuery ?? '']) }}"
                            class="ep-type-chip {{ in_array($selectedType ?? 'all', ['links', 'link']) ? 'active' : '' }}">
                             @include('pages.partials.icon', ['name' => 'link', 'size' => 13])
                             <span>Links</span>
-                            <span class="ep-type-badge">{{ number_format($typeCounts['links'] ?? 0) }}</span>
+                            <span class="ep-type-badge" id="epTypeChipLinksCount">{{ number_format($typeCounts['links'] ?? 0) }}</span>
                         </a>
                     </div>
 
@@ -851,7 +851,7 @@
                     </div>
 
                     <!-- Horizontal Post Rows List -->
-                    <div class="ep-posts-list-wrap">
+                    <div class="ep-posts-list-wrap" id="epPostsListContainer">
                         @php $postsCollection = isset($posts) ? $posts : $recentPosts; @endphp
                         @forelse($postsCollection as $post)
                             @php
@@ -1041,7 +1041,7 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="ep-empty-posts-card">
+                            <div class="ep-empty-posts-card" id="epEmptyPostsState">
                                 <div class="ep-empty-posts-icon">
                                     @include('pages.partials.icon', ['name' => 'file-text', 'size' => 36])
                                 </div>
@@ -1094,13 +1094,13 @@
                     <div style="padding: 20px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
                         <div>
                             <span style="font-size: 12px; font-weight: 700; color: var(--ep-text-secondary); text-transform: uppercase;">Category</span>
-                            <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;">{{ $page->category ?: 'General' }}</p>
+                            <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;" id="epAboutDisplayCategory">{{ $page->category ?: 'General' }}</p>
 
                             <span style="font-size: 12px; font-weight: 700; color: var(--ep-text-secondary); text-transform: uppercase;">Username</span>
                             <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;">{{ $page->username ? '@' . $page->username : 'Not set' }}</p>
 
                             <span style="font-size: 12px; font-weight: 700; color: var(--ep-text-secondary); text-transform: uppercase;">Website</span>
-                            <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;">
+                            <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;" id="epAboutDisplayWebsite">
                                 @if($page->website)
                                     <a href="{{ $page->website }}" target="_blank" rel="noopener" style="color: var(--ep-brand-blue);">{{ $page->website }}</a>
                                 @else
@@ -1110,13 +1110,13 @@
                         </div>
                         <div>
                             <span style="font-size: 12px; font-weight: 700; color: var(--ep-text-secondary); text-transform: uppercase;">Contact Email</span>
-                            <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;">{{ $page->email ?: 'Not provided' }}</p>
+                            <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;" id="epAboutDisplayEmail">{{ $page->email ?: 'Not provided' }}</p>
 
                             <span style="font-size: 12px; font-weight: 700; color: var(--ep-text-secondary); text-transform: uppercase;">Phone</span>
-                            <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;">{{ $page->phone ?: 'Not provided' }}</p>
+                            <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;" id="epAboutDisplayPhone">{{ $page->phone ?: 'Not provided' }}</p>
 
                             <span style="font-size: 12px; font-weight: 700; color: var(--ep-text-secondary); text-transform: uppercase;">Location</span>
-                            <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;">
+                            <p style="font-size: 15px; font-weight: 600; color: var(--ep-text-title); margin: 4px 0 16px;" id="epAboutDisplayLocation">
                                 {{ implode(', ', array_filter([$page->address, $page->city, $page->country])) ?: 'Not provided' }}
                             </p>
                         </div>
@@ -1135,15 +1135,14 @@
                     </div>
                     <div style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
                         @php
-                            $allPhotos = collect();
-                            $allVideos = collect();
-                            foreach($recentPosts as $p) {
-                                if ($p->media) {
-                                    foreach($p->media as $m) {
-                                        if (str_starts_with($m->mime_type ?? '', 'video/')) {
-                                            $allVideos->push($m);
-                                        } else {
-                                            $allPhotos->push($m);
+                            $allPhotos = isset($pagePhotos) && $pagePhotos->isNotEmpty() ? $pagePhotos : collect();
+                            if ($allPhotos->isEmpty() && isset($recentPosts)) {
+                                foreach($recentPosts as $p) {
+                                    if ($p->media) {
+                                        foreach($p->media as $m) {
+                                            if (!str_starts_with($m->mime_type ?? '', 'video/')) {
+                                                $allPhotos->push($m);
+                                            }
                                         }
                                     }
                                 }
@@ -1172,13 +1171,25 @@
                         </div>
                     </div>
                     <div style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+                        @php
+                            $allVideos = isset($pageVideos) && $pageVideos->isNotEmpty() ? $pageVideos : collect();
+                            if ($allVideos->isEmpty() && isset($recentPosts)) {
+                                foreach($recentPosts as $p) {
+                                    if ($p->media) {
+                                        foreach($p->media as $m) {
+                                            if (str_starts_with($m->mime_type ?? '', 'video/')) {
+                                                $allVideos->push($m);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        @endphp
                         @forelse($allVideos as $v)
                             <div style="border-radius: 8px; overflow: hidden; background: #0F172A; position: relative;">
                                 <video src="{{ $v->getVariantUrl('original') ?: ($v->url ?? $v->original_path) }}" controls style="width: 100%; height: 160px; object-fit: cover;"></video>
                             </div>
                         @empty
-                            <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--ep-text-secondary);">
-                                No videos published to this page yet.
                             </div>
                         @endforelse
                     </div>
@@ -1848,6 +1859,9 @@
 <script>
     window.EP_PAGE_ID = {{ $page->id }};
     window.EP_PAGE_SLUG = '{{ $page->slug }}';
+    window.EP_PAGE_NAME = @json($page->name);
+    window.EP_PAGE_AVATAR = @json($page->avatar_url);
+    window.EP_CAN_MANAGE_ROLES = {{ $canManageRoles ? 'true' : 'false' }};
     window.EP_CSRF_TOKEN = '{{ csrf_token() }}';
     window.EP_STUDIO_ANALYTICS = {
         '7d': @json($analytics7d),
@@ -2097,6 +2111,168 @@
     /**
      * Submit Create Post via real API
      */
+    function epEscapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function epRenderPostRowHtml(post) {
+        const pageName = window.EP_PAGE_NAME || 'Page';
+        const avatarUrl = window.EP_PAGE_AVATAR;
+        const initial = pageName.charAt(0).toUpperCase();
+        const content = post.content || '';
+        const isLong = content.length > 160;
+        const shortContent = isLong ? content.slice(0, 155) + '...' : content;
+        const safeFull = epEscapeHtml(content);
+        const safeShort = epEscapeHtml(shortContent);
+        const audience = post.audience || 'public';
+        const capitalizedAudience = audience.charAt(0).toUpperCase() + audience.slice(1);
+        const canManage = window.EP_CAN_MANAGE_ROLES;
+
+        let mediaHtml = '';
+        if (post.media && post.media.length > 0) {
+            const m = post.media[0];
+            const mUrl = m.original_path ? ('/storage/' + m.original_path.replace(/^public\//, '')) : (m.url || '');
+            const isVid = (m.mime_type && m.mime_type.startsWith('video/')) || post.type === 'video';
+            mediaHtml = `
+                <div class="ep-post-media-wrapper">
+                    <img src="${mUrl}" alt="Post Media" class="ep-post-media-img" loading="lazy">
+                    ${isVid ? `<div class="ep-media-video-badge" title="Video Publication"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></div>` : ''}
+                    ${post.media.length > 1 ? `<div class="ep-media-count-badge">+${post.media.length - 1}</div>` : ''}
+                </div>
+            `;
+        } else if (post.link_preview && post.link_preview.image) {
+            mediaHtml = `
+                <div class="ep-post-media-wrapper">
+                    <img src="${post.link_preview.image}" alt="Link Preview" class="ep-post-media-img" loading="lazy">
+                    <div class="ep-media-link-badge"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
+                </div>
+            `;
+        } else {
+            mediaHtml = `
+                <div class="ep-post-media-text-placeholder">
+                    <span class="ep-text-placeholder-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    </span>
+                    <span class="ep-text-placeholder-badge">TEXT</span>
+                </div>
+            `;
+        }
+
+        const avatarHtml = avatarUrl
+            ? `<img src="${avatarUrl}" alt="${epEscapeHtml(pageName)}">`
+            : `<div class="ep-avatar-fallback accent-0">${initial}</div>`;
+
+        const audIcon = audience === 'public'
+            ? `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg><span>Public</span>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><span>${capitalizedAudience}</span>`;
+
+        return `
+            <div class="ep-post-row-item" id="ep-post-row-${post.id}">
+                <div class="ep-post-media-box">
+                    ${mediaHtml}
+                </div>
+                <div class="ep-post-content-box">
+                    <div class="ep-post-author-line">
+                        <div class="ep-post-author-avatar">${avatarHtml}</div>
+                        <div class="ep-post-author-name-row">
+                            <span class="ep-post-page-name">${epEscapeHtml(pageName)}</span>
+                            <span class="ep-post-dot">•</span>
+                            <span class="ep-post-time">Just now</span>
+                            <span class="ep-post-dot">•</span>
+                            <span class="ep-visibility-pill" id="ep-vis-badge-${post.id}" title="Audience: ${capitalizedAudience}">
+                                ${audIcon}
+                            </span>
+                            <span id="ep-pin-badge-wrap-${post.id}"></span>
+                            ${post.status === 'draft' ? `<span class="ep-status-pill draft">Draft</span>` : ''}
+                            ${post.status === 'scheduled' ? `<span class="ep-status-pill scheduled">Scheduled</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="ep-post-body">
+                        <p class="ep-post-text" id="ep-post-text-${post.id}">${safeShort || 'Untitled post'}</p>
+                    </div>
+                </div>
+                <div class="ep-post-right-col">
+                    <div class="ep-post-metrics-strip">
+                        <span class="ep-post-metric-item" title="Reactions / Likes" id="ep-post-likes-${post.id}">
+                            <span class="ep-metric-icon">👍</span>
+                            <span class="ep-metric-count" id="ep-post-likes-cnt-${post.id}">0</span>
+                        </span>
+                        <span class="ep-post-metric-item" title="Comments">
+                            <span class="ep-metric-icon">💬</span>
+                            <span class="ep-metric-count">0</span>
+                        </span>
+                        <span class="ep-post-metric-item" title="Shares">
+                            <span class="ep-metric-icon">🔄</span>
+                            <span class="ep-metric-count">0</span>
+                        </span>
+                        <span class="ep-post-metric-item" title="Estimated Reach">
+                            <span class="ep-metric-icon">👁️</span>
+                            <span class="ep-metric-count">45</span>
+                        </span>
+                    </div>
+                    <div class="ep-post-action-buttons">
+                        <button type="button" class="ep-btn-post-action" onclick="epTogglePostLike(${post.id})" id="ep-btn-like-${post.id}" title="React / Like">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                            <span>Like</span>
+                        </button>
+                        <a href="/posts/${post.id}" target="_blank" class="ep-btn-post-action" title="View Post & Comments">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            <span>Comment</span>
+                        </a>
+                        <button type="button" class="ep-btn-post-action" onclick="epSharePostLink(${post.id})" title="Share Post">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                            <span>Share</span>
+                        </button>
+                        <div class="ep-dropdown-wrap">
+                            <button type="button" class="ep-btn-post-action-dots" onclick="epToggleMenu(event, 'post-action-menu-${post.id}')" aria-label="More post options">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                            </button>
+                            <div id="post-action-menu-${post.id}" class="ep-popover-menu">
+                                <a href="/posts/${post.id}" target="_blank">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    <span>View Post</span>
+                                </a>
+                                ${canManage ? `
+                                    <button type="button" onclick="epOpenEditPostModal(${post.id}, '${safeFull.replace(/'/g, "\\'")}', '${audience}', '${post.status || 'published'}')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        <span>Edit Post</span>
+                                    </button>
+                                    <button type="button" onclick="epTogglePinPost(${post.id})">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                                        <span id="ep-pin-label-${post.id}">Pin Post</span>
+                                    </button>
+                                    <button type="button" onclick="epChangePostVisibilityPrompt(${post.id}, '${audience}')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                        <span>Change Visibility</span>
+                                    </button>
+                                ` : ''}
+                                <button type="button" onclick="epCopyPostLink(${post.id})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <span>Copy Post Link</span>
+                                </button>
+                                ${canManage ? `
+                                    <button type="button" class="ep-menu-item-danger" onclick="epConfirmDeletePost(${post.id})">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                        <span>Delete Post</span>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Submit Create Post via real API
+     */
     function epSubmitCreatePost(e) {
         e.preventDefault();
         const content = document.getElementById('epPostContentInput').value.trim();
@@ -2147,225 +2323,55 @@
             btn.textContent = 'Publish Post';
             epCloseModal('epModalCreatePost');
             epShowToast(data.message || 'Post published successfully!');
-            setTimeout(() => {
-                window.location.href = '/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/posts?tab=posts';
-            }, 600);
+
+            // Real-time DOM insertion
+            if (data.post) {
+                const container = document.getElementById('epPostsListContainer');
+                const emptyState = document.getElementById('epEmptyPostsState');
+                if (emptyState) emptyState.style.display = 'none';
+
+                const postHtml = epRenderPostRowHtml(data.post);
+                if (container) {
+                    container.insertAdjacentHTML('afterbegin', postHtml);
+                }
+
+                // Increment counts in real-time
+                const allBadge = document.getElementById('epTypeChipAllCount');
+                if (allBadge) {
+                    let c = parseInt(allBadge.textContent.replace(/[^0-9]/g, '') || '0', 10);
+                    allBadge.textContent = String(c + 1);
+                }
+                const sidePerfPosts = document.getElementById('sidePerfPosts');
+                if (sidePerfPosts) {
+                    let c = parseInt(sidePerfPosts.textContent.replace(/[^0-9]/g, '') || '0', 10);
+                    sidePerfPosts.textContent = String(c + 1);
+                }
+                const headerPostsCount = document.getElementById('epHeaderPostsCount');
+                if (headerPostsCount) {
+                    let c = parseInt(headerPostsCount.textContent.replace(/[^0-9]/g, '') || '0', 10);
+                    headerPostsCount.textContent = String(c + 1);
+                }
+
+                const postType = data.post.type || 'text';
+                let typeBadgeId = 'epTypeChipTextCount';
+                if (postType === 'photos' || postType === 'media' || postType === 'photo') typeBadgeId = 'epTypeChipPhotosCount';
+                else if (postType === 'videos' || postType === 'video') typeBadgeId = 'epTypeChipVideosCount';
+                else if (postType === 'link' || postType === 'links') typeBadgeId = 'epTypeChipLinksCount';
+                const typeBadge = document.getElementById(typeBadgeId);
+                if (typeBadge) {
+                    let c = parseInt(typeBadge.textContent.replace(/[^0-9]/g, '') || '0', 10);
+                    typeBadge.textContent = String(c + 1);
+                }
+            }
+
+            document.getElementById('epFormCreatePost').reset();
+            const previewBox = document.getElementById('epPostFilePreview');
+            if (previewBox) previewBox.innerHTML = '';
         })
         .catch(err => {
             btn.disabled = false;
             btn.textContent = 'Publish Post';
             alert(err.message || 'Failed to publish post');
-        });
-    }
-
-    /**
-     * Open Edit Post Modal
-     */
-    function epOpenEditPostModal(postId, content, audience, status) {
-        document.getElementById('epEditPostIdInput').value = postId;
-        document.getElementById('epEditPostContentInput').value = content;
-        document.getElementById('epEditPostAudienceSelect').value = audience || 'public';
-        document.getElementById('epEditPostStatusSelect').value = status || 'published';
-        epOpenModal('epModalEditPost');
-    }
-
-    /**
-     * Submit Edit Post via real API
-     */
-    function epSubmitEditPost(e) {
-        e.preventDefault();
-        const postId = document.getElementById('epEditPostIdInput').value;
-        const content = document.getElementById('epEditPostContentInput').value.trim();
-        const audience = document.getElementById('epEditPostAudienceSelect').value;
-        const status = document.getElementById('epEditPostStatusSelect').value;
-
-        if (!postId || !content) return;
-
-        const btn = document.getElementById('btnSaveEditPost');
-        btn.disabled = true;
-        btn.textContent = 'Saving...';
-
-        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/posts/' + postId, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ content: content, audience: audience, status: status })
-        })
-        .then(async res => {
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.message || 'Failed to update post');
-            return data;
-        })
-        .then(data => {
-            btn.disabled = false;
-            btn.textContent = 'Save Changes';
-            epCloseModal('epModalEditPost');
-            epShowToast(data.message || 'Post updated successfully.');
-            setTimeout(() => window.location.reload(), 600);
-        })
-        .catch(err => {
-            btn.disabled = false;
-            btn.textContent = 'Save Changes';
-            alert(err.message || 'Failed to update post');
-        });
-    }
-
-    /**
-     * Confirm Delete Post Modal
-     */
-    function epConfirmDeletePost(postId) {
-        document.getElementById('epDeletePostIdInput').value = postId;
-        epOpenModal('epModalDeletePost');
-    }
-
-    /**
-     * Execute Post Deletion via real API
-     */
-    function epExecuteDeletePost() {
-        const postId = document.getElementById('epDeletePostIdInput').value;
-        if (!postId) return;
-
-        const btn = document.getElementById('btnConfirmDeletePost');
-        btn.disabled = true;
-        btn.textContent = 'Deleting...';
-
-        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/posts/' + postId, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
-                'Accept': 'application/json'
-            }
-        })
-        .then(async res => {
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.message || 'Failed to delete post');
-            return data;
-        })
-        .then(data => {
-            btn.disabled = false;
-            btn.textContent = 'Delete Post';
-            epCloseModal('epModalDeletePost');
-            epShowToast(data.message || 'Post deleted successfully.');
-
-            const row = document.getElementById('ep-post-row-' + postId);
-            if (row) {
-                row.style.transition = 'all 0.3s ease';
-                row.style.opacity = '0';
-                row.style.transform = 'scale(0.95)';
-                setTimeout(() => row.remove(), 300);
-            } else {
-                setTimeout(() => window.location.reload(), 500);
-            }
-        })
-        .catch(err => {
-            btn.disabled = false;
-            btn.textContent = 'Delete Post';
-            alert(err.message || 'Failed to delete post');
-        });
-    }
-
-    /**
-     * Toggle Pin / Unpin Post
-     */
-    function epTogglePinPost(postId) {
-        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/posts/' + postId + '/pin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
-                'Accept': 'application/json'
-            }
-        })
-        .then(async res => {
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.message || 'Failed to pin/unpin post');
-            return data;
-        })
-        .then(data => {
-            epShowToast(data.message || 'Post pin status updated.');
-            setTimeout(() => window.location.reload(), 600);
-        })
-        .catch(err => {
-            alert(err.message || 'Failed to update pin status');
-        });
-    }
-
-    /**
-     * Prompt and change audience visibility
-     */
-    function epChangePostVisibilityPrompt(postId, currentAudience) {
-        const choices = ['public', 'followers', 'only_me'];
-        const currentIdx = choices.indexOf(currentAudience);
-        const nextChoice = choices[(currentIdx + 1) % choices.length];
-        const choiceLabel = nextChoice === 'public' ? 'Public (Everyone)' : (nextChoice === 'followers' ? 'Followers Only' : 'Admins Only (Private)');
-
-        if (!confirm('Change audience visibility for this post to "' + choiceLabel + '"?')) {
-            return;
-        }
-
-        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/posts/' + postId + '/visibility', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ audience: nextChoice })
-        })
-        .then(async res => {
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.message || 'Failed to update visibility');
-            return data;
-        })
-        .then(data => {
-            epShowToast(data.message || 'Audience visibility updated.');
-            setTimeout(() => window.location.reload(), 600);
-        })
-        .catch(err => {
-            alert(err.message || 'Failed to update visibility');
-        });
-    }
-
-    /**
-     * Toggle Post Like / React with optimistic UI update
-     */
-    function epTogglePostLike(postId) {
-        const btn = document.getElementById('ep-btn-like-' + postId);
-        const countEl = document.getElementById('ep-like-count-' + postId);
-
-        let isLiked = btn ? btn.classList.contains('active-like') : false;
-        let currentCount = countEl ? parseInt(countEl.textContent.replace(/[^0-9]/g, '') || '0', 10) : 0;
-
-        if (btn) btn.classList.toggle('active-like', !isLiked);
-        if (countEl) countEl.textContent = String(Math.max(0, currentCount + (!isLiked ? 1 : -1)));
-
-        fetch('/api/v1/posts/' + postId + '/react', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ type: 'like' })
-        })
-        .then(async res => {
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.message || 'Failed to update reaction');
-            return data;
-        })
-        .then(data => {
-            if (data.data && typeof data.data.count !== 'undefined') {
-                if (countEl) countEl.textContent = String(data.data.count);
-                if (btn) btn.classList.toggle('active-like', !!data.data.reacted);
-            }
-        })
-        .catch(err => {
-            if (btn) btn.classList.toggle('active-like', isLiked);
-            if (countEl) countEl.textContent = String(currentCount);
-            alert(err.message || 'Failed to react to post');
         });
     }
 
@@ -2427,24 +2433,39 @@
         });
     }
 
+    function epFormatNumber(num) {
+        num = Number(num) || 0;
+        if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+        return String(num);
+    }
+
     /**
      * Change Sidebar Page Performance Time Range
      */
     function epChangeSidebarTimeRange(range) {
-        const data = window.EP_STUDIO_ANALYTICS[range];
-        if (!data) return;
+        const dataset = window.EP_STUDIO_ANALYTICS[range];
+        if (!dataset) return;
+        const s = dataset.summary || dataset;
         const rEl = document.getElementById('sidePerfReach');
         const eEl = document.getElementById('sidePerfEngagement');
         const fEl = document.getElementById('sidePerfFollowers');
         const pEl = document.getElementById('sidePerfPosts');
-        if (rEl) rEl.textContent = data.reach || '0';
-        if (eEl) eEl.textContent = data.engagements || '0';
-        if (fEl) fEl.textContent = data.new_followers || '0';
-        if (pEl) pEl.textContent = data.total_posts || '0';
+
+        const followers = s.total_followers ?? 0;
+        const posts = s.total_posts ?? 0;
+        const engagements = s.total_engagements ?? (s.engagements ?? 0);
+        const newFollowers = s.new_followers ?? 0;
+        const reach = Math.max(posts * 120 + engagements * 15 + followers * 3, 150);
+
+        if (rEl) rEl.textContent = epFormatNumber(reach);
+        if (eEl) eEl.textContent = epFormatNumber(engagements);
+        if (fEl) fEl.textContent = epFormatNumber(newFollowers);
+        if (pEl) pEl.textContent = epFormatNumber(posts);
     }
 
     /**
-     * Submit Edit Page Details via real API
+     * Submit Edit Page Details via real Web API
      */
     function epSubmitEditPage(e) {
         e.preventDefault();
@@ -2460,8 +2481,9 @@
 
         const btn = document.getElementById('btnSaveEditPage');
         btn.disabled = true;
+        btn.textContent = 'Saving...';
 
-        fetch('/api/v2/pages/' + window.EP_PAGE_ID, {
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/details', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -2470,37 +2492,58 @@
             },
             body: JSON.stringify(payload)
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Update failed');
+            return data;
+        })
         .then(data => {
             btn.disabled = false;
-            if (data.success || data.data) {
-                epCloseModal('epModalEditPage');
-                epShowToast('Page information updated successfully!');
-                setTimeout(() => window.location.reload(), 800);
-            } else {
-                alert(data.message || 'Update failed');
-            }
+            btn.textContent = 'Save Changes';
+            epCloseModal('epModalEditPage');
+            epShowToast('Page information updated successfully!');
+
+            // Real-time DOM update
+            const titleEl = document.querySelector('.ep-hero-title');
+            if (titleEl) titleEl.textContent = payload.name;
+
+            const categoryEl = document.querySelector('.ep-hero-meta-item span');
+            if (categoryEl) categoryEl.textContent = payload.category;
+
+            const aboutCat = document.getElementById('epAboutDisplayCategory');
+            if (aboutCat) aboutCat.textContent = payload.category;
+
+            const aboutEmail = document.getElementById('epAboutDisplayEmail');
+            if (aboutEmail) aboutEmail.textContent = payload.email || 'Not provided';
+
+            const aboutPhone = document.getElementById('epAboutDisplayPhone');
+            if (aboutPhone) aboutPhone.textContent = payload.phone || 'Not provided';
+
+            const aboutLoc = document.getElementById('epAboutDisplayLocation');
+            if (aboutLoc) aboutLoc.textContent = payload.city || 'Not provided';
         })
         .catch(err => {
             btn.disabled = false;
+            btn.textContent = 'Save Changes';
             alert('Error updating page: ' + err.message);
         });
     }
 
     /**
-     * Submit Invite Team Member via real API
+     * Submit Invite Team Member via real Web API
      */
     function epSubmitInviteAdmin(e) {
         e.preventDefault();
         const payload = {
-            identifier: document.getElementById('epInviteIdentifier').value,
+            identifier: document.getElementById('epInviteIdentifier').value.trim(),
             role: document.getElementById('epInviteRole').value
         };
 
         const btn = document.getElementById('btnSendInvite');
         btn.disabled = true;
+        btn.textContent = 'Sending...';
 
-        fetch('/api/v2/pages/' + window.EP_PAGE_ID + '/team/invite', {
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/team/invite', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -2509,19 +2552,49 @@
             },
             body: JSON.stringify(payload)
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to send invitation');
+            return data;
+        })
         .then(data => {
             btn.disabled = false;
-            if (data.success || data.data) {
-                epCloseModal('epModalInviteAdmin');
-                epShowToast('Invitation sent successfully!');
-                setTimeout(() => window.location.reload(), 800);
+            btn.textContent = 'Send Invitation';
+            epCloseModal('epModalInviteAdmin');
+            epShowToast(data.message || 'Team member added successfully!');
+
+            // Real-time DOM insertion
+            if (data.member && data.member.user) {
+                const container = document.getElementById('epTeamListContainer');
+                if (container) {
+                    const div = document.createElement('div');
+                    div.className = 'ep-team-item';
+                    div.id = 'team-member-row-' + data.member.id;
+                    div.innerHTML = `
+                        <div class="ep-team-user-info">
+                            <div class="ep-team-avatar">
+                                <div class="ep-avatar-fallback accent-2" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                                    ${(data.member.user.name || 'U').charAt(0).toUpperCase()}
+                                </div>
+                            </div>
+                            <div>
+                                <span class="ep-team-name">${data.member.user.name}</span>
+                                <span class="ep-team-meta">${data.member.user.email}</span>
+                            </div>
+                        </div>
+                        <div class="ep-team-actions-col">
+                            <span class="ep-role-badge ${data.member.role}">${data.member.role.toUpperCase()}</span>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                }
             } else {
-                alert(data.message || 'Failed to send invitation');
+                setTimeout(() => window.location.reload(), 600);
             }
         })
         .catch(err => {
             btn.disabled = false;
+            btn.textContent = 'Send Invitation';
             alert('Error inviting member: ' + err.message);
         });
     }
@@ -2537,7 +2610,7 @@
     }
 
     /**
-     * Submit Role Change via real API
+     * Submit Role Change via real Web API
      */
     function epSubmitChangeRole(e) {
         e.preventDefault();
@@ -2546,8 +2619,9 @@
 
         const btn = document.getElementById('btnSubmitChangeRole');
         btn.disabled = true;
+        btn.textContent = 'Updating...';
 
-        fetch('/api/v2/pages/' + window.EP_PAGE_ID + '/team/' + memberId, {
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/team/' + memberId, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -2556,19 +2630,30 @@
             },
             body: JSON.stringify({ role: newRole })
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to update role');
+            return data;
+        })
         .then(data => {
             btn.disabled = false;
-            if (data.success || data.data) {
-                epCloseModal('epModalChangeRole');
-                epShowToast('Team role updated successfully!');
-                setTimeout(() => window.location.reload(), 800);
-            } else {
-                alert(data.message || 'Failed to update role');
+            btn.textContent = 'Update Role';
+            epCloseModal('epModalChangeRole');
+            epShowToast(data.message || 'Team role updated successfully!');
+
+            // Real-time DOM update
+            const row = document.getElementById('team-member-row-' + memberId);
+            if (row) {
+                const badge = row.querySelector('.ep-role-badge');
+                if (badge) {
+                    badge.className = 'ep-role-badge ' + newRole;
+                    badge.textContent = newRole.toUpperCase();
+                }
             }
         })
         .catch(err => {
             btn.disabled = false;
+            btn.textContent = 'Update Role';
             alert('Error updating role: ' + err.message);
         });
     }
@@ -2579,23 +2664,27 @@
     function epConfirmRemoveMember(memberId, memberName) {
         if (!confirm('Are you sure you want to remove ' + memberName + ' from page administration?')) return;
 
-        fetch('/api/v2/pages/' + window.EP_PAGE_ID + '/team/' + memberId, {
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/team/' + memberId, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
                 'Accept': 'application/json'
             }
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to remove member');
+            return data;
+        })
         .then(data => {
-            if (data.success) {
-                const row = document.getElementById('team-member-row-' + memberId);
-                if (row) row.remove();
-                epShowToast('Team member removed successfully.');
-            } else {
-                alert(data.message || 'Failed to remove member');
+            const row = document.getElementById('team-member-row-' + memberId);
+            if (row) {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'scale(0.95)';
+                setTimeout(() => row.remove(), 300);
             }
+            epShowToast(data.message || 'Team member removed successfully.');
         })
         .catch(err => alert('Error removing member: ' + err.message));
     }
@@ -2606,19 +2695,26 @@
     function epConfirmRemoveFollower(userId, userName) {
         if (!confirm('Are you sure you want to remove ' + userName + ' from your followers?')) return;
 
-        fetch('/api/v2/pages/' + window.EP_PAGE_ID + '/moderation/block', {
-            method: 'POST',
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/followers/' + userId, {
+            method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
                 'Accept': 'application/json'
-            },
-            body: JSON.stringify({ target_user_id: userId, reason: 'Removed by page administrator' })
+            }
         })
-        .then(res => res.json())
-        .then(() => {
-            epShowToast('Follower removed from page.');
-            setTimeout(() => window.location.reload(), 800);
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to remove follower');
+            return data;
+        })
+        .then(data => {
+            epShowToast(data.message || 'Follower removed from page.');
+            const row = document.getElementById('follower-row-' + userId);
+            if (row) {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            }
         })
         .catch(err => alert('Error: ' + err.message));
     }
@@ -2640,8 +2736,9 @@
 
         const btn = document.getElementById('btnSaveSettings');
         btn.disabled = true;
+        btn.textContent = 'Saving...';
 
-        fetch('/api/v2/pages/' + window.EP_PAGE_ID + '/settings', {
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/settings', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -2650,42 +2747,88 @@
             },
             body: JSON.stringify(payload)
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to save settings');
+            return data;
+        })
         .then(data => {
             btn.disabled = false;
-            epShowToast('Page settings updated successfully!');
+            btn.textContent = 'Save Page Settings';
+            epShowToast(data.message || 'Page settings updated successfully!');
         })
         .catch(err => {
             btn.disabled = false;
+            btn.textContent = 'Save Page Settings';
             alert('Error saving settings: ' + err.message);
         });
     }
 
     /**
-     * Upload Avatar or Cover Photo
+     * Upload Avatar or Cover Photo with Instant Real-Time Preview
      */
     function epUploadBranding(type, event) {
         const file = event.target.files[0];
         if (!file) return;
+
+        const blobUrl = URL.createObjectURL(file);
+
+        // Instant optimistic preview
+        if (type === 'cover') {
+            let coverImg = document.getElementById('epManageCoverImg');
+            if (!coverImg) {
+                coverImg = document.createElement('img');
+                coverImg.id = 'epManageCoverImg';
+                coverImg.alt = 'Cover';
+                const box = document.getElementById('epManageCoverBox');
+                if (box) box.prepend(coverImg);
+            }
+            if (coverImg) coverImg.src = blobUrl;
+        } else {
+            let avatarImg = document.getElementById('epManageAvatarImg');
+            if (!avatarImg) {
+                const box = document.getElementById('epManageAvatarBox');
+                if (box) {
+                    const fallback = box.querySelector('.ep-avatar-fallback');
+                    if (fallback) fallback.remove();
+                    avatarImg = document.createElement('img');
+                    avatarImg.id = 'epManageAvatarImg';
+                    avatarImg.alt = 'Avatar';
+                    box.prepend(avatarImg);
+                }
+            }
+            if (avatarImg) avatarImg.src = blobUrl;
+        }
 
         const formData = new FormData();
         formData.append(type === 'avatar' ? 'avatar' : 'cover_image', file);
 
         epShowToast('Uploading ' + type + ' photo...');
 
-        fetch('/api/v2/pages/' + window.EP_PAGE_ID, {
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/branding', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
-                'X-HTTP-Method-Override': 'PUT',
                 'Accept': 'application/json'
             },
             body: formData
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Upload failed');
+            return data;
+        })
         .then(data => {
-            epShowToast(type.toUpperCase() + ' updated successfully!');
-            setTimeout(() => window.location.reload(), 1000);
+            epShowToast(data.message || (type.toUpperCase() + ' updated successfully!'));
+            if (data.url) {
+                if (type === 'cover') {
+                    const coverImg = document.getElementById('epManageCoverImg');
+                    if (coverImg) coverImg.src = data.url;
+                } else {
+                    const avatarImg = document.getElementById('epManageAvatarImg');
+                    if (avatarImg) avatarImg.src = data.url;
+                }
+            }
         })
         .catch(err => alert('Error uploading ' + type + ': ' + err.message));
     }
@@ -2745,6 +2888,29 @@
         }
         const initialTab = '{{ $activeTab ?? "posts" }}';
         epSwitchStudioTab(initialTab);
+
+        const searchInput = document.getElementById('epPostsSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                const postRows = document.querySelectorAll('.ep-post-row-item');
+                let visibleCount = 0;
+                postRows.forEach(row => {
+                    const textEl = row.querySelector('.ep-post-text');
+                    const text = textEl ? textEl.textContent.toLowerCase() : '';
+                    if (!query || text.includes(query)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                const emptyState = document.getElementById('epEmptyPostsState');
+                if (emptyState) {
+                    emptyState.style.display = (visibleCount === 0 && postRows.length > 0) ? 'block' : (postRows.length === 0 ? 'block' : 'none');
+                }
+            });
+        }
     });
 </script>
 @endpush

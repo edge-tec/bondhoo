@@ -15,6 +15,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Services\Page\EnterprisePageService;
 use App\Services\PageService;
+use App\Services\ReactionService;
 use Carbon\Carbon;
 use Database\Seeders\PageTaxonomySeeder;
 use Illuminate\Http\JsonResponse;
@@ -658,6 +659,20 @@ class PageWebController extends Controller
 
         $recentActivities = $recentActivities->sortByDesc('created_at')->values()->take(6);
 
+        $pagePhotos = Media::where('mediable_type', Post::class)
+            ->whereIn('mediable_id', Post::where('page_id', $page->id)->pluck('id'))
+            ->where('mime_type', 'like', 'image/%')
+            ->latest('id')
+            ->take(30)
+            ->get();
+
+        $pageVideos = Media::where('mediable_type', Post::class)
+            ->whereIn('mediable_id', Post::where('page_id', $page->id)->pluck('id'))
+            ->where('mime_type', 'like', 'video/%')
+            ->latest('id')
+            ->take(20)
+            ->get();
+
         $isOwner = (int) $page->owner_id === (int) $user->id;
         $userRole = $role ?? ($isOwner ? Page::ROLE_OWNER : Page::ROLE_VIEWER);
         $canManageRoles = $isOwner || in_array($userRole, [Page::ROLE_OWNER, Page::ROLE_ADMIN], true);
@@ -675,6 +690,8 @@ class PageWebController extends Controller
             'analytics90d' => $analytics90d,
             'audienceInsights' => $audienceInsights,
             'recentPosts' => $recentPosts,
+            'pagePhotos' => $pagePhotos,
+            'pageVideos' => $pageVideos,
             'posts' => $posts,
             'typeCounts' => $typeCounts,
             'searchQuery' => $search,
@@ -896,6 +913,264 @@ class PageWebController extends Controller
             'success' => true,
             'audience' => $validated['audience'],
             'message' => 'Audience visibility updated.',
+        ]);
+    }
+
+    /**
+     * React to a post from the web dashboard.
+     */
+    public function reactPost(Request $request, int $postId, ReactionService $reactionService): JsonResponse
+    {
+        $user = $this->resolveUser($request);
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        $post = Post::findOrFail($postId);
+        $type = $request->input('type', 'like');
+
+        $result = $reactionService->react(
+            user: $user,
+            target: $post,
+            type: $type
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $result,
+            'message' => $result['reacted'] ? "Reacted with {$result['type']}." : 'Reaction removed.',
+        ]);
+    }
+
+    /**
+     * Update page general details (name, category, bio, contact, website, location).
+     */
+    public function updateDetails(Request $request, string $slug): JsonResponse
+    {
+        $user = $this->resolveUser($request);
+        $page = Page::where('slug', $slug)->firstOrFail();
+        $this->authorizePageManager($page, $user, 'page.edit');
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'category' => ['required', 'string', 'max:100'],
+            'bio' => ['nullable', 'string', 'max:1000'],
+            'website' => ['nullable', 'url', 'max:255'],
+            'email' => ['nullable', 'email', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'city' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $page->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Page information updated successfully.',
+            'page' => $page->fresh(),
+        ]);
+    }
+
+    /**
+     * Upload Avatar or Cover Photo for the page.
+     */
+    public function uploadBranding(Request $request, string $slug): JsonResponse
+    {
+        $user = $this->resolveUser($request);
+        $page = Page::where('slug', $slug)->firstOrFail();
+        $this->authorizePageManager($page, $user, 'page.edit');
+
+        $request->validate([
+            'avatar' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
+            'cover_image' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:15360'],
+        ]);
+
+        $type = null;
+        $url = null;
+
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('pages/avatars', 'public');
+            $url = '/storage/'.$path;
+            $page->update(['avatar_url' => $url]);
+            $type = 'avatar';
+        } elseif ($request->hasFile('cover_image')) {
+            $path = $request->file('cover_image')->store('pages/covers', 'public');
+            $url = '/storage/'.$path;
+            $page->update(['cover_image_url' => $url]);
+            $type = 'cover';
+        }
+
+        if (! $type) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No image file uploaded.',
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'type' => $type,
+            'url' => $url,
+            'message' => ucfirst($type).' photo updated successfully.',
+        ]);
+    }
+
+    /**
+     * Update page settings (bio, messaging auto-reply, etc.).
+     */
+    public function updateSettings(Request $request, string $slug): JsonResponse
+    {
+        $user = $this->resolveUser($request);
+        $page = Page::where('slug', $slug)->firstOrFail();
+        $this->authorizePageManager($page, $user, 'page.edit');
+
+        $validated = $request->validate([
+            'bio' => ['nullable', 'string', 'max:1000'],
+            'settings' => ['nullable', 'array'],
+        ]);
+
+        if (array_key_exists('bio', $validated)) {
+            $page->bio = $validated['bio'];
+        }
+
+        if (! empty($validated['settings'])) {
+            $currentSettings = $page->settings ?? [];
+            $page->settings = array_replace_recursive($currentSettings, $validated['settings']);
+        }
+
+        $page->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Page settings updated successfully.',
+            'page' => $page->fresh(),
+        ]);
+    }
+
+    /**
+     * Invite or add administrator/team member.
+     */
+    public function inviteTeamMember(Request $request, string $slug): JsonResponse
+    {
+        $user = $this->resolveUser($request);
+        $page = Page::where('slug', $slug)->firstOrFail();
+
+        $isOwner = (int) $page->owner_id === (int) $user->id;
+        $role = $page->getMemberRole($user->id);
+        if (! $isOwner && $role !== Page::ROLE_ADMIN) {
+            abort(403, 'Only page owners or administrators can manage team roles.');
+        }
+
+        $validated = $request->validate([
+            'identifier' => ['required', 'string', 'max:120'],
+            'role' => ['required', 'string', 'in:admin,editor,moderator,analyst'],
+        ]);
+
+        $identifier = trim($validated['identifier']);
+        $targetUser = User::where('email', $identifier)
+            ->orWhere('username', $identifier)
+            ->first();
+
+        if (! $targetUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found with the provided email or username.',
+            ], 404);
+        }
+
+        if ((int) $targetUser->id === (int) $page->owner_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This user is already the owner of this page.',
+            ], 422);
+        }
+
+        $member = PageMember::updateOrCreate(
+            ['page_id' => $page->id, 'user_id' => $targetUser->id],
+            [
+                'role' => $validated['role'],
+                'status' => 'active',
+                'assigned_by' => $user->id,
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$targetUser->name} has been added as {$validated['role']}.",
+            'member' => $member->load('user.profile'),
+        ]);
+    }
+
+    /**
+     * Update existing team member's role.
+     */
+    public function updateTeamMemberRole(Request $request, string $slug, int $memberId): JsonResponse
+    {
+        $user = $this->resolveUser($request);
+        $page = Page::where('slug', $slug)->firstOrFail();
+
+        $isOwner = (int) $page->owner_id === (int) $user->id;
+        $role = $page->getMemberRole($user->id);
+        if (! $isOwner && $role !== Page::ROLE_ADMIN) {
+            abort(403, 'Only page owners or administrators can change team roles.');
+        }
+
+        $validated = $request->validate([
+            'role' => ['required', 'string', 'in:admin,editor,moderator,analyst'],
+        ]);
+
+        $member = PageMember::where('page_id', $page->id)->where('id', $memberId)->firstOrFail();
+        $member->update(['role' => $validated['role']]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Team member role updated successfully.',
+            'member' => $member,
+        ]);
+    }
+
+    /**
+     * Remove team member from the page.
+     */
+    public function removeTeamMember(Request $request, string $slug, int $memberId): JsonResponse
+    {
+        $user = $this->resolveUser($request);
+        $page = Page::where('slug', $slug)->firstOrFail();
+
+        $isOwner = (int) $page->owner_id === (int) $user->id;
+        $role = $page->getMemberRole($user->id);
+        if (! $isOwner && $role !== Page::ROLE_ADMIN) {
+            abort(403, 'Only page owners or administrators can remove team members.');
+        }
+
+        $member = PageMember::where('page_id', $page->id)->where('id', $memberId)->firstOrFail();
+        $member->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Team member removed successfully.',
+        ]);
+    }
+
+    /**
+     * Remove follower from page.
+     */
+    public function removeFollower(Request $request, string $slug, int $userId): JsonResponse
+    {
+        $user = $this->resolveUser($request);
+        $page = Page::where('slug', $slug)->firstOrFail();
+        $this->authorizePageManager($page, $user, 'page.moderate');
+
+        $deleted = PageFollower::where('page_id', $page->id)->where('user_id', $userId)->delete();
+        if ($deleted && $page->followers_count > 0) {
+            $page->decrement('followers_count');
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Follower removed from page.',
         ]);
     }
 

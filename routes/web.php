@@ -254,6 +254,14 @@ Route::put('/pages/{slug}/posts/{postId}', [PageWebController::class, 'updatePos
 Route::delete('/pages/{slug}/posts/{postId}', [PageWebController::class, 'deletePost'])->name('pages.posts.delete')->whereNumber('postId');
 Route::post('/pages/{slug}/posts/{postId}/pin', [PageWebController::class, 'togglePinPost'])->name('pages.posts.pin')->whereNumber('postId');
 Route::post('/pages/{slug}/posts/{postId}/visibility', [PageWebController::class, 'updatePostVisibility'])->name('pages.posts.visibility')->whereNumber('postId');
+Route::post('/posts/{id}/react', [PageWebController::class, 'reactPost'])->name('posts.react')->whereNumber('id');
+Route::put('/pages/{slug}/details', [PageWebController::class, 'updateDetails'])->name('pages.updateDetails');
+Route::post('/pages/{slug}/branding', [PageWebController::class, 'uploadBranding'])->name('pages.branding');
+Route::put('/pages/{slug}/settings', [PageWebController::class, 'updateSettings'])->name('pages.updateSettings');
+Route::post('/pages/{slug}/team/invite', [PageWebController::class, 'inviteTeamMember'])->name('pages.team.invite');
+Route::put('/pages/{slug}/team/{memberId}', [PageWebController::class, 'updateTeamMemberRole'])->name('pages.team.updateRole')->whereNumber('memberId');
+Route::delete('/pages/{slug}/team/{memberId}', [PageWebController::class, 'removeTeamMember'])->name('pages.team.remove')->whereNumber('memberId');
+Route::delete('/pages/{slug}/followers/{userId}', [PageWebController::class, 'removeFollower'])->name('pages.followers.remove')->whereNumber('userId');
 Route::get('/pages/{slug}', [PageWebController::class, 'show'])->name('pages.show');
 Route::post('/pages/{id}/follow', [PageWebController::class, 'toggleFollow'])->name('pages.follow')->whereNumber('id');
 
