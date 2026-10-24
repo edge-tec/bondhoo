@@ -79,7 +79,7 @@ class MessageController extends Controller
             'body' => ['nullable', 'string', 'max:5000'],
             'media_ids' => ['nullable', 'array'],
             'media_ids.*' => ['integer', 'exists:media,id'],
-            'type' => ['nullable', 'string', 'in:text,media,voice,file,link,system'],
+            'type' => ['nullable', 'string', 'in:text,media,voice,file,link,system,reel'],
             'reply_to_id' => ['nullable', 'integer', 'exists:messages,id'],
             'reply_to_message_id' => ['nullable', 'integer', 'exists:messages,id'],
             'client_message_id' => ['nullable', 'string', 'max:128'],

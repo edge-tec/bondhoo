@@ -70,6 +70,14 @@ class ReportController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $viewer = $request->user();
+        if (! $viewer || (! $viewer->hasPermission('reports.manage') && ! $viewer->isAdmin() && ! $viewer->hasRole(['ADMIN', 'MODERATOR', 'SUPER_ADMIN']))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to access moderation reports.',
+            ], 403);
+        }
+
         $status = $request->query('status');
         $query = Report::with(['reporter.profile', 'reviewer']);
 
@@ -95,12 +103,32 @@ class ReportController extends Controller
      */
     public function update(Request $request, int $id): JsonResponse
     {
+        $viewer = $request->user();
+        if (! $viewer || (! $viewer->hasPermission('reports.resolve') && ! $viewer->isAdmin() && ! $viewer->hasRole(['ADMIN', 'MODERATOR', 'SUPER_ADMIN']))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to moderate reports.',
+            ], 403);
+        }
+
         $report = Report::findOrFail($id);
 
         $validated = $request->validate([
             'status' => ['required', 'string', 'in:reviewed,dismissed,actioned'],
             'admin_notes' => ['nullable', 'string', 'max:1000'],
+            'action_type' => ['nullable', 'string', 'in:delete_content,suspend_user'],
         ]);
+
+        if ($validated['status'] === Report::STATUS_ACTIONED && ! empty($validated['action_type'])) {
+            if ($validated['action_type'] === 'delete_content' && $report->reportable) {
+                $report->reportable->delete();
+            } elseif ($validated['action_type'] === 'suspend_user') {
+                $targetUser = $report->reportable instanceof User ? $report->reportable : $report->reportable?->user;
+                if ($targetUser) {
+                    $targetUser->update(['status' => 'suspended']);
+                }
+            }
+        }
 
         $report->update([
             'status' => $validated['status'],

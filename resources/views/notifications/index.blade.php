@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'নোটিফিকেশন সেন্টার — Bondhoo')
+@section('title', 'নোটিফিকেশন সেন্টার — SocialHub')
 
 @section('styles')
 <style>

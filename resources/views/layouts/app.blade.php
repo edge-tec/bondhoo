@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>@yield('title', 'Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্ক')</title>
+    <title>@yield('title', 'SocialHub — Modern Social Network')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
@@ -43,18 +43,18 @@
     </script>
     <style>
         :root {
-            --fb-bg: #f0f2f5;
+            --fb-bg: #f5f7fb;
             --fb-card: #ffffff;
             --fb-primary: #1877f2;
-            --fb-primary-hover: #166fe5;
-            --fb-text-primary: #050505;
-            --fb-text-secondary: #65676b;
-            --fb-border: #e4e6eb;
-            --fb-divider: #ced0d4;
-            --fb-hover: #f2f2f2;
-            --fb-btn-bg: #e4e6eb;
-            --fb-green: #42b72a;
-            --fb-red: #f02849;
+            --fb-primary-hover: #1666d8;
+            --fb-text-primary: #172033;
+            --fb-text-secondary: #667085;
+            --fb-border: #e4e7ec;
+            --fb-divider: #e4e7ec;
+            --fb-hover: #f5f7fb;
+            --fb-btn-bg: #f5f7fb;
+            --fb-green: #12b76a;
+            --fb-red: #f04438;
             --fb-yellow: #f7b125;
             --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
             --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -654,6 +654,12 @@
             background: #f8fafc;
         }
 
+        .main-app-container.is-page-view-mode {
+            max-width: 1536px !important;
+            width: 100% !important;
+            padding: 16px 20px !important;
+        }
+
         .user-profile-header-pill {
             display: flex;
             align-items: center;
@@ -785,8 +791,15 @@
     <header class="app-header">
         <!-- Left: Logo & Search -->
         <div class="header-left">
-            <a href="/" class="fb-logo" title="Bondhoo হোম" style="background:transparent;box-shadow:none;padding:0;display:flex;align-items:center;text-decoration:none;">
-                <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo" style="height: 34px; max-width: 155px; width: auto; object-fit: contain; display: block;">
+            <a href="/" class="fb-logo" title="SocialHub" style="background:transparent;box-shadow:none;padding:0;display:flex;align-items:center;gap:10px;text-decoration:none;">
+                <div style="width: 38px; height: 38px; border-radius: 11px; background: #1877f2; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(24, 119, 242, 0.25); flex-shrink: 0;">
+                    <svg style="width: 24px; height: 24px;" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                </div>
+                <span style="font-size: 21px; font-weight: 800; color: var(--fb-text-primary); letter-spacing: -0.5px; display: inline-flex; align-items: center;">
+                    Social<span style="color: #1877f2;">Hub</span>
+                </span>
             </a>
             <div class="search-box" style="position: relative;">
                 <span class="search-icon">
@@ -795,7 +808,7 @@
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                 </span>
-                <input type="text" class="search-input" id="globalAppSearch" placeholder="Search for people, pages, groups and more..." autocomplete="off">
+                <input type="text" class="search-input" id="globalAppSearch" placeholder="Search for people, posts, or groups" autocomplete="off">
                 <div id="globalAppSearchResultsDropdown" style="display: none; position: absolute; top: 46px; left: 0; width: 340px; background: var(--fb-card); border-radius: 12px; box-shadow: var(--shadow-lg); border: 1px solid var(--fb-border); z-index: 1000; max-height: 420px; overflow-y: auto;"></div>
             </div>
         </div>
@@ -1010,7 +1023,7 @@
         </div>
     </header>
 
-    <main class="main-app-container {{ request()->is('messages*') ? 'main-messenger-mode' : '' }} {{ request()->routeIs('pages.index', 'pages.manage') ? 'is-pages-dashboard' : '' }}">
+    <main class="main-app-container {{ request()->is('messages*') ? 'main-messenger-mode' : '' }} {{ request()->routeIs('pages.index', 'pages.manage') ? 'is-pages-dashboard' : '' }} {{ request()->routeIs('pages.show') ? 'is-page-view-mode' : '' }}">
         @yield('content')
     </main>
 
@@ -1583,6 +1596,7 @@
         }
     </style>
     @yield('scripts')
+    @stack('scripts')
     @include('partials.mobile-navigation')
     @include('partials.realtime-listener')
 </body>

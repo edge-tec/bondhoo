@@ -86,7 +86,7 @@ class ReactionService
                 ->where('reactable_id', $reactableId)
                 ->count();
 
-            if (isset($target->likes_count)) {
+            if (array_key_exists('likes_count', $target->getAttributes()) || isset($target->likes_count) || $target instanceof Post || $target instanceof Comment) {
                 $target->update(['likes_count' => $totalCount]);
             }
 

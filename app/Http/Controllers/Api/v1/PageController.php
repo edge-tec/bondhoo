@@ -26,9 +26,23 @@ class PageController extends Controller
         $user = $request->user();
         $perPage = (int) $request->query('per_page', 15);
 
-        $pages = Page::with('owner')
-            ->latest('followers_count')
-            ->paginate($perPage);
+        $query = Page::with('owner');
+
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('category', 'like', "%{$search}%")
+                    ->orWhere('bio', 'like', "%{$search}%");
+            });
+        }
+
+        if ($category = $request->query('category')) {
+            if ($category !== 'all') {
+                $query->where('category', 'like', "%{$category}%");
+            }
+        }
+
+        $pages = $query->latest('followers_count')->paginate($perPage);
 
         $pages->getCollection()->transform(fn (Page $p) => $p->toResponseArray($user));
 
@@ -54,8 +68,17 @@ class PageController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'category' => ['required', 'string', 'max:50'],
             'bio' => ['nullable', 'string', 'max:500'],
-            'avatar_url' => ['nullable', 'string', 'url'],
-            'cover_image_url' => ['nullable', 'string', 'url'],
+            'short_description' => ['nullable', 'string', 'max:300'],
+            'description' => ['nullable', 'string', 'max:3000'],
+            'username' => ['nullable', 'string', 'max:60'],
+            'website' => ['nullable', 'string', 'url', 'max:255'],
+            'email' => ['nullable', 'email', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:60'],
+            'visibility' => ['nullable', 'string', 'in:public,friends,private,unlisted,restricted'],
+            'avatar_url' => ['nullable', 'string', 'max:1000'],
+            'cover_image_url' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $page = $this->pageService->createPage($user, $validated);

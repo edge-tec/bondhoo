@@ -2,8 +2,65 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+@source '../js/**/*.{vue,js,ts,jsx,tsx}';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-brand-blue: #1877F2;
+    --color-brand-blue-hover: #1666D8;
+    --color-brand-blue-light: #E7F3FF;
+    --color-canvas-bg: #F5F7FB;
+    --color-surface-card: #FFFFFF;
+    --color-content-main: #172033;
+    --color-content-muted: #667085;
+    --color-edge-border: #E4E7EC;
+    --color-status-online: #12B76A;
 }
+
+:root {
+    --primary: #1877f2;
+    --primary-hover: #1666d8;
+    --primary-light: #e7f3ff;
+    --bg-main: #f5f7fb;
+    --surface: #ffffff;
+    --text-primary: #172033;
+    --text-secondary: #667085;
+    --border-color: #e4e7ec;
+    --online-green: #12b76a;
+}
+
+/* Custom utility styles */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e4e7ec;
+    border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+/* Story transition & subtle card lift */
+.card-hover-lift {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -3px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.04);
+}
+

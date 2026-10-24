@@ -109,6 +109,7 @@ class ProfileEnterpriseApiController extends Controller
         $this->profileService->repositionCover($request->user(), (int) $request->input('position_y'));
 
         return response()->json([
+            'success' => true,
             'status' => 'success',
             'message' => 'Cover photo repositioned',
         ]);
@@ -437,6 +438,7 @@ class ProfileEnterpriseApiController extends Controller
         $items = $this->profileService->getSavedItems($request->user(), $collection);
 
         return response()->json([
+            'success' => true,
             'status' => 'success',
             'data' => $items,
         ]);
@@ -461,6 +463,7 @@ class ProfileEnterpriseApiController extends Controller
         );
 
         return response()->json([
+            'success' => true,
             'status' => 'success',
             'data' => $result,
         ]);

@@ -41,6 +41,18 @@ class Media extends Model
         ];
     }
 
+    protected $appends = [
+        'url',
+    ];
+
+    /**
+     * Virtual url attribute resolving public/CDN URL.
+     */
+    public function getUrlAttribute(): ?string
+    {
+        return $this->getVariantUrl('original') ?: ($this->original_path ? asset('storage/'.ltrim($this->original_path, '/')) : null);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

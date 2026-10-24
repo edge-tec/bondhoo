@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'নতুন এন্টারপ্রাইজ পেইজ তৈরি করুন — Bondhoo')
+@section('title', 'নতুন এন্টারপ্রাইজ পেইজ তৈরি করুন — SocialHub')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('css/enterprise-pages-redesign.css') }}?v={{ time() }}">
 <style>
     :root {
-        --primary-brand: #059669;
-        --primary-brand-hover: #047857;
-        --primary-gradient: linear-gradient(135deg, #059669 0%, #0284c7 100%);
+        --primary-brand: #1877f2;
+        --primary-brand-hover: #166fe5;
+        --primary-gradient: linear-gradient(135deg, #1877f2 0%, #0056b3 100%);
     }
 
     .stepper-container {
@@ -507,7 +507,7 @@
                         </div>
                         <div id="usernameIndicator" class="availability-indicator" style="display: none;"></div>
                         <div style="font-size: 12px; color: var(--fb-text-secondary); margin-top: 4px;">
-                            লাইভ প্রিভিউ: <strong style="color: #059669;">bondhoo.com/pages/@<span id="previewUrlSlug">yourbrand</span></strong>
+                            লাইভ প্রিভিউ: <strong style="color: #059669;">socialhub.com/pages/@<span id="previewUrlSlug">yourbrand</span></strong>
                         </div>
                     </div>
 

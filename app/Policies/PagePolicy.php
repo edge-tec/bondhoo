@@ -45,6 +45,22 @@ class PagePolicy
     }
 
     /**
+     * পেজ আর্কাইভ / নিষ্ক্রিয় করতে পারবে কিনা (ওনার বা সেটিংস ম্যানেজার)
+     */
+    public function archive(User $user, Page $page): bool
+    {
+        return (int) $page->owner_id === (int) $user->id || $page->hasPermission($user->id, 'page.settings');
+    }
+
+    /**
+     * পেজ ট্র্যাশ থেকে পুনরুদ্ধার করতে পারবে কিনা (শুধুমাত্র পেজ ওনার)
+     */
+    public function restore(User $user, Page $page): bool
+    {
+        return (int) $page->owner_id === (int) $user->id;
+    }
+
+    /**
      * পেজ সেটিংস পরিবর্তন করতে পারবে কিনা
      */
     public function manageSettings(User $user, Page $page): bool
@@ -82,6 +98,30 @@ class PagePolicy
     public function schedulePost(User $user, Page $page): bool
     {
         return $page->hasPermission($user->id, 'posts.schedule');
+    }
+
+    /**
+     * পোস্ট সরাসরি পাবলিশ করতে পারবে কিনা
+     */
+    public function publishPost(User $user, Page $page): bool
+    {
+        return $page->hasPermission($user->id, 'posts.publish');
+    }
+
+    /**
+     * পোস্ট ডিলিট করতে পারবে কিনা
+     */
+    public function deletePost(User $user, Page $page): bool
+    {
+        return $page->hasPermission($user->id, 'posts.delete');
+    }
+
+    /**
+     * মিডিয়া আপলোড বা ডিলিট পরিচালনা করতে পারবে কিনা
+     */
+    public function manageMedia(User $user, Page $page): bool
+    {
+        return $page->hasPermission($user->id, 'media.manage');
     }
 
     /**

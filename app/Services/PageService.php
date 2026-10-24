@@ -2,10 +2,13 @@
 
 namespace App\Services;
 
+use App\Events\PageFollowerUpdatedEvent;
+use App\Events\PageNotificationEvent;
 use App\Events\PagePostPublishedEvent;
 use App\Models\Media;
 use App\Models\Page;
 use App\Models\PageFollower;
+use App\Models\PageMember;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\Contracts\NotificationServiceInterface;
@@ -14,6 +17,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -38,17 +42,43 @@ class PageService
         }
 
         return DB::transaction(function () use ($owner, $data, $name, $slug) {
+            $username = $data['username'] ?? $slug;
+            $counter = 1;
+            $origUser = $username;
+            while (Page::where('username', $username)->exists()) {
+                $username = "{$origUser}-{$counter}";
+                $counter++;
+            }
+
             $page = Page::create([
                 'name' => $name,
                 'slug' => $slug,
+                'username' => $username,
                 'category' => $data['category'] ?? 'General',
-                'bio' => $data['bio'] ?? null,
+                'bio' => $data['bio'] ?? ($data['short_description'] ?? null),
+                'short_description' => $data['short_description'] ?? ($data['bio'] ?? null),
+                'description' => $data['description'] ?? ($data['bio'] ?? null),
+                'website' => $data['website'] ?? null,
+                'email' => $data['email'] ?? null,
+                'phone' => $data['phone'] ?? null,
+                'address' => $data['address'] ?? null,
+                'city' => $data['city'] ?? null,
                 'avatar_url' => $data['avatar_url'] ?? null,
                 'cover_image_url' => $data['cover_image_url'] ?? null,
+                'visibility' => $data['visibility'] ?? 'public',
                 'owner_id' => $owner->id,
                 'followers_count' => 0,
                 'posts_count' => 0,
                 'is_verified' => false,
+            ]);
+
+            PageMember::firstOrCreate([
+                'page_id' => $page->id,
+                'user_id' => $owner->id,
+            ], [
+                'role' => Page::ROLE_OWNER,
+                'status' => 'active',
+                'joined_at' => now(),
             ]);
 
             return $page;
@@ -71,10 +101,19 @@ class PageService
             if ($existing) {
                 $existing->delete();
                 $lockedPage->decrement('followers_count');
+                $newCount = (int) $lockedPage->fresh()->followers_count;
+
+                DB::afterCommit(function () use ($lockedPage, $newCount, $user) {
+                    try {
+                        broadcast(new PageFollowerUpdatedEvent((int) $lockedPage->id, $newCount, 'unfollowed', (int) $user->id));
+                    } catch (\Throwable $e) {
+                        // Ignore broadcast failure
+                    }
+                });
 
                 return [
                     'is_following' => false,
-                    'followers_count' => (int) $lockedPage->fresh()->followers_count,
+                    'followers_count' => $newCount,
                     'message' => 'Unfollowed page successfully.',
                 ];
             }
@@ -90,6 +129,36 @@ class PageService
             } catch (UniqueConstraintViolationException $e) {
                 // Concurrently followed, retain consistency
             }
+
+            $newCount = (int) $lockedPage->fresh()->followers_count;
+
+            DB::afterCommit(function () use ($lockedPage, $newCount, $user) {
+                try {
+                    broadcast(new PageFollowerUpdatedEvent((int) $lockedPage->id, $newCount, 'followed', (int) $user->id));
+                } catch (\Throwable $e) {
+                    // Ignore broadcast failure
+                }
+
+                if ((int) $lockedPage->owner_id !== (int) $user->id) {
+                    try {
+                        broadcast(new PageNotificationEvent(
+                            recipientUserId: (int) $lockedPage->owner_id,
+                            pageId: (int) $lockedPage->id,
+                            notificationData: [
+                                'type' => 'page.followed',
+                                'title' => 'নতুন পেজ ফলোয়ার!',
+                                'message' => ($user->name ?? $user->username)." আপনার পেজ '{$lockedPage->name}' ফলো করেছেন।",
+                                'action_url' => "/pages/{$lockedPage->slug}",
+                                'actor_id' => $user->id,
+                                'actor_name' => $user->name ?? $user->username,
+                            ],
+                            broadcastToAdminChannel: true
+                        ));
+                    } catch (\Throwable $e) {
+                        // Ignore broadcast failure
+                    }
+                }
+            });
 
             if (app()->bound(NotificationServiceInterface::class) && (int) $lockedPage->owner_id !== (int) $user->id) {
                 try {
@@ -114,7 +183,7 @@ class PageService
 
             return [
                 'is_following' => true,
-                'followers_count' => (int) $lockedPage->fresh()->followers_count,
+                'followers_count' => $newCount,
                 'message' => 'Followed page successfully.',
             ];
         });
@@ -195,5 +264,80 @@ class PageService
         $paginator->getCollection()->transform(fn (Post $p) => $p->toResponseArray($viewer));
 
         return $paginator;
+    }
+
+    /**
+     * Delete unused page media from storage disk safely without deleting files referenced by other records.
+     */
+    public function cleanupUnusedMedia(?string $url, ?int $exceptPageId = null): bool
+    {
+        if (empty($url) || ! is_string($url)) {
+            return false;
+        }
+
+        // Only clean up local public storage paths
+        if (! str_contains($url, 'storage/') && ! str_starts_with($url, 'pages/')) {
+            return false;
+        }
+
+        $relativePath = Str::after($url, 'storage/');
+        $relativePath = ltrim($relativePath, '/');
+
+        if (empty($relativePath)) {
+            return false;
+        }
+
+        $normalizedUrl = '/storage/'.$relativePath;
+
+        // Check if any other Page references this file
+        $otherPageExists = Page::where('id', '!=', $exceptPageId ?? 0)
+            ->where(function ($q) use ($url, $normalizedUrl, $relativePath) {
+                $q->where('avatar_url', $url)
+                    ->orWhere('avatar_url', $normalizedUrl)
+                    ->orWhere('avatar_url', $relativePath)
+                    ->orWhere('cover_image_url', $url)
+                    ->orWhere('cover_image_url', $normalizedUrl)
+                    ->orWhere('cover_image_url', $relativePath)
+                    ->orWhere('logo_url', $url)
+                    ->orWhere('logo_url', $normalizedUrl)
+                    ->orWhere('logo_url', $relativePath);
+            })
+            ->exists();
+
+        if ($otherPageExists) {
+            return false;
+        }
+
+        // Check if UserProfile references this file
+        $userProfileExists = DB::table('user_profiles')
+            ->where('avatar_url', $url)
+            ->orWhere('avatar_url', $normalizedUrl)
+            ->orWhere('avatar_url', $relativePath)
+            ->orWhere('cover_url', $url)
+            ->orWhere('cover_url', $normalizedUrl)
+            ->orWhere('cover_url', $relativePath)
+            ->exists();
+
+        if ($userProfileExists) {
+            return false;
+        }
+
+        // Check if Media table references this file
+        $mediaExists = DB::table('media')
+            ->where('url', $url)
+            ->orWhere('url', $normalizedUrl)
+            ->orWhere('original_path', $relativePath)
+            ->orWhere('path', $relativePath)
+            ->exists();
+
+        if ($mediaExists) {
+            return false;
+        }
+
+        if (Storage::disk('public')->exists($relativePath)) {
+            return Storage::disk('public')->delete($relativePath);
+        }
+
+        return false;
     }
 }

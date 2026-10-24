@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $profile['name'] }} (@ {{ $profile['username'] }}) | Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্ক</title>
+    <title>{{ $profile['name'] }} (@ {{ $profile['username'] }}) | SocialHub</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
@@ -46,24 +46,24 @@
     <style>
         :root {
             /* ═══════ PREMIUM COLOR PALETTE ═══════ */
-            --fb-bg: #f4f6fa;
+            --fb-bg: #f5f7fb;
             --fb-card: #ffffff;
-            --fb-primary: #4f46e5;
-            --fb-primary-hover: #4338ca;
-            --fb-primary-light: rgba(79, 70, 229, 0.08);
-            --fb-text-primary: #111827;
-            --fb-text-secondary: #6b7280;
-            --fb-border: #e5e7eb;
+            --fb-primary: #1877f2;
+            --fb-primary-hover: #1666d8;
+            --fb-primary-light: rgba(24, 119, 242, 0.08);
+            --fb-text-primary: #172033;
+            --fb-text-secondary: #667085;
+            --fb-border: #e4e7ec;
             --fb-divider: #f0f1f3;
             --fb-hover: #f8f9fb;
             --fb-btn-bg: #f3f4f6;
             --fb-btn-text: #1f2937;
-            --fb-green: #10b981;
-            --fb-red: #ef4444;
-            --fb-blue-light: #eef2ff;
-            --fb-badge-blue: #4f46e5;
-            --fb-accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
-            --fb-cover-gradient: radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.18) 0%, transparent 40%), radial-gradient(circle at 20% 80%, rgba(0, 132, 255, 0.4) 0%, transparent 50%), linear-gradient(135deg, #0284c7 0%, #0084ff 45%, #1d4ed8 100%);
+            --fb-green: #12b76a;
+            --fb-red: #f04438;
+            --fb-blue-light: #e7f3ff;
+            --fb-badge-blue: #1877f2;
+            --fb-accent-gradient: linear-gradient(135deg, #1877f2, #1666d8, #0284c7);
+            --fb-cover-gradient: radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.18) 0%, transparent 40%), radial-gradient(circle at 20% 80%, rgba(24, 119, 242, 0.4) 0%, transparent 50%), linear-gradient(135deg, #0284c7 0%, #1877f2 45%, #1666d8 100%);
 
             /* ═══════ REFINED SHADOWS ═══════ */
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -109,11 +109,21 @@
         }
 
         /* ------------------------------------------------------------- */
-        /* TOP NAVIGATION BAR - HIDDEN (DOCK SIDEBAR IS PRIMARY AS IN MOCKUP) */
+        /* TOP NAVIGATION BAR */
         /* ------------------------------------------------------------- */
         header.desktop-header,
         .desktop-header {
-            display: none !important;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: #ffffff;
+            border-bottom: 1px solid var(--fb-border, #e4e6eb);
+            height: 56px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .header-left {
@@ -326,7 +336,7 @@
             gap: 24px;
             margin-top: 0;
             flex: 1 1 auto;
-            min-width: 320px;
+            min-width: 0;
         }
 
         .avatar-wrapper {
@@ -334,17 +344,16 @@
             width: 168px;
             height: 168px;
             border-radius: 50%;
-            border: 5px solid var(--fb-card);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(79, 70, 229, 0.1);
+            border: 4px solid #ffffff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
             background: #ffffff;
             flex-shrink: 0;
-            margin-top: -84px;
+            margin-top: -64px;
             z-index: 4;
-            transition: box-shadow var(--transition-smooth);
         }
 
         .avatar-wrapper:hover {
-            box-shadow: 0 4px 24px rgba(79, 70, 229, 0.25), 0 0 0 2px rgba(79, 70, 229, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
         }
 
         .avatar-img {
@@ -973,40 +982,13 @@
             background: #ef4444;
         }
 
-        @media (min-width: 1200px) {
-            body.has-slim-dock {
-                padding-left: 230px;
-            }
+        .app-slim-dock {
+            display: none !important;
         }
 
-        @media (max-width: 1199px) and (min-width: 1025px) {
-            .app-slim-dock {
-                width: 64px !important;
-                padding: 16px 0 20px 0 !important;
-                align-items: center !important;
-            }
-            .dock-brand-area, .dock-search-box, .dock-label {
-                display: none !important;
-            }
-            .dock-item {
-                width: 42px !important;
-                height: 42px !important;
-                padding: 0 !important;
-                justify-content: center !important;
-                border-radius: 12px !important;
-            }
-            body.has-slim-dock {
-                padding-left: 64px !important;
-            }
-        }
-
-        @media (max-width: 1024px) {
-            .app-slim-dock {
-                display: none !important;
-            }
-            body.has-slim-dock {
-                padding-left: 0 !important;
-            }
+        body.has-slim-dock,
+        body {
+            padding-left: 0 !important;
         }
 
         /* Desktop Header Stats Box (As in Desktop Mockup) */
@@ -3882,6 +3864,10 @@
                 overflow-x: hidden !important;
             }
             .profile-main-bar {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
                 padding: 0 12px 14px 12px !important;
                 box-sizing: border-box !important;
                 width: 100% !important;
@@ -3889,8 +3875,13 @@
                 overflow: hidden !important;
             }
             .profile-avatar-and-names {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
                 width: 100% !important;
                 max-width: 100% !important;
+                min-width: 0 !important;
                 box-sizing: border-box !important;
             }
             .profile-names-block {
@@ -4378,12 +4369,19 @@
     </style>
     <link rel="stylesheet" href="/css/enterprise-profile-redesign.css?v={{ time() }}">
 </head>
-<body class="has-slim-dock">
+<body class="profile-facebook-layout">
 
-    <!-- SLIM VERTICAL APP RAIL DOCK / DESKTOP SIDEBAR (AS SHOWN IN DESKTOP MOCKUP) -->
-    <aside class="app-slim-dock" aria-label="Quick App Dock">
-        <a href="/" class="dock-brand-area" title="Bondhoo">
-            <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo">
+    <!-- SLIM VERTICAL APP RAIL DOCK / DESKTOP SIDEBAR (HIDDEN FOR AUTHENTIC FACEBOOK DESKTOP LAYOUT) -->
+    <aside class="app-slim-dock" aria-label="Quick App Dock" style="display: none !important;">
+        <a href="/" class="dock-brand-area" title="SocialHub" style="display:inline-flex;align-items:center;justify-content:center;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#1877f2;color:#fff;box-shadow:0 2px 6px rgba(24,119,242,0.35);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </span>
         </a>
         <div class="dock-search-box">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -4479,8 +4477,16 @@
     <!-- MOBILE TOP NAVIGATION BAR (MATCHING MOCKUP DESIGN) -->
     <header class="mobile-profile-header-bar mobile-only">
         <div class="mobile-profile-header-top">
-            <a href="/" class="mobile-profile-brand" title="Bondhoo">
-                <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo">
+            <a href="/" class="mobile-profile-brand" title="SocialHub" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:#1877f2;color:#fff;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </span>
+                <span style="font-size:1.25rem;font-weight:800;letter-spacing:-0.03em;color:#1877f2;font-family:'Inter',sans-serif;">SocialHub</span>
             </a>
             <div class="mobile-profile-top-actions">
                 <a href="/watch" class="mobile-head-icon-btn" title="ভিডিও ও লাইভ">
@@ -4539,8 +4545,16 @@
     <!-- TOP NAVIGATION BAR -->
     <header class="desktop-header desktop-only">
         <div class="header-left">
-            <a href="/" class="fb-logo" title="Bondhoo Home" style="background:transparent;box-shadow:none;padding:0;display:inline-flex;align-items:center;height:38px;text-decoration:none;">
-                <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo" style="height: 34px; max-width: 155px; width: auto; object-fit: contain; display: block;">
+            <a href="/" class="fb-logo" title="SocialHub Home" style="background:transparent;box-shadow:none;padding:0;display:inline-flex;align-items:center;gap:8px;height:38px;text-decoration:none;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#1877f2;color:#fff;box-shadow:0 2px 6px rgba(24,119,242,0.35);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </span>
+                <span style="font-size:1.35rem;font-weight:800;letter-spacing:-0.035em;color:#1877f2;font-family:'Inter',sans-serif;">SocialHub</span>
             </a>
             <div class="search-box">
                 <span class="search-icon">
@@ -4549,7 +4563,7 @@
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                 </span>
-                <input type="text" class="search-input" placeholder="Bondhoo-তে খুঁজুন...">
+                <input type="text" class="search-input" placeholder="Search for people, posts, or groups...">
                 <span class="header-search-badge desktop-only" style="display:inline-flex;align-items:center;padding:2px 7px;font-size:11px;font-weight:700;background:var(--fb-btn-bg);border:1px solid var(--fb-border);border-radius:6px;color:var(--fb-text-secondary);font-family:inherit;">⌘ Keyword</span>
             </div>
         </div>
@@ -4980,11 +4994,12 @@
 
                     @if($isOwner)
                         <div class="profile-actions-row profile-actions-row-primary">
-                            <button class="fb-btn fb-btn-primary btn-action-story" onclick="openStoryModal()" style="background:#0084ff;color:white;border:none;box-shadow:0 2px 8px rgba(0,132,255,0.3);">
-                                <span style="font-size:15px;line-height:1;">+</span>
+                            <button class="fb-btn fb-btn-primary btn-action-story" onclick="openStoryModal()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                 <span>স্টোরি যোগ করুন</span>
                             </button>
                             <button class="fb-btn fb-btn-secondary btn-action-edit" onclick="openEditProfileModal()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 <span>প্রোফাইল সম্পাদনা</span>
                             </button>
 
@@ -5858,7 +5873,7 @@
                     <div class="fb-card" style="margin-bottom:16px; border-radius:14px; padding:18px;">
                         <div style="font-size:16px; font-weight:800; margin-bottom:8px;">পরিচিতি</div>
                         <div style="font-size:13.5px; color:var(--fb-text-secondary); line-height:1.5; margin-bottom:10px;">
-                            {{ $profile['bio'] ?: ($profile['headline'] ?: 'Lead System Administrator at Bondhoo Platform, Dhaka, Bangladesh') }}
+                            {{ $profile['bio'] ?: ($profile['headline'] ?: 'Lead System Administrator at SocialHub Platform, Dhaka, Bangladesh') }}
                         </div>
                         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding-top:10px; border-top:1px solid var(--fb-divider);">
                             <div style="display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--fb-text-secondary);">
@@ -8777,7 +8792,7 @@
                 <!-- Social Share Buttons -->
                 <div style="font-size: 12px; font-weight: 700; color: var(--fb-text-secondary); text-transform: uppercase; margin-bottom: 12px;">সোশ্যাল মিডিয়ায় শেয়ার করুন</div>
                 <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
-                    <a href="https://api.whatsapp.com/send?text={{ urlencode($profile['name'] . ' এর সাথে Bondhoo-তে যুক্ত হোন: ' . $profileUrl) }}" target="_blank" class="fb-btn" style="background: #25D366; color: #fff; text-decoration: none; font-size: 13px; border-radius: 50px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                    <a href="https://api.whatsapp.com/send?text={{ urlencode($profile['name'] . ' এর সাথে SocialHub-এ যুক্ত হোন: ' . $profileUrl) }}" target="_blank" class="fb-btn" style="background: #25D366; color: #fff; text-decoration: none; font-size: 13px; border-radius: 50px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                         <span>WhatsApp</span>
                     </a>
@@ -8785,11 +8800,11 @@
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
                         <span>Facebook</span>
                     </a>
-                    <a href="https://twitter.com/intent/tweet?url={{ urlencode($profileUrl) }}&text={{ urlencode($profile['name'] . ' on Bondhoo') }}" target="_blank" class="fb-btn" style="background: #000; color: #fff; text-decoration: none; font-size: 13px; border-radius: 50px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                    <a href="https://twitter.com/intent/tweet?url={{ urlencode($profileUrl) }}&text={{ urlencode($profile['name'] . ' on SocialHub') }}" target="_blank" class="fb-btn" style="background: #000; color: #fff; text-decoration: none; font-size: 13px; border-radius: 50px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
                         <span>X (Twitter)</span>
                     </a>
-                    <a href="https://t.me/share/url?url={{ urlencode($profileUrl) }}&text={{ urlencode($profile['name'] . ' on Bondhoo') }}" target="_blank" class="fb-btn" style="background: #0088cc; color: #fff; text-decoration: none; font-size: 13px; border-radius: 50px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                    <a href="https://t.me/share/url?url={{ urlencode($profileUrl) }}&text={{ urlencode($profile['name'] . ' on SocialHub') }}" target="_blank" class="fb-btn" style="background: #0088cc; color: #fff; text-decoration: none; font-size: 13px; border-radius: 50px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                         <span>Telegram</span>
                     </a>

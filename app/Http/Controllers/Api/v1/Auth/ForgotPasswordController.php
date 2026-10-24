@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\PasswordResetOtpNotification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +17,7 @@ class ForgotPasswordController extends Controller
     /**
      * Request a password reset token.
      */
-    public function sendResetLinkEmail(Request $request): JsonResponse
+    public function sendResetLinkEmail(Request $request): JsonResponse|RedirectResponse
     {
         $request->validate([
             'email' => ['required', 'email'],
@@ -25,6 +26,10 @@ class ForgotPasswordController extends Controller
         $user = User::where('email', strtolower($request->email))->first();
 
         if (! $user) {
+            if (! $request->expectsJson()) {
+                return back()->with('status', 'If an account exists with this email, a password reset token has been generated.');
+            }
+
             // Constant-time dummy response to prevent email enumeration
             return response()->json([
                 'success' => true,
@@ -57,6 +62,10 @@ class ForgotPasswordController extends Controller
             // Ignore notification failure in tests
         }
 
+        if (! $request->expectsJson()) {
+            return back()->with('status', 'A password reset token has been generated and sent to your email.');
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Password reset token generated.',
@@ -71,7 +80,7 @@ class ForgotPasswordController extends Controller
     /**
      * Reset password using token.
      */
-    public function resetPassword(Request $request): JsonResponse
+    public function resetPassword(Request $request): JsonResponse|RedirectResponse
     {
         $request->validate([
             'email' => ['required', 'email'],
@@ -84,6 +93,10 @@ class ForgotPasswordController extends Controller
             ->first();
 
         if (! $record || ! Hash::check($request->token, $record->token)) {
+            if (! $request->expectsJson()) {
+                return back()->withInput($request->only('email'))->withErrors(['email' => 'Invalid or expired password reset token.']);
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid or expired password reset token.',
@@ -93,6 +106,10 @@ class ForgotPasswordController extends Controller
         // Check if token expired (1 hour)
         if (now()->subHours(1)->gt($record->created_at)) {
             DB::table('password_reset_tokens')->where('email', strtolower($request->email))->delete();
+
+            if (! $request->expectsJson()) {
+                return back()->withInput($request->only('email'))->withErrors(['email' => 'Password reset token has expired.']);
+            }
 
             return response()->json([
                 'success' => false,
@@ -112,6 +129,10 @@ class ForgotPasswordController extends Controller
 
         // Revoke active tokens for security
         $user->tokens()->delete();
+
+        if (! $request->expectsJson()) {
+            return redirect()->route('login')->with('status', 'Password has been reset successfully. You may now log in.');
+        }
 
         return response()->json([
             'success' => true,

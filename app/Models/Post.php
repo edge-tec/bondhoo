@@ -182,8 +182,20 @@ class Post extends Model
                 'shares' => $this->shares_count,
             ],
             'media' => $this->media->map(fn (Media $m) => $m->toResponseArray())->values(),
+            'comments' => $this->relationLoaded('comments')
+                ? $this->comments->map(fn (Comment $c) => $c->toResponseArray($viewer))->values()
+                : ($this->relationLoaded('allComments')
+                    ? $this->allComments->map(fn (Comment $c) => $c->toResponseArray($viewer))->values()
+                    : []),
             'group_id' => $this->group_id,
             'page_id' => $this->page_id,
+            'page' => $this->relationLoaded('page') && $this->page ? [
+                'id' => $this->page->id,
+                'name' => $this->page->name,
+                'slug' => $this->page->slug,
+                'avatar_url' => $this->page->avatar_url,
+                'is_verified' => (bool) $this->page->is_verified,
+            ] : null,
             'viewer_reaction' => $viewerReaction,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

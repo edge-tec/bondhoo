@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 /**
  * সার্চ কন্ট্রোলার:
- * ইউজার, পোস্ট, গ্রুপ এবং পেজজুড়ে সার্বজনীন সার্চ পরিচালনা করে।
+ * ইউজার, পোস্ট, গ্রুপ এবং পেজজুড়ে সার্বজনীন সার্চ ও সার্চ হিস্ট্রি পরিচালনা করে।
  */
 class SearchController extends Controller
 {
@@ -33,6 +33,34 @@ class SearchController extends Controller
         return $this->successResponse(
             data: $results,
             message: 'Search completed successfully.'
+        );
+    }
+
+    /**
+     * ইউজারের সাম্প্রতিক সার্চ হিস্ট্রি তালিকা।
+     */
+    public function history(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $history = $this->searchService->getSearchHistory($user);
+
+        return $this->successResponse(
+            data: $history,
+            message: 'Search history retrieved.'
+        );
+    }
+
+    /**
+     * সার্চ হিস্ট্রি মুছে ফেলা।
+     */
+    public function clearHistory(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $this->searchService->clearSearchHistory($user);
+
+        return $this->successResponse(
+            data: [],
+            message: 'Search history cleared successfully.'
         );
     }
 }

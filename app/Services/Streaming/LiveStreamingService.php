@@ -84,6 +84,7 @@ class LiveStreamingService
         $stream = LiveStream::create([
             'channel_id' => $channelId,
             'user_id' => $user->id,
+            'page_id' => $options['page_id'] ?? null,
             'title' => $title,
             'description' => $description,
             'privacy' => $privacy,
@@ -321,12 +322,20 @@ class LiveStreamingService
      */
     public function leaveViewer(LiveStream $stream, ?User $user, string $sessionId): array
     {
-        LiveStreamViewer::where('live_stream_id', $stream->id)
-            ->where('session_id', $sessionId)
-            ->update([
-                'is_active' => false,
-                'left_at' => now(),
-            ]);
+        $query = LiveStreamViewer::where('live_stream_id', $stream->id);
+
+        if ($sessionId !== '') {
+            $query->where('session_id', $sessionId);
+        } elseif ($user) {
+            $query->where('user_id', $user->id);
+        } else {
+            return $this->recalculateViewerMetrics($stream);
+        }
+
+        $query->update([
+            'is_active' => false,
+            'left_at' => now(),
+        ]);
 
         return $this->recalculateViewerMetrics($stream);
     }
@@ -704,6 +713,7 @@ class LiveStreamingService
 
         $post = Post::create([
             'user_id' => $user->id,
+            'page_id' => $stream->page_id,
             'content' => $stream->title.($stream->description ? "\n\n".$stream->description : ''),
             'audience' => $postAudience,
             'type' => 'video',

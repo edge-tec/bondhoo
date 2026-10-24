@@ -43,6 +43,7 @@ class StoryService
         return DB::transaction(function () use ($user, $type, $content, $mediaIds, $data) {
             $story = Story::create([
                 'user_id' => $user->id,
+                'page_id' => $data['page_id'] ?? null,
                 'type' => $type,
                 'status' => Story::STATUS_READY,
                 'content' => $content ?: null,

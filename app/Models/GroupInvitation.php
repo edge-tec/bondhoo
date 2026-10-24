@@ -14,6 +14,8 @@ class GroupInvitation extends Model
 
     public const STATUS_ACCEPTED = 'accepted';
 
+    public const STATUS_DECLINED = 'declined';
+
     public const STATUS_REVOKED = 'revoked';
 
     public const STATUS_EXPIRED = 'expired';
@@ -69,5 +71,33 @@ class GroupInvitation extends Model
         }
 
         return false;
+    }
+
+    public function toResponseArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'group_id' => $this->group_id,
+            'group' => $this->relationLoaded('group') && $this->group ? [
+                'id' => $this->group->id,
+                'name' => $this->group->name,
+                'slug' => $this->group->slug,
+                'avatar_url' => $this->group->avatar_url,
+                'cover_image_url' => $this->group->cover_image_url,
+                'privacy' => $this->group->privacy,
+                'members_count' => $this->group->members_count,
+            ] : null,
+            'inviter_id' => $this->inviter_id,
+            'inviter' => $this->relationLoaded('inviter') && $this->inviter ? [
+                'id' => $this->inviter->id,
+                'name' => $this->inviter->name,
+                'avatar' => $this->inviter->avatar,
+            ] : null,
+            'invitee_id' => $this->invitee_id,
+            'role' => $this->role,
+            'status' => $this->status,
+            'created_at' => $this->created_at?->toISOString(),
+            'expires_at' => $this->expires_at?->toISOString(),
+        ];
     }
 }

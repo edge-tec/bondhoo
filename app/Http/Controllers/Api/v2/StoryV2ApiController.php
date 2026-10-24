@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v2;
 
 use App\Http\Controllers\Controller;
+use App\Models\Page;
 use App\Models\Story;
 use App\Services\StoryEnterpriseService;
 use Exception;
@@ -40,6 +41,7 @@ class StoryV2ApiController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'page_id' => ['nullable', 'integer', 'exists:pages,id'],
             'type' => ['required', 'string', 'in:text,media'],
             'content' => ['nullable', 'string', 'max:2000'],
             'media_ids' => ['nullable', 'array'],
@@ -57,6 +59,25 @@ class StoryV2ApiController extends Controller
             'allow_replies' => ['nullable', 'boolean'],
             'is_draft' => ['nullable', 'boolean'],
         ]);
+
+        if (! empty($validated['page_id'])) {
+            $page = Page::findOrFail($validated['page_id']);
+            $user = $request->user();
+            $isOwner = (int) $page->owner_id === (int) $user->id;
+            $canManage = $isOwner || in_array($page->getMemberRole($user->id), [
+                Page::ROLE_OWNER,
+                Page::ROLE_ADMIN,
+                Page::ROLE_MANAGER,
+                Page::ROLE_CONTENT_MANAGER,
+                Page::ROLE_MODERATOR,
+            ], true);
+            if (! $canManage) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'এই পেইজের পক্ষে স্টোরি পোস্ট করার অনুমতি আপনার নেই।',
+                ], 403);
+            }
+        }
 
         try {
             $story = $this->storyService->createStory($request->user(), $validated);

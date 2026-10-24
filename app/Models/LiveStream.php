@@ -51,6 +51,7 @@ class LiveStream extends Model
     protected $fillable = [
         'channel_id',
         'user_id',
+        'page_id',
         'title',
         'description',
         'privacy',
@@ -106,6 +107,11 @@ class LiveStream extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function page(): BelongsTo
+    {
+        return $this->belongsTo(Page::class);
     }
 
     public function post(): BelongsTo
@@ -229,13 +235,38 @@ class LiveStream extends Model
             return true;
         }
 
+        if ($this->page_id) {
+            $page = $this->page ?? Page::find($this->page_id);
+            if ($page) {
+                $isOwner = (int) $page->owner_id === (int) $user->id;
+                $userRole = $page->getMemberRole($user->id);
+                $canManage = $isOwner || in_array($userRole, [
+                    Page::ROLE_OWNER,
+                    Page::ROLE_ADMIN,
+                    Page::ROLE_MANAGER,
+                    Page::ROLE_CONTENT_MANAGER,
+                    Page::ROLE_MODERATOR,
+                ], true);
+
+                if ($this->privacy === self::PRIVACY_ONLY_ME) {
+                    return $canManage;
+                }
+
+                if ($this->privacy === self::PRIVACY_FRIENDS || $this->privacy === 'followers') {
+                    $isFollowing = PageFollower::where('page_id', $page->id)->where('user_id', $user->id)->exists();
+
+                    return $canManage || $isFollowing;
+                }
+            }
+        }
+
         if ($this->privacy === self::PRIVACY_ONLY_ME) {
             return false;
         }
 
-        if ($this->privacy === self::PRIVACY_FRIENDS) {
-            return $this->user->friends()->where('friend_id', $user->id)->exists()
-                || $user->friends()->where('friend_id', $this->user_id)->exists();
+        if ($this->privacy === self::PRIVACY_FRIENDS || $this->privacy === 'followers') {
+            return $this->user && ($this->user->friends()->where('friend_id', $user->id)->exists()
+                || $user->friends()->where('friend_id', $this->user_id)->exists());
         }
 
         return false;

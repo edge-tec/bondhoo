@@ -64,10 +64,10 @@ class Comment extends Model
         }
 
         $authorData = [
-            'id' => $this->user->id,
-            'username' => $this->user->username,
-            'name' => $this->user->name,
-            'avatar_url' => $this->user->profile?->avatar_url,
+            'id' => $this->user?->id,
+            'username' => $this->user?->username ?? 'deleted_user',
+            'name' => $this->user?->name ?? 'Deleted User',
+            'avatar_url' => $this->user?->profile?->avatar_url,
         ];
 
         return [

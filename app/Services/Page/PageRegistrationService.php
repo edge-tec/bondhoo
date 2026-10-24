@@ -16,6 +16,7 @@ use Database\Seeders\PageTaxonomySeeder;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -160,12 +161,12 @@ class PageRegistrationService
             ];
         }
 
-        // ২. ক্যারেক্টার ফরম্যাট যাচাই (শুধু ইংরেজি অক্ষর, সংখ্যা, আন্ডারস্কোর এবং ডট)
-        if (! preg_match('/^[a-z0-9_\.]+$/', $normalized)) {
+        // ২. ক্যারেক্টার ফরম্যাট যাচাই (শুধু ইংরেজি অক্ষর, সংখ্যা, আন্ডারস্কোর, ডট এবং ড্যাশ)
+        if (! preg_match('/^[a-z0-9_\.\-]+$/', $normalized)) {
             return [
                 'available' => false,
                 'normalized' => $normalized,
-                'message' => 'Username can only contain letters, numbers, underscores, and dots.',
+                'message' => 'Username can only contain letters, numbers, underscores, dots, and hyphens.',
                 'suggestions' => [],
             ];
         }
@@ -287,6 +288,44 @@ class PageRegistrationService
     }
 
     /**
+     * বেস৬৪ ইমেজ প্রসেস ও ডিস্কে সংরক্ষণ করা।
+     *
+     * @throws Exception
+     */
+    public function processBase64Image(string $dataUri, string $folder = 'pages/avatars'): ?string
+    {
+        if (! preg_match('/^data:image\/([a-zA-Z0-9\+\-\.]+);base64,/', $dataUri, $matches)) {
+            return null;
+        }
+
+        $extension = strtolower($matches[1]);
+        if ($extension === 'jpeg') {
+            $extension = 'jpg';
+        }
+        if (! in_array($extension, ['jpg', 'png', 'webp', 'gif'], true)) {
+            throw new Exception("Invalid image format: {$extension}. Allowed formats: JPG, PNG, WebP, GIF.");
+        }
+
+        $base64Data = substr($dataUri, strpos($dataUri, ',') + 1);
+        $decoded = base64_decode($base64Data, true);
+
+        if ($decoded === false) {
+            throw new Exception('Invalid base64 image data.');
+        }
+
+        if (strlen($decoded) > 15 * 1024 * 1024) {
+            throw new Exception('Image size exceeds maximum limit of 15MB.');
+        }
+
+        $filename = Str::random(40).'.'.$extension;
+        $path = $folder.'/'.$filename;
+
+        Storage::disk('public')->put($path, $decoded);
+
+        return '/storage/'.$path;
+    }
+
+    /**
      * এন্টারপ্রাইজ পেজ তৈরি করা (Atomic Transactional Registration)
      *
      * @throws Exception
@@ -300,20 +339,51 @@ class PageRegistrationService
         }
 
         // ২. ইউজারনেম চেক ও নরমালাইজেশন
-        $rawUsername = $data['username'] ?? null;
-        if (! $rawUsername) {
-            $rawUsername = Str::slug($data['name']);
+        $hasCustomUsername = ! empty($data['username']);
+        $rawUsername = trim((string) ($data['username'] ?? ''));
+        $rawUsername = ltrim($rawUsername, '@');
+
+        // ইউজারনেম না থাকলে বা ৩ ক্যারেক্টারের কম হলে পেজের নাম থেকে স্বয়ংক্রিয়ভাবে তৈরি
+        if (strlen($rawUsername) < 3) {
+            $nameSlug = Str::slug($data['name'] ?? '');
+            if (strlen($nameSlug) >= 3) {
+                $rawUsername = $nameSlug;
+            } else {
+                $rawUsername = ($nameSlug !== '' ? $nameSlug : 'page').'_'.rand(100, 999);
+            }
+            $hasCustomUsername = false;
         }
 
+        // ইউজারনেম ভ্যালিডিটি ও ইউনিকনেস যাচাই
         $usernameCheck = $this->checkUsernameAvailability($rawUsername);
         if (! $usernameCheck['available']) {
-            throw new Exception($usernameCheck['message']);
+            if ($hasCustomUsername) {
+                throw new Exception($usernameCheck['message']);
+            }
+
+            $baseUsername = $rawUsername;
+            $u = 1;
+            while (! $usernameCheck['available'] && $u <= 50) {
+                $rawUsername = "{$baseUsername}-{$u}";
+                $usernameCheck = $this->checkUsernameAvailability($rawUsername);
+                $u++;
+            }
         }
-        $username = $usernameCheck['normalized'];
+
+        if (! $usernameCheck['available']) {
+            $rawUsername = 'page_'.uniqid();
+            $usernameCheck = $this->checkUsernameAvailability($rawUsername);
+        }
+
+        $username = $usernameCheck['normalized'] ?? $rawUsername;
 
         // ৩. স্লাগ তৈরি
         $name = trim($data['name']);
-        $slug = Str::slug($name);
+        $rawSlug = ! empty($data['slug']) ? Str::slug($data['slug']) : Str::slug($name);
+        if (empty($rawSlug)) {
+            $rawSlug = 'page-'.Str::random(8);
+        }
+        $slug = $rawSlug;
         $originalSlug = $slug;
         $c = 1;
         while (Page::where('slug', $slug)->exists()) {

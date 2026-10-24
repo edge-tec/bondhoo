@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $group->name . ' — Bondhoo কমিউনিটি OS')
+@section('title', $group->name . ' — SocialHub কমিউনিটি OS')
 
 @section('styles')
 <style>

@@ -29,10 +29,17 @@ class FeedService
             // Unauthenticated viewers only see public posts
             $query->where('audience', 'public');
         } else {
+            $privacyService = app(ProfilePrivacyService::class);
+            $blockedUserIds = $privacyService->getBlockedUserIds($viewer->id);
+            if (! empty($blockedUserIds)) {
+                $query->whereNotIn('user_id', $blockedUserIds);
+            }
+
             $friendIds = $viewer->getFriendIds();
             $followingIds = $viewer->getFollowingIds();
+            $followerOrFriendIds = array_values(array_unique(array_merge($friendIds, $followingIds)));
 
-            $query->where(function ($q) use ($viewer, $friendIds, $followingIds) {
+            $query->where(function ($q) use ($viewer, $friendIds, $followerOrFriendIds) {
                 // Author always sees their own posts
                 $q->where('user_id', $viewer->id)
                     // Public posts visible to everyone
@@ -46,11 +53,11 @@ class FeedService
                     });
                 }
 
-                // Posts with audience 'followers' visible ONLY if author is followed by viewer
-                if (! empty($followingIds)) {
-                    $q->orWhere(function ($sub) use ($followingIds) {
+                // Posts with audience 'followers' visible if author is followed by or friends with viewer
+                if (! empty($followerOrFriendIds)) {
+                    $q->orWhere(function ($sub) use ($followerOrFriendIds) {
                         $sub->where('audience', 'followers')
-                            ->whereIn('user_id', $followingIds);
+                            ->whereIn('user_id', $followerOrFriendIds);
                     });
                 }
             });
@@ -61,6 +68,17 @@ class FeedService
             $sub->whereNull('status')->orWhere('status', 'published');
         })->where(function ($sub) {
             $sub->whereNull('scheduled_at')->orWhere('scheduled_at', '<=', now());
+        });
+
+        // Private group protection: Never leak non-public group posts to non-members
+        $query->where(function ($q) use ($viewer) {
+            $q->whereNull('group_id')
+                ->orWhereHas('group', function ($gq) use ($viewer) {
+                    $gq->where('privacy', 'public');
+                    if ($viewer) {
+                        $gq->orWhereHas('members', fn ($mq) => $mq->where('user_id', $viewer->id)->where('status', 'active'));
+                    }
+                });
         });
 
         // Feed ranking algorithm
@@ -83,6 +101,12 @@ class FeedService
      */
     public function getUserPosts(User $targetUser, ?User $viewer = null, int $perPage = 15): CursorPaginator
     {
+        $privacyService = app(ProfilePrivacyService::class);
+
+        if ($viewer && $privacyService->isBlocked($targetUser, $viewer)) {
+            return Post::whereRaw('1 = 0')->cursorPaginate($perPage);
+        }
+
         $query = Post::with([
             'user.profile',
             'media',
@@ -92,12 +116,33 @@ class FeedService
         $isOwner = $viewer && $viewer->id === $targetUser->id;
 
         if (! $isOwner) {
-            $query->where('audience', 'public')
-                ->where(function ($sub) {
-                    $sub->whereNull('status')->orWhere('status', 'published');
-                })->where(function ($sub) {
-                    $sub->whereNull('scheduled_at')->orWhere('scheduled_at', '<=', now());
-                });
+            $isFriend = $viewer && $privacyService->isFriend($targetUser, $viewer);
+            $isFollower = $viewer && ($privacyService->isFollower($targetUser, $viewer) || $isFriend);
+
+            $query->where(function ($q) use ($isFriend, $isFollower) {
+                $q->where('audience', 'public');
+                if ($isFriend) {
+                    $q->orWhere('audience', 'friends');
+                }
+                if ($isFollower) {
+                    $q->orWhere('audience', 'followers');
+                }
+            })->where(function ($sub) {
+                $sub->whereNull('status')->orWhere('status', 'published');
+            })->where(function ($sub) {
+                $sub->whereNull('scheduled_at')->orWhere('scheduled_at', '<=', now());
+            });
+
+            // Hide private group posts from non-members
+            $query->where(function ($q) use ($viewer) {
+                $q->whereNull('group_id')
+                    ->orWhereHas('group', function ($gq) use ($viewer) {
+                        $gq->where('privacy', 'public');
+                        if ($viewer) {
+                            $gq->orWhereHas('members', fn ($mq) => $mq->where('user_id', $viewer->id)->where('status', 'active'));
+                        }
+                    });
+            });
         }
 
         return $query->orderByDesc('is_pinned')

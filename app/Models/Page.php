@@ -187,6 +187,11 @@ class Page extends Model
         return $this->hasMany(PageProduct::class);
     }
 
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(PageInvitation::class);
+    }
+
     /**
      * নির্দিষ্ট ইউজার এই পেজটি ফলো করছেন কিনা।
      */
@@ -263,6 +268,10 @@ class Page extends Model
                 'media.manage', 'comments.moderate', 'messages.manage', 'analytics.view',
                 'events.manage', 'moderation.manage',
             ],
+            self::ROLE_EDITOR => [
+                'page.view', 'page.edit', 'posts.create', 'posts.edit', 'posts.publish', 'posts.schedule',
+                'media.manage', 'comments.moderate', 'events.manage', 'analytics.view',
+            ],
             self::ROLE_CONTENT_MANAGER => [
                 'page.view', 'posts.create', 'posts.edit', 'posts.publish', 'posts.schedule',
                 'media.manage', 'comments.moderate', 'events.manage', 'analytics.view',
@@ -278,9 +287,82 @@ class Page extends Model
             ],
         ];
 
-        $allowed = $rolePermissions[$member->role] ?? [];
+        $normalizedRole = in_array($member->role, ['administrator', 'admin'], true) ? self::ROLE_ADMIN : $member->role;
+        $allowed = $rolePermissions[$normalizedRole] ?? [];
 
         return in_array($permission, $allowed, true);
+    }
+
+    /**
+     * পেজের মার্জড ডিফল্ট সেটিংস পাওয়া।
+     *
+     * @return array<string, mixed>
+     */
+    public function getMergedSettings(): array
+    {
+        $defaults = [
+            'visibility' => $this->visibility ?? 'public',
+            'discoverability' => [
+                'search_engine_indexing' => true,
+                'show_in_directory' => true,
+            ],
+            'messaging' => [
+                'allow_messages' => true,
+                'auto_reply_enabled' => false,
+                'auto_reply_message' => 'Thanks for reaching out! We will reply shortly.',
+            ],
+            'moderation' => [
+                'allow_comments' => true,
+                'profanity_filter' => true,
+                'blocked_keywords' => [],
+            ],
+            'notifications' => [
+                'email_alerts' => true,
+                'in_app_follows' => true,
+                'in_app_comments' => true,
+                'in_app_messages' => true,
+            ],
+            'publishing' => [
+                'allowed_formats' => ['text', 'image', 'video', 'reel', 'story', 'live'],
+            ],
+            'privacy' => [
+                'audience' => 'public',
+                'show_contact_info' => true,
+            ],
+            'tagging' => [
+                'allow_mentions' => true,
+                'who_can_tag' => 'everyone',
+            ],
+        ];
+
+        $current = $this->settings ?? [];
+        $merged = array_replace_recursive($defaults, $current);
+
+        if (isset($current['publishing']['allowed_formats']) && is_array($current['publishing']['allowed_formats'])) {
+            $merged['publishing']['allowed_formats'] = array_values($current['publishing']['allowed_formats']);
+        }
+        if (isset($current['moderation']['blocked_keywords']) && is_array($current['moderation']['blocked_keywords'])) {
+            $merged['moderation']['blocked_keywords'] = array_values($current['moderation']['blocked_keywords']);
+        }
+
+        return $merged;
+    }
+
+    /**
+     * পেজের মার্জড ডিফল্ট প্রাইভেসি সেটিংস পাওয়া।
+     *
+     * @return array<string, mixed>
+     */
+    public function getMergedPrivacySettings(): array
+    {
+        $defaults = [
+            'public_email' => true,
+            'public_phone' => true,
+            'public_address' => true,
+            'default_post_audience' => 'public',
+        ];
+
+        return array_replace_recursive($defaults, $this->privacy_settings ?? []);
     }
 
     /**
@@ -298,6 +380,28 @@ class Page extends Model
             $userRole = $this->getMemberRole($viewer->id);
         }
 
+        $settings = $this->getMergedSettings();
+        $privacy = $this->getMergedPrivacySettings();
+        $canManage = $isOwner || in_array($userRole, [
+            self::ROLE_ADMIN,
+            self::ROLE_MANAGER,
+            self::ROLE_EDITOR,
+            self::ROLE_CONTENT_MANAGER,
+            self::ROLE_MODERATOR,
+        ], true);
+
+        $showContactInfo = (bool) ($settings['privacy']['show_contact_info'] ?? true);
+        $publicEmail = (bool) ($privacy['public_email'] ?? true);
+        $publicPhone = (bool) ($privacy['public_phone'] ?? true);
+        $publicAddress = (bool) ($privacy['public_address'] ?? true);
+
+        $email = ($canManage || ($showContactInfo && $publicEmail)) ? $this->email : null;
+        $phone = ($canManage || ($showContactInfo && $publicPhone)) ? $this->phone : null;
+        $address = ($canManage || ($showContactInfo && $publicAddress)) ? $this->address : null;
+        $city = ($canManage || ($showContactInfo && $publicAddress)) ? $this->city : null;
+        $country = ($canManage || ($showContactInfo && $publicAddress)) ? $this->country : null;
+        $zipCode = ($canManage || ($showContactInfo && $publicAddress)) ? $this->zip_code : null;
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -306,25 +410,32 @@ class Page extends Model
             'category' => $this->category,
             'sub_category' => $this->sub_category,
             'bio' => $this->bio,
+            'short_description' => $this->short_description,
             'description' => $this->description,
             'avatar_url' => $this->avatar_url,
             'cover_image_url' => $this->cover_image_url,
+            'logo_url' => $this->logo_url,
             'owner' => [
                 'id' => $this->owner?->id,
                 'name' => $this->owner?->name,
                 'username' => $this->owner?->username,
             ],
             'website' => $this->website,
-            'email' => $this->email,
-            'phone' => $this->phone,
-            'address' => $this->address,
-            'city' => $this->city,
-            'country' => $this->country,
+            'email' => $email,
+            'phone' => $phone,
+            'address' => $address,
+            'city' => $city,
+            'country' => $country,
+            'zip_code' => $zipCode,
+            'business_hours' => $this->business_hours,
+            'social_links' => $this->social_links,
             'cta_type' => $this->cta_type,
             'cta_url' => $this->cta_url,
             'verification_status' => $this->verification_status,
             'visibility' => $this->visibility,
             'status' => $this->status,
+            'settings' => $settings,
+            'privacy_settings' => $privacy,
             'followers_count' => $this->followers_count,
             'posts_count' => $this->posts_count,
             'is_verified' => $this->is_verified,
@@ -332,6 +443,7 @@ class Page extends Model
             'is_owner' => $isOwner,
             'viewer_role' => $userRole,
             'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

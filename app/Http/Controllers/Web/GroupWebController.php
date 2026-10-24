@@ -12,6 +12,7 @@ use App\Services\GroupService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Inertia\Response;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class GroupWebController extends Controller
@@ -38,8 +39,12 @@ class GroupWebController extends Controller
     /**
      * Display groups discovery hub, categories, trending groups, and user's joined groups.
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|Response
     {
+        if (! $request->query('blade')) {
+            return app(SocialWebController::class)->groups($request);
+        }
+
         $user = $this->resolveUser($request);
 
         $filters = [
@@ -82,8 +87,12 @@ class GroupWebController extends Controller
     /**
      * Display a specific group's page with dynamic, permission-aware tabs.
      */
-    public function show(Request $request, string $slug): View|RedirectResponse
+    public function show(Request $request, string $slug): View|Response|RedirectResponse
     {
+        if (! $request->query('blade')) {
+            return app(SocialWebController::class)->groupProfile($request, $slug);
+        }
+
         $user = $this->resolveUser($request);
 
         $group = Group::where('slug', $slug)

@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>আমার ডিভাইসসমূহ — Bondhoo</title>
+    <title>আমার ডিভাইসসমূহ — SocialHub</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
-    <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,8 +102,16 @@
     <div class="container">
         <!-- Navigation Bar -->
         <header class="header-bar">
-            <a href="/" class="logo" style="display: inline-flex; align-items: center;">
-                <img src="/images/bondhoo-logo.png" alt="Bondhoo" style="height: 36px; max-width: 160px; object-fit: contain;">
+            <a href="/" class="logo" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#1877f2;color:#fff;box-shadow:0 2px 6px rgba(24,119,242,0.35);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </span>
+                <span style="font-size: 1.35rem; font-weight: 800; letter-spacing: -0.035em; color: #1877f2; font-family: 'Inter', sans-serif;">SocialHub</span>
             </a>
             <a href="/dashboard" class="back-link">← ড্যাশবোর্ডে ফিরুন</a>
         </header>

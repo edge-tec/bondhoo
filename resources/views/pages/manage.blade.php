@@ -26,7 +26,11 @@
     $totalPosts = $page->posts_count ?? ($summary['total_posts'] ?? 0);
     $totalEngagements = $summary['total_engagements'] ?? 0;
     $engagementRate = $summary['engagement_rate'] ?? '0%';
-    $calcReach = max($totalFollowers * 3 + 120, $totalEngagements * 4 + 40);
+    $calcReach = (int) ($summary['reach'] ?? 0);
+    $calcImpressions = (int) ($summary['impressions'] ?? 0);
+    $calcClicks = (int) ($summary['link_clicks'] ?? ($summary['clicks'] ?? 0));
+    $calcVideoViews = (int) ($summary['video_views'] ?? ($summary['reel_views'] ?? 0));
+    $calcStoryViews = (int) ($summary['story_views'] ?? 0);
 @endphp
 
 <div class="ep-dashboard-root">
@@ -57,12 +61,16 @@
                 <a href="{{ route('messages.index') }}" class="ep-sidebar-link">
                     <span class="ep-sidebar-icon">@include('pages.partials.icon', ['name' => 'message-square', 'size' => 20])</span>
                     <span class="ep-sidebar-label">Messages</span>
-                    <span class="ep-sidebar-badge">5</span>
+                    @if(!empty($unreadMessagesCount) && $unreadMessagesCount > 0)
+                        <span class="ep-sidebar-badge">{{ $unreadMessagesCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('notifications.index') }}" class="ep-sidebar-link">
                     <span class="ep-sidebar-icon">@include('pages.partials.icon', ['name' => 'bell', 'size' => 20])</span>
                     <span class="ep-sidebar-label">Notifications</span>
-                    <span class="ep-sidebar-badge">3</span>
+                    @if(!empty($unreadNotificationsCount) && $unreadNotificationsCount > 0)
+                        <span class="ep-sidebar-badge">{{ $unreadNotificationsCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('friends.index') }}" class="ep-sidebar-link">
                     <span class="ep-sidebar-icon">@include('pages.partials.icon', ['name' => 'users', 'size' => 20])</span>
@@ -76,7 +84,7 @@
                     <span class="ep-sidebar-icon">@include('pages.partials.icon', ['name' => 'flag', 'size' => 20])</span>
                     <span class="ep-sidebar-label">Pages</span>
                 </a>
-                <a href="javascript:void(0)" class="ep-sidebar-link">
+                <a href="javascript:void(0)" onclick="epSwitchStudioTab('events')" class="ep-sidebar-link">
                     <span class="ep-sidebar-icon">@include('pages.partials.icon', ['name' => 'calendar', 'size' => 20])</span>
                     <span class="ep-sidebar-label">Events</span>
                 </a>
@@ -88,7 +96,7 @@
                     <span class="ep-sidebar-icon">@include('pages.partials.icon', ['name' => 'video', 'size' => 20])</span>
                     <span class="ep-sidebar-label">Watch</span>
                 </a>
-                <a href="javascript:void(0)" onclick="epSwitchStudioTab('followers')" class="ep-sidebar-link">
+                <a href="{{ route('feed') }}" class="ep-sidebar-link" title="Feed & Saved">
                     <span class="ep-sidebar-icon">@include('pages.partials.icon', ['name' => 'bookmark', 'size' => 20])</span>
                     <span class="ep-sidebar-label">Saved</span>
                 </a>
@@ -166,11 +174,23 @@
                         <img src="{{ $page->cover_image_url }}" alt="{{ $page->name }} Cover" id="epManageCoverImg">
                     @endif
                     @if($canManageRoles)
-                        <label class="ep-cover-upload-btn" title="Change Cover Photo">
-                            @include('pages.partials.icon', ['name' => 'camera', 'size' => 16])
-                            <span>Edit Cover</span>
-                            <input type="file" id="coverFileInput" accept="image/*" style="display: none;" onchange="epUploadBranding('cover', event)">
-                        </label>
+                        <div class="ep-dropdown-wrap ep-cover-upload-wrap">
+                            <button type="button" class="ep-cover-upload-btn" onclick="epToggleMenu(event, 'cover-branding-menu')" title="Edit Cover Photo">
+                                @include('pages.partials.icon', ['name' => 'camera', 'size' => 16])
+                                <span>Edit Cover</span>
+                            </button>
+                            <div id="cover-branding-menu" class="ep-popover-menu" style="right: 0; left: auto; top: calc(100% + 6px);">
+                                <label style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; cursor: pointer; font-size: 13px; color: var(--ep-text-title); width: 100%; box-sizing: border-box;">
+                                    @include('pages.partials.icon', ['name' => 'image', 'size' => 14])
+                                    <span>Upload New Cover</span>
+                                    <input type="file" id="coverFileInput" accept="image/*" style="display: none;" onchange="epUploadBranding('cover', event)">
+                                </label>
+                                <button type="button" class="ep-popover-danger" onclick="epRemoveBranding('cover')">
+                                    @include('pages.partials.icon', ['name' => 'trash-2', 'size' => 14])
+                                    <span>Remove Cover</span>
+                                </button>
+                            </div>
+                        </div>
                     @endif
                 </div>
 
@@ -187,10 +207,22 @@
                                 </div>
                             @endif
                             @if($canManageRoles)
-                                <label class="ep-avatar-upload-btn" title="Change Profile Picture">
-                                    @include('pages.partials.icon', ['name' => 'camera', 'size' => 16])
-                                    <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="epUploadBranding('avatar', event)">
-                                </label>
+                                <div class="ep-dropdown-wrap" style="position: absolute; bottom: 4px; right: 4px; z-index: 10;">
+                                    <button type="button" class="ep-avatar-upload-btn" onclick="epToggleMenu(event, 'avatar-branding-menu')" title="Edit Profile Picture">
+                                        @include('pages.partials.icon', ['name' => 'camera', 'size' => 16])
+                                    </button>
+                                    <div id="avatar-branding-menu" class="ep-popover-menu" style="left: 0; top: calc(100% + 6px);">
+                                        <label style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; cursor: pointer; font-size: 13px; color: var(--ep-text-title); width: 100%; box-sizing: border-box;">
+                                            @include('pages.partials.icon', ['name' => 'image', 'size' => 14])
+                                            <span>Upload New Avatar</span>
+                                            <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="epUploadBranding('avatar', event)">
+                                        </label>
+                                        <button type="button" class="ep-popover-danger" onclick="epRemoveBranding('avatar')">
+                                            @include('pages.partials.icon', ['name' => 'trash-2', 'size' => 14])
+                                            <span>Remove Avatar</span>
+                                        </button>
+                                    </div>
+                                </div>
                             @endif
                         </div>
 
@@ -372,8 +404,8 @@
                         <div class="ep-stat-content">
                             <span class="ep-stat-label">Total Followers</span>
                             <div class="ep-stat-value-row">
-                                <span class="ep-stat-value">{{ $formatMetric($totalFollowers) }}</span>
-                                <span class="ep-stat-trend green">↑ {{ $newFollowers ?: 1 }} new</span>
+                                <span class="ep-stat-value" id="epOverviewTotalFollowersValue">{{ $formatMetric($totalFollowers) }}</span>
+                                <span class="ep-stat-trend green" id="epOverviewNewFollowersSub">↑ {{ $newFollowers }} new</span>
                             </div>
                         </div>
                     </div>
@@ -386,8 +418,8 @@
                         <div class="ep-stat-content">
                             <span class="ep-stat-label">Total Posts</span>
                             <div class="ep-stat-value-row">
-                                <span class="ep-stat-value">{{ $formatMetric($totalPosts) }}</span>
-                                <span class="ep-stat-trend green">↑ 8%</span>
+                                <span class="ep-stat-value" id="epOverviewTotalPostsValue">{{ $formatMetric($totalPosts) }}</span>
+                                <span class="ep-stat-trend green" id="epOverviewPostsSub">{{ $summary['posts_in_period'] ?? $totalPosts }} in period</span>
                             </div>
                         </div>
                     </div>
@@ -398,10 +430,12 @@
                             @include('pages.partials.icon', ['name' => 'eye', 'size' => 22])
                         </div>
                         <div class="ep-stat-content">
-                            <span class="ep-stat-label">Post Reach</span>
+                            <span class="ep-stat-label" title="Unique user accounts that viewed page content">Post Reach</span>
                             <div class="ep-stat-value-row">
-                                <span class="ep-stat-value">{{ $formatMetric($calcReach) }}</span>
-                                <span class="ep-stat-trend green">↑ 18%</span>
+                                <span class="ep-stat-value" id="epOverviewPostReachValue">{{ $formatMetric($calcReach) }}</span>
+                                <span class="ep-stat-trend green" id="epOverviewPostReachSub" title="Total Impressions: {{ number_format($calcImpressions) }}">
+                                    {{ $calcImpressions > 0 ? $formatMetric($calcImpressions) . ' imp' : 'Unique reach' }}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -414,8 +448,53 @@
                         <div class="ep-stat-content">
                             <span class="ep-stat-label">Engagement</span>
                             <div class="ep-stat-value-row">
-                                <span class="ep-stat-value">{{ $formatMetric($totalEngagements) }}</span>
-                                <span class="ep-stat-trend green">{{ $engagementRate }}</span>
+                                <span class="ep-stat-value" id="epOverviewTotalEngagementsValue">{{ $formatMetric($totalEngagements) }}</span>
+                                <span class="ep-stat-trend green" id="epOverviewEngagementRateSub">{{ $engagementRate }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4b. SECONDARY VERIFIABLE METRICS STRIP -->
+                <div class="ep-stats-grid" style="margin-bottom: 20px; grid-template-columns: repeat(3, 1fr);">
+                    <!-- Video & Reel Views -->
+                    <div class="ep-stat-card">
+                        <div class="ep-stat-icon-circle blue" style="background: rgba(37, 99, 235, 0.1); color: #2563eb;">
+                            @include('pages.partials.icon', ['name' => 'video', 'size' => 20])
+                        </div>
+                        <div class="ep-stat-content">
+                            <span class="ep-stat-label">Video & Reel Views</span>
+                            <div class="ep-stat-value-row">
+                                <span class="ep-stat-value" id="epOverviewVideoViewsValue">{{ $formatMetric($calcVideoViews) }}</span>
+                                <span class="ep-stat-trend green">Verifiable views</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Story Views -->
+                    <div class="ep-stat-card">
+                        <div class="ep-stat-icon-circle purple" style="background: rgba(147, 51, 234, 0.1); color: #9333ea;">
+                            @include('pages.partials.icon', ['name' => 'circle', 'size' => 20])
+                        </div>
+                        <div class="ep-stat-content">
+                            <span class="ep-stat-label">Story Views</span>
+                            <div class="ep-stat-value-row">
+                                <span class="ep-stat-value" id="epOverviewStoryViewsValue">{{ $formatMetric($calcStoryViews) }}</span>
+                                <span class="ep-stat-trend green">24h viewers</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Link Clicks -->
+                    <div class="ep-stat-card">
+                        <div class="ep-stat-icon-circle green" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                            @include('pages.partials.icon', ['name' => 'mouse-pointer', 'size' => 20])
+                        </div>
+                        <div class="ep-stat-content">
+                            <span class="ep-stat-label">Link Clicks</span>
+                            <div class="ep-stat-value-row">
+                                <span class="ep-stat-value" id="epOverviewClicksValue">{{ $formatMetric($calcClicks) }}</span>
+                                <span class="ep-stat-trend green">Tracked clicks</span>
                             </div>
                         </div>
                     </div>
@@ -509,6 +588,12 @@
                                                     @include('pages.partials.icon', ['name' => 'edit', 'size' => 14])
                                                     <span>Change Role</span>
                                                 </button>
+                                                @if($member->status === 'invited')
+                                                    <button type="button" class="ep-popover-danger" onclick="epConfirmRevokeInvite({{ $member->id }}, '{{ addslashes($member->user->name ?? '') }}')">
+                                                        @include('pages.partials.icon', ['name' => 'x-circle', 'size' => 14])
+                                                        <span>Revoke Invitation</span>
+                                                    </button>
+                                                @endif
                                                 <button type="button" class="ep-popover-danger" onclick="epConfirmRemoveMember({{ $member->id }}, '{{ addslashes($member->user->name ?? '') }}')">
                                                     @include('pages.partials.icon', ['name' => 'trash-2', 'size' => 14])
                                                     <span>Remove Member</span>
@@ -523,23 +608,52 @@
                 </div>
 
                 <!-- 6. PAGE PERFORMANCE AND ANALYTICS CARD -->
-                <div class="ep-card" style="margin-bottom: 20px;">
-                    <div class="ep-card-header">
+                <div class="ep-card" style="margin-bottom: 20px;" id="epAnalyticsMasterCard">
+                    <div class="ep-card-header" style="flex-wrap: wrap; gap: 12px;">
                         <div>
                             <h2 class="ep-card-title">Page Performance & Growth Analytics</h2>
-                            <p class="ep-card-subtitle">Accurate server-calculated audience reach and follower trends</p>
+                            <p class="ep-card-subtitle">Verifiable metrics calculated from actual persisted events, reactions, and post analytics</p>
                         </div>
-                        <div class="ep-card-controls">
+                        <div class="ep-card-controls" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <select id="epStudioTimeRangeSelect" class="ep-time-range-select" onchange="epChangeStudioAnalyticsRange(this.value)">
                                 <option value="7d">Last 7 days</option>
                                 <option value="30d" selected>Last 30 days</option>
                                 <option value="90d">Last 90 days</option>
+                                <option value="custom">Custom Date Range...</option>
                             </select>
+                            <div id="epCustomDateRangeWrap" style="display: none; align-items: center; gap: 6px;">
+                                <input type="date" id="epAnalyticsStartDate" class="ep-input" style="padding: 4px 8px; font-size: 12px; height: 32px;" max="{{ date('Y-m-d') }}">
+                                <span style="font-size: 12px; color: var(--ep-text-muted);">to</span>
+                                <input type="date" id="epAnalyticsEndDate" class="ep-input" style="padding: 4px 8px; font-size: 12px; height: 32px;" max="{{ date('Y-m-d') }}">
+                                <button type="button" class="ep-btn-manage" style="padding: 4px 10px; font-size: 12px; height: 32px;" onclick="epApplyCustomAnalyticsRange()">Apply</button>
+                            </div>
                         </div>
                     </div>
 
+                    <!-- Loading State -->
+                    <div id="epAnalyticsLoadingIndicator" style="display: none; padding: 36px 20px; text-align: center; color: var(--ep-brand-blue);">
+                        <div class="ep-spinner" style="width: 28px; height: 28px; border: 3px solid rgba(24, 119, 242, 0.2); border-top-color: #1877F2; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px;"></div>
+                        <span style="font-size: 13.5px; font-weight: 600;">Calculating verifiable metrics from event records...</span>
+                    </div>
+
+                    <!-- Error State -->
+                    <div id="epAnalyticsErrorState" style="display: none; padding: 20px; margin: 16px 20px; background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 8px; text-align: center;">
+                        <p style="color: #991B1B; font-weight: 600; font-size: 13.5px; margin: 0 0 10px;" id="epAnalyticsErrorMessage">Could not retrieve analytics. Please try again.</p>
+                        <button type="button" class="ep-btn-manage" style="margin: 0 auto;" onclick="epRetryAnalyticsLoad()">
+                            @include('pages.partials.icon', ['name' => 'rotate-cw', 'size' => 13])
+                            <span>Retry</span>
+                        </button>
+                    </div>
+
+                    <!-- Empty Data State -->
+                    <div id="epAnalyticsEmptyState" style="display: none; padding: 40px 20px; text-align: center; color: var(--ep-text-secondary);">
+                        <div style="font-size: 32px; margin-bottom: 8px;">📊</div>
+                        <h3 style="font-size: 15px; font-weight: 700; color: var(--ep-text-title); margin: 0 0 6px;">No Event Records Found</h3>
+                        <p style="font-size: 13px; margin: 0 auto; max-width: 480px; line-height: 1.45;">No verifiable page views, reactions, or interactions occurred during this period. Once users view posts or follow your page, real-time analytics will populate here.</p>
+                    </div>
+
                     <!-- Analytics Sub-tabs -->
-                    <div style="padding: 14px 20px 0; border-bottom: 1px solid var(--ep-border); display: flex; gap: 16px;">
+                    <div id="epAnalyticsTabsBar" style="padding: 14px 20px 0; border-bottom: 1px solid var(--ep-border); display: flex; gap: 16px;">
                         <button type="button" class="ep-tab-item active" id="btnAnalyticTabOverview" onclick="epSwitchAnalyticSubTab('overview')">
                             <span>Overview Trend</span>
                         </button>
@@ -551,21 +665,20 @@
                         </button>
                     </div>
 
-                    <!-- Sub-pane 1: Overview Chart -->
+                    <!-- Sub-pane 1: Overview Chart & Verifiable Breakdown -->
                     <div id="epAnalyticSubOverview" class="ep-analytics-chart-box">
-                        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                             <div>
                                 <span style="font-size: 13px; font-weight: 600; color: var(--ep-text-secondary);">Follower Growth Over Time</span>
                                 <div style="font-size: 20px; font-weight: 800; color: var(--ep-text-title);" id="epChartSummaryText">
                                     +{{ $newFollowers }} new followers in this period
                                 </div>
                             </div>
-                            <span style="font-size: 12px; color: var(--ep-text-muted);">Daily aggregation</span>
+                            <span style="font-size: 12px; color: var(--ep-text-muted);" id="epChartDateBadge">Daily aggregation</span>
                         </div>
 
                         <!-- SVG Line Chart -->
                         <div style="width: 100%; height: 180px; position: relative;" id="epChartSvgWrapper">
-                            <!-- SVG dynamically rendered by JavaScript -->
                             <svg viewBox="0 0 700 180" class="ep-chart-svg" id="epSvgChart">
                                 <defs>
                                     <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
@@ -591,6 +704,34 @@
                                 </g>
                             </svg>
                         </div>
+
+                        <!-- Verifiable Metrics Breakdown Strip -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--ep-border);">
+                            <div style="background: var(--ep-card-bg, #f8fafc); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--ep-border);">
+                                <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--ep-text-secondary); display: block;" title="Total times posts appeared on screens">Impressions</span>
+                                <strong style="font-size: 16px; color: var(--ep-text-title);" id="epDetailImpressions">{{ number_format($calcImpressions) }}</strong>
+                            </div>
+                            <div style="background: var(--ep-card-bg, #f8fafc); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--ep-border);">
+                                <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--ep-text-secondary); display: block;" title="Unique accounts that viewed content">Unique Reach</span>
+                                <strong style="font-size: 16px; color: #2563eb;" id="epDetailReach">{{ number_format($calcReach) }}</strong>
+                            </div>
+                            <div style="background: var(--ep-card-bg, #f8fafc); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--ep-border);">
+                                <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--ep-text-secondary); display: block;" title="Likes, Comments, Shares, Clicks">Engagements</span>
+                                <strong style="font-size: 16px; color: #d97706;" id="epDetailEngagements">{{ number_format($totalEngagements) }}</strong>
+                            </div>
+                            <div style="background: var(--ep-card-bg, #f8fafc); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--ep-border);">
+                                <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--ep-text-secondary); display: block;" title="Engagements / Reach">Rate</span>
+                                <strong style="font-size: 16px; color: #059669;" id="epDetailRate">{{ $engagementRate }}</strong>
+                            </div>
+                            <div style="background: var(--ep-card-bg, #f8fafc); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--ep-border);">
+                                <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--ep-text-secondary); display: block;" title="Reels & Video Views">Video Views</span>
+                                <strong style="font-size: 16px; color: var(--ep-text-title);" id="epDetailVideoViews">{{ number_format($calcVideoViews) }}</strong>
+                            </div>
+                            <div style="background: var(--ep-card-bg, #f8fafc); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--ep-border);">
+                                <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--ep-text-secondary); display: block;" title="24h Story views">Story Views</span>
+                                <strong style="font-size: 16px; color: var(--ep-text-title);" id="epDetailStoryViews">{{ number_format($calcStoryViews) }}</strong>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Sub-pane 2: Audience Geography -->
@@ -614,30 +755,32 @@
                     <!-- Sub-pane 3: Top Content -->
                     <div id="epAnalyticSubContent" style="display: none; padding: 14px 20px;">
                         <span style="font-size: 13px; font-weight: 700; color: var(--ep-text-title); display: block; margin-bottom: 8px;">Top Performing Posts by Engagement</span>
-                        @php
-                            $topContent = $activeAnalytics['top_content'] ?? [];
-                        @endphp
-                        @forelse($topContent as $tPost)
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--ep-border); gap: 14px;">
-                                <div style="min-width: 0; flex: 1;">
-                                    <p style="font-size: 13px; font-weight: 600; color: var(--ep-text-title); margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                        {{ $tPost->content ?? ($tPost['content'] ?? 'Post') }}
-                                    </p>
-                                    <span style="font-size: 11.5px; color: var(--ep-text-muted);">
-                                        {{ isset($tPost->created_at) ? \Carbon\Carbon::parse($tPost->created_at)->diffForHumans() : 'Recently' }}
-                                    </span>
+                        <div id="epAnalyticTopContentList">
+                            @php
+                                $topContent = $activeAnalytics['top_content'] ?? [];
+                            @endphp
+                            @forelse($topContent as $tPost)
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--ep-border); gap: 14px;">
+                                    <div style="min-width: 0; flex: 1;">
+                                        <p style="font-size: 13px; font-weight: 600; color: var(--ep-text-title); margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            {{ $tPost->content ?? ($tPost['content'] ?? 'Post') }}
+                                        </p>
+                                        <span style="font-size: 11.5px; color: var(--ep-text-muted);">
+                                            {{ isset($tPost->created_at) ? \Carbon\Carbon::parse($tPost->created_at)->diffForHumans() : 'Recently' }}
+                                        </span>
+                                    </div>
+                                    <div style="display: flex; gap: 12px; font-size: 12px; color: var(--ep-text-secondary); flex-shrink: 0;">
+                                        <span>👍 {{ $tPost->likes_count ?? ($tPost['likes_count'] ?? 0) }}</span>
+                                        <span>💬 {{ $tPost->comments_count ?? ($tPost['comments_count'] ?? 0) }}</span>
+                                        <span>↗ {{ $tPost->shares_count ?? ($tPost['shares_count'] ?? 0) }}</span>
+                                    </div>
                                 </div>
-                                <div style="display: flex; gap: 12px; font-size: 12px; color: var(--ep-text-secondary); flex-shrink: 0;">
-                                    <span>👍 {{ $tPost->likes_count ?? ($tPost['likes_count'] ?? 0) }}</span>
-                                    <span>💬 {{ $tPost->comments_count ?? ($tPost['comments_count'] ?? 0) }}</span>
-                                    <span>↗ {{ $tPost->shares_count ?? ($tPost['shares_count'] ?? 0) }}</span>
+                            @empty
+                                <div style="padding: 24px; text-align: center; color: var(--ep-text-secondary); font-size: 13px;">
+                                    No top content identified yet. Publish updates to view interaction metrics.
                                 </div>
-                            </div>
-                        @empty
-                            <div style="padding: 24px; text-align: center; color: var(--ep-text-secondary); font-size: 13px;">
-                                No top content identified yet. Publish updates to view interaction metrics.
-                            </div>
-                        @endforelse
+                            @endforelse
+                        </div>
                     </div>
                 </div>
 
@@ -698,7 +841,7 @@
                             <div class="ep-recent-post-row">
                                 <div class="ep-post-thumb-box">
                                     @if($post->media && $post->media->isNotEmpty())
-                                        <img src="{{ $post->media->first()->url ?? $post->media->first()->original_path }}" alt="Post Media">
+                                        <img src="{{ $post->media->first()->getVariantUrl('thumbnail') ?: ($post->media->first()->url ?: asset('storage/' . $post->media->first()->original_path)) }}" alt="Post Media">
                                     @else
                                         @include('pages.partials.icon', ['name' => 'file-text', 'size' => 20])
                                     @endif
@@ -867,7 +1010,7 @@
                                 <div class="ep-post-media-box">
                                     @if($firstMedia)
                                         <div class="ep-post-media-wrapper">
-                                            <img src="{{ $firstMedia->getVariantUrl('thumbnail') ?: ($firstMedia->getVariantUrl('medium') ?: ($firstMedia->url ?? $firstMedia->original_path)) }}"
+                                            <img src="{{ $firstMedia->getVariantUrl('thumbnail') ?: ($firstMedia->getVariantUrl('medium') ?: ($firstMedia->url ?: asset('storage/' . $firstMedia->original_path))) }}"
                                                  alt="Post Thumbnail"
                                                  class="ep-post-media-img"
                                                  loading="lazy">
@@ -1127,11 +1270,17 @@
             <!-- TAB 4: PHOTOS PANE -->
             <div id="studio-pane-photos" class="ep-studio-pane" style="display: none;">
                 <div class="ep-card">
-                    <div class="ep-card-header">
+                    <div class="ep-card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <h2 class="ep-card-title">Photos</h2>
                             <p class="ep-card-subtitle">Photo media published on {{ $page->name }}</p>
                         </div>
+                        @if($canManageRoles)
+                            <button type="button" class="ep-btn-new-post-primary" onclick="epOpenCreatePostWithType('photo')">
+                                @include('pages.partials.icon', ['name' => 'plus', 'size' => 15, 'strokeWidth' => 2.5])
+                                <span>Upload Photo</span>
+                            </button>
+                        @endif
                     </div>
                     <div style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
                         @php
@@ -1150,7 +1299,7 @@
                         @endphp
                         @forelse($allPhotos as $m)
                             <div style="aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: #0F172A;">
-                                <img src="{{ $m->getVariantUrl('medium') ?: ($m->url ?? $m->original_path) }}" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;">
+                                <img src="{{ $m->getVariantUrl('medium') ?: ($m->url ?: asset('storage/' . $m->original_path)) }}" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                         @empty
                             <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--ep-text-secondary);">
@@ -1164,11 +1313,17 @@
             <!-- TAB 5: VIDEOS PANE -->
             <div id="studio-pane-videos" class="ep-studio-pane" style="display: none;">
                 <div class="ep-card">
-                    <div class="ep-card-header">
+                    <div class="ep-card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <h2 class="ep-card-title">Videos</h2>
                             <p class="ep-card-subtitle">Video publications and recordings on {{ $page->name }}</p>
                         </div>
+                        @if($canManageRoles)
+                            <button type="button" class="ep-btn-new-post-primary" onclick="epOpenCreatePostWithType('video')">
+                                @include('pages.partials.icon', ['name' => 'plus', 'size' => 15, 'strokeWidth' => 2.5])
+                                <span>Upload Video</span>
+                            </button>
+                        @endif
                     </div>
                     <div style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
                         @php
@@ -1187,26 +1342,81 @@
                         @endphp
                         @forelse($allVideos as $v)
                             <div style="border-radius: 8px; overflow: hidden; background: #0F172A; position: relative;">
-                                <video src="{{ $v->getVariantUrl('original') ?: ($v->url ?? $v->original_path) }}" controls style="width: 100%; height: 160px; object-fit: cover;"></video>
+                                <video src="{{ $v->getVariantUrl('original') ?: ($v->url ?: asset('storage/' . $v->original_path)) }}" controls style="width: 100%; height: 160px; object-fit: cover;"></video>
                             </div>
                         @empty
+                            <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--ep-text-secondary);">
+                                No videos uploaded to this page yet.
                             </div>
                         @endforelse
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 5: EVENTS PANE -->
+            <!-- TAB 6: EVENTS PANE -->
             <div id="studio-pane-events" class="ep-studio-pane" style="display: none;">
                 <div class="ep-card">
-                    <div class="ep-card-header">
+                    <div class="ep-card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <h2 class="ep-card-title">Page Events</h2>
                             <p class="ep-card-subtitle">Upcoming and community events hosted by {{ $page->name }}</p>
                         </div>
+                        @if($canManageRoles)
+                            <button type="button" class="ep-btn-new-post-primary" onclick="epOpenModal('epModalCreateEvent')">
+                                @include('pages.partials.icon', ['name' => 'plus', 'size' => 15, 'strokeWidth' => 2.5])
+                                <span>New Event</span>
+                            </button>
+                        @endif
                     </div>
-                    <div style="padding: 24px; text-align: center; color: var(--ep-text-secondary);">
-                        <p>No active events scheduled right now.</p>
+                    <div style="padding: 20px;">
+                        <div id="epEventsGridContainer" style="display: {{ (isset($pageEvents) && $pageEvents->isNotEmpty()) ? 'grid' : 'none' }}; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                            @if(isset($pageEvents))
+                                @foreach($pageEvents as $event)
+                                    <div class="ep-event-card-item" id="ep-event-card-{{ $event->id }}" style="border: 1px solid var(--ep-border); border-radius: 10px; overflow: hidden; background: var(--ep-card-bg); display: flex; flex-direction: column;">
+                                        <div style="height: 110px; background: linear-gradient(135deg, #059669, #10B981); display: flex; align-items: center; justify-content: center; color: white; padding: 12px; position: relative;">
+                                            <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;">
+                                                {{ $event->is_online ? '🌐 Online Event' : '📍 ' . ($event->location ?: 'Physical Event') }}
+                                            </div>
+                                            <span style="font-size: 26px;">📅</span>
+                                        </div>
+                                        <div style="padding: 16px; flex: 1; display: flex; flex-direction: column;">
+                                            <span style="font-size: 12px; font-weight: 700; color: #059669; text-transform: uppercase;">
+                                                {{ $event->start_time ? $event->start_time->format('l, F d, Y • h:i A') : 'Date TBD' }}
+                                            </span>
+                                            <h3 style="font-size: 15px; font-weight: 700; color: var(--ep-text-title); margin: 6px 0 8px; line-height: 1.35;">
+                                                {{ $event->title }}
+                                            </h3>
+                                            <p style="font-size: 13px; color: var(--ep-text-secondary); margin: 0 0 14px; line-height: 1.45; flex: 1;">
+                                                {{ Str::limit($event->description, 110) }}
+                                            </p>
+                                            <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--ep-border); padding-top: 12px; font-size: 12.5px; color: var(--ep-text-secondary);">
+                                                <span id="ep-event-rsvp-cnt-{{ $event->id }}">👥 {{ number_format($event->rsvp_count ?? 0) }} Attending</span>
+                                                <div style="display: flex; gap: 6px; align-items: center;">
+                                                    <button type="button" class="ep-btn-manage" style="padding: 4px 10px; font-size: 12px;" onclick="epRsvpEvent({{ $event->id }})">
+                                                        RSVP
+                                                    </button>
+                                                    @if($canManageRoles)
+                                                        <button type="button" class="ep-btn-manage" style="padding: 4px 8px; font-size: 12px; color: #dc2626;" onclick="epDeleteEvent({{ $event->id }})" title="Delete Event">
+                                                            @include('pages.partials.icon', ['name' => 'trash-2', 'size' => 12])
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @endif
+                        </div>
+                        <div id="epEmptyEventsState" style="display: {{ (!isset($pageEvents) || $pageEvents->isEmpty()) ? 'block' : 'none' }}; padding: 40px; text-align: center; color: var(--ep-text-secondary);">
+                            <div style="font-size: 32px; margin-bottom: 8px;">📅</div>
+                            <h3 style="font-size: 15px; font-weight: 700; color: var(--ep-text-title); margin: 0 0 4px;">No active events scheduled</h3>
+                            <p style="margin: 0; font-size: 13.5px;">Create workshops, webinars, or meetups to connect with your community.</p>
+                            @if($canManageRoles)
+                                <button type="button" class="ep-btn-header-create" style="margin-top: 14px;" onclick="epOpenModal('epModalCreateEvent')">
+                                    + Create First Event
+                                </button>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1337,46 +1547,467 @@
             <!-- TAB 7: SETTINGS PANE -->
             @if($canManageRoles)
                 <div id="studio-pane-settings" class="ep-studio-pane" style="display: none;">
-                    <div class="ep-card">
-                        <div class="ep-card-header">
-                            <div>
-                                <h2 class="ep-card-title">Page Settings & Preferences</h2>
-                                <p class="ep-card-subtitle">Configure auto-messaging, moderation filters, and security</p>
+                    @php
+                        $mSettings = $page->getMergedSettings();
+                        $mPrivacy = $page->getMergedPrivacySettings();
+                        $allowedFormats = $mSettings['publishing']['allowed_formats'] ?? ['text', 'image', 'video', 'reel', 'story', 'live'];
+                        $blockedKeywordsStr = implode(', ', $mSettings['moderation']['blocked_keywords'] ?? []);
+                        $socialLinks = $page->social_links ?? [];
+                        if (is_string($socialLinks)) {
+                            $socialLinks = json_decode($socialLinks, true) ?? [];
+                        }
+                    @endphp
+
+                    <form id="epPageSettingsForm" onsubmit="epSavePageSettings(event)">
+                        <!-- Section 1: General Information & Page Visibility -->
+                        <div class="ep-card" style="margin-bottom: 20px;">
+                            <div class="ep-card-header">
+                                <div>
+                                    <h2 class="ep-card-title">1. General Information & Visibility</h2>
+                                    <p class="ep-card-subtitle">Set your page identity, category, and access level</p>
+                                </div>
+                            </div>
+                            <div style="padding: 20px 24px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">Page Display Name <span style="color: #ef4444;">*</span></label>
+                                        <input type="text" id="settingPageName" class="ep-form-control" value="{{ $page->name }}" required>
+                                    </div>
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">Page Username (@handle)</label>
+                                        <input type="text" id="settingPageUsername" class="ep-form-control" value="{{ $page->username }}" placeholder="mybrand">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">Category <span style="color: #ef4444;">*</span></label>
+                                        <input type="text" id="settingPageCategory" class="ep-form-control" value="{{ $page->category }}" required>
+                                    </div>
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">Sub Category</label>
+                                        <input type="text" id="settingPageSubCategory" class="ep-form-control" value="{{ $page->sub_category }}" placeholder="e.g. Media, Technology">
+                                    </div>
+                                </div>
+
+                                <div class="ep-form-group" style="margin-bottom: 16px;">
+                                    <label class="ep-form-label">Bio / Tagline</label>
+                                    <textarea id="settingPageBio" class="ep-form-control" rows="2" placeholder="Brief summary of your page">{{ $page->bio }}</textarea>
+                                </div>
+
+                                <div class="ep-form-group" style="margin-bottom: 16px;">
+                                    <label class="ep-form-label">Full Description</label>
+                                    <textarea id="settingPageDescription" class="ep-form-control" rows="3" placeholder="Detailed mission and story">{{ $page->description }}</textarea>
+                                </div>
+
+                                <div class="ep-form-group">
+                                    <label class="ep-form-label">Page Visibility</label>
+                                    <select id="settingPageVisibility" class="ep-form-control" style="background: #fff;">
+                                        <option value="public" {{ ($page->visibility ?? 'public') === 'public' ? 'selected' : '' }}>Public — Searchable & accessible by all visitors</option>
+                                        <option value="unlisted" {{ ($page->visibility ?? '') === 'unlisted' ? 'selected' : '' }}>Unlisted — Accessible only via direct URL</option>
+                                        <option value="private" {{ ($page->visibility ?? '') === 'private' ? 'selected' : '' }}>Private — Restricted to page team members only</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
-                        <form id="epPageSettingsForm" onsubmit="epSavePageSettings(event)" style="padding: 20px 24px;">
-                            <div class="ep-form-group">
-                                <label class="ep-form-label">Page Display Name</label>
-                                <input type="text" id="settingPageName" class="ep-form-control" value="{{ $page->name }}" required>
+                        <!-- Section 2: Page URL & Discoverability -->
+                        <div class="ep-card" style="margin-bottom: 20px;">
+                            <div class="ep-card-header">
+                                <div>
+                                    <h2 class="ep-card-title">2. URL & Search Discoverability</h2>
+                                    <p class="ep-card-subtitle">Control SEO indexing and directory listings</p>
+                                </div>
+                            </div>
+                            <div style="padding: 20px 24px;">
+                                <div style="margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: #f8fafc; border: 1px solid var(--ep-border); display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--ep-text-secondary);">Direct Page URL</div>
+                                        <div style="font-size: 14px; font-weight: 600; color: var(--ep-brand-blue);" id="settingDisplayUrl">{{ url('/pages/' . $page->slug) }}</div>
+                                    </div>
+                                    <button type="button" class="ep-btn-secondary" onclick="epCopyStudioUrl()" style="padding: 6px 14px; font-size: 12.5px;">Copy Link</button>
+                                </div>
+
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                        <input type="checkbox" id="settingSearchIndexing" {{ ($mSettings['discoverability']['search_engine_indexing'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">Search Engine Indexing</div>
+                                            <div style="font-size: 12px; color: var(--ep-text-secondary);">Allow Google and external engines to index this page</div>
+                                        </div>
+                                    </label>
+
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                        <input type="checkbox" id="settingShowDirectory" {{ ($mSettings['discoverability']['show_in_directory'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">SocialHub Directory Discovery</div>
+                                            <div style="font-size: 12px; color: var(--ep-text-secondary);">Display in community recommendations and category lists</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Messaging Availability & Auto-Reply -->
+                        <div class="ep-card" style="margin-bottom: 20px;">
+                            <div class="ep-card-header">
+                                <div>
+                                    <h2 class="ep-card-title">3. Messaging Availability & Inbox Automation</h2>
+                                    <p class="ep-card-subtitle">Manage customer inquiries and automated greeting messages</p>
+                                </div>
+                            </div>
+                            <div style="padding: 20px 24px;">
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 12px;">
+                                        <input type="checkbox" id="settingAllowMessages" {{ ($mSettings['messaging']['allow_messages'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">Allow Direct Messaging</div>
+                                            <div style="font-size: 12px; color: var(--ep-text-secondary);">Enable "Message" button on page header for visitor inquiries</div>
+                                        </div>
+                                    </label>
+
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                        <input type="checkbox" id="settingAutoReplyEnabled" {{ ($mSettings['messaging']['auto_reply_enabled'] ?? false) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">Automated Welcome Reply</div>
+                                            <div style="font-size: 12px; color: var(--ep-text-secondary);">Immediately respond to first-time message senders</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="ep-form-group">
+                                    <label class="ep-form-label">Auto-Reply Welcome Message Content</label>
+                                    <textarea id="settingAutoReply" class="ep-form-control" rows="2" placeholder="Thanks for reaching out! We will reply shortly.">{{ $mSettings['messaging']['auto_reply_message'] ?? 'Thanks for reaching out! We will reply shortly.' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4: Comment & Content Moderation -->
+                        <div class="ep-card" style="margin-bottom: 20px;">
+                            <div class="ep-card-header">
+                                <div>
+                                    <h2 class="ep-card-title">4. Comment & Content Moderation</h2>
+                                    <p class="ep-card-subtitle">Automate safety filters and manage community dialogue</p>
+                                </div>
+                            </div>
+                            <div style="padding: 20px 24px;">
+                                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                        <input type="checkbox" id="settingAllowComments" {{ ($mSettings['moderation']['allow_comments'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">Allow Public Comments</div>
+                                            <div style="font-size: 12px; color: var(--ep-text-secondary);">Allow followers and visitors to comment on your page posts</div>
+                                        </div>
+                                    </label>
+
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                        <input type="checkbox" id="settingProfanityFilter" {{ ($mSettings['moderation']['profanity_filter'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">Automatic Profanity & Hate Speech Filter</div>
+                                            <div style="font-size: 12px; color: var(--ep-text-secondary);">Automatically hide comments containing toxic words</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="ep-form-group">
+                                    <label class="ep-form-label">Blocked Keywords (comma separated)</label>
+                                    <input type="text" id="settingBlockedKeywords" class="ep-form-control" value="{{ $blockedKeywordsStr }}" placeholder="spam, offensive_word, promo">
+                                    <span style="font-size: 11.5px; color: var(--ep-text-secondary); margin-top: 4px; display: block;">Comments with these words will be flagged for review.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 5: Notification Preferences -->
+                        <div class="ep-card" style="margin-bottom: 20px;">
+                            <div class="ep-card-header">
+                                <div>
+                                    <h2 class="ep-card-title">5. Notification Preferences</h2>
+                                    <p class="ep-card-subtitle">Choose how you wish to receive page activity alerts</p>
+                                </div>
+                            </div>
+                            <div style="padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="settingNotifyEmail" {{ ($mSettings['notifications']['email_alerts'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">Email Alerts</div>
+                                        <div style="font-size: 12px; color: var(--ep-text-secondary);">Send email for important page activities</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="settingNotifyFollows" {{ ($mSettings['notifications']['in_app_follows'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">New Followers</div>
+                                        <div style="font-size: 12px; color: var(--ep-text-secondary);">In-app notification when someone follows</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="settingNotifyComments" {{ ($mSettings['notifications']['in_app_comments'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">New Comments</div>
+                                        <div style="font-size: 12px; color: var(--ep-text-secondary);">In-app notification for comments on posts</div>
+                                    </div>
+                                </label>
+
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="settingNotifyMessages" {{ ($mSettings['notifications']['in_app_messages'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">Direct Messages</div>
+                                        <div style="font-size: 12px; color: var(--ep-text-secondary);">In-app notification for inbox messages</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Section 6: Allowed Publishing Formats -->
+                        <div class="ep-card" style="margin-bottom: 20px;">
+                            <div class="ep-card-header">
+                                <div>
+                                    <h2 class="ep-card-title">6. Allowed Publishing Formats</h2>
+                                    <p class="ep-card-subtitle">Enable or disable content creation media options</p>
+                                </div>
+                            </div>
+                            <div style="padding: 20px 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="format_text" value="text" {{ in_array('text', $allowedFormats, true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                    <span style="font-weight: 600; font-size: 13.5px;">Text Posts</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="format_image" value="image" {{ in_array('image', $allowedFormats, true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                    <span style="font-weight: 600; font-size: 13.5px;">Photo & Graphics</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="format_video" value="video" {{ in_array('video', $allowedFormats, true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                    <span style="font-weight: 600; font-size: 13.5px;">Standard Videos</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="format_reel" value="reel" {{ in_array('reel', $allowedFormats, true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                    <span style="font-weight: 600; font-size: 13.5px;">Reels & Short Clips</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="format_story" value="story" {{ in_array('story', $allowedFormats, true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                    <span style="font-weight: 600; font-size: 13.5px;">24h Stories</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="format_live" value="live" {{ in_array('live', $allowedFormats, true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                    <span style="font-weight: 600; font-size: 13.5px;">Live Broadcasts</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Section 7: Privacy & Permitted Audience Controls -->
+                        <div class="ep-card" style="margin-bottom: 20px;">
+                            <div class="ep-card-header">
+                                <div>
+                                    <h2 class="ep-card-title">7. Privacy & Audience Controls</h2>
+                                    <p class="ep-card-subtitle">Manage public visibility of contact details and default audiences</p>
+                                </div>
+                            </div>
+                            <div style="padding: 20px 24px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">Default Post Audience</label>
+                                        <select id="settingDefaultAudience" class="ep-form-control" style="background: #fff;">
+                                            <option value="public" {{ ($mPrivacy['default_post_audience'] ?? 'public') === 'public' ? 'selected' : '' }}>Public (Everyone)</option>
+                                            <option value="followers" {{ ($mPrivacy['default_post_audience'] ?? '') === 'followers' ? 'selected' : '' }}>Followers Only</option>
+                                        </select>
+                                    </div>
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">Contact Details Display</label>
+                                        <select id="settingShowContactInfo" class="ep-form-control" style="background: #fff;">
+                                            <option value="1" {{ ($mSettings['privacy']['show_contact_info'] ?? true) ? 'selected' : '' }}>Show Contact Information Publicly</option>
+                                            <option value="0" {{ !($mSettings['privacy']['show_contact_info'] ?? true) ? 'selected' : '' }}>Hide Contact Information</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="settingPublicEmail" {{ ($mPrivacy['public_email'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                        <span style="font-size: 13px; font-weight: 600;">Public Email</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="settingPublicPhone" {{ ($mPrivacy['public_phone'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                        <span style="font-size: 13px; font-weight: 600;">Public Phone</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="settingPublicAddress" {{ ($mPrivacy['public_address'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                        <span style="font-size: 13px; font-weight: 600;">Public Address</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 8: Tagging & Mentions -->
+                        <div class="ep-card" style="margin-bottom: 20px;">
+                            <div class="ep-card-header">
+                                <div>
+                                    <h2 class="ep-card-title">8. Tagging & Mentions</h2>
+                                    <p class="ep-card-subtitle">Control who can tag and mention this page in posts and stories</p>
+                                </div>
+                            </div>
+                            <div style="padding: 20px 24px;">
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                        <input type="checkbox" id="settingAllowMentions" {{ ($mSettings['tagging']['allow_mentions'] ?? true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title);">Allow Mentions</div>
+                                            <div style="font-size: 12px; color: var(--ep-text-secondary);">Allow people to mention @{{ $page->username ?: $page->slug }} in their posts and comments</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="ep-form-group">
+                                    <label class="ep-form-label">Who Can Tag This Page</label>
+                                    <select id="settingWhoCanTag" class="ep-form-control" style="background: #fff;">
+                                        <option value="everyone" {{ ($mSettings['tagging']['who_can_tag'] ?? 'everyone') === 'everyone' ? 'selected' : '' }}>Everyone — Anyone on the platform can tag this page</option>
+                                        <option value="followers" {{ ($mSettings['tagging']['who_can_tag'] ?? '') === 'followers' ? 'selected' : '' }}>Followers Only — Only existing followers can tag this page</option>
+                                        <option value="none" {{ ($mSettings['tagging']['who_can_tag'] ?? '') === 'none' ? 'selected' : '' }}>Nobody — Disallow all photo and post tagging</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 9: Contact Information & Social Integrations -->
+                        <div class="ep-card" style="margin-bottom: 20px;">
+                            <div class="ep-card-header">
+                                <div>
+                                    <h2 class="ep-card-title">9. Contact Information & Linked Social Accounts</h2>
+                                    <p class="ep-card-subtitle">Official communication channels and cross-platform profiles</p>
+                                </div>
+                            </div>
+                            <div style="padding: 20px 24px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">Official Contact Email</label>
+                                        <input type="email" id="settingContactEmail" class="ep-form-control" value="{{ $page->email }}" placeholder="contact@example.com">
+                                    </div>
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">Official Contact Phone</label>
+                                        <input type="text" id="settingContactPhone" class="ep-form-control" value="{{ $page->phone }}" placeholder="+880 1700 000000">
+                                    </div>
+                                </div>
+
+                                <div class="ep-form-group" style="margin-bottom: 16px;">
+                                    <label class="ep-form-label">Official Website URL</label>
+                                    <input type="url" id="settingContactWebsite" class="ep-form-control" value="{{ $page->website }}" placeholder="https://example.com">
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">Street Address</label>
+                                        <input type="text" id="settingContactAddress" class="ep-form-control" value="{{ $page->address }}" placeholder="123 Commercial Ave">
+                                    </div>
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">City</label>
+                                        <input type="text" id="settingContactCity" class="ep-form-control" value="{{ $page->city }}" placeholder="Dhaka">
+                                    </div>
+                                    <div class="ep-form-group">
+                                        <label class="ep-form-label">Zip / Postal Code</label>
+                                        <input type="text" id="settingContactZip" class="ep-form-control" value="{{ $page->zip_code }}" placeholder="1212">
+                                    </div>
+                                </div>
+
+                                <div style="border-top: 1px solid var(--ep-border); padding-top: 16px;">
+                                    <div style="font-weight: 700; font-size: 13.5px; color: var(--ep-text-title); margin-bottom: 12px;">Linked Social Media Accounts</div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                                        <div class="ep-form-group">
+                                            <label class="ep-form-label">Facebook Profile / Page</label>
+                                            <input type="text" id="settingSocialFacebook" class="ep-form-control" value="{{ $socialLinks['facebook'] ?? '' }}" placeholder="https://facebook.com/page">
+                                        </div>
+                                        <div class="ep-form-group">
+                                            <label class="ep-form-label">Twitter / X Handle or URL</label>
+                                            <input type="text" id="settingSocialTwitter" class="ep-form-control" value="{{ $socialLinks['twitter'] ?? '' }}" placeholder="https://x.com/handle">
+                                        </div>
+                                        <div class="ep-form-group">
+                                            <label class="ep-form-label">Instagram Profile</label>
+                                            <input type="text" id="settingSocialInstagram" class="ep-form-control" value="{{ $socialLinks['instagram'] ?? '' }}" placeholder="https://instagram.com/page">
+                                        </div>
+                                        <div class="ep-form-group">
+                                            <label class="ep-form-label">LinkedIn Organization</label>
+                                            <input type="text" id="settingSocialLinkedin" class="ep-form-control" value="{{ $socialLinks['linkedin'] ?? '' }}" placeholder="https://linkedin.com/company/page">
+                                        </div>
+                                        <div class="ep-form-group">
+                                            <label class="ep-form-label">YouTube Channel</label>
+                                            <input type="text" id="settingSocialYoutube" class="ep-form-control" value="{{ $socialLinks['youtube'] ?? '' }}" placeholder="https://youtube.com/@channel">
+                                        </div>
+                                        <div class="ep-form-group">
+                                            <label class="ep-form-label">GitHub Organization</label>
+                                            <input type="text" id="settingSocialGithub" class="ep-form-control" value="{{ $socialLinks['github'] ?? '' }}" placeholder="https://github.com/org">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Settings Action Bar -->
+                        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 24px;">
+                            <button type="submit" class="ep-btn-header-create" id="btnSaveSettings" style="padding: 10px 28px; font-size: 14.5px;">
+                                <span>Save All Settings</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Section 10: Danger Zone (Archive, Restore, Soft-Delete) -->
+                    <div class="ep-card" style="border: 1px solid #fecaca; margin-bottom: 30px;">
+                        <div class="ep-card-header" style="background: #fff5f5; border-bottom: 1px solid #fee2e2;">
+                            <div>
+                                <h2 class="ep-card-title" style="color: #b91c1c;">10. Danger Zone</h2>
+                                <p class="ep-card-subtitle" style="color: #ef4444;">Archive, deactivate, or delete your page record</p>
+                            </div>
+                            <span class="ep-badge" style="background: {{ $page->status === 'active' ? '#dcfce7' : '#fee2e2' }}; color: {{ $page->status === 'active' ? '#15803d' : '#b91c1c' }}; font-weight: 800;">
+                                Status: {{ ucfirst($page->status) }}
+                            </span>
+                        </div>
+                        <div style="padding: 20px 24px;">
+                            <!-- Archive / Deactivate Option -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #fee2e2;">
+                                <div>
+                                    <div style="font-weight: 700; font-size: 14px; color: var(--ep-text-title);">Archive Page</div>
+                                    <div style="font-size: 12.5px; color: var(--ep-text-secondary); max-width: 500px;">
+                                        Temporarily disable this page. Followers cannot view it, but all data, posts, and team settings are preserved.
+                                    </div>
+                                </div>
+                                @if($page->status === 'active')
+                                    <button type="button" class="ep-btn-secondary" onclick="epArchivePageStudio()" style="color: #b45309; border-color: #fde68a; background: #fffbeb;">
+                                        Archive Page
+                                    </button>
+                                @else
+                                    <button type="button" class="ep-btn-secondary" onclick="epRestoreArchivedPageStudio()" style="color: #15803d; border-color: #bbf7d0; background: #f0fdf4;">
+                                        Reactivate Page
+                                    </button>
+                                @endif
                             </div>
 
-                            <div class="ep-form-group">
-                                <label class="ep-form-label">Page Username (@handle)</label>
-                                <input type="text" id="settingPageUsername" class="ep-form-control" value="{{ $page->username }}">
-                            </div>
+                            @if($isOwner)
+                                <!-- Transfer Ownership Option -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #fee2e2;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 14px; color: #b45309;">Transfer Page Ownership</div>
+                                        <div style="font-size: 12.5px; color: var(--ep-text-secondary); max-width: 500px;">
+                                            Permanently transfer ownership of this page to another team member or user.
+                                        </div>
+                                    </div>
+                                    <button type="button" class="ep-btn-secondary" onclick="epOpenTransferOwnershipModal()" style="color: #9a3412; border-color: #fdba74; background: #fff7ed;">
+                                        Transfer Ownership
+                                    </button>
+                                </div>
+                            @endif
 
-                            <div class="ep-form-group">
-                                <label class="ep-form-label">Category</label>
-                                <input type="text" id="settingPageCategory" class="ep-form-control" value="{{ $page->category }}" required>
-                            </div>
-
-                            <div class="ep-form-group">
-                                <label class="ep-form-label">Short Description / Bio</label>
-                                <textarea id="settingPageBio" class="ep-form-control" rows="3">{{ $page->bio }}</textarea>
-                            </div>
-
-                            <div class="ep-form-group">
-                                <label class="ep-form-label">Auto-Reply Welcome Message for Inbox</label>
-                                <textarea id="settingAutoReply" class="ep-form-control" rows="2" placeholder="Thanks for reaching out! We will reply shortly.">{{ $page->settings['messaging']['auto_reply_message'] ?? '' }}</textarea>
-                            </div>
-
-                            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-                                <button type="submit" class="ep-btn-header-create" id="btnSaveSettings">
-                                    <span>Save Page Settings</span>
+                            <!-- Soft Delete to Trash Option -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px;">
+                                <div>
+                                    <div style="font-weight: 700; font-size: 14px; color: #b91c1c;">Move Page to Trash</div>
+                                    <div style="font-size: 12.5px; color: var(--ep-text-secondary); max-width: 500px;">
+                                        Only the page owner can perform this action. The page will be soft-deleted and removed from all public listings.
+                                    </div>
+                                </div>
+                                <button type="button" class="ep-btn-secondary" onclick="epDeletePageStudio()" style="color: #ffffff; background: #dc2626; border-color: #dc2626;">
+                                    Delete Page
                                 </button>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -1487,7 +2118,7 @@
                     @endforelse
                 </div>
                 <div class="ep-activity-footer">
-                    <a href="javascript:void(0)" class="ep-link-view-all" onclick="epSwitchStudioTab('overview')">
+                    <a href="javascript:void(0)" class="ep-link-view-all" onclick="epOpenAuditHistoryModal()">
                         <span>View All Activity</span>
                         @include('pages.partials.icon', ['name' => 'arrow-right', 'size' => 13])
                     </a>
@@ -1578,13 +2209,23 @@
                     </select>
                 </div>
                 <div class="ep-form-group" id="epPostMediaGroup" style="display: none;">
-                    <label class="ep-form-label">Attach Media File</label>
-                    <input type="file" id="epPostFileInput" class="ep-form-control" accept="image/*,video/*" onchange="epPreviewMediaFile(this)">
+                    <label class="ep-form-label">Attach Media Files (Photos / Video)</label>
+                    <input type="file" id="epPostFileInput" class="ep-form-control" accept="image/*,video/*" multiple onchange="epPreviewMediaFile(this)">
                     <div id="epPostMediaPreviewBox" style="display: none; margin-top: 10px; max-height: 160px; overflow: hidden; border-radius: 8px;"></div>
                 </div>
                 <div class="ep-form-group" id="epPostLinkGroup" style="display: none;">
                     <label class="ep-form-label">Link URL (https://...)</label>
                     <input type="url" id="epPostLinkInput" class="ep-form-control" placeholder="https://example.com/article">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="ep-form-group">
+                        <label class="ep-form-label">Feeling / Activity</label>
+                        <input type="text" id="epPostFeelingInput" class="ep-form-control" placeholder="e.g. Feeling Happy 😊">
+                    </div>
+                    <div class="ep-form-group">
+                        <label class="ep-form-label">Location (Optional)</label>
+                        <input type="text" id="epPostLocationInput" class="ep-form-control" placeholder="e.g. Dhaka, Bangladesh">
+                    </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div class="ep-form-group">
@@ -1741,10 +2382,15 @@
                 <div class="ep-form-group">
                     <label class="ep-form-label">Assigned Role</label>
                     <select id="epInviteRole" class="ep-form-control" required>
-                        <option value="admin">Administrator (Full settings, team, and content controls)</option>
-                        <option value="editor">Editor (Publish and edit posts, stories, and media)</option>
+                        @if($isOwner)
+                            <option value="admin">Administrator (Full settings, team, and content controls)</option>
+                        @endif
+                        <option value="manager">Manager (Operations, settings, and content management)</option>
+                        <option value="editor" selected>Editor (Publish and edit posts, stories, and media)</option>
+                        <option value="content_manager">Content Publisher (Posts, media, and stories)</option>
                         <option value="moderator">Moderator (Review comments and interactions)</option>
                         <option value="analyst">Analyst (View audience and performance insights)</option>
+                        <option value="viewer">Viewer (Read-only access)</option>
                     </select>
                 </div>
             </div>
@@ -1772,16 +2418,46 @@
                 <div class="ep-form-group">
                     <label class="ep-form-label">Select New Role</label>
                     <select id="epChangeRoleSelect" class="ep-form-control" required>
-                        <option value="admin">Administrator</option>
+                        @if($isOwner)
+                            <option value="admin">Administrator</option>
+                        @endif
+                        <option value="manager">Manager</option>
                         <option value="editor">Editor</option>
+                        <option value="content_manager">Content Publisher</option>
                         <option value="moderator">Moderator</option>
                         <option value="analyst">Analyst</option>
+                        <option value="viewer">Viewer</option>
                     </select>
                 </div>
             </div>
             <div class="ep-modal-footer">
                 <button type="button" class="ep-btn-manage" onclick="epCloseModal('epModalChangeRole')">Cancel</button>
                 <button type="submit" class="ep-btn-header-create" id="btnSubmitChangeRole">Update Role</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 4.5. Transfer Ownership Modal -->
+<div id="epModalTransferOwnership" class="ep-modal-backdrop">
+    <div class="ep-modal-dialog">
+        <div class="ep-modal-header">
+            <h3 class="ep-modal-title" style="color: #b91c1c;">Transfer Page Ownership</h3>
+            <button type="button" class="ep-btn-close-modal" onclick="epCloseModal('epModalTransferOwnership')">&times;</button>
+        </div>
+        <form id="epFormTransferOwnership" onsubmit="epSubmitTransferOwnership(event)">
+            <div class="ep-modal-body">
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #991b1b;">
+                    <strong>Warning:</strong> You are transferring primary ownership of this page. You will become an Administrator. This operation is permanent and requires server-side owner verification.
+                </div>
+                <div class="ep-form-group">
+                    <label class="ep-form-label">New Owner Email or Username</label>
+                    <input type="text" id="epTransferOwnerIdentifier" class="ep-form-control" placeholder="user@example.com or username" required>
+                </div>
+            </div>
+            <div class="ep-modal-footer">
+                <button type="button" class="ep-btn-manage" onclick="epCloseModal('epModalTransferOwnership')">Cancel</button>
+                <button type="submit" class="ep-btn-header-create" id="btnSubmitTransferOwnership" style="background: #dc2626; border-color: #dc2626;">Confirm Transfer</button>
             </div>
         </form>
     </div>
@@ -1850,10 +2526,87 @@
     </div>
 </div>
 
+<!-- 6. Create Event Modal -->
+<div id="epModalCreateEvent" class="ep-modal-backdrop">
+    <div class="ep-modal-dialog">
+        <div class="ep-modal-header">
+            <h3 class="ep-modal-title">Create Page Event</h3>
+            <button type="button" class="ep-btn-close-modal" onclick="epCloseModal('epModalCreateEvent')">&times;</button>
+        </div>
+        <form id="epFormCreateEvent" onsubmit="epSubmitCreateEvent(event)">
+            <div class="ep-modal-body">
+                <div class="ep-form-group">
+                    <label class="ep-form-label">Event Title</label>
+                    <input type="text" id="epEventTitleInput" class="ep-form-control" placeholder="e.g. Annual Community Gathering 2026" required>
+                </div>
+                <div class="ep-form-group">
+                    <label class="ep-form-label">Description</label>
+                    <textarea id="epEventDescInput" class="ep-form-control" rows="3" placeholder="Tell your followers what the event is about..."></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="ep-form-group">
+                        <label class="ep-form-label">Start Date & Time</label>
+                        <input type="datetime-local" id="epEventStartInput" class="ep-form-control" required>
+                    </div>
+                    <div class="ep-form-group">
+                        <label class="ep-form-label">End Date & Time (Optional)</label>
+                        <input type="datetime-local" id="epEventEndInput" class="ep-form-control">
+                    </div>
+                </div>
+                <div class="ep-form-group">
+                    <label class="ep-form-label">Event Format</label>
+                    <div style="display: flex; gap: 16px; align-items: center; margin-top: 6px;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13.5px;">
+                            <input type="radio" name="eventFormat" value="physical" checked onchange="document.getElementById('epEventLocationGroup').style.display='block'">
+                            <span>In-Person Physical Event</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13.5px;">
+                            <input type="radio" name="eventFormat" value="online" onchange="document.getElementById('epEventLocationGroup').style.display='none'">
+                            <span>Online Event</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="ep-form-group" id="epEventLocationGroup">
+                    <label class="ep-form-label">Location / Venue</label>
+                    <input type="text" id="epEventLocationInput" class="ep-form-control" placeholder="e.g. Dhaka, Bangladesh or Venue Address">
+                </div>
+            </div>
+            <div class="ep-modal-footer">
+                <button type="button" class="ep-btn-manage" onclick="epCloseModal('epModalCreateEvent')">Cancel</button>
+                <button type="submit" class="ep-btn-header-create" id="btnPublishEvent">Publish Event</button>
+            </div>
+        </form>
+    </div>
+<!-- Audit & Activity History Modal -->
+<div id="epModalAuditActivityHistory" class="ep-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="auditHistoryTitle">
+    <div class="ep-modal-box" style="max-width: 650px;">
+        <div class="ep-modal-header">
+            <h3 class="ep-modal-title" id="auditHistoryTitle">Page Activity & Audit Trail</h3>
+            <button type="button" class="ep-modal-close" onclick="epCloseModal('epModalAuditActivityHistory')" aria-label="Close">
+                @include('pages.partials.icon', ['name' => 'x', 'size' => 18])
+            </button>
+        </div>
+        <div class="ep-modal-body" style="max-height: 480px; overflow-y: auto;">
+            <div id="epAuditModalLoading" style="text-align: center; padding: 24px;">
+                <div class="ep-spinner" style="width: 24px; height: 24px; border: 3px solid rgba(24, 119, 242, 0.2); border-top-color: #1877F2; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 8px;"></div>
+                <span style="font-size: 13px; color: var(--ep-text-secondary);">Loading verified activity logs...</span>
+            </div>
+            <div id="epAuditModalList" style="display: none; display: flex; flex-direction: column; gap: 10px;"></div>
+            <div id="epAuditModalEmpty" style="display: none; text-align: center; padding: 32px; color: var(--ep-text-muted);">
+                No audit records found for this page.
+            </div>
+        </div>
+        <div class="ep-modal-footer">
+            <button type="button" class="ep-btn-manage" onclick="epCloseModal('epModalAuditActivityHistory')">Close</button>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container -->
 <div id="epToast" class="ep-toast" style="display: none;" role="status">
     <span id="epToastText"></span>
 </div>
+@endsection
 
 @push('scripts')
 <script>
@@ -1863,6 +2616,7 @@
     window.EP_PAGE_AVATAR = @json($page->avatar_url);
     window.EP_CAN_MANAGE_ROLES = {{ $canManageRoles ? 'true' : 'false' }};
     window.EP_CSRF_TOKEN = '{{ csrf_token() }}';
+    window.EP_PAGE_UPDATED_AT = '{{ $page->updated_at?->toIso8601String() }}';
     window.EP_STUDIO_ANALYTICS = {
         '7d': @json($analytics7d),
         '30d': @json($analytics30d),
@@ -1978,12 +2732,284 @@
     }
 
     /**
+     * Escape HTML string helper
+     */
+    function epEscapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>"']/g, function(m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        });
+    }
+
+    /**
+     * Format metric shorthand helper in JS
+     */
+    function epFormatMetricJs(num) {
+        num = parseFloat(num || 0);
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return String(Math.round(num));
+    }
+
+    /**
      * Change Studio Analytics Time Range Dropdown
      */
     function epChangeStudioAnalyticsRange(rangeKey) {
-        const dataset = window.EP_STUDIO_ANALYTICS[rangeKey];
-        if (dataset) {
-            epRenderAnalyticsChart(dataset);
+        const customWrap = document.getElementById('epCustomDateRangeWrap');
+        if (rangeKey === 'custom') {
+            if (customWrap) customWrap.style.display = 'inline-flex';
+            return;
+        }
+
+        if (customWrap) customWrap.style.display = 'none';
+
+        epFetchAndRenderAnalytics(rangeKey);
+    }
+
+    /**
+     * Apply custom date range
+     */
+    function epApplyCustomAnalyticsRange() {
+        const startInput = document.getElementById('epAnalyticsStartDate');
+        const endInput = document.getElementById('epAnalyticsEndDate');
+        if (!startInput || !endInput || !startInput.value || !endInput.value) {
+            alert('Please select both start and end dates.');
+            return;
+        }
+
+        if (startInput.value > endInput.value) {
+            alert('Start date must be before or equal to end date.');
+            return;
+        }
+
+        epFetchAndRenderAnalytics('custom', startInput.value, endInput.value);
+    }
+
+    /**
+     * Retry loading analytics on error
+     */
+    function epRetryAnalyticsLoad() {
+        const select = document.getElementById('epStudioTimeRangeSelect');
+        const rangeKey = select ? select.value : '30d';
+        if (rangeKey === 'custom') {
+            epApplyCustomAnalyticsRange();
+        } else {
+            epFetchAndRenderAnalytics(rangeKey);
+        }
+    }
+
+    /**
+     * Fetch & Render verifiable analytics asynchronously from server
+     */
+    async function epFetchAndRenderAnalytics(period, startDate, endDate) {
+        const loading = document.getElementById('epAnalyticsLoadingIndicator');
+        const errorBox = document.getElementById('epAnalyticsErrorState');
+        const emptyState = document.getElementById('epAnalyticsEmptyState');
+        const chartBox = document.getElementById('epAnalyticSubOverview');
+        const audienceBox = document.getElementById('epAnalyticSubAudience');
+        const contentBox = document.getElementById('epAnalyticSubContent');
+
+        if (loading) loading.style.display = 'block';
+        if (errorBox) errorBox.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'none';
+        if (chartBox) chartBox.style.opacity = '0.5';
+
+        const params = new URLSearchParams();
+        if (period) params.set('period', period);
+        if (startDate) params.set('start_date', startDate);
+        if (endDate) params.set('end_date', endDate);
+
+        try {
+            const url = '/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/analytics?' + params.toString();
+            const res = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!res.ok) {
+                throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+            }
+
+            const json = await res.json();
+            if (!json.success || !json.data) {
+                throw new Error(json.message || 'Invalid server response structure');
+            }
+
+            const data = json.data;
+            const summary = data.summary || {};
+
+            // Save to memory cache
+            window.EP_STUDIO_ANALYTICS[period || 'custom'] = data;
+
+            // Render SVG chart
+            epRenderAnalyticsChart(data);
+
+            // Update Header / Overview cards
+            const reachVal = document.getElementById('epOverviewPostReachValue');
+            const reachSub = document.getElementById('epOverviewPostReachSub');
+            if (reachVal) reachVal.textContent = epFormatMetricJs(summary.reach || 0);
+            if (reachSub) {
+                reachSub.textContent = (summary.impressions > 0)
+                    ? (epFormatMetricJs(summary.impressions) + ' imp')
+                    : 'Unique reach';
+                reachSub.title = 'Total Impressions: ' + Number(summary.impressions || 0).toLocaleString();
+            }
+
+            const engVal = document.getElementById('epOverviewTotalEngagementsValue');
+            const engSub = document.getElementById('epOverviewEngagementRateSub');
+            if (engVal) engVal.textContent = epFormatMetricJs(summary.total_engagements || 0);
+            if (engSub) engSub.textContent = summary.engagement_rate || '0%';
+
+            const folVal = document.getElementById('epOverviewTotalFollowersValue');
+            const folSub = document.getElementById('epOverviewNewFollowersSub');
+            if (folVal) folVal.textContent = epFormatMetricJs(summary.total_followers || 0);
+            if (folSub) folSub.textContent = '↑ ' + (summary.new_followers || 0) + ' new';
+
+            const postVal = document.getElementById('epOverviewTotalPostsValue');
+            const postSub = document.getElementById('epOverviewPostsSub');
+            if (postVal) postVal.textContent = epFormatMetricJs(summary.total_posts || 0);
+            if (postSub) postSub.textContent = (summary.posts_in_period || summary.total_posts || 0) + ' in period';
+
+            const vidVal = document.getElementById('epOverviewVideoViewsValue');
+            if (vidVal) vidVal.textContent = epFormatMetricJs(summary.video_views || summary.reel_views || 0);
+
+            const storyVal = document.getElementById('epOverviewStoryViewsValue');
+            if (storyVal) storyVal.textContent = epFormatMetricJs(summary.story_views || 0);
+
+            const clickVal = document.getElementById('epOverviewClicksValue');
+            if (clickVal) clickVal.textContent = epFormatMetricJs(summary.link_clicks || summary.clicks || 0);
+
+            // Update Detail Strip
+            const dImp = document.getElementById('epDetailImpressions');
+            if (dImp) dImp.textContent = Number(summary.impressions || 0).toLocaleString();
+
+            const dReach = document.getElementById('epDetailReach');
+            if (dReach) dReach.textContent = Number(summary.reach || 0).toLocaleString();
+
+            const dEng = document.getElementById('epDetailEngagements');
+            if (dEng) dEng.textContent = Number(summary.total_engagements || 0).toLocaleString();
+
+            const dRate = document.getElementById('epDetailRate');
+            if (dRate) dRate.textContent = summary.engagement_rate || '0%';
+
+            const dVid = document.getElementById('epDetailVideoViews');
+            if (dVid) dVid.textContent = Number(summary.video_views || summary.reel_views || 0).toLocaleString();
+
+            const dStory = document.getElementById('epDetailStoryViews');
+            if (dStory) dStory.textContent = Number(summary.story_views || 0).toLocaleString();
+
+            // Update Top Content list
+            epRenderTopContent(data.top_content || []);
+
+            // Check if empty
+            const totalActivity = (summary.new_followers || 0) + (summary.impressions || 0) + (summary.reach || 0) + (summary.total_engagements || 0);
+            if (totalActivity === 0 && emptyState) {
+                emptyState.style.display = 'block';
+            }
+
+        } catch (err) {
+            console.error('Analytics load error:', err);
+            if (errorBox) {
+                const msg = document.getElementById('epAnalyticsErrorMessage');
+                if (msg) msg.textContent = 'Failed to load analytics: ' + err.message;
+                errorBox.style.display = 'block';
+            }
+        } finally {
+            if (loading) loading.style.display = 'none';
+            if (chartBox) chartBox.style.opacity = '1';
+        }
+    }
+
+    /**
+     * Render Top Content list in Sub-tab 3
+     */
+    function epRenderTopContent(topList) {
+        const container = document.getElementById('epAnalyticTopContentList');
+        if (!container) return;
+
+        if (!topList || topList.length === 0) {
+            container.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--ep-text-secondary); font-size: 13px;">No top content identified yet. Publish updates to view interaction metrics.</div>';
+            return;
+        }
+
+        let html = '';
+        topList.forEach(tPost => {
+            const content = tPost.content || 'Post';
+            const likes = tPost.likes_count || 0;
+            const comments = tPost.comments_count || 0;
+            const shares = tPost.shares_count || 0;
+            const reach = tPost.reach || 0;
+            const imp = tPost.impressions || 0;
+            html += `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--ep-border); gap: 14px;">
+                    <div style="min-width: 0; flex: 1;">
+                        <p style="font-size: 13px; font-weight: 600; color: var(--ep-text-title); margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${epEscapeHtml(content)}
+                        </p>
+                        <span style="font-size: 11.5px; color: var(--ep-text-muted);">
+                            ${reach > 0 ? (reach + ' reach • ') : ''}${imp > 0 ? (imp + ' impressions') : 'Published update'}
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 12px; font-size: 12px; color: var(--ep-text-secondary); flex-shrink: 0;">
+                        <span>👍 ${likes}</span>
+                        <span>💬 ${comments}</span>
+                        <span>↗ ${shares}</span>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    /**
+     * Open Full Audit & Activity History Modal and load records
+     */
+    async function epOpenAuditHistoryModal() {
+        epOpenModal('epModalAuditActivityHistory');
+        const loading = document.getElementById('epAuditModalLoading');
+        const list = document.getElementById('epAuditModalList');
+        const empty = document.getElementById('epAuditModalEmpty');
+        if (loading) loading.style.display = 'block';
+        if (list) { list.style.display = 'none'; list.innerHTML = ''; }
+        if (empty) empty.style.display = 'none';
+
+        try {
+            const res = await fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/audit-logs?per_page=25', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const json = await res.json();
+            if (loading) loading.style.display = 'none';
+            if (json.success && json.data && json.data.length > 0) {
+                if (list) {
+                    list.style.display = 'flex';
+                    let html = '';
+                    json.data.forEach(log => {
+                        const actorName = log.actor ? (log.actor.name || log.actor.username) : 'System';
+                        const action = log.action ? log.action.replace(/[._]/g, ' ') : 'Action';
+                        const time = log.created_at ? new Date(log.created_at).toLocaleString() : '';
+                        html += `
+                            <div style="padding: 10px 14px; background: var(--ep-card-bg, #f8fafc); border-radius: 8px; border: 1px solid var(--ep-border); font-size: 13px;">
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                                    <strong style="color: var(--ep-text-title);">${epEscapeHtml(actorName)}</strong>
+                                    <span style="font-size: 11px; color: var(--ep-text-muted);">${epEscapeHtml(time)}</span>
+                                </div>
+                                <div style="color: var(--ep-text-secondary); text-transform: capitalize;">
+                                    ${epEscapeHtml(action)} on <strong>${epEscapeHtml(log.target_type || 'Page')}</strong>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    list.innerHTML = html;
+                }
+            } else {
+                if (empty) empty.style.display = 'block';
+            }
+        } catch (e) {
+            if (loading) loading.style.display = 'none';
+            if (empty) {
+                empty.textContent = 'Failed to load activity logs: ' + e.message;
+                empty.style.display = 'block';
+            }
         }
     }
 
@@ -2298,9 +3324,21 @@
             formData.append('link_url', linkInput.value);
         }
 
+        const feelingInput = document.getElementById('epPostFeelingInput');
+        if (feelingInput && feelingInput.value) {
+            formData.append('feeling_activity', feelingInput.value);
+        }
+
+        const locationInput = document.getElementById('epPostLocationInput');
+        if (locationInput && locationInput.value) {
+            formData.append('location', locationInput.value);
+        }
+
         const fileInput = document.getElementById('epPostFileInput');
-        if (fileInput && fileInput.files && fileInput.files[0]) {
-            formData.append('media', fileInput.files[0]);
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('media_files[]', fileInput.files[i]);
+            }
         }
 
         fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/posts', {
@@ -2372,6 +3410,281 @@
             btn.disabled = false;
             btn.textContent = 'Publish Post';
             alert(err.message || 'Failed to publish post');
+        });
+    }
+
+    /**
+     * React / Like Post
+     */
+    function epTogglePostLike(postId) {
+        const btn = document.getElementById('ep-btn-like-' + postId);
+        const cntEl = document.getElementById('ep-post-likes-cnt-' + postId);
+
+        fetch('/posts/' + postId + '/react', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ type: 'like' })
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to update reaction');
+            return data;
+        })
+        .then(data => {
+            if (data.success) {
+                const reacted = data.data ? data.data.reacted : true;
+                if (btn) {
+                    btn.classList.toggle('active', reacted);
+                    btn.style.color = reacted ? 'var(--ep-brand-blue)' : '';
+                }
+                if (cntEl) {
+                    let current = parseInt(cntEl.textContent.replace(/[^0-9]/g, '') || '0', 10);
+                    cntEl.textContent = String(Math.max(0, current + (reacted ? 1 : -1)));
+                }
+                epShowToast(data.message || (reacted ? 'Liked post!' : 'Removed like.'));
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            epShowToast('Unable to react to post');
+        });
+    }
+
+    /**
+     * Open Edit Post Modal
+     */
+    function epOpenEditPostModal(postId, content, audience, status) {
+        const idInput = document.getElementById('epEditPostIdInput');
+        const contentInput = document.getElementById('epEditPostContentInput');
+        const audienceSelect = document.getElementById('epEditPostAudienceSelect');
+        const statusSelect = document.getElementById('epEditPostStatusSelect');
+
+        if (idInput) idInput.value = postId;
+        if (contentInput) contentInput.value = content;
+        if (audienceSelect) audienceSelect.value = audience || 'public';
+        if (statusSelect) statusSelect.value = status || 'published';
+
+        epOpenModal('epModalEditPost');
+    }
+
+    /**
+     * Submit Edit Post via real Web API
+     */
+    function epSubmitEditPost(e) {
+        e.preventDefault();
+        const postId = document.getElementById('epEditPostIdInput').value;
+        const content = document.getElementById('epEditPostContentInput').value.trim();
+        const audience = document.getElementById('epEditPostAudienceSelect').value;
+        const status = document.getElementById('epEditPostStatusSelect').value;
+
+        if (!postId || !content) return;
+
+        const btn = document.getElementById('btnSaveEditPost');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+        }
+
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/posts/' + postId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                content: content,
+                audience: audience,
+                status: status
+            })
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to update post');
+            return data;
+        })
+        .then(data => {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+            epCloseModal('epModalEditPost');
+            epShowToast(data.message || 'Post updated successfully!');
+
+            // Real-time DOM update
+            const textEl = document.getElementById('ep-post-text-' + postId);
+            if (textEl) {
+                textEl.textContent = content.length > 160 ? content.slice(0, 155) + '...' : content;
+            }
+
+            const visBadge = document.getElementById('ep-vis-badge-' + postId);
+            if (visBadge) {
+                const capAud = audience.charAt(0).toUpperCase() + audience.slice(1);
+                visBadge.title = 'Audience: ' + capAud;
+                visBadge.innerHTML = audience === 'public'
+                    ? '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg><span>Public</span>'
+                    : '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><span>' + capAud + '</span>';
+            }
+        })
+        .catch(err => {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+            alert(err.message || 'Error updating post');
+        });
+    }
+
+    /**
+     * Toggle Pin Post
+     */
+    function epTogglePinPost(postId) {
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/posts/' + postId + '/pin', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            }
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to toggle pin');
+            return data;
+        })
+        .then(data => {
+            epShowToast(data.message || (data.is_pinned ? 'Post pinned!' : 'Post unpinned.'));
+            const badgeWrap = document.getElementById('ep-pin-badge-wrap-' + postId);
+            const labelEl = document.getElementById('ep-pin-label-' + postId);
+
+            if (data.is_pinned) {
+                document.querySelectorAll('[id^="ep-pin-badge-wrap-"]').forEach(el => el.innerHTML = '');
+                if (badgeWrap) {
+                    badgeWrap.innerHTML = '<span class="ep-pinned-badge"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg><span>Pinned</span></span>';
+                }
+                if (labelEl) labelEl.textContent = 'Unpin Post';
+            } else {
+                if (badgeWrap) badgeWrap.innerHTML = '';
+                if (labelEl) labelEl.textContent = 'Pin Post';
+            }
+        })
+        .catch(err => alert(err.message || 'Error toggling pin'));
+    }
+
+    /**
+     * Change Post Visibility Prompt
+     */
+    function epChangePostVisibilityPrompt(postId, currentAudience) {
+        const options = ['public', 'followers', 'only_me'];
+        const nextIdx = (options.indexOf(currentAudience) + 1) % options.length;
+        const newAudience = prompt('Choose visibility: public, followers, only_me', options[nextIdx]);
+        if (!newAudience || !options.includes(newAudience.trim().toLowerCase())) return;
+
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/posts/' + postId + '/visibility', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ audience: newAudience.trim().toLowerCase() })
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to update visibility');
+            return data;
+        })
+        .then(data => {
+            epShowToast('Visibility updated to ' + data.audience);
+            const visBadge = document.getElementById('ep-vis-badge-' + postId);
+            if (visBadge) {
+                const capAud = data.audience.charAt(0).toUpperCase() + data.audience.slice(1);
+                visBadge.title = 'Audience: ' + capAud;
+                visBadge.innerHTML = data.audience === 'public'
+                    ? '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg><span>Public</span>'
+                    : '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><span>' + capAud + '</span>';
+            }
+        })
+        .catch(err => alert(err.message || 'Error updating visibility'));
+    }
+
+    /**
+     * Open Delete Post Confirmation Modal
+     */
+    function epConfirmDeletePost(postId) {
+        const idInput = document.getElementById('epDeletePostIdInput');
+        if (idInput) idInput.value = postId;
+        epOpenModal('epModalDeletePost');
+    }
+
+    /**
+     * Execute Delete Post via real Web API
+     */
+    function epExecuteDeletePost() {
+        const postId = document.getElementById('epDeletePostIdInput')?.value;
+        if (!postId) return;
+
+        const btn = document.getElementById('btnConfirmDeletePost');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+        }
+
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/posts/' + postId, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            }
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to delete post');
+            return data;
+        })
+        .then(data => {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Delete Post';
+            }
+            epCloseModal('epModalDeletePost');
+            epShowToast(data.message || 'Post deleted successfully.');
+
+            const row = document.getElementById('ep-post-row-' + postId);
+            if (row) {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    row.remove();
+                    const container = document.getElementById('epPostsListContainer');
+                    if (container && container.querySelectorAll('.ep-post-row-item').length === 0) {
+                        const emptyState = document.getElementById('epEmptyPostsState');
+                        if (emptyState) emptyState.style.display = 'block';
+                    }
+                }, 300);
+            }
+
+            const allBadge = document.getElementById('epTypeChipAllCount');
+            if (allBadge) {
+                let c = parseInt(allBadge.textContent.replace(/[^0-9]/g, '') || '0', 10);
+                allBadge.textContent = String(Math.max(0, c - 1));
+            }
+            const headerCount = document.getElementById('epHeaderPostsCount');
+            if (headerCount) {
+                let c = parseInt(headerCount.textContent.replace(/[^0-9]/g, '') || '0', 10);
+                headerCount.textContent = String(Math.max(0, c - 1));
+            }
+        })
+        .catch(err => {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Delete Post';
+            }
+            alert(err.message || 'Error deleting post');
         });
     }
 
@@ -2470,13 +3783,13 @@
     function epSubmitEditPage(e) {
         e.preventDefault();
         const payload = {
-            name: document.getElementById('epEditName').value,
-            category: document.getElementById('epEditCategory').value,
-            bio: document.getElementById('epEditBio').value,
-            website: document.getElementById('epEditWebsite').value,
-            email: document.getElementById('epEditEmail').value,
-            phone: document.getElementById('epEditPhone').value,
-            city: document.getElementById('epEditCity').value
+            name: document.getElementById('epEditName').value.trim(),
+            category: document.getElementById('epEditCategory').value.trim(),
+            bio: document.getElementById('epEditBio').value.trim(),
+            website: document.getElementById('epEditWebsite').value.trim() || null,
+            email: document.getElementById('epEditEmail').value.trim() || null,
+            phone: document.getElementById('epEditPhone').value.trim() || null,
+            city: document.getElementById('epEditCity').value.trim() || null
         };
 
         const btn = document.getElementById('btnSaveEditPage');
@@ -2690,6 +4003,87 @@
     }
 
     /**
+     * Revoke Pending Invitation with Confirmation
+     */
+    function epConfirmRevokeInvite(memberId, memberName) {
+        if (!confirm('Are you sure you want to revoke the pending invitation for ' + memberName + '?')) return;
+
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/team/' + memberId + '/revoke', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            }
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to revoke invitation');
+            return data;
+        })
+        .then(data => {
+            const row = document.getElementById('team-member-row-' + memberId);
+            if (row) {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'scale(0.95)';
+                setTimeout(() => row.remove(), 300);
+            }
+            epShowToast(data.message || 'Invitation revoked successfully.');
+        })
+        .catch(err => alert('Error revoking invitation: ' + err.message));
+    }
+
+    /**
+     * Open Transfer Ownership Modal
+     */
+    function epOpenTransferOwnershipModal() {
+        document.getElementById('epTransferOwnerIdentifier').value = '';
+        epOpenModal('epModalTransferOwnership');
+    }
+
+    /**
+     * Submit Transfer Ownership via Web API
+     */
+    function epSubmitTransferOwnership(e) {
+        e.preventDefault();
+        const identifier = document.getElementById('epTransferOwnerIdentifier').value.trim();
+        if (!identifier) return;
+
+        if (!confirm('FINAL CONFIRMATION: Are you completely certain you want to transfer ownership of this page to ' + identifier + '? You will become an Administrator and lose owner privileges.')) return;
+
+        const btn = document.getElementById('btnSubmitTransferOwnership');
+        btn.disabled = true;
+        btn.textContent = 'Transferring...';
+
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/transfer-ownership', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ identifier: identifier })
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to transfer ownership');
+            return data;
+        })
+        .then(data => {
+            btn.disabled = false;
+            btn.textContent = 'Confirm Transfer';
+            epCloseModal('epModalTransferOwnership');
+            alert(data.message || 'Ownership transferred successfully!');
+            window.location.reload();
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.textContent = 'Confirm Transfer';
+            alert('Error transferring ownership: ' + err.message);
+        });
+    }
+
+    /**
      * Remove Follower with Confirmation
      */
     function epConfirmRemoveFollower(userId, userName) {
@@ -2719,24 +4113,105 @@
         .catch(err => alert('Error: ' + err.message));
     }
 
+    function epCopyStudioUrl() {
+        const url = document.getElementById('settingDisplayUrl')?.textContent || window.location.origin + '/pages/' + window.EP_PAGE_SLUG;
+        navigator.clipboard.writeText(url).then(() => {
+            epShowToast('Page link copied to clipboard!');
+        }).catch(() => {
+            prompt('Copy link:', url);
+        });
+    }
+
     /**
      * Save Page Settings
      */
     function epSavePageSettings(e) {
         e.preventDefault();
+
+        const checkedFormats = [];
+        ['format_text', 'format_image', 'format_video', 'format_reel', 'format_story', 'format_live'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.checked) {
+                checkedFormats.push(el.value);
+            }
+        });
+
+        const blockedKeywordsRaw = document.getElementById('settingBlockedKeywords')?.value || '';
+        const blockedKeywords = blockedKeywordsRaw
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+
         const payload = {
-            bio: document.getElementById('settingPageBio').value,
+            name: document.getElementById('settingPageName')?.value || '',
+            username: document.getElementById('settingPageUsername')?.value || '',
+            category: document.getElementById('settingPageCategory')?.value || '',
+            sub_category: document.getElementById('settingPageSubCategory')?.value || '',
+            bio: document.getElementById('settingPageBio')?.value || '',
+            description: document.getElementById('settingPageDescription')?.value || '',
+            visibility: document.getElementById('settingPageVisibility')?.value || 'public',
+            email: document.getElementById('settingContactEmail')?.value || '',
+            phone: document.getElementById('settingContactPhone')?.value || '',
+            website: document.getElementById('settingContactWebsite')?.value || '',
+            address: document.getElementById('settingContactAddress')?.value || '',
+            city: document.getElementById('settingContactCity')?.value || '',
+            zip_code: document.getElementById('settingContactZip')?.value || '',
+            last_updated_at: window.EP_PAGE_UPDATED_AT || '',
+            social_links: {
+                facebook: document.getElementById('settingSocialFacebook')?.value || '',
+                twitter: document.getElementById('settingSocialTwitter')?.value || '',
+                instagram: document.getElementById('settingSocialInstagram')?.value || '',
+                linkedin: document.getElementById('settingSocialLinkedin')?.value || '',
+                youtube: document.getElementById('settingSocialYoutube')?.value || '',
+                github: document.getElementById('settingSocialGithub')?.value || ''
+            },
             settings: {
+                visibility: document.getElementById('settingPageVisibility')?.value || 'public',
+                discoverability: {
+                    search_engine_indexing: !!document.getElementById('settingSearchIndexing')?.checked,
+                    show_in_directory: !!document.getElementById('settingShowDirectory')?.checked
+                },
                 messaging: {
-                    auto_reply_enabled: true,
-                    auto_reply_message: document.getElementById('settingAutoReply').value
+                    allow_messages: !!document.getElementById('settingAllowMessages')?.checked,
+                    auto_reply_enabled: !!document.getElementById('settingAutoReplyEnabled')?.checked,
+                    auto_reply_message: document.getElementById('settingAutoReply')?.value || ''
+                },
+                moderation: {
+                    allow_comments: !!document.getElementById('settingAllowComments')?.checked,
+                    profanity_filter: !!document.getElementById('settingProfanityFilter')?.checked,
+                    blocked_keywords: blockedKeywords
+                },
+                tagging: {
+                    allow_mentions: !!document.getElementById('settingAllowMentions')?.checked,
+                    who_can_tag: document.getElementById('settingWhoCanTag')?.value || 'everyone'
+                },
+                notifications: {
+                    email_alerts: !!document.getElementById('settingNotifyEmail')?.checked,
+                    in_app_follows: !!document.getElementById('settingNotifyFollows')?.checked,
+                    in_app_comments: !!document.getElementById('settingNotifyComments')?.checked,
+                    in_app_messages: !!document.getElementById('settingNotifyMessages')?.checked
+                },
+                publishing: {
+                    allowed_formats: checkedFormats
+                },
+                privacy: {
+                    audience: document.getElementById('settingDefaultAudience')?.value || 'public',
+                    show_contact_info: document.getElementById('settingShowContactInfo')?.value === '1'
                 }
+            },
+            privacy_settings: {
+                default_post_audience: document.getElementById('settingDefaultAudience')?.value || 'public',
+                public_email: !!document.getElementById('settingPublicEmail')?.checked,
+                public_phone: !!document.getElementById('settingPublicPhone')?.checked,
+                public_address: !!document.getElementById('settingPublicAddress')?.checked
             }
         };
 
         const btn = document.getElementById('btnSaveSettings');
-        btn.disabled = true;
-        btn.textContent = 'Saving...';
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Saving Settings...';
+        }
 
         fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/settings', {
             method: 'PUT',
@@ -2749,19 +4224,116 @@
         })
         .then(async res => {
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.message || 'Failed to save settings');
+            if (!res.ok) {
+                if (res.status === 409) {
+                    throw new Error(data.message || 'Conflict: This page was modified concurrently by another manager. Please reload before saving.');
+                }
+                throw new Error(data.message || 'Failed to save settings');
+            }
             return data;
         })
         .then(data => {
-            btn.disabled = false;
-            btn.textContent = 'Save Page Settings';
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Save All Settings';
+            }
+            if (data.page && data.page.updated_at) {
+                window.EP_PAGE_UPDATED_AT = data.page.updated_at;
+            }
             epShowToast(data.message || 'Page settings updated successfully!');
+
+            if (payload.name) {
+                const titleEl = document.querySelector('.ep-hero-title');
+                if (titleEl) titleEl.textContent = payload.name;
+                window.EP_PAGE_NAME = payload.name;
+            }
+            if (payload.category) {
+                const categoryEl = document.querySelector('.ep-hero-meta-item span');
+                if (categoryEl) categoryEl.textContent = payload.category;
+            }
         })
         .catch(err => {
-            btn.disabled = false;
-            btn.textContent = 'Save Page Settings';
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Save All Settings';
+            }
             alert('Error saving settings: ' + err.message);
         });
+    }
+
+    /**
+     * Archive Page
+     */
+    function epArchivePageStudio() {
+        if (!confirm('Are you sure you want to archive this page? It will be hidden from the public until reactivated.')) return;
+
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/archive', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            }
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (data.success) {
+                epShowToast(data.message || 'Page archived successfully.');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                alert(data.message || 'Failed to archive page.');
+            }
+        })
+        .catch(e => alert('Server communication error.'));
+    }
+
+    /**
+     * Restore Archived Page
+     */
+    function epRestoreArchivedPageStudio() {
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/settings', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ status: 'active' })
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (data.success) {
+                epShowToast('Page reactivated successfully.');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                alert(data.message || 'Failed to reactivate page.');
+            }
+        })
+        .catch(e => alert('Server communication error.'));
+    }
+
+    /**
+     * Move Page to Trash
+     */
+    function epDeletePageStudio() {
+        if (!confirm('DANGER: Are you sure you want to move this page to trash? Only the owner can restore it.')) return;
+
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG), {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            }
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message || 'Page moved to trash.');
+                window.location.href = '/pages';
+            } else {
+                alert(data.message || 'Failed to move page to trash.');
+            }
+        })
+        .catch(e => alert('Server communication error.'));
     }
 
     /**
@@ -2831,6 +4403,226 @@
             }
         })
         .catch(err => alert('Error uploading ' + type + ': ' + err.message));
+    }
+
+    /**
+     * Remove Avatar or Cover Photo
+     */
+    function epRemoveBranding(type) {
+        if (!confirm('Are you sure you want to remove the page ' + type + ' photo?')) return;
+
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/branding/' + type, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            }
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to remove ' + type);
+            return data;
+        })
+        .then(data => {
+            epShowToast(data.message || (type.toUpperCase() + ' removed successfully!'));
+            if (type === 'cover') {
+                const coverImg = document.getElementById('epManageCoverImg');
+                if (coverImg) coverImg.remove();
+            } else {
+                const avatarImg = document.getElementById('epManageAvatarImg');
+                if (avatarImg) {
+                    avatarImg.remove();
+                    const box = document.getElementById('epManageAvatarBox');
+                    if (box && !box.querySelector('.ep-avatar-fallback')) {
+                        const fallback = document.createElement('div');
+                        fallback.className = 'ep-avatar-fallback accent-1';
+                        fallback.style.cssText = 'width: 100%; height: 100%; font-size: 36px;';
+                        fallback.textContent = (window.EP_PAGE_NAME || 'P').charAt(0).toUpperCase();
+                        box.prepend(fallback);
+                    }
+                }
+            }
+        })
+        .catch(err => alert(err.message || 'Error removing photo'));
+    }
+
+    /**
+     * Open Create Post Modal with preselected type
+     */
+    function epOpenCreatePostWithType(type) {
+        const typeSelect = document.getElementById('epPostTypeSelect');
+        if (typeSelect) {
+            typeSelect.value = type;
+            epChangePostType(type);
+        }
+        epOpenModal('epModalCreatePost');
+    }
+
+    /**
+     * Submit Create Event via real Web API
+     */
+    function epSubmitCreateEvent(e) {
+        e.preventDefault();
+        const title = document.getElementById('epEventTitleInput').value.trim();
+        const startTime = document.getElementById('epEventStartInput').value;
+        if (!title || !startTime) return;
+
+        const btn = document.getElementById('btnPublishEvent');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Publishing...';
+        }
+
+        const isOnline = document.querySelector('input[name="eventFormat"]:checked')?.value === 'online';
+        const payload = {
+            title: title,
+            description: document.getElementById('epEventDescInput').value.trim(),
+            start_time: startTime,
+            end_time: document.getElementById('epEventEndInput').value || null,
+            is_online: isOnline,
+            location: isOnline ? 'Online Event' : (document.getElementById('epEventLocationInput').value.trim() || 'Physical Event')
+        };
+
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/events', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to create event');
+            return data;
+        })
+        .then(data => {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Publish Event';
+            }
+            epCloseModal('epModalCreateEvent');
+            epShowToast(data.message || 'Event created successfully!');
+
+            const ev = data.event;
+            if (ev) {
+                const container = document.getElementById('epEventsGridContainer');
+                const emptyState = document.getElementById('epEmptyEventsState');
+                if (emptyState) emptyState.style.display = 'none';
+                if (container) {
+                    container.style.display = 'grid';
+                    const card = document.createElement('div');
+                    card.className = 'ep-event-card-item';
+                    card.id = 'ep-event-card-' + ev.id;
+                    card.style.cssText = 'border: 1px solid var(--ep-border); border-radius: 10px; overflow: hidden; background: var(--ep-card-bg); display: flex; flex-direction: column;';
+                    card.innerHTML = `
+                        <div style="height: 110px; background: linear-gradient(135deg, #059669, #10B981); display: flex; align-items: center; justify-content: center; color: white; padding: 12px; position: relative;">
+                            <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;">
+                                ${ev.is_online ? '🌐 Online Event' : '📍 ' + (ev.location || 'Physical Event')}
+                            </div>
+                            <span style="font-size: 26px;">📅</span>
+                        </div>
+                        <div style="padding: 16px; flex: 1; display: flex; flex-direction: column;">
+                            <span style="font-size: 12px; font-weight: 700; color: #059669; text-transform: uppercase;">
+                                ${ev.start_time || 'Upcoming'}
+                            </span>
+                            <h3 style="font-size: 15px; font-weight: 700; color: var(--ep-text-title); margin: 6px 0 8px; line-height: 1.35;">
+                                ${epEscapeHtml(ev.title)}
+                            </h3>
+                            <p style="font-size: 13px; color: var(--ep-text-secondary); margin: 0 0 14px; line-height: 1.45; flex: 1;">
+                                ${epEscapeHtml(ev.description || '')}
+                            </p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--ep-border); padding-top: 12px; font-size: 12.5px; color: var(--ep-text-secondary);">
+                                <span id="ep-event-rsvp-cnt-${ev.id}">👥 0 Attending</span>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <button type="button" class="ep-btn-manage" style="padding: 4px 10px; font-size: 12px;" onclick="epRsvpEvent(${ev.id})">RSVP</button>
+                                    <button type="button" class="ep-btn-manage" style="padding: 4px 8px; font-size: 12px; color: #dc2626;" onclick="epDeleteEvent(${ev.id})" title="Delete Event">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.prepend(card);
+                }
+            }
+            document.getElementById('epFormCreateEvent').reset();
+        })
+        .catch(err => {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Publish Event';
+            }
+            alert(err.message || 'Error creating event');
+        });
+    }
+
+    /**
+     * Delete Event
+     */
+    function epDeleteEvent(eventId) {
+        if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return;
+
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/events/' + eventId, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            }
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to delete event');
+            return data;
+        })
+        .then(data => {
+            epShowToast(data.message || 'Event deleted successfully.');
+            const card = document.getElementById('ep-event-card-' + eventId);
+            if (card) {
+                card.style.transition = 'all 0.3s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    card.remove();
+                    const container = document.getElementById('epEventsGridContainer');
+                    if (container && container.querySelectorAll('.ep-event-card-item').length === 0) {
+                        container.style.display = 'none';
+                        const emptyState = document.getElementById('epEmptyEventsState');
+                        if (emptyState) emptyState.style.display = 'block';
+                    }
+                }, 300);
+            }
+        })
+        .catch(err => alert(err.message || 'Error deleting event'));
+    }
+
+    /**
+     * RSVP to Event
+     */
+    function epRsvpEvent(eventId) {
+        fetch('/pages/' + encodeURIComponent(window.EP_PAGE_SLUG) + '/events/' + eventId + '/rsvp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.EP_CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ status: 'going' })
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || 'Failed to RSVP');
+            return data;
+        })
+        .then(data => {
+            epShowToast(data.message || 'RSVP updated!');
+            const cntEl = document.getElementById('ep-event-rsvp-cnt-' + eventId);
+            if (cntEl && data.rsvp_count !== undefined) {
+                cntEl.textContent = '👥 ' + data.rsvp_count + ' Attending';
+            }
+        })
+        .catch(err => alert(err.message || 'Error updating RSVP'));
     }
 
     /**
@@ -2914,4 +4706,3 @@
     });
 </script>
 @endpush
-@endsection

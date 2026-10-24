@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $stream->title . ' — Bondhoo লাইভ')
+@section('title', $stream->title . ' — SocialHub লাইভ')
 
 @section('styles')
 <style>

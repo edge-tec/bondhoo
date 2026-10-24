@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>অ্যাডমিন সিকিউরিটি লগইন — Bondhoo Enterprise Console</title>
-    <meta name="description" content="Bondhoo সোশ্যাল নেটওয়ার্ক সেন্ট্রাল অ্যাডমিনিস্ট্রেটিভ ও সিকিউরিটি কনসোল প্রবেশদ্বার।">
+    <title>অ্যাডমিন সিকিউরিটি লগইন — SocialHub Enterprise Console</title>
+    <meta name="description" content="SocialHub সোশ্যাল নেটওয়ার্ক সেন্ট্রাল অ্যাডমিনিস্ট্রেটিভ ও সিকিউরিটি কনসোল প্রবেশদ্বার।">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -369,9 +369,16 @@
 </head>
 <body>
     <div class="header-strip">
-        <a href="/" class="brand-badge">
-            <img src="/images/bondhoo-icon.png" alt="Bondhoo">
-            <span class="brand-title">Bondhoo Admin</span>
+        <a href="/" class="brand-badge" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#1877f2;color:#fff;box-shadow:0 2px 8px rgba(24,119,242,0.4);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </span>
+            <span class="brand-title">SocialHub Admin</span>
         </a>
         <div class="sec-level-tag">
             <span class="pulse-dot"></span>
@@ -451,7 +458,7 @@
     </div>
 
     <footer>
-        Bondhoo Enterprise Infrastructure &bull; All Security Operations Monitored &bull; &copy; {{ date('Y') }}
+        SocialHub Enterprise Infrastructure &bull; All Security Operations Monitored &bull; &copy; {{ date('Y') }}
     </footer>
 
     <script>

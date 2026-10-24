@@ -144,9 +144,9 @@
         <div class="escrow-feature-card">
             <div style="font-size: 24px;">🛡️</div>
             <div>
-                <div style="font-weight: 800; font-size: 14px; color: #065f46;">Bondhoo এসক্রো নিরাপত্তা</div>
+                <div style="font-weight: 800; font-size: 14px; color: #065f46;">SocialHub এসক্রো নিরাপত্তা</div>
                 <div style="font-size: 12px; color: #047857; margin-top: 2px;">
-                    আপনি অর্ডার করলে আপনার টাকা Bondhoo এসক্রোতে সংরক্ষিত থাকবে। পণ্য বুঝে পেয়ে রিলিজ করলে তবেই বিক্রেতা টাকা পাবেন।
+                    আপনি অর্ডার করলে আপনার টাকা SocialHub এসক্রোতে সংরক্ষিত থাকবে। পণ্য বুঝে পেয়ে রিলিজ করলে তবেই বিক্রেতা টাকা পাবেন।
                 </div>
             </div>
         </div>
@@ -176,7 +176,7 @@
                         {{ $product->seller?->name ?? 'সেলার' }}
                     </a>
                     <div style="font-size: 12px; color: var(--fb-text-secondary);">
-                        Bondhoo সদস্য • {{ $product->seller?->created_at ? $product->seller->created_at->format('Y') : '২০২৬' }}
+                        SocialHub সদস্য • {{ $product->seller?->created_at ? $product->seller->created_at->format('Y') : '২০২৬' }}
                     </div>
                 </div>
             </div>
@@ -202,22 +202,64 @@
 
 <!-- Order Confirmation Modal -->
 <div id="orderModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--fb-card); border-radius: 12px; width: 440px; max-width: 90vw; padding: 24px; box-shadow: var(--shadow-lg);">
-        <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 10px;">অর্ডার নিশ্চিতকরণ</h3>
-        <p style="font-size: 14px; color: var(--fb-text-secondary); margin-bottom: 16px;">
-            আপনি <strong>{{ $product->title }}</strong> পণ্যটির জন্য <strong>৳ {{ number_format($product->price) }}</strong> এসক্রো পেমেন্ট সম্পন্ন করতে যাচ্ছেন।
+    <div style="background: var(--fb-card); border-radius: 12px; width: 480px; max-width: 92vw; padding: 24px; box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="font-size: 18px; font-weight: 800; margin: 0;">🛡️ এসক্রো সুরক্ষিত অর্ডার নিশ্চিতকরণ</h3>
+            <button onclick="closeOrderModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--fb-text-secondary);">✕</button>
+        </div>
+        <p style="font-size: 13px; color: var(--fb-text-secondary); margin-bottom: 14px;">
+            আপনার পেমেন্ট SocialHub এসক্রো তহবিলে নিরাপদ থাকবে। পণ্য হাতে পেয়ে সন্তুষ্ট হলে তবেই বিক্রেতা টাকা পাবেন।
         </p>
-        <div style="background: var(--fb-bg); padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;">
-            <div>📦 পণ্য মূল্য: <strong>৳ {{ number_format($product->price) }}</strong></div>
-            <div>🚚 ডেলিভারি চার্জ: <strong>৳ ০ (ফ্রি)</strong></div>
-            <div style="border-top: 1px solid var(--fb-border); margin-top: 6px; padding-top: 6px; font-weight: 800;">
-                মোট প্রদেয়: ৳ {{ number_format($product->price) }}
+
+        <div style="background: var(--fb-bg); padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; border: 1px solid var(--fb-border);">
+            <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px;">{{ $product->title }}</div>
+            <div style="display:flex; justify-content: space-between;">
+                <span>📦 পণ্যের মূল্য:</span>
+                <strong>৳ {{ number_format($product->price) }}</strong>
+            </div>
+            <div style="display:flex; justify-content: space-between; margin-top: 4px;">
+                <span>🚚 ডেলিভারি চার্জ:</span>
+                <strong style="color: #10b981;">৳ ০ (ফ্রি)</strong>
+            </div>
+            <div style="border-top: 1px solid var(--fb-border); margin-top: 6px; padding-top: 6px; display:flex; justify-content: space-between; font-weight: 800; font-size: 15px; color: var(--fb-primary);">
+                <span>মোট প্রদেয়:</span>
+                <span>৳ {{ number_format($product->price) }}</span>
             </div>
         </div>
-        <div style="display: flex; justify-content: flex-end; gap: 10px;">
-            <button class="btn-fb-secondary" onclick="closeOrderModal()">বাতিল</button>
-            <button class="btn-fb-primary" id="btnConfirmOrder" onclick="processEscrowOrder()">পেমেন্ট নিশ্চিত করুন</button>
-        </div>
+
+        <form id="escrowOrderForm" onsubmit="processEscrowOrder(event)">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 4px;">ডেলিভারি ঠিকানা ও ফোন নম্বর *</label>
+                <textarea id="orderShippingAddress" required rows="2" style="width: 100%; border: 1px solid var(--fb-border); border-radius: 8px; padding: 10px; font-size: 13px; box-sizing: border-box;" placeholder="বাসা/হোল্ডিং নম্বর, রোড, এলাকা, জেলা এবং সচল ফোন নম্বর লিখুন..."></textarea>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px;">পেমেন্ট মেথড নির্বাচন করুন *</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--fb-border); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                        <input type="radio" name="orderPaymentMethod" value="bkash" checked>
+                        <span>🌸 বিকাশ (bKash)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--fb-border); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                        <input type="radio" name="orderPaymentMethod" value="nagad">
+                        <span>🟠 নগদ (Nagad)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--fb-border); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                        <input type="radio" name="orderPaymentMethod" value="sslcommerz">
+                        <span>💳 কার্ড / ব্যাংক</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--fb-border); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                        <input type="radio" name="orderPaymentMethod" value="cod">
+                        <span>💵 ক্যাশ অন ডেলিভারি</span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn-fb-secondary" onclick="closeOrderModal()">বাতিল</button>
+                <button type="submit" class="btn-fb-primary" id="btnConfirmOrder">পেমেন্ট ও অর্ডার সম্পন্ন করুন</button>
+            </div>
+        </form>
     </div>
 </div>
 @endsection
@@ -236,7 +278,15 @@
         document.getElementById('orderModal').style.display = 'none';
     }
 
-    function processEscrowOrder() {
+    function processEscrowOrder(e) {
+        if (e) e.preventDefault();
+        const address = document.getElementById('orderShippingAddress').value.trim();
+        if (!address) {
+            alert('অনুগ্রহ করে আপনার ডেলিভারি ঠিকানা প্রদান করুন।');
+            return;
+        }
+
+        const selectedMethod = document.querySelector('input[name="orderPaymentMethod"]:checked')?.value || 'bkash';
         const btn = document.getElementById('btnConfirmOrder');
         btn.disabled = true;
         btn.textContent = 'প্রসেসিং...';
@@ -247,24 +297,30 @@
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json'
-            }
+            },
+            body: JSON.stringify({
+                shipping_address: address,
+                payment_method: selectedMethod
+            })
         })
         .then(res => res.json())
         .then(data => {
             if (data.status === 'success' || data.data) {
-                alert('অর্ডার সফল হয়েছে! আপনার টাকা এসক্রো সুরক্ষায় রক্ষিত আছে। বিক্রেতার সাথে মেসেঞ্জারে যোগাযোগ করুন।');
-                closeOrderModal();
+                const order = data.data;
+                alert('অর্ডার সফল হয়েছে! আপনার টাকা নিরাপদ এসক্রো ফান্ডে রয়েছে।');
+                window.location.href = '/marketplace/orders';
             } else {
                 alert(data.message || 'অর্ডার সম্পন্ন করা যায়নি।');
                 btn.disabled = false;
-                btn.textContent = 'পেমেন্ট নিশ্চিত করুন';
+                btn.textContent = 'পেমেন্ট ও অর্ডার সম্পন্ন করুন';
             }
         })
         .catch(err => {
-            alert('অর্ডার ব্যর্থ হয়েছে।');
+            alert('অর্ডার ব্যর্থ হয়েছে। নেটওয়ার্ক চেক করুন।');
             btn.disabled = false;
-            btn.textContent = 'পেমেন্ট নিশ্চিত করুন';
+            btn.textContent = 'পেমেন্ট ও অর্ডার সম্পন্ন করুন';
         });
     }
 </script>
 @endsection
+

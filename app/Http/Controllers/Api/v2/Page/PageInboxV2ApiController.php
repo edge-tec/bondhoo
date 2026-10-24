@@ -134,6 +134,11 @@ class PageInboxV2ApiController extends Controller
             abort(403, 'You are restricted from messaging this page.');
         }
 
+        $settings = $page->getMergedSettings();
+        if (isset($settings['messaging']['allow_messages']) && ! $settings['messaging']['allow_messages']) {
+            abort(403, 'Direct messaging is currently disabled for this page.');
+        }
+
         $validated = $request->validate([
             'body' => ['required', 'string', 'max:5000'],
         ]);
@@ -153,7 +158,6 @@ class PageInboxV2ApiController extends Controller
         );
 
         // অটো-রিপ্লাই কনফিগারেশন চেক
-        $settings = $page->settings ?? [];
         if (! empty($settings['messaging']['auto_reply_enabled']) && ! empty($settings['messaging']['auto_reply_message'])) {
             $this->enterprisePageService->sendMessage(
                 $page,

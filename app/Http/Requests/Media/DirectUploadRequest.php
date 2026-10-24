@@ -17,10 +17,10 @@ class DirectUploadRequest extends FormRequest
             'file' => [
                 'required',
                 'file',
-                'mimes:jpeg,png,webp,gif,avif,mp4,webm,pdf',
-                'max:51200', // 50MB
+                'mimes:jpeg,png,webp,gif,avif,mp4,webm,mov,qt,m4v,3gp,3gpp,ogg,ogv,pdf',
+                'max:102400', // 100MB
             ],
-            'collection' => ['required', 'string', 'in:profile,cover,post,story,message,group,page,general'],
+            'collection' => ['required', 'string', 'in:profile,cover,post,story,message,group,page,general,reel'],
             'entity_id' => ['nullable', 'integer'],
         ];
     }

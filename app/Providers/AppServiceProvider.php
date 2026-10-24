@@ -2,21 +2,33 @@
 
 namespace App\Providers;
 
+use App\Models\Comment;
+use App\Models\Group;
+use App\Models\MarketplaceOrder;
+use App\Models\MarketplaceProduct;
 use App\Models\Page;
+use App\Models\Post;
 use App\Models\ProfileEducation;
 use App\Models\ProfileExperience;
 use App\Models\ProfileInterest;
 use App\Models\ProfileLanguage;
 use App\Models\ProfileSkill;
 use App\Models\ProfileSocialLink;
+use App\Models\User;
 use App\Models\UserProfile;
+use App\Policies\CommentPolicy;
+use App\Policies\GroupPolicy;
+use App\Policies\MarketplaceOrderPolicy;
+use App\Policies\MarketplaceProductPolicy;
 use App\Policies\PagePolicy;
+use App\Policies\PostPolicy;
 use App\Policies\ProfileEducationPolicy;
 use App\Policies\ProfileExperiencePolicy;
 use App\Policies\ProfileInterestPolicy;
 use App\Policies\ProfileLanguagePolicy;
 use App\Policies\ProfileSkillPolicy;
 use App\Policies\ProfileSocialLinkPolicy;
+use App\Policies\UserPolicy;
 use App\Policies\UserProfilePolicy;
 use App\Services\Contracts\CacheServiceInterface;
 use App\Services\Contracts\MediaProcessingServiceInterface;
@@ -81,6 +93,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ProfileInterest::class, ProfileInterestPolicy::class);
         Gate::policy(ProfileLanguage::class, ProfileLanguagePolicy::class);
         Gate::policy(ProfileSocialLink::class, ProfileSocialLinkPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Post::class, PostPolicy::class);
+        Gate::policy(Comment::class, CommentPolicy::class);
+        Gate::policy(Group::class, GroupPolicy::class);
+        Gate::policy(MarketplaceProduct::class, MarketplaceProductPolicy::class);
+        Gate::policy(MarketplaceOrder::class, MarketplaceOrderPolicy::class);
         // ১. সাধারণ API রিকোয়েস্ট রেট লিমিট (প্রতি মিনিটে ৬০ টি)
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by(

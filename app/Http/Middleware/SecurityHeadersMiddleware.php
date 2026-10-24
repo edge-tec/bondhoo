@@ -40,7 +40,7 @@ class SecurityHeadersMiddleware
 
         // ৬. Content Security Policy (কন্টেন্ট সিকিউরিটি পলিসি)
         // অনিরাপদ বাহ্যিক স্ক্রিপ্ট লোড বন্ধ করে ও অডিও/ভিডিয়ো মিডিয়া সোর্স অনুমোদন করে
-        $csp = "default-src 'self'; img-src 'self' data: https: blob:; media-src 'self' data: https: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:;";
+        $csp = "default-src 'self'; img-src 'self' data: https: blob: http://localhost:5173 http://[::1]:5173 http://127.0.0.1:5173; media-src 'self' data: https: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173 http://[::1]:5173 http://127.0.0.1:5173; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com http://localhost:5173 http://[::1]:5173 http://127.0.0.1:5173; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ws: wss: http://localhost:5173 http://[::1]:5173 http://127.0.0.1:5173 ws://localhost:5173 ws://[::1]:5173 ws://127.0.0.1:5173;";
         $response->headers->set('Content-Security-Policy', $csp);
 
         // ৭. প্রোডাকশন অথবা HTTPS কানেকশনে HSTS এনফোর্স করা

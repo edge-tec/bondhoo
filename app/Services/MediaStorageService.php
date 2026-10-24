@@ -37,6 +37,7 @@ class MediaStorageService implements MediaStorageServiceInterface
             'post' => 'posts/'.($entityId ?? 'pending')."/images/{$filename}",
             'video' => 'posts/'.($entityId ?? 'pending')."/videos/{$filename}",
             'story' => 'stories/'.($entityId ?? 'pending')."/{$filename}",
+            'reel' => 'reels/'.($entityId ?? 'pending')."/{$filename}",
             'message' => 'messages/'.($entityId ?? 'pending')."/{$filename}",
             'group' => 'groups/'.($entityId ?? 'pending')."/{$filename}",
             'page' => 'pages/'.($entityId ?? 'pending')."/{$filename}",

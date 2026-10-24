@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'বন্ধুরা ও সোশ্যাল কানেকশন — Bondhoo')
+@section('title', 'বন্ধুরা ও সোশ্যাল কানেকশন — SocialHub')
 
 @section('styles')
 <style>
@@ -1185,7 +1185,7 @@
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                     </div>
                     <div class="empty-state-title">এই মুহূর্তে কোনো সুপারিশ নেই</div>
-                    <div class="empty-state-text">আপনার কমিউনিটি, গ্রুপ এবং পেজগুলোতে আরও যুক্ত হোন যাতে Bondhoo আপনার নেটওয়ার্ক প্রসারিত করতে সাহায্য করতে পারে।</div>
+                    <div class="empty-state-text">আপনার কমিউনিটি, গ্রুপ এবং পেজগুলোতে আরও যুক্ত হোন যাতে SocialHub আপনার নেটওয়ার্ক প্রসারিত করতে সাহায্য করতে পারে।</div>
                 </div>
             @endif
         @endif

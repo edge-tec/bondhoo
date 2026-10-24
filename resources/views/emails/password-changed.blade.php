@@ -3,7 +3,7 @@
 @section('content')
     <div class="email-greeting">আসসালামু আলাইকুম, {{ $user->name ?: $user->username }}!</div>
     <p class="email-text">
-        আমরা আপনাকে জানাচ্ছি যে আপনার <strong>Bondhoo</strong> অ্যাকাউন্টের পাসওয়ার্ড সম্প্রতি পরিবর্তন করা হয়েছে।
+        আমরা আপনাকে জানাচ্ছি যে আপনার <strong>SocialHub</strong> অ্যাকাউন্টের পাসওয়ার্ড সম্প্রতি পরিবর্তন করা হয়েছে।
     </p>
 
     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin: 20px 0;">

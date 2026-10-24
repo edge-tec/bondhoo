@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Media;
 use App\Models\MusicTrack;
+use App\Models\Page;
 use App\Models\Report;
 use App\Models\Story;
 use App\Models\StoryMedia;
@@ -19,6 +20,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -70,6 +72,7 @@ class StoryEnterpriseService
 
             $story = Story::create([
                 'user_id' => $user->id,
+                'page_id' => $data['page_id'] ?? null,
                 'type' => $type,
                 'status' => Story::STATUS_READY,
                 'content' => $content ?: null,
@@ -387,8 +390,23 @@ class StoryEnterpriseService
      */
     public function getStoryViewers(Story $story, User $user, int $perPage = 20): LengthAwarePaginator
     {
-        if ($story->user_id !== $user->id) {
-            throw new AuthorizationException('Only the story creator can view the viewer list.');
+        $isPageManager = false;
+        if ($story->page_id) {
+            $page = $story->page ?? Page::find($story->page_id);
+            if ($page) {
+                $isPageManager = (int) $page->owner_id === (int) $user->id
+                    || in_array($page->getMemberRole($user->id), [
+                        Page::ROLE_OWNER,
+                        Page::ROLE_ADMIN,
+                        Page::ROLE_MANAGER,
+                        Page::ROLE_CONTENT_MANAGER,
+                        Page::ROLE_MODERATOR,
+                    ], true);
+            }
+        }
+
+        if ($story->user_id !== $user->id && ! $isPageManager) {
+            throw new AuthorizationException('Only the story creator or page manager can view the viewer list.');
         }
 
         $paginator = StoryView::where('story_id', $story->id)
@@ -419,7 +437,22 @@ class StoryEnterpriseService
      */
     public function deleteStory(Story $story, User $user): bool
     {
-        if ($story->user_id !== $user->id) {
+        $isPageManager = false;
+        if ($story->page_id) {
+            $page = $story->page ?? Page::find($story->page_id);
+            if ($page) {
+                $isPageManager = (int) $page->owner_id === (int) $user->id
+                    || in_array($page->getMemberRole($user->id), [
+                        Page::ROLE_OWNER,
+                        Page::ROLE_ADMIN,
+                        Page::ROLE_MANAGER,
+                        Page::ROLE_CONTENT_MANAGER,
+                        Page::ROLE_MODERATOR,
+                    ], true);
+            }
+        }
+
+        if ($story->user_id !== $user->id && ! $isPageManager) {
             throw new AuthorizationException('You are not authorized to delete this story.');
         }
 
@@ -549,5 +582,67 @@ class StoryEnterpriseService
         }
 
         return $count;
+    }
+
+    /**
+     * রিটেনশন পলিসি অনুযায়ী মেয়াদোত্তীর্ণ স্টোরির মিডিয়া ফাইল ক্লিনআপ করা (অডিট ও রেকর্ড অক্ষুণ্ণ রেখে)
+     *
+     * @return array{cleaned_stories: int, deleted_files: int}
+     */
+    public function cleanupExpiredStories(int $retentionHours = 24): array
+    {
+        $this->expireStaleStories();
+
+        $cutoff = now()->subHours($retentionHours);
+        $eligibleStories = Story::where('is_expired', true)
+            ->where('expires_at', '<=', $cutoff)
+            ->with(['media', 'storyMedia.media'])
+            ->get();
+
+        $deletedFiles = 0;
+        $cleanedStories = 0;
+        $disk = config('filesystems.default', 'public');
+
+        foreach ($eligibleStories as $story) {
+            foreach ($story->storyMedia as $sm) {
+                if ($sm->media) {
+                    $mediaDisk = $sm->media->disk ?: 'public';
+                    if ($sm->media->original_path && Storage::disk($mediaDisk)->exists($sm->media->original_path)) {
+                        Storage::disk($mediaDisk)->delete($sm->media->original_path);
+                        $deletedFiles++;
+                    }
+                    if ($sm->media->thumbnail_path && Storage::disk($mediaDisk)->exists($sm->media->thumbnail_path)) {
+                        Storage::disk($mediaDisk)->delete($sm->media->thumbnail_path);
+                        $deletedFiles++;
+                    }
+                    $sm->media->delete();
+                }
+                $sm->delete();
+            }
+
+            foreach ($story->media as $m) {
+                $mDisk = $m->disk ?: 'public';
+                if ($m->original_path && Storage::disk($mDisk)->exists($m->original_path)) {
+                    Storage::disk($mDisk)->delete($m->original_path);
+                    $deletedFiles++;
+                }
+                if ($m->thumbnail_path && Storage::disk($mDisk)->exists($m->thumbnail_path)) {
+                    Storage::disk($mDisk)->delete($m->thumbnail_path);
+                    $deletedFiles++;
+                }
+                $m->delete();
+            }
+
+            $story->update([
+                'is_archived' => true,
+            ]);
+
+            $cleanedStories++;
+        }
+
+        return [
+            'cleaned_stories' => $cleanedStories,
+            'deleted_files' => $deletedFiles,
+        ];
     }
 }

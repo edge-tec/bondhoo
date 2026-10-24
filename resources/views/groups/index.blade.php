@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'কমিউনিটি হাব — Bondhoo এন্টারপ্রাইজ')
+@section('title', 'কমিউনিটি হাব — SocialHub এন্টারপ্রাইজ')
 
 @section('styles')
 <style>
@@ -434,7 +434,7 @@
 <div class="community-hero">
     <div>
         <h1>🌐 কমিউনিটি হাব ও গ্রুপস V2</h1>
-        <p>Bondhoo-এর নিজস্ব এন্টারপ্রাইজ ডিজিটাল কমিউনিটি প্ল্যাটফর্ম। আপনার পছন্দের বিষয়, পেশা, প্রজেক্ট বা স্থানীয় কমিউনিটি খুঁজুন ও যুক্ত হোন।</p>
+        <p>SocialHub-এর নিজস্ব এন্টারপ্রাইজ ডিজিটাল কমিউনিটি প্ল্যাটফর্ম। আপনার পছন্দের বিষয়, পেশা, প্রজেক্ট বা স্থানীয় কমিউনিটি খুঁজুন ও যুক্ত হোন।</p>
     </div>
     <div>
         <button class="btn-jj-primary" style="background: white; color: var(--jj-brand); font-weight: 800; font-size: 15px; padding: 12px 24px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);" onclick="openCreateGroupModal()" aria-label="নতুন কমিউনিটি তৈরি করুন">

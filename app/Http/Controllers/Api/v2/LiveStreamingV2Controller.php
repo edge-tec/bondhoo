@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v2;
 
 use App\Http\Controllers\Controller;
 use App\Models\LiveStream;
+use App\Models\Page;
 use App\Models\User;
 use App\Services\Calling\CallingService;
 use App\Services\Streaming\LiveStreamingService;
@@ -145,6 +146,7 @@ class LiveStreamingV2Controller extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
+            'page_id' => 'nullable|integer|exists:pages,id',
             'privacy' => 'nullable|string|in:public,friends,only_me',
             'comments_enabled' => 'nullable|boolean',
             'reactions_enabled' => 'nullable|boolean',
@@ -157,11 +159,28 @@ class LiveStreamingV2Controller extends Controller
             return response()->json(['status' => 'error', 'message' => 'অননুমোদিত অনুরোধ।'], 401);
         }
 
+        $pageId = $request->input('page_id');
+        if ($pageId) {
+            $page = Page::findOrFail($pageId);
+            $isOwner = (int) $page->owner_id === (int) $user->id;
+            $canManage = $isOwner || in_array($page->getMemberRole($user->id), [
+                Page::ROLE_OWNER,
+                Page::ROLE_ADMIN,
+                Page::ROLE_MANAGER,
+                Page::ROLE_CONTENT_MANAGER,
+                Page::ROLE_MODERATOR,
+            ], true);
+            if (! $canManage) {
+                return response()->json(['status' => 'error', 'message' => 'এই পেইজ থেকে লাইভ ব্রডকাস্ট করার অনুমতি আপনার নেই।'], 403);
+            }
+        }
+
         $stream = $this->streamingService->createChannel(
             user: $user,
             title: $request->input('title'),
             description: $request->input('description'),
             options: [
+                'page_id' => $pageId,
                 'privacy' => $request->input('privacy', LiveStream::PRIVACY_PUBLIC),
                 'comments_enabled' => $request->boolean('comments_enabled', true),
                 'reactions_enabled' => $request->boolean('reactions_enabled', true),
@@ -314,6 +333,9 @@ class LiveStreamingV2Controller extends Controller
      */
     public function heartbeat(int $id, Request $request): JsonResponse
     {
+        $rawSessionId = $request->input('session_id') ?: ('host-session-'.$id);
+        $request->merge(['session_id' => $rawSessionId]);
+
         $request->validate([
             'session_id' => 'required|string|max:64',
         ]);
@@ -389,6 +411,10 @@ class LiveStreamingV2Controller extends Controller
      */
     public function comment(int $id, Request $request): JsonResponse
     {
+        if (! $request->has('message') && $request->has('comment')) {
+            $request->merge(['message' => $request->input('comment')]);
+        }
+
         $request->validate(['message' => 'required|string|max:500']);
 
         $user = $this->resolveCurrentUser($request);
@@ -439,6 +465,14 @@ class LiveStreamingV2Controller extends Controller
      */
     public function reaction(int $id, Request $request): JsonResponse
     {
+        if (! $request->has('reaction_type') && $request->has('type')) {
+            $type = $request->input('type');
+            if ($type === 'heart') {
+                $type = 'love';
+            }
+            $request->merge(['reaction_type' => $type]);
+        }
+
         $request->validate([
             'reaction_type' => 'required|string|in:like,love,care,haha,wow,sad,angry',
         ]);

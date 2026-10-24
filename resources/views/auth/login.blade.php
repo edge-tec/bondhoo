@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-    <title>লগইন করুন — Bondhoo সোশ্যাল নেটওয়ার্ক</title>
-    <meta name="description" content="Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্কে লগইন করুন। বন্ধু ও পরিজনদের সাথে যুক্ত থাকুন, মনের কথা শেয়ার করুন।">
+    <title>লগইন করুন — SocialHub সোশ্যাল নেটওয়ার্ক</title>
+    <meta name="description" content="SocialHub — আধুনিক সোশ্যাল নেটওয়ার্কে লগইন করুন। বন্ধু ও পরিজনদের সাথে যুক্ত থাকুন, মনের কথা শেয়ার করুন।">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
@@ -15,26 +15,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bh-bg: #f8fafc;
+            --bh-bg: #f5f7fb;
             --bh-card: #ffffff;
-            --bh-primary: #4f46e5;
-            --bh-primary-hover: #4338ca;
-            --bh-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-            --bh-text-primary: #0f172a;
-            --bh-text-secondary: #64748b;
-            --bh-border: #e2e8f0;
-            --bh-border-focus: #6366f1;
-            --bh-red: #ef4444;
-            --bh-green: #10b981;
+            --bh-primary: #1877f2;
+            --bh-primary-hover: #1666d8;
+            --bh-gradient: linear-gradient(135deg, #1877f2 0%, #1666d8 100%);
+            --bh-text-primary: #172033;
+            --bh-text-secondary: #667085;
+            --bh-border: #e4e7ec;
+            --bh-border-focus: #1877f2;
+            --bh-red: #f04438;
+            --bh-green: #12b76a;
             --bh-green-hover: #059669;
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-            --shadow-card: 0 20px 40px -15px rgba(99, 102, 241, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+            --shadow-card: 0 20px 40px -15px rgba(24, 119, 242, 0.12), 0 1px 3px 0 rgba(0, 0, 0, 0.05);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Hind Siliguri', 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
         body {
-            background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+            background: #f5f7fb;
             color: var(--bh-text-primary);
             min-height: 100vh;
             display: flex;
@@ -452,11 +452,18 @@
         <div class="auth-wrapper">
             <!-- Left Branding -->
             <div class="brand-section">
-                <a href="/" class="brand-logo-wrap" title="Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্ক">
-                    <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="brand-logo-img">
+                <a href="/" class="brand-logo-wrap" title="SocialHub" style="text-decoration: none; display: inline-flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                    <div style="width: 52px; height: 52px; border-radius: 14px; background: #1877f2; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 8px 20px rgba(24, 119, 242, 0.3);">
+                        <svg style="width: 32px; height: 32px;" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                    </div>
+                    <span style="font-size: 34px; font-weight: 800; color: #1e293b; letter-spacing: -0.7px;">
+                        Social<span style="color: #1877f2;">Hub</span>
+                    </span>
                 </a>
-                <h1 class="brand-headline">বন্ধু সোশ্যাল নেটওয়ার্কে আপনাকে স্বাগতম</h1>
-                <p class="brand-subtext">Bondhoo আপনাকে আপনার জীবনের প্রিয় মানুষদের সাথে যুক্ত হতে, আনন্দময় মুহূর্তগুলো শেয়ার করতে এবং নতুন বন্ধু তৈরিতে সাহায্য করে।</p>
+                <h1 class="brand-headline">SocialHub-এ আপনাকে স্বাগতম</h1>
+                <p class="brand-subtext">SocialHub আপনাকে আপনার জীবনের প্রিয় মানুষদের সাথে যুক্ত হতে, আনন্দময় মুহূর্তগুলো শেয়ার করতে এবং নতুন কমিউনিটি তৈরিতে সাহায্য করে।</p>
 
                 <div class="brand-features">
                     <div class="brand-feature-item">
@@ -563,7 +570,7 @@
     </main>
 
     <footer>
-        <p>Bondhoo সোশ্যাল নেটওয়ার্ক &copy; {{ date('Y') }} — বন্ধু ও পরিজনদের সাথে বন্ধন আরও সুদৃঢ় করুন।</p>
+        <p>SocialHub সোশ্যাল নেটওয়ার্ক &copy; {{ date('Y') }} — বন্ধু ও পরিজনদের সাথে বন্ধন আরও সুদৃঢ় করুন।</p>
     </footer>
 
     <script>
@@ -671,6 +678,10 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             detectIdentifierType(document.getElementById('loginIdentifier').value);
+            document.getElementById('captchaAnswer')?.addEventListener('input', () => {
+                const capError = document.getElementById('captchaError');
+                if (capError) capError.style.display = 'none';
+            });
         });
 
         async function handleLogin(e) {
@@ -684,6 +695,7 @@
             const pwdInput = document.getElementById('loginPassword');
             const idError = document.getElementById('identifierError');
             const pwdError = document.getElementById('passwordError');
+            const capError = document.getElementById('captchaError');
 
             const identifier = idInput.value.trim();
             const password = pwdInput.value;
@@ -692,6 +704,10 @@
             alertBox.style.display = 'none';
             idError.style.display = 'none';
             pwdError.style.display = 'none';
+            if (capError) {
+                capError.style.display = 'none';
+                capError.innerText = '';
+            }
             idInput.classList.remove('error');
             pwdInput.classList.remove('error');
 
@@ -719,6 +735,21 @@
                 return;
             }
 
+            const captchaContainer = document.getElementById('captchaContainer');
+            const capKey = document.getElementById('captchaKey')?.value;
+            const capAns = document.getElementById('captchaAnswer')?.value?.trim();
+
+            if (captchaContainer && captchaContainer.style.display !== 'none') {
+                if (!capAns) {
+                    if (capError) {
+                        capError.innerText = 'ক্যাপচা সমাধান করে উত্তর প্রদান করুন।';
+                        capError.style.display = 'block';
+                    }
+                    document.getElementById('captchaAnswer')?.focus();
+                    return;
+                }
+            }
+
             isSubmitting = true;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="login-spinner"></span> <span>যাচাই করা হচ্ছে...</span>';
@@ -732,11 +763,9 @@
                 device_name: 'Web Browser (' + (navigator.platform || 'Workstation') + ')'
             };
 
-            const capKey = document.getElementById('captchaKey')?.value;
-            const capAns = document.getElementById('captchaAnswer')?.value;
-            if (capKey && capAns) {
+            if (capKey) {
                 payload.captcha_key = capKey;
-                payload.captcha_answer = capAns;
+                payload.captcha_answer = capAns || '';
             }
 
             try {

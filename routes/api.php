@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminMarketplaceController;
 use App\Http\Controllers\Admin\AuthManagementController;
 use App\Http\Controllers\Admin\EmailManagementController;
 use App\Http\Controllers\Api\v1\Admin\AdminAuthController;
@@ -19,9 +20,13 @@ use App\Http\Controllers\Api\v1\CallSignalController;
 use App\Http\Controllers\Api\v1\CommentController;
 use App\Http\Controllers\Api\v1\ConversationController;
 use App\Http\Controllers\Api\v1\DeviceSessionController;
+use App\Http\Controllers\Api\v1\EventApiController;
 use App\Http\Controllers\Api\v1\FriendController;
 use App\Http\Controllers\Api\v1\GroupController;
+use App\Http\Controllers\Api\v1\JobApiController;
+use App\Http\Controllers\Api\v1\MarketplaceApiController;
 use App\Http\Controllers\Api\v1\MediaController;
+use App\Http\Controllers\Api\v1\MemoriesApiController;
 use App\Http\Controllers\Api\v1\MessageController;
 use App\Http\Controllers\Api\v1\MessengerSearchController;
 use App\Http\Controllers\Api\v1\MessengerSoundController;
@@ -37,6 +42,7 @@ use App\Http\Controllers\Api\v1\ReactionController;
 use App\Http\Controllers\Api\v1\ReportController;
 use App\Http\Controllers\Api\v1\SavedMessageController;
 use App\Http\Controllers\Api\v1\SearchController;
+use App\Http\Controllers\Api\v1\SettingsApiController;
 use App\Http\Controllers\Api\v1\StoryController;
 use App\Http\Controllers\Api\v1\SystemController;
 use App\Http\Controllers\Api\v1\UserController;
@@ -89,6 +95,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
         Route::post('/auth/reset-password', [ForgotPasswordController::class, 'resetPassword']);
         Route::post('/auth/resend-email', [AuthV2Controller::class, 'resendEmail']);
+        Route::post('/auth/verify-email', [AuthV2Controller::class, 'verifyEmail']);
         Route::post('/auth/send-phone-otp', [PhoneOtpController::class, 'sendOtp']);
         Route::post('/auth/verify-phone-otp', [PhoneOtpController::class, 'verifyOtp']);
         Route::post('/auth/2fa/challenge', [TwoFactorController::class, 'verifyChallenge']);
@@ -131,8 +138,17 @@ Route::prefix('v1')->group(function () {
     // Universal Real-Time Search (Public & Authenticated)
     Route::get('/search', [SearchController::class, 'search']);
 
+    // Public Marketplace v1 endpoints
+    Route::get('/marketplace/categories', [MarketplaceApiController::class, 'categories']);
+    Route::get('/marketplace/products', [MarketplaceApiController::class, 'index']);
+    Route::get('/marketplace/featured', [MarketplaceApiController::class, 'featured']);
+    Route::get('/marketplace/products/{id}', [MarketplaceApiController::class, 'show'])->whereNumber('id');
+    Route::post('/marketplace/media/upload', [MarketplaceApiController::class, 'uploadMedia']);
+    Route::post('/marketplace/upload-media', [MarketplaceApiController::class, 'uploadMedia']);
+
     // Authenticated API endpoints
     Route::middleware(['auth:sanctum,web'])->group(function () {
+
         // Auth session & token management
         Route::get('/auth/me', [LoginController::class, 'me']);
         Route::post('/auth/logout', [LoginController::class, 'logout']);
@@ -164,6 +180,22 @@ Route::prefix('v1')->group(function () {
 
         // Profile Enterprise V3 Suite
         Route::prefix('profile')->group(function () {
+            // Core Avatar & Cover Operations
+            Route::post('/avatar', [ProfileV2Controller::class, 'updateAvatar']);
+            Route::delete('/avatar', [ProfileV2Controller::class, 'deleteAvatar']);
+            Route::post('/avatar/crop', [ProfileV2Controller::class, 'cropAvatar']);
+            Route::post('/cover', [ProfileV2Controller::class, 'updateCover']);
+            Route::delete('/cover', [ProfileV2Controller::class, 'deleteCover']);
+            Route::post('/cover/crop', [ProfileV2Controller::class, 'cropCover']);
+
+            // Granular Privacy Settings
+            Route::get('/privacy', [ProfileV2Controller::class, 'getPrivacySettings']);
+            Route::put('/privacy', [ProfileV2Controller::class, 'updatePrivacySettings']);
+
+            // Social & Safety Interactions (Block / Unblock)
+            Route::post('/{username}/block', [ProfileV2Controller::class, 'blockUser']);
+            Route::post('/{username}/unblock', [ProfileV2Controller::class, 'unblockUser']);
+
             // Avatar & Cover History, Frames, Reposition
             Route::get('/avatar/history', [ProfileEnterpriseApiController::class, 'getAvatarHistory']);
             Route::post('/avatar/restore', [ProfileEnterpriseApiController::class, 'restoreAvatar']);
@@ -273,6 +305,23 @@ Route::prefix('v1')->group(function () {
         // Content Reporting
         Route::post('/reports', [ReportController::class, 'store'])->middleware('throttle:reports');
 
+        // Memories ("On This Day" historical posts)
+        Route::get('/memories', [MemoriesApiController::class, 'index']);
+
+        // Community Events
+        Route::get('/events', [EventApiController::class, 'index']);
+        Route::post('/events', [EventApiController::class, 'store']);
+        Route::post('/events/{id}/rsvp', [EventApiController::class, 'rsvp'])->whereNumber('id');
+
+        // Job Board & Career Portal
+        Route::get('/jobs', [JobApiController::class, 'index']);
+        Route::get('/jobs/my/applications', [JobApiController::class, 'myApplications']);
+        Route::get('/jobs/{id}', [JobApiController::class, 'show'])->whereNumber('id');
+        Route::post('/jobs', [JobApiController::class, 'store']);
+        Route::post('/jobs/{id}/apply', [JobApiController::class, 'apply'])->whereNumber('id');
+        Route::get('/jobs/{id}/applications', [JobApiController::class, 'applicantList'])->whereNumber('id');
+        Route::put('/jobs/applications/{id}/status', [JobApiController::class, 'updateApplicationStatus'])->whereNumber('id');
+
         // Real-time Presence & Typing
         Route::post('/presence/heartbeat', [PresenceController::class, 'heartbeat']);
         Route::post('/presence/offline', [PresenceController::class, 'offline']);
@@ -334,6 +383,7 @@ Route::prefix('v1')->group(function () {
 
         // Voice Messages & Audio Notes
         Route::post('/conversations/{id}/voice', [VoiceMessageController::class, 'store']);
+        Route::post('/messages/{id}/voice', [VoiceMessageController::class, 'store'])->whereNumber('id');
 
         // Pinned Messages
         Route::get('/conversations/{id}/pins', [PinnedMessageController::class, 'index']);
@@ -375,6 +425,20 @@ Route::prefix('v1')->group(function () {
         Route::post('/settings/messenger-sounds/reset', [MessengerSoundController::class, 'reset']);
         Route::post('/settings/messenger-sounds/upload', [MessengerSoundController::class, 'upload']);
 
+        // Unified Settings & Privacy Center
+        Route::prefix('settings')->group(function () {
+            Route::get('/overview', [SettingsApiController::class, 'overview']);
+            Route::get('/account', [SettingsApiController::class, 'getAccount']);
+            Route::put('/account', [SettingsApiController::class, 'updateAccount']);
+            Route::put('/password', [SettingsApiController::class, 'updatePassword']);
+            Route::get('/privacy', [SettingsApiController::class, 'getPrivacy']);
+            Route::put('/privacy', [SettingsApiController::class, 'updatePrivacy']);
+            Route::get('/blocking', [SettingsApiController::class, 'getBlockedUsers']);
+            Route::post('/blocking/{userId}', [SettingsApiController::class, 'blockUser'])->whereNumber('userId');
+            Route::delete('/blocking/{userId}', [SettingsApiController::class, 'unblockUser'])->whereNumber('userId');
+            Route::post('/2fa/toggle', [SettingsApiController::class, 'toggleTwoFactor']);
+        });
+
         // OpenAPI Documentation Endpoint
         Route::get('/docs/messenger', fn () => response()->file(public_path('docs/messenger-openapi.json'), ['Content-Type' => 'application/json']));
 
@@ -388,13 +452,24 @@ Route::prefix('v1')->group(function () {
         // Enterprise Groups & Community Platform
         Route::get('/groups', [GroupController::class, 'index']);
         Route::post('/groups', [GroupController::class, 'store']);
+        Route::get('/groups/categories', [GroupController::class, 'categories']);
+        Route::post('/groups/media/upload', [GroupController::class, 'uploadMedia']);
+        Route::get('/groups/invitations', [GroupController::class, 'myInvitations']);
+        Route::post('/groups/invitations/{invitationId}/accept', [GroupController::class, 'acceptInvitation']);
+        Route::post('/groups/invitations/{invitationId}/decline', [GroupController::class, 'declineInvitation']);
         Route::get('/groups/my', [GroupController::class, 'myGroups']);
         Route::get('/groups/{slug}', [GroupController::class, 'show']);
         Route::put('/groups/{id}', [GroupController::class, 'update']);
         Route::delete('/groups/{id}', [GroupController::class, 'destroy']);
         Route::post('/groups/{id}/join', [GroupController::class, 'join']);
         Route::post('/groups/{id}/leave', [GroupController::class, 'leave']);
+        Route::post('/groups/{id}/transfer-ownership', [GroupController::class, 'transferOwnership']);
         Route::get('/groups/{id}/members', [GroupController::class, 'members']);
+        Route::get('/groups/{id}/requests', [GroupController::class, 'requests']);
+        Route::post('/groups/{id}/requests/cancel', [GroupController::class, 'cancelRequest']);
+        Route::post('/groups/{id}/cancel-request', [GroupController::class, 'cancelRequest']);
+        Route::post('/groups/{id}/requests/{userId}/approve', [GroupController::class, 'approve']);
+        Route::post('/groups/{id}/requests/{userId}/reject', [GroupController::class, 'reject']);
         Route::post('/groups/{id}/approve/{userId}', [GroupController::class, 'approve']);
         Route::post('/groups/{id}/reject/{userId}', [GroupController::class, 'reject']);
         Route::delete('/groups/{id}/members/{userId}', [GroupController::class, 'removeMember']);
@@ -422,11 +497,16 @@ Route::prefix('v1')->group(function () {
         Route::post('/groups/{id}/questions', [GroupController::class, 'storeQuestion']);
         Route::get('/groups/{id}/files', [GroupController::class, 'files']);
         Route::post('/groups/{id}/files', [GroupController::class, 'storeFile']);
+        Route::post('/groups/{id}/media', [GroupController::class, 'uploadGroupMedia']);
         Route::post('/groups/{id}/reports', [GroupController::class, 'storeReport']);
         Route::get('/groups/{id}/moderation/reports', [GroupController::class, 'reports']);
         Route::post('/groups/{id}/moderation/reports/{reportId}/review', [GroupController::class, 'reviewReport']);
         Route::get('/groups/{id}/analytics', [GroupController::class, 'analytics']);
         Route::get('/groups/{id}/moderation/history', [GroupController::class, 'moderationHistory']);
+        Route::get('/groups/{id}/invitations', [GroupController::class, 'groupInvitations']);
+        Route::post('/groups/{id}/invitations', [GroupController::class, 'inviteMembers']);
+        Route::get('/groups/{id}/notification-preferences', [GroupController::class, 'getNotificationPreferences']);
+        Route::match(['put', 'post'], '/groups/{id}/notification-preferences', [GroupController::class, 'updateNotificationPreferences']);
 
         // Pages & Public Entities
         Route::get('/pages', [PageController::class, 'index']);
@@ -438,6 +518,8 @@ Route::prefix('v1')->group(function () {
 
         // Universal Search
         Route::get('/search', [SearchController::class, 'search']);
+        Route::get('/search/history', [SearchController::class, 'history']);
+        Route::delete('/search/history', [SearchController::class, 'clearHistory']);
 
         // Enterprise Post Composer & Operations
         Route::post('/posts/link-preview', [PostController::class, 'linkPreview']);
@@ -462,13 +544,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/posts/{id}/analytics', [AnalyticsController::class, 'show'])->whereNumber('id');
 
         // Reactions
-        Route::post('/posts/{id}/react', [ReactionController::class, 'reactPost'])->middleware('throttle:reactions');
-        Route::post('/comments/{id}/react', [ReactionController::class, 'reactComment'])->middleware('throttle:reactions');
+        Route::post('/posts/{id}/react', [ReactionController::class, 'reactPost'])->whereNumber('id')->middleware('throttle:reactions');
+        Route::post('/comments/{id}/react', [ReactionController::class, 'reactComment'])->whereNumber('id')->middleware('throttle:reactions');
 
         // Comments & Replies
-        Route::post('/posts/{id}/comments', [CommentController::class, 'store'])->middleware('throttle:comments');
-        Route::put('/comments/{id}', [CommentController::class, 'update']);
-        Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
+        Route::post('/posts/{id}/comments', [CommentController::class, 'store'])->whereNumber('id')->middleware('throttle:comments');
+        Route::put('/comments/{id}', [CommentController::class, 'update'])->whereNumber('id');
+        Route::delete('/comments/{id}', [CommentController::class, 'destroy'])->whereNumber('id');
 
         // Media & Object Storage Operations
         Route::prefix('media')->group(function () {
@@ -525,6 +607,36 @@ Route::prefix('v1')->group(function () {
             Route::get('/reports', [ReportController::class, 'index']);
             Route::put('/reports/{id}', [ReportController::class, 'update']);
         });
+
+        // Marketplace v1
+        Route::post('/marketplace/products', [MarketplaceApiController::class, 'store']);
+        Route::put('/marketplace/products/{id}', [MarketplaceApiController::class, 'update'])->whereNumber('id');
+        Route::patch('/marketplace/products/{id}', [MarketplaceApiController::class, 'update'])->whereNumber('id');
+        Route::patch('/marketplace/products/{id}/status', [MarketplaceApiController::class, 'updateStatus'])->whereNumber('id');
+        Route::post('/marketplace/products/{id}/status', [MarketplaceApiController::class, 'updateStatus'])->whereNumber('id');
+        Route::delete('/marketplace/products/{id}', [MarketplaceApiController::class, 'destroy'])->whereNumber('id');
+        Route::post('/marketplace/products/{id}/favorite', [MarketplaceApiController::class, 'toggleFavorite'])->whereNumber('id');
+        Route::get('/marketplace/favorites', [MarketplaceApiController::class, 'favorites']);
+        Route::post('/marketplace/products/{id}/message', [MarketplaceApiController::class, 'contact'])->whereNumber('id');
+        Route::post('/marketplace/products/{id}/contact', [MarketplaceApiController::class, 'contact'])->whereNumber('id');
+        Route::post('/marketplace/products/{id}/report', [MarketplaceApiController::class, 'report'])->whereNumber('id');
+        Route::get('/marketplace/my-listings', [MarketplaceApiController::class, 'myListings']);
+
+        // Orders & Escrow
+        Route::get('/marketplace/orders', [MarketplaceV2Controller::class, 'orders']);
+        Route::get('/marketplace/orders/{id}', [MarketplaceV2Controller::class, 'showOrder'])->whereNumber('id');
+        Route::patch('/marketplace/orders/{id}/status', [MarketplaceV2Controller::class, 'updateOrderStatus'])->whereNumber('id');
+        Route::post('/marketplace/products/{id}/order', [MarketplaceV2Controller::class, 'order'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/checkout', [MarketplaceV2Controller::class, 'checkout'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/verify-payment', [MarketplaceV2Controller::class, 'verifyPayment'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/release-escrow', [MarketplaceV2Controller::class, 'releaseEscrow'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/ship', [MarketplaceV2Controller::class, 'shipOrder'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/confirm-delivery', [MarketplaceV2Controller::class, 'confirmDelivery'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/cancel', [MarketplaceV2Controller::class, 'cancelOrder'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/dispute', [MarketplaceV2Controller::class, 'disputeOrder'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/review', [MarketplaceV2Controller::class, 'reviewOrder'])->whereNumber('id');
+        Route::get('/marketplace/orders/{id}/transactions', [MarketplaceV2Controller::class, 'orderTransactions'])->whereNumber('id');
+        Route::get('/marketplace/seller/summary', [MarketplaceV2Controller::class, 'sellerSummary']);
     });
 });
 
@@ -614,6 +726,21 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         Route::post('/{id}/reject', [AdminVerificationV2Controller::class, 'reject'])->whereNumber('id');
         Route::post('/{id}/request-info', [AdminVerificationV2Controller::class, 'requestInfo'])->whereNumber('id');
         Route::post('/{id}/revoke', [AdminVerificationV2Controller::class, 'revoke'])->whereNumber('id');
+    });
+
+    // Admin Marketplace Commerce & Moderation Management
+    Route::prefix('admin/marketplace')->middleware(['auth:sanctum,admin,web', 'role:ADMIN,SUPER_ADMIN'])->group(function () {
+        Route::get('/listings', [AdminMarketplaceController::class, 'listings']);
+        Route::patch('/listings/{id}/moderate', [AdminMarketplaceController::class, 'moderateListing'])->whereNumber('id');
+        Route::get('/reports', [AdminMarketplaceController::class, 'reports']);
+        Route::patch('/reports/{id}', [AdminMarketplaceController::class, 'resolveReport'])->whereNumber('id');
+        Route::get('/orders', [AdminMarketplaceController::class, 'orders']);
+        Route::get('/orders/{id}', [AdminMarketplaceController::class, 'orderDetail'])->whereNumber('id');
+        Route::post('/orders/{id}/refund', [AdminMarketplaceController::class, 'refundOrder'])->whereNumber('id');
+        Route::get('/payments', [AdminMarketplaceController::class, 'paymentTransactions']);
+        Route::get('/disputes', [AdminMarketplaceController::class, 'disputes']);
+        Route::post('/disputes/{id}/resolve', [AdminMarketplaceController::class, 'resolveDispute'])->whereNumber('id');
+        Route::delete('/reviews/{id}', [AdminMarketplaceController::class, 'moderateReview'])->whereNumber('id');
     });
 
     // User Profile & Personal Timeline (Facebook-style UX & Privacy)
@@ -828,10 +955,33 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
 
         // Marketplace actions
         Route::post('/marketplace/products', [MarketplaceV2Controller::class, 'store']);
+        Route::get('/marketplace/my-listings', [MarketplaceV2Controller::class, 'myListings']);
+        Route::patch('/marketplace/products/{id}/status', [MarketplaceV2Controller::class, 'updateListingStatus'])->whereNumber('id');
+        Route::delete('/marketplace/products/{id}', [MarketplaceV2Controller::class, 'destroy'])->whereNumber('id');
+        Route::post('/marketplace/products/{id}/favorite', [MarketplaceV2Controller::class, 'toggleFavorite'])->whereNumber('id');
+        Route::get('/marketplace/orders', [MarketplaceV2Controller::class, 'orders']);
+        Route::post('/marketplace/orders', function (Request $request) {
+            $productId = (int) ($request->input('product_id') ?: $request->route('id'));
+
+            return app(MarketplaceV2Controller::class)->order($request, $productId);
+        });
+        Route::get('/marketplace/orders/{id}', [MarketplaceV2Controller::class, 'showOrder'])->whereNumber('id');
+        Route::patch('/marketplace/orders/{id}/status', [MarketplaceV2Controller::class, 'updateOrderStatus'])->whereNumber('id');
         Route::post('/marketplace/products/{id}/order', [MarketplaceV2Controller::class, 'order']);
+        Route::post('/marketplace/products/{id}/reviews', [MarketplaceV2Controller::class, 'createProductReview'])->whereNumber('id');
+        Route::post('/marketplace/products/{id}/review', [MarketplaceV2Controller::class, 'createProductReview'])->whereNumber('id');
         Route::post('/marketplace/orders/{id}/checkout', [MarketplaceV2Controller::class, 'checkout']);
-        Route::post('/marketplace/orders/{id}/verify-payment', [MarketplaceV2Controller::class, 'verifyPayment']);
+        Route::post('/marketplace/orders/{id}/verify-payment', [MarketplaceV2Controller::class, 'verifyPayment'])->name('api.v2.marketplace.orders.verify-payment');
         Route::post('/marketplace/orders/{id}/release-escrow', [MarketplaceV2Controller::class, 'releaseEscrow']);
+        Route::post('/marketplace/orders/{id}/ship', [MarketplaceV2Controller::class, 'shipOrder'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/confirm-delivery', [MarketplaceV2Controller::class, 'confirmDelivery'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/cancel', [MarketplaceV2Controller::class, 'cancelOrder'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/dispute', [MarketplaceV2Controller::class, 'disputeOrder'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/review', [MarketplaceV2Controller::class, 'reviewOrder'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/refund', [MarketplaceV2Controller::class, 'refundOrder'])->whereNumber('id');
+        Route::post('/marketplace/orders/{id}/admin-dispute-resolve', [MarketplaceV2Controller::class, 'resolveDispute'])->whereNumber('id');
+        Route::get('/marketplace/orders/{id}/transactions', [MarketplaceV2Controller::class, 'orderTransactions'])->whereNumber('id');
+        Route::get('/marketplace/seller/summary', [MarketplaceV2Controller::class, 'sellerSummary']);
 
         // Offline Sync
         Route::post('/offline/sync', function (Request $request, OfflineSyncService $sync) {
@@ -916,7 +1066,13 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
             Route::post('/{reel}/comments', [ReelV2ApiController::class, 'storeComment'])->whereNumber('reel');
             Route::delete('/comments/{comment}', [ReelV2ApiController::class, 'deleteComment'])->whereNumber('comment');
             Route::post('/comments/{comment}/like', [ReelV2ApiController::class, 'likeComment'])->whereNumber('comment');
+            Route::get('/share-targets', [ReelV2ApiController::class, 'shareTargets']);
+            Route::get('/share-recipients', [ReelV2ApiController::class, 'searchRecipients']);
             Route::post('/{reel}/share', [ReelV2ApiController::class, 'share'])->whereNumber('reel');
+            Route::post('/{reel}/message', [ReelV2ApiController::class, 'message'])->whereNumber('reel');
+            Route::post('/{reel}/share-post', [ReelV2ApiController::class, 'sharePost'])->whereNumber('reel');
+            Route::post('/{reel}/share-group', [ReelV2ApiController::class, 'shareGroup'])->whereNumber('reel');
+            Route::post('/{reel}/share-page', [ReelV2ApiController::class, 'sharePage'])->whereNumber('reel');
             Route::post('/{reel}/save', [ReelV2ApiController::class, 'save'])->whereNumber('reel');
             Route::post('/{reel}/report', [ReelV2ApiController::class, 'report'])->whereNumber('reel');
             Route::delete('/{reel}', [ReelV2ApiController::class, 'destroy'])->whereNumber('reel');
@@ -999,6 +1155,7 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
             Route::post('/team/decline', [PageTeamV2ApiController::class, 'decline']);
             Route::put('/{page}/team/{memberId}', [PageTeamV2ApiController::class, 'updateRole']);
             Route::delete('/{page}/team/{memberId}', [PageTeamV2ApiController::class, 'remove']);
+            Route::delete('/{page}/team/{memberId}/revoke', [PageTeamV2ApiController::class, 'revoke']);
 
             // Content & Scheduling & Calendar
             Route::get('/{page}/posts/drafts', [PageContentV2ApiController::class, 'drafts']);

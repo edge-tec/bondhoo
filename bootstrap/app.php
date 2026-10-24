@@ -8,6 +8,7 @@ use App\Http\Middleware\AdminSessionTimeoutMiddleware;
 use App\Http\Middleware\AdminWebMiddleware;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CorrelationIdMiddleware;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\PermissionMiddleware;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\RoleMiddleware;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecurityHeadersMiddleware::class);
         $middleware->append(CorrelationIdMiddleware::class);
         $middleware->appendToGroup('web', UserSessionTimeoutMiddleware::class);
+        $middleware->appendToGroup('web', HandleInertiaRequests::class);
 
         $middleware->alias([
             'auth' => Authenticate::class,

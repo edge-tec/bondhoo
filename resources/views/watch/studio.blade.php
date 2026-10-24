@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'ক্রিয়েটর লাইভ স্টুডিও — Bondhoo')
+@section('title', 'ক্রিয়েটর লাইভ স্টুডিও — SocialHub')
 
 @section('styles')
 <style>
@@ -675,8 +675,16 @@
     <!-- Top Command Header -->
     <header class="studio-navbar">
         <div class="studio-brand-group">
-            <a href="{{ route('dashboard') }}" style="display: flex; align-items: center; text-decoration: none;">
-                <img src="/images/bondhoo-logo-white.png" alt="Bondhoo" class="studio-brand-logo" onerror="this.src='/images/bondhoo-logo.png'">
+            <a href="{{ route('dashboard') }}" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:#1877f2;color:#fff;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </span>
+                <span style="font-size:16px;font-weight:800;letter-spacing:-0.03em;color:#ffffff;font-family:'Inter',sans-serif;">SocialHub</span>
             </a>
             <h1 style="font-size: 15px; font-weight: 800; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 8px;">ক্রিয়েটর লাইভ ব্রডকাস্ট স্টুডিও</h1>
             <span class="studio-badge-pill {{ $stream->status === 'live' ? 'live' : 'ready' }}" id="studioHeaderBadge">
@@ -813,7 +821,7 @@
                         <label class="studio-form-label" for="livePrivacy">গোপনীয়তা (Audience Privacy)</label>
                         <select id="livePrivacy" class="studio-select">
                             <option value="public" {{ $stream->privacy === 'public' ? 'selected' : '' }}>🌐 পাবলিক (সকলের জন্য উন্মুক্ত)</option>
-                            <option value="friends" {{ $stream->privacy === 'friends' ? 'selected' : '' }}>👥 বন্ধুরা (শুধুমাত্র Bondhoo বন্ধুরা)</option>
+                            <option value="friends" {{ $stream->privacy === 'friends' ? 'selected' : '' }}>👥 বন্ধুরা (শুধুমাত্র SocialHub বন্ধুরা)</option>
                             <option value="only_me" {{ $stream->privacy === 'only_me' ? 'selected' : '' }}>🔒 শুধুমাত্র আমি (পরীক্ষামূলক ব্রডকাস্ট)</option>
                         </select>
                     </div>

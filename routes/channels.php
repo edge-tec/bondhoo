@@ -93,6 +93,49 @@ Broadcast::channel('page.{pageId}.conversation.{conversationId}', function ($use
     return $page && $page->hasPermission($user->id, 'messages.manage');
 });
 
+// ৮. পেজ অ্যাডমিন ও টিম চ্যানেল (শুধুমাত্র ওনার বা অনুমোদিত টিম মেম্বার)
+Broadcast::channel('page.{pageId}.admin', function ($user, $pageId) {
+    if (! $user) {
+        return false;
+    }
+
+    $page = Page::find((int) $pageId);
+    if (! $page) {
+        return false;
+    }
+
+    if ((int) $page->owner_id === (int) $user->id) {
+        return true;
+    }
+
+    return $page->hasPermission($user->id, 'team.manage')
+        || $page->hasPermission($user->id, 'page.settings')
+        || $page->hasPermission($user->id, 'posts.create')
+        || in_array($page->getMemberRole($user->id), [
+            Page::ROLE_OWNER,
+            Page::ROLE_ADMIN,
+            Page::ROLE_MANAGER,
+        ], true);
+});
+
+// ৯. পেজ সেটিংস চ্যানেল (শুধুমাত্র ওনার বা পেজ সেটিংস পারমিশনপ্রাপ্ত মেম্বার)
+Broadcast::channel('page.{pageId}.settings', function ($user, $pageId) {
+    if (! $user) {
+        return false;
+    }
+
+    $page = Page::find((int) $pageId);
+    if (! $page) {
+        return false;
+    }
+
+    if ((int) $page->owner_id === (int) $user->id) {
+        return true;
+    }
+
+    return $page->hasPermission($user->id, 'page.settings');
+});
+
 // ৮. গ্রুপ চ্যানেল (গ্রুপ সদস্য বা পাবলিক গ্রুপের জন্য)
 Broadcast::channel('group.{groupId}', function ($user, $groupId) {
     if (! $user) {

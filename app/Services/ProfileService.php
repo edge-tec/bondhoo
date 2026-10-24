@@ -193,11 +193,21 @@ class ProfileService
         $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
         $oldValues = $profile->toArray();
 
+        $userUpdates = [];
         if (isset($data['name'])) {
-            $user->update(['name' => $data['name']]);
+            $userUpdates['name'] = $data['name'];
             if (! isset($data['display_name'])) {
                 $data['display_name'] = $data['name'];
             }
+        }
+        if (isset($data['first_name'])) {
+            $userUpdates['first_name'] = $data['first_name'];
+        }
+        if (isset($data['last_name'])) {
+            $userUpdates['last_name'] = $data['last_name'];
+        }
+        if (! empty($userUpdates)) {
+            $user->update($userUpdates);
         }
 
         $profile->update($data);
@@ -247,6 +257,7 @@ class ProfileService
                 'display_name',
                 'slug',
                 'bio',
+                'headline',
                 'about',
                 'location',
                 'country',
@@ -650,6 +661,49 @@ class ProfileService
     }
 
     /**
+     * Get videos uploaded by the user.
+     */
+    public function getUserVideos(User $targetUser, ?User $viewer = null, int $limit = 12): array
+    {
+        $privacyService = app(ProfilePrivacyService::class);
+        if (! $privacyService->canViewProfile($targetUser, $viewer)) {
+            abort(403, 'এই প্রোফাইলটি ব্যক্তিগত অথবা দেখার অনুমতি আপনার নেই।');
+        }
+
+        $isOwner = $viewer && $viewer->id === $targetUser->id;
+        $isFriend = $viewer && in_array($viewer->id, $targetUser->getFriendIds(), true);
+
+        if ($targetUser->settings?->is_profile_locked && ! $isOwner && ! $isFriend) {
+            return [];
+        }
+
+        $mediaVideos = Media::where('user_id', $targetUser->id)
+            ->where(function ($q) {
+                $q->where('mime_type', 'like', 'video/%')
+                    ->orWhere('collection', 'videos')
+                    ->orWhere('collection', 'reels');
+            })
+            ->latest()
+            ->take($limit)
+            ->get();
+
+        $videos = [];
+        foreach ($mediaVideos as $m) {
+            $thumbnailUrl = $m->thumbnail_path ? UserProfile::normalizeStorageUrl(Storage::disk($m->disk)->url($m->thumbnail_path)) : null;
+            $videos[] = [
+                'id' => $m->id,
+                'type' => $m->collection,
+                'url' => UserProfile::normalizeStorageUrl(Storage::disk($m->disk)->url($m->original_path)),
+                'thumbnail_url' => $thumbnailUrl,
+                'thumbnail' => $thumbnailUrl,
+                'created_at' => $m->created_at,
+            ];
+        }
+
+        return $videos;
+    }
+
+    /**
      * Get paginated friends list with mutual friend indicators.
      */
     public function getUserFriends(User $targetUser, ?User $viewer = null, int $perPage = 20): LengthAwarePaginator
@@ -846,43 +900,6 @@ class ProfileService
     {
         Cache::forget("relationship:{$userId1}:{$userId2}");
         Cache::forget("relationship:{$userId2}:{$userId1}");
-    }
-
-    /**
-     * Get videos uploaded by the user.
-     */
-    public function getUserVideos(User $targetUser, ?User $viewer = null, int $limit = 12): array
-    {
-        $privacyService = app(ProfilePrivacyService::class);
-        if (! $privacyService->canViewProfile($targetUser, $viewer)) {
-            abort(403, 'এই প্রোফাইলটি ব্যক্তিগত অথবা দেখার অনুমতি আপনার নেই।');
-        }
-
-        $isOwner = $viewer && $viewer->id === $targetUser->id;
-        $isFriend = $viewer && in_array($viewer->id, $targetUser->getFriendIds(), true);
-
-        if ($targetUser->settings?->is_profile_locked && ! $isOwner && ! $isFriend) {
-            return [];
-        }
-
-        $mediaVideos = Media::where('user_id', $targetUser->id)
-            ->where('mime_type', 'like', 'video/%')
-            ->latest()
-            ->take($limit)
-            ->get();
-
-        $videos = [];
-        foreach ($mediaVideos as $m) {
-            $videos[] = [
-                'id' => $m->id,
-                'type' => $m->collection,
-                'url' => UserProfile::normalizeStorageUrl(Storage::disk($m->disk)->url($m->original_path)),
-                'thumbnail_url' => $m->thumbnail_path ? UserProfile::normalizeStorageUrl(Storage::disk($m->disk)->url($m->thumbnail_path)) : null,
-                'created_at' => $m->created_at,
-            ];
-        }
-
-        return $videos;
     }
 
     /**

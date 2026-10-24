@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'ওয়াচ ও লাইভ স্ট্রিমিং — Bondhoo')
+@section('title', 'ওয়াচ ও লাইভ স্ট্রিমিং — SocialHub')
 
 @section('styles')
 <style>
@@ -950,7 +950,7 @@
         <div class="hero-content">
             <div class="hero-kicker">
                 <span class="live-dot-pulse" style="background: #ef4444;"></span>
-                <span>Bondhoo লাইভ ও ভিডিও স্ট্রিমিং হাব</span>
+                <span>SocialHub লাইভ ও ভিডিও স্ট্রিমিং হাব</span>
             </div>
 
             <h1 class="hero-headline">
@@ -959,7 +959,7 @@
                     <line x1="8" y1="21" x2="16" y2="21"/>
                     <line x1="12" y1="17" x2="12" y2="21"/>
                 </svg>
-                <span>Bondhoo ওয়াচ ও লাইভ স্ট্রিমিং</span>
+                <span>SocialHub ওয়াচ ও লাইভ স্ট্রিমিং</span>
             </h1>
 
             <p class="hero-subline">
@@ -1187,7 +1187,7 @@
                             </linearGradient>
                         </defs>
                     </svg>
-                    <span>জনপ্রিয় Bondhoo রিলস</span>
+                    <span>জনপ্রিয় SocialHub রিলস</span>
                 </h2>
                 <a href="{{ route('dashboard') }}" style="font-size: 13px; font-weight: 700; color: var(--fb-primary); text-decoration: none;">
                     সব রিল দেখুন ➔

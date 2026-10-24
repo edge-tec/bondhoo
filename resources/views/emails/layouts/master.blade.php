@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>{{ $subject ?? 'Bondhoo বিজ্ঞপ্তি' }}</title>
+    <title>{{ $subject ?? 'SocialHub বিজ্ঞপ্তি' }}</title>
     <style>
         /* Base Reset */
         body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
@@ -63,8 +63,8 @@
                     <div class="email-container">
                         <!-- Header -->
                         <div class="email-header">
-                            <h1 class="brand-title">bondhoo</h1>
-                            <div class="brand-subtitle">বন্ধু সোশ্যাল নেটওয়ার্ক — আধুনিক ও নিরাপদ যোগাযোগ</div>
+                            <h1 class="brand-title">SocialHub</h1>
+                            <div class="brand-subtitle">SocialHub — আধুনিক ও নিরাপদ সোশ্যাল নেটওয়ার্ক</div>
                         </div>
 
                         <!-- Body Content Slot -->
@@ -74,14 +74,14 @@
 
                         <!-- Footer -->
                         @php
-                            $safeBaseUrl = config('app.url', 'https://bondhoo.com');
+                            $safeBaseUrl = config('app.url', 'https://socialhub.com');
                             if (empty($safeBaseUrl) || str_contains($safeBaseUrl, 'localhost') || str_contains($safeBaseUrl, '127.0.0.1')) {
-                                $safeBaseUrl = 'https://bondhoo.com';
+                                $safeBaseUrl = 'https://socialhub.com';
                             }
                         @endphp
                         <div class="email-footer">
                             <p style="margin: 0 0 10px 0;">
-                                এই ইমেইলটি <strong>Bondhoo সোশ্যাল নেটওয়ার্ক</strong> থেকে আপনার অ্যাকাউন্টের সুরক্ষার জন্য স্বয়ংক্রিয়ভাবে পাঠানো হয়েছে।
+                                এই ইমেইলটি <strong>SocialHub সোশ্যাল নেটওয়ার্ক</strong> থেকে আপনার অ্যাকাউন্টের সুরক্ষার জন্য স্বয়ংক্রিয়ভাবে পাঠানো হয়েছে।
                             </p>
                             <div class="footer-links" style="margin-bottom: 12px;">
                                 <a href="{{ $safeBaseUrl }}/settings/notifications">নোটিফিকেশন সেটিংস</a> &bull;
@@ -89,7 +89,7 @@
                                 <a href="{{ $safeBaseUrl }}/help">সাহায্য কেন্দ্র</a>
                             </div>
                             <p style="margin: 0; color: #94a3b8; font-size: 11px;">
-                                &copy; {{ date('Y') }} Bondhoo Inc. সর্বস্বত্ব সংরক্ষিত। ঢাকা, বাংলাদেশ।
+                                &copy; {{ date('Y') }} SocialHub Inc. সর্বস্বত্ব সংরক্ষিত। ঢাকা, বাংলাদেশ।
                             </p>
                         </div>
                     </div>

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Page;
+use App\Models\PageEvent;
 use App\Models\PageMember;
 use App\Models\Post;
 use App\Models\User;
@@ -367,5 +368,156 @@ class PagePostsDashboardTest extends TestCase
 
         $deleteResponse = $this->deleteJson('/pages/innovatex-labs/posts/'.$post->id);
         $deleteResponse->assertStatus(401);
+    }
+
+    public function test_owner_can_update_page_settings(): void
+    {
+        $response = $this->actingAs($this->owner)->postJson('/pages/innovatex-labs/settings', [
+            'name' => 'InnovateX Global Labs',
+            'username' => 'innovatex-global',
+            'category' => 'AI & Cloud Infrastructure',
+            'bio' => 'Building autonomous enterprise AI applications.',
+            'settings' => [
+                'enable_auto_reply' => true,
+                'auto_reply_message' => 'Thank you for contacting InnovateX Global Labs!',
+                'allow_visitor_posts' => false,
+            ],
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'message' => 'Page settings updated successfully.',
+        ]);
+
+        $this->assertDatabaseHas('pages', [
+            'id' => $this->page->id,
+            'name' => 'InnovateX Global Labs',
+            'username' => 'innovatex-global',
+            'category' => 'AI & Cloud Infrastructure',
+            'bio' => 'Building autonomous enterprise AI applications.',
+        ]);
+    }
+
+    public function test_owner_can_remove_page_branding(): void
+    {
+        $this->page->update([
+            'avatar_url' => 'https://example.com/avatar.jpg',
+            'cover_image_url' => 'https://example.com/cover.jpg',
+        ]);
+
+        // Remove avatar
+        $avatarResponse = $this->actingAs($this->owner)->deleteJson('/pages/innovatex-labs/branding/avatar');
+        $avatarResponse->assertStatus(200);
+        $avatarResponse->assertJson(['success' => true]);
+        $this->assertNull($this->page->fresh()->avatar_url);
+
+        // Remove cover
+        $coverResponse = $this->actingAs($this->owner)->deleteJson('/pages/innovatex-labs/branding/cover');
+        $coverResponse->assertStatus(200);
+        $coverResponse->assertJson(['success' => true]);
+        $this->assertNull($this->page->fresh()->cover_image_url);
+    }
+
+    public function test_unauthorized_user_cannot_remove_page_branding(): void
+    {
+        $response = $this->actingAs($this->stranger)->deleteJson('/pages/innovatex-labs/branding/avatar');
+        $response->assertStatus(403);
+    }
+
+    public function test_authorized_user_can_create_and_delete_page_event(): void
+    {
+        $createResponse = $this->actingAs($this->owner)->postJson('/pages/innovatex-labs/events', [
+            'title' => 'InnovateX Annual Tech Keynote 2026',
+            'description' => 'Unveiling revolutionary multi-cloud orchestrations.',
+            'start_time' => now()->addDays(7)->toDateTimeString(),
+            'end_time' => now()->addDays(7)->addHours(3)->toDateTimeString(),
+            'is_online' => true,
+            'location' => 'https://stream.innovatex.example.com',
+        ]);
+
+        $createResponse->assertStatus(201);
+        $createResponse->assertJson([
+            'success' => true,
+            'message' => 'Event created successfully.',
+        ]);
+
+        $eventId = $createResponse->json('event.id');
+        $this->assertDatabaseHas('page_events', [
+            'id' => $eventId,
+            'page_id' => $this->page->id,
+            'title' => 'InnovateX Annual Tech Keynote 2026',
+        ]);
+
+        // Delete event
+        $deleteResponse = $this->actingAs($this->owner)->deleteJson('/pages/innovatex-labs/events/'.$eventId);
+        $deleteResponse->assertStatus(200);
+        $deleteResponse->assertJson([
+            'success' => true,
+            'message' => 'Event deleted successfully.',
+        ]);
+
+        $this->assertDatabaseMissing('page_events', [
+            'id' => $eventId,
+        ]);
+    }
+
+    public function test_user_can_rsvp_to_page_event(): void
+    {
+        $event = PageEvent::create([
+            'page_id' => $this->page->id,
+            'title' => 'Developer Meetup and Hackathon',
+            'slug' => 'developer-meetup-hackathon',
+            'description' => 'Hands on AI app building.',
+            'start_time' => now()->addDays(3),
+            'end_time' => now()->addDays(3)->addHours(4),
+            'location' => 'Banani Dhaka',
+            'is_online' => false,
+            'rsvp_count' => 0,
+            'status' => 'scheduled',
+        ]);
+
+        // First RSVP -> Going
+        $rsvpResponse1 = $this->actingAs($this->stranger)->postJson('/pages/innovatex-labs/events/'.$event->id.'/rsvp');
+        $rsvpResponse1->assertStatus(200);
+        $rsvpResponse1->assertJson([
+            'success' => true,
+            'status' => 'going',
+            'rsvp_count' => 1,
+        ]);
+        $this->assertEquals(1, $event->fresh()->rsvp_count);
+
+        // Second RSVP -> Cancel
+        $rsvpResponse2 = $this->actingAs($this->stranger)->postJson('/pages/innovatex-labs/events/'.$event->id.'/rsvp');
+        $rsvpResponse2->assertStatus(200);
+        $rsvpResponse2->assertJson([
+            'success' => true,
+            'status' => 'none',
+            'rsvp_count' => 0,
+        ]);
+        $this->assertEquals(0, $event->fresh()->rsvp_count);
+    }
+
+    public function test_stranger_cannot_create_or_delete_page_events(): void
+    {
+        $event = PageEvent::create([
+            'page_id' => $this->page->id,
+            'title' => 'Protected Event',
+            'slug' => 'protected-event',
+            'start_time' => now()->addDays(1),
+            'end_time' => now()->addDays(1)->addHours(2),
+            'is_online' => true,
+            'rsvp_count' => 0,
+            'status' => 'scheduled',
+        ]);
+
+        $createResponse = $this->actingAs($this->stranger)->postJson('/pages/innovatex-labs/events', [
+            'title' => 'Malicious Event',
+            'start_time' => now()->addDays(5)->toDateTimeString(),
+        ]);
+        $createResponse->assertStatus(403);
+
+        $deleteResponse = $this->actingAs($this->stranger)->deleteJson('/pages/innovatex-labs/events/'.$event->id);
+        $deleteResponse->assertStatus(403);
     }
 }

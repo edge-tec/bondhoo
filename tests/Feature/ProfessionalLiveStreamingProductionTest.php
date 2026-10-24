@@ -44,7 +44,7 @@ class ProfessionalLiveStreamingProductionTest extends TestCase
         $response = $this->actingAs($viewer)->get(route('watch.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Bondhoo ওয়াচ ও লাইভ স্ট্রিমিং');
+        $response->assertSee('SocialHub ওয়াচ ও লাইভ স্ট্রিমিং');
         $response->assertSee('বিশেষ লাইভ শো');
         $response->assertSee('হোস্ট ক্রিয়েটর');
         $response->assertSee('চলমান লাইভ সেশনসমূহ');

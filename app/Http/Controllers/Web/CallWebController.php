@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\MessengerSyncEvent;
 use App\Models\User;
 use App\Services\Calling\CallingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -56,6 +57,16 @@ class CallWebController extends Controller
         }
 
         $conversation = Conversation::with(['participants.user.profile'])->find($id);
+
+        if (! $conversation) {
+            $call = Call::with('conversation.participants.user.profile')->find($id);
+            if ($call && $call->conversation) {
+                $conversation = $call->conversation;
+                if (! $request->filled('call_id')) {
+                    $request->merge(['call_id' => (string) $call->id]);
+                }
+            }
+        }
 
         if (! $conversation) {
             abort(404, 'চ্যাট কনভার্সনটি খুঁজে পাওয়া যায়নি।');
@@ -136,5 +147,32 @@ class CallWebController extends Controller
             ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT')
             ->withCookie(cookie('jugajug_token', $apiToken, 60 * 24))
             ->withCookie(cookie('bondhoo_token', $apiToken, 60 * 24));
+    }
+
+    /**
+     * Retrieve user's call history.
+     */
+    public function history(Request $request): View|JsonResponse|RedirectResponse
+    {
+        $user = $this->resolveUser($request);
+        if (! $user) {
+            return redirect()->route('login');
+        }
+
+        $history = $this->callingService->getCallHistory($user, 20);
+
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'data' => $history->getCollection()->map(fn ($call) => $call->toResponseArray($user))->values()->all(),
+                'meta' => [
+                    'current_page' => $history->currentPage(),
+                    'last_page' => $history->lastPage(),
+                    'total' => $history->total(),
+                ],
+            ]);
+        }
+
+        return redirect('/messages?tab=calls');
     }
 }

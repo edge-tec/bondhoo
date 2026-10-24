@@ -60,7 +60,7 @@
                     <!-- Ringtone Selector & Preview -->
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <select id="mssCallSelect" style="flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; background: white; color: #0f172a; outline: none;">
-                            <option value="bondhoo_ring">Bondhoo Ring (ডিফল্ট)</option>
+                            <option value="bondhoo_ring">SocialHub Ring (ডিফল্ট)</option>
                             <option value="digital_bell">Digital Bell (ডিজিটাল বেল)</option>
                             <option value="celesta_chime">Celesta Chime (সেলেনিয়াম মেলোডি)</option>
                         </select>

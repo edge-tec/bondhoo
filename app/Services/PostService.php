@@ -6,6 +6,8 @@ use App\Jobs\FeedUpdateJob;
 use App\Models\AuditLog;
 use App\Models\Group;
 use App\Models\Media;
+use App\Models\Page;
+use App\Models\PageFollower;
 use App\Models\Post;
 use App\Models\PostDraft;
 use App\Models\Story;
@@ -222,6 +224,23 @@ class PostService
             'comments_disabled' => $data['comments_disabled'] ?? $post->comments_disabled,
         ], fn ($val) => $val !== null));
 
+        if (array_key_exists('media_ids', $data)) {
+            $mediaIds = (array) ($data['media_ids'] ?? []);
+            Media::where('mediable_type', Post::class)
+                ->where('mediable_id', $post->id)
+                ->whereNotIn('id', $mediaIds)
+                ->update(['mediable_type' => null, 'mediable_id' => null]);
+
+            if (! empty($mediaIds)) {
+                Media::whereIn('id', $mediaIds)
+                    ->where('user_id', $user->id)
+                    ->update([
+                        'mediable_type' => Post::class,
+                        'mediable_id' => $post->id,
+                    ]);
+            }
+        }
+
         return $post->fresh(['user.profile', 'media', 'reactions', 'collaborator.profile']);
     }
 
@@ -420,29 +439,59 @@ class PostService
             return true;
         }
 
-        // 2. Scheduled posts are only visible to the author
+        // 2. Page post authorization handling
+        if ($post->page_id) {
+            $page = $post->page ?: Page::find($post->page_id);
+            if ($page) {
+                $isPageManager = $viewer && ((int) $page->owner_id === (int) $viewer->id || $page->getMemberRole($viewer->id) !== null);
+                if ($isPageManager) {
+                    return true;
+                }
+
+                if ($post->status === 'draft' || $post->status === 'scheduled' || ($post->scheduled_at && $post->scheduled_at->isFuture())) {
+                    return false;
+                }
+
+                if ($page->visibility === 'private') {
+                    return false;
+                }
+
+                $audience = strtolower(trim((string) ($post->audience ?? 'public')));
+                if ($audience === 'followers') {
+                    return $viewer ? PageFollower::where('page_id', $page->id)->where('user_id', $viewer->id)->exists() : false;
+                }
+
+                if (in_array($audience, ['only_me', 'private'], true)) {
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        // 3. Scheduled posts are only visible to the author
         if ($post->status === 'scheduled' || ($post->scheduled_at && $post->scheduled_at->isFuture())) {
             return false;
         }
 
-        // 3. Admin / Moderator bypass
+        // 4. Admin / Moderator bypass
         $privacyService = app(ProfilePrivacyService::class);
         if ($privacyService->isAdmin($viewer)) {
             return true;
         }
 
-        // 4. Author status / deactivation check
+        // 5. Author status / deactivation check
         $author = $post->user ?: User::find($post->user_id);
         if (! $author || in_array($author->status, ['deactivated', 'suspended', 'banned'], true)) {
             return false;
         }
 
-        // 5. Block check (bidirectional between author and viewer)
+        // 6. Block check (bidirectional between author and viewer)
         if ($privacyService->isBlocked($author, $viewer)) {
             return false;
         }
 
-        // 6. Group privacy check if post belongs to a group
+        // 7. Group privacy check if post belongs to a group
         if ($post->group_id) {
             $group = $post->group ?: Group::find($post->group_id);
             if ($group && $group->privacy !== 'public') {
@@ -452,14 +501,14 @@ class PostService
             }
         }
 
-        // 7. Audience evaluation
+        // 8. Audience evaluation
         $audience = strtolower(trim((string) ($post->audience ?? 'public')));
 
         return match ($audience) {
             'public' => true,
             'friends' => $viewer ? $privacyService->isFriend($author, $viewer) : false,
             'followers' => $viewer ? ($privacyService->isFollower($author, $viewer) || $privacyService->isFriend($author, $viewer)) : false,
-            'only_me' => false,
+            'only_me', 'private' => false,
             default => true,
         };
     }

@@ -153,6 +153,16 @@ class PageContentV2ApiController extends Controller
 
         $status = $validated['status'] ?? 'published';
 
+        $settings = $page->getMergedSettings();
+        $allowedFormats = $settings['publishing']['allowed_formats'] ?? ['text', 'image', 'video', 'reel', 'story', 'live'];
+        $hasMedia = ! empty($validated['media_ids']);
+        if (! $hasMedia && ! in_array('text', $allowedFormats, true)) {
+            abort(422, 'Text posts are currently disabled for this page.');
+        }
+        if ($hasMedia && ! in_array('image', $allowedFormats, true) && ! in_array('video', $allowedFormats, true)) {
+            abort(422, 'Media posts are currently disabled for this page.');
+        }
+
         if ($status === 'scheduled') {
             if (! Gate::forUser($user)->allows('schedulePost', $page)) {
                 abort(403, 'You do not have permission to schedule posts for this page.');
@@ -163,6 +173,8 @@ class PageContentV2ApiController extends Controller
             }
         }
 
+        $privacy = $validated['privacy'] ?? ($settings['audience']['default_post_audience'] ?? 'public');
+
         try {
             $post = $this->pageService->createPagePost(
                 $page,
@@ -170,7 +182,7 @@ class PageContentV2ApiController extends Controller
                 [
                     'content' => $validated['content'],
                     'media_ids' => $validated['media_ids'] ?? [],
-                    'privacy' => $validated['privacy'] ?? 'public',
+                    'privacy' => $privacy,
                     'status' => $status,
                     'scheduled_at' => ! empty($validated['scheduled_at']) ? Carbon::parse($validated['scheduled_at']) : null,
                 ]
@@ -232,7 +244,7 @@ class PageContentV2ApiController extends Controller
     public function destroy(Request $request, Page $page, Post $post): JsonResponse
     {
         $user = $request->user();
-        if (! Gate::forUser($user)->allows('editPost', $page)) {
+        if (! Gate::forUser($user)->allows('deletePost', $page)) {
             abort(403, 'You do not have permission to delete posts on this page.');
         }
 

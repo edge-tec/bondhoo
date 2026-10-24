@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্ক</title>
+    <title>SocialHub — Modern Social Network</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
@@ -45,18 +45,18 @@
     </script>
     <style>
         :root {
-            --fb-bg: #f0f2f5;
+            --fb-bg: #f5f7fb;
             --fb-card: #ffffff;
             --fb-primary: #1877f2;
-            --fb-primary-hover: #166fe5;
-            --fb-text-primary: #050505;
-            --fb-text-secondary: #65676b;
-            --fb-border: #e4e6eb;
-            --fb-divider: #ced0d4;
-            --fb-hover: #f2f2f2;
-            --fb-btn-bg: #e4e6eb;
-            --fb-green: #42b72a;
-            --fb-red: #f02849;
+            --fb-primary-hover: #1666d8;
+            --fb-text-primary: #172033;
+            --fb-text-secondary: #667085;
+            --fb-border: #e4e7ec;
+            --fb-divider: #e4e7ec;
+            --fb-hover: #f5f7fb;
+            --fb-btn-bg: #f5f7fb;
+            --fb-green: #12b76a;
+            --fb-red: #f04438;
             --fb-yellow: #f7b125;
             --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
             --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -520,27 +520,40 @@
 
         /* Post Creator Card (Facebook Style) */
         .create-post-card {
-            padding: 14px 16px 10px;
+            padding: 12px 16px 10px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--fb-border, #e4e6eb);
         }
 
         .create-post-top {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             padding-bottom: 12px;
-            border-bottom: 1px solid var(--fb-border);
+            border-bottom: 1px solid var(--fb-border, #e4e6eb);
+        }
+
+        .create-post-avatar-wrap {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            cursor: pointer;
         }
 
         .create-post-trigger {
             flex: 1;
             min-width: 0 !important;
-            height: 42px;
-            background: var(--fb-bg);
+            height: 40px;
+            background: var(--fb-bg, #f0f2f5);
             border-radius: 50px;
             display: flex;
             align-items: center;
             padding: 0 16px;
-            color: var(--fb-text-secondary);
+            color: var(--fb-text-secondary, #65676b);
             font-size: 15px;
             cursor: pointer;
             transition: background 0.15s;
@@ -563,7 +576,8 @@
         .create-post-actions {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            padding-top: 8px;
+            padding-top: 6px;
+            gap: 4px;
         }
 
         .action-item {
@@ -571,17 +585,20 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 8px;
+            height: 40px;
+            padding: 0 8px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
-            color: var(--fb-text-secondary);
+            color: var(--fb-text-secondary, #65676b);
             transition: background 0.15s;
+            user-select: none;
         }
 
         .action-item:hover {
-            background: var(--fb-hover);
+            background: var(--fb-hover, #f0f2f5);
+            color: var(--fb-text-primary, #050505);
         }
 
         /* Post Card (Facebook Style) */
@@ -1692,8 +1709,15 @@
     <header>
         <!-- Left: Logo & Search -->
         <div class="header-left">
-            <a href="/" class="fb-logo-brand" title="Bondhoo" style="text-decoration: none; display: flex; align-items: center; flex-shrink: 0;">
-                <img src="/images/bondhoo-logo.png" alt="Bondhoo" class="bondhoo-main-brand-logo" style="height: 36px; max-width: 165px; width: auto; object-fit: contain; display: block;">
+            <a href="/" class="fb-logo-brand" title="SocialHub" style="text-decoration: none; display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                <div style="width: 38px; height: 38px; border-radius: 11px; background: #1877f2; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(24, 119, 242, 0.25); flex-shrink: 0;">
+                    <svg style="width: 24px; height: 24px;" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                </div>
+                <span style="font-size: 21px; font-weight: 800; color: var(--fb-text-primary); letter-spacing: -0.5px; display: inline-flex; align-items: center;">
+                    Social<span style="color: #1877f2;">Hub</span>
+                </span>
             </a>
             <div class="search-box desktop-only-search" style="position: relative;">
                 <span class="search-icon" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; color: var(--fb-text-secondary); pointer-events: none;">
@@ -1702,7 +1726,7 @@
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                 </span>
-                <input type="text" class="search-input" id="globalSearchInput" placeholder="Bondhoo-তে অনুসন্ধান করুন..." autocomplete="off">
+                <input type="text" class="search-input" id="globalSearchInput" placeholder="Search for people, posts, or groups..." autocomplete="off">
                 <div id="searchResultsDropdown" style="display: none; position: absolute; top: 44px; left: 0; width: 340px; background: white; border-radius: 8px; box-shadow: var(--shadow-lg); border: 1px solid var(--fb-border); z-index: 1000; max-height: 400px; overflow-y: auto;"></div>
             </div>
         </div>
@@ -1749,7 +1773,13 @@
         </div>
 
         <!-- Right: Actions & Profile -->
-        <div class="header-right" style="position: relative;">
+        <div class="header-right" style="position: relative; display: flex; align-items: center;">
+            <!-- SocialHub Modern UI Shortcut -->
+            <a href="/app" class="socialhub-pill-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: #E7F3FF; color: #1877F2; border-radius: 20px; font-weight: 700; font-size: 12px; margin-right: 8px; transition: all 0.2s;" title="Switch to SocialHub Modern UI">
+                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                <span>SocialHub UI</span>
+            </a>
+
             <!-- Mobile Search Circular Icon Button (Visible on mobile screens) -->
             <button type="button" class="circle-btn mobile-header-search-btn" id="mobileHeaderSearchBtn" title="অনুসন্ধান" onclick="openMobileSearchModal()" style="display: none;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
@@ -1981,7 +2011,7 @@
                 <span>গ্রুপসমূহ (Groups)</span>
             </a>
 
-            <a href="/pages" class="sidebar-item">
+            <a href="javascript:void(0)" class="sidebar-item" onclick="openPagesModal()">
                 <div class="sidebar-icon" style="color: #f43f5e; background: rgba(244, 63, 94, 0.1);">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
                 </div>
@@ -2016,17 +2046,68 @@
                 <span>অনুষ্ঠানসমূহ (Events)</span>
             </a>
 
-            <a href="javascript:void(0)" class="sidebar-item" onclick="openUserProfileModal()">
-                <div class="sidebar-icon" style="color: #64748b; background: rgba(100, 116, 139, 0.1);">
+            <a href="javascript:void(0)" class="sidebar-item" onclick="openJobsModal()">
+                <div class="sidebar-icon" style="color: #0284c7; background: rgba(2, 132, 199, 0.1);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                </div>
+                <span>চাকরির বিজ্ঞপ্তি (Jobs)</span>
+            </a>
+
+            <a href="/settings" class="sidebar-item">
+                <div class="sidebar-icon" style="color: #6366f1; background: rgba(99, 102, 241, 0.1);">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 </div>
-                <span>সেটিংস ও প্রোফাইল</span>
+                <span>সেটিংস ও প্রাইভেসি</span>
             </a>
 
             <div style="height: 1px; background: var(--fb-border); margin: 8px 12px;"></div>
 
+            <!-- YOUR SHORTCUTS (Matching Reference Design) -->
+            <div style="padding: 0 12px; margin-bottom: 12px;">
+                <div style="font-size: 13px; font-weight: 700; color: var(--fb-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                    Your Shortcuts
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <a href="/groups?category=technology" class="sidebar-item" style="padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--fb-text-primary); display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 28px; height: 28px; border-radius: 6px; background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: monospace;">&lt;/&gt;</div>
+                        <span style="font-size: 14px; font-weight: 600;">Web Developers</span>
+                    </a>
+                    <a href="/groups?category=travel" class="sidebar-item" style="padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--fb-text-primary); display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 28px; height: 28px; border-radius: 6px; background: #0284c7; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px;">🚀</div>
+                        <span style="font-size: 14px; font-weight: 600;">Travel &amp; Adventure</span>
+                    </a>
+                    <a href="/groups?category=photography" class="sidebar-item" style="padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--fb-text-primary); display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 28px; height: 28px; border-radius: 6px; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px;">📷</div>
+                        <span style="font-size: 14px; font-weight: 600;">Photography</span>
+                    </a>
+                    <a href="/groups?category=food" class="sidebar-item" style="padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--fb-text-primary); display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 28px; height: 28px; border-radius: 6px; background: #f59e0b; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px;">🍕</div>
+                        <span style="font-size: 14px; font-weight: 600;">FoodLovers</span>
+                    </a>
+                    <a href="/groups?category=gadgets" class="sidebar-item" style="padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--fb-text-primary); display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 28px; height: 28px; border-radius: 6px; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px;">📱</div>
+                        <span style="font-size: 14px; font-weight: 600;">Technology</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Create Your Page Card -->
+            <div style="margin: 12px; padding: 14px; background: var(--fb-card); border: 1px solid var(--fb-border); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 8px; background: #eff6ff; color: #1877f2; display: flex; align-items: center; justify-content: center; font-size: 18px;">🏪</div>
+                    <div>
+                        <div style="font-size: 13px; font-weight: 700; color: var(--fb-text-primary);">Create Your Page</div>
+                        <div style="font-size: 11px; color: var(--fb-text-secondary);">Build your brand, grow your community.</div>
+                    </div>
+                </div>
+                <a href="/pages/create" style="display: block; width: 100%; text-align: center; padding: 7px; background: #1877f2; color: white; border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none; transition: background 0.15s;">Create Page</a>
+            </div>
+
             <div style="font-size: 13px; color: var(--fb-text-secondary); padding: 8px 12px; line-height: 1.6;">
-                গোপনীয়তা · শর্তাবলী · বিজ্ঞাপন · কুকিজ · Bondhoo © {{ date('Y') }}
+                <a href="/settings/privacy" style="color: inherit; text-decoration: none;">গোপনীয়তা</a> · 
+                <a href="/terms" style="color: inherit; text-decoration: none;">শর্তাবলী</a> · 
+                <a href="/cookies" style="color: inherit; text-decoration: none;">কুকিজ</a> · 
+                SocialHub © {{ date('Y') }}
             </div>
         </aside>
 
@@ -2072,59 +2153,46 @@
                     </div>
                 </div>
 
-                <!-- What's on your mind? Post Creator Card -->
+                <!-- What's on your mind? Post Creator Card (Authentic Facebook Style) -->
                 <div class="fb-card create-post-card">
-                    <div class="create-post-row">
+                    <div class="create-post-top">
                         <div class="avatar create-post-avatar-wrap" id="createPostAvatar" onclick="goToMyProfile()" title="আমার প্রোফাইল">
                             <img src="/images/default-avatar.svg" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="User">
                         </div>
                         <div class="create-post-trigger" onclick="openCreatePostModal()" title="নতুন পোস্ট লিখুন">
                             <span id="createPostPlaceholder">আপনার মনে কী আছে?</span>
                         </div>
-                        <div class="create-post-inline-actions">
-                            <div class="post-inline-btn" onclick="openCreatePostModal('photo')" title="ছবি বা ভিডিও যুক্ত করুন">
-                                <span class="post-inline-icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                                        <rect width="20" height="20" x="2" y="2" rx="5" fill="url(#composerPhotoGrad)"/>
-                                        <circle cx="8" cy="8" r="2.2" fill="#ffffff"/>
-                                        <path d="M22 15.5l-6-6a1.5 1.5 0 0 0-2.12 0L3.5 19.8" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
-                                        <defs>
-                                            <linearGradient id="composerPhotoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stop-color="#10b981"/>
-                                                <stop offset="100%" stop-color="#059669"/>
-                                            </linearGradient>
-                                        </defs>
-                                    </svg>
-                                </span>
-                                <span class="post-inline-label">ছবি/ভিডিও</span>
-                            </div>
-                            <div class="post-inline-btn" onclick="openCreatePostModal('feeling')" title="অনুভূতি বা কার্যকলাপ যুক্ত করুন">
-                                <span class="post-inline-icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                                        <circle cx="12" cy="12" r="10" fill="#fbbf24"/>
-                                        <circle cx="8.5" cy="9.5" r="1.5" fill="#78350f"/>
-                                        <circle cx="15.5" cy="9.5" r="1.5" fill="#78350f"/>
-                                        <path d="M7.5 14c1.2 2.2 2.8 3.2 4.5 3.2s3.3-1 4.5-3.2" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
-                                    </svg>
-                                </span>
-                                <span class="post-inline-label">অনুভূতি</span>
-                            </div>
-                            <div class="post-inline-btn" onclick="openStartLiveFlow()" title="সরাসরি লাইভ শুরু করুন">
-                                <span class="post-inline-icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                                        <circle cx="12" cy="12" r="10" fill="url(#composerLiveGrad)"/>
-                                        <circle cx="12" cy="12" r="3.5" fill="#ffffff"/>
-                                        <path d="M7 7a7 7 0 0 1 10 0M5 5a10 10 0 0 1 14 0" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
-                                        <defs>
-                                            <linearGradient id="composerLiveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stop-color="#ef4444"/>
-                                                <stop offset="100%" stop-color="#dc2626"/>
-                                            </linearGradient>
-                                        </defs>
-                                    </svg>
-                                </span>
-                                <span class="post-inline-label">লাইভ</span>
-                            </div>
+                    </div>
+                    <div class="create-post-actions">
+                        <div class="action-item" onclick="openStartLiveFlow()" title="সরাসরি লাইভ শুরু করুন">
+                            <span class="action-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14v-4z" fill="#f3425f"/>
+                                    <rect x="3" y="6" width="12" height="12" rx="2" fill="#f3425f"/>
+                                </svg>
+                            </span>
+                            <span>লাইভ ভিডিও</span>
+                        </div>
+                        <div class="action-item" onclick="openCreatePostModal('photo')" title="ছবি বা ভিডিও যুক্ত করুন">
+                            <span class="action-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <rect width="20" height="18" x="2" y="3" rx="3" fill="#45BD62"/>
+                                    <circle cx="8" cy="8.5" r="2" fill="#ffffff"/>
+                                    <path d="M21 16l-5.5-5.5a1.2 1.2 0 00-1.7 0L4 20" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </span>
+                            <span>ছবি/ভিডিও</span>
+                        </div>
+                        <div class="action-item" onclick="openCreatePostModal('feeling')" title="অনুভূতি বা কার্যকলাপ যুক্ত করুন">
+                            <span class="action-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" fill="#F7B125"/>
+                                    <circle cx="8.5" cy="9.5" r="1.5" fill="#593b00"/>
+                                    <circle cx="15.5" cy="9.5" r="1.5" fill="#593b00"/>
+                                    <path d="M7.5 13.5c1.2 2.5 3 3.5 4.5 3.5s3.3-1 4.5-3.5" stroke="#593b00" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </span>
+                            <span>অনুভূতি/কার্যক্রম</span>
                         </div>
                     </div>
                 </div>
@@ -2141,7 +2209,7 @@
                     <div>
                         <h2 style="font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
                             <span>📺</span>
-                            <span>Bondhoo লাইভ ও ভিডিও হাব</span>
+                            <span>SocialHub লাইভ ও ভিডিও হাব</span>
                         </h2>
                         <p style="font-size: 13px; opacity: 0.92; margin-top: 2px;">বাস্তব সময়ের লাইভ সম্প্রচার দেখুন এবং বন্ধুদের সাথে সরাসরি যুক্ত হন</p>
                     </div>
@@ -2176,7 +2244,7 @@
             <div id="marketplaceTabSection" style="display: none; flex-direction: column; gap: 16px;">
                 <div class="fb-card" style="padding: 16px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1877f2, #00c6ff); color: white;">
                     <div>
-                        <h2 style="font-size: 20px; font-weight: 800;">🏪 Bondhoo মার্কেটপ্লেস ও এসক্রো কমার্স</h2>
+                        <h2 style="font-size: 20px; font-weight: 800;">🏪 SocialHub মার্কেটপ্লেস ও এসক্রো কমার্স</h2>
                         <p style="font-size: 13px; opacity: 0.9;">১০০% নিরাপদ bKash/Nagad পেমেন্ট ও এসক্রো সিকিউরিটি</p>
                     </div>
                     <button class="post-btn" style="background: white; color: #1877f2; font-weight: 700; padding: 8px 16px; border-radius: 20px;" onclick="openCreateProductModal()">+ নতুন লিস্টিং তৈরি করুন</button>
@@ -2205,7 +2273,7 @@
                     <div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 24px;">🌐</span>
-                            <h2 style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">Bondhoo কমিউনিটি ও গ্রুপস V2</h2>
+                            <h2 style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">SocialHub কমিউনিটি ও গ্রুপস V2</h2>
                             <span style="background: rgba(255,255,255,0.2); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 700;">ENTERPRISE OS</span>
                         </div>
                         <p style="font-size: 13.5px; opacity: 0.95; margin-top: 6px; max-width: 520px; line-height: 1.5;">
@@ -2454,8 +2522,8 @@
         </div>
     </div>
 
-    <!-- Floating Bondhoo AI Assistant Widget -->
-    <div id="aiFloatingBtn" onclick="toggleAIChat()" style="position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1877f2, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4); cursor: pointer; z-index: 99; transition: transform 0.2s;" title="Bondhoo AI (বন্ধু এআই)">
+    <!-- Floating SocialHub AI Assistant Widget -->
+    <div id="aiFloatingBtn" onclick="toggleAIChat()" style="position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1877f2, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4); cursor: pointer; z-index: 99; transition: transform 0.2s;" title="SocialHub AI">
         🤖
     </div>
 
@@ -2464,13 +2532,13 @@
         <div style="background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; padding: 14px 16px; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span>🤖</span>
-                <span>Bondhoo AI (বন্ধু এআই)</span>
+                <span>SocialHub AI</span>
             </div>
             <button onclick="toggleAIChat()" style="background: transparent; border: none; color: white; font-size: 18px; cursor: pointer;">✕</button>
         </div>
         <div id="aiChatMessages" style="flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
             <div style="background: #f0f2f5; padding: 8px 12px; border-radius: 12px 12px 12px 0; max-width: 85%;">
-                হ্যালো! আমি Bondhoo AI। আপনাকে কীভাবে সাহায্য করতে পারি? সোশ্যাল পোস্ট লেখা, ক্যাপশন তৈরি, কিংবা যেকোনো তথ্য জানতে আমাকে প্রশ্ন করতে পারেন।
+                হ্যালো! আমি SocialHub AI। আপনাকে কীভাবে সাহায্য করতে পারি? সোশ্যাল পোস্ট লেখা, ক্যাপশন তৈরি, কিংবা যেকোনো তথ্য জানতে আমাকে প্রশ্ন করতে পারেন।
             </div>
         </div>
         <div style="padding: 10px; border-top: 1px solid var(--fb-border); display: flex; gap: 8px; background: #fafafa;">
@@ -2814,7 +2882,7 @@
                             </defs>
                         </svg>
                     </span>
-                    <span>Bondhoo রিলস</span>
+                    <span>SocialHub রিলস</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <button type="button" class="fb-story-ctrl-btn" id="fbReelMuteBtn" onclick="JugajugMediaSuite.toggleReelMute()" title="শব্দ অন/অফ">
@@ -3091,8 +3159,8 @@
                                 </defs>
                             </svg>
                         </span>
-                        <span class="reel-studio-title-full">Bondhoo রিল স্টুডিও — নতুন রিল তৈরি ও সম্পাদনা</span>
-                        <span class="reel-studio-title-short">Bondhoo রিল স্টুডিও</span>
+                        <span class="reel-studio-title-full">SocialHub রিল স্টুডিও — নতুন রিল তৈরি ও সম্পাদনা</span>
+                        <span class="reel-studio-title-short">SocialHub রিল স্টুডিও</span>
                     </div>
                     <button type="button" class="modal-close reel-studio-close-btn" style="position: static !important; transform: none !important; margin-left: auto !important; flex-shrink: 0 !important;" onclick="JugajugMediaSuite.closeCreateReelModal()" title="বন্ধ করুন">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -3334,7 +3402,7 @@
                             <div style="margin-bottom: 12px;">
                                 <span style="font-size: 11px; font-weight: 700; color: #64748b;">ট্রেন্ডিং হ্যাশট্যাগ যোগ করুন:</span>
                                 <div class="hashtag-chips-bar">
-                                    <span class="hashtag-chip" onclick="JugajugMediaSuite.appendHashtag('Bondhoo')">#Bondhoo</span>
+                                    <span class="hashtag-chip" onclick="JugajugMediaSuite.appendHashtag('SocialHub')">#SocialHub</span>
                                     <span class="hashtag-chip" onclick="JugajugMediaSuite.appendHashtag('বন্ধু')">#বন্ধু</span>
                                     <span class="hashtag-chip" onclick="JugajugMediaSuite.appendHashtag('Reels')">#Reels</span>
                                     <span class="hashtag-chip" onclick="JugajugMediaSuite.appendHashtag('Viral')">#Viral</span>
@@ -4065,7 +4133,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sidebar-item" style="border: 1px solid var(--fb-border); border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s;" onclick="goToMyProfile('security')">
+                        <div class="sidebar-item" style="border: 1px solid var(--fb-border); border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s;" onclick="window.location.href='/settings?tab=security'">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="color: #0d9488;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></div>
                                 <div>
@@ -4096,7 +4164,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sidebar-item" style="border: 1px solid var(--fb-border); border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s;" onclick="goToMyProfile('notifications')">
+                        <div class="sidebar-item" style="border: 1px solid var(--fb-border); border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s;" onclick="window.location.href='/settings?tab=notifications'">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="color: #f59e0b;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></div>
                                 <div>
@@ -4105,7 +4173,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sidebar-item" style="border: 1px solid var(--fb-border); border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s;" onclick="goToMyProfile('blocking')">
+                        <div class="sidebar-item" style="border: 1px solid var(--fb-border); border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s;" onclick="window.location.href='/settings?tab=blocking'">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="color: #ef4444;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg></div>
                                 <div>
@@ -4405,31 +4473,62 @@
 
     <!-- CREATE PAGE MODAL -->
     <div class="modal-overlay" id="createPageModal" style="display: none;">
-        <div class="modal-box" style="max-width: 460px;">
+        <div class="modal-box" style="max-width: 480px;">
             <div class="modal-header">
                 <span class="modal-title">🚩 নতুন পেজ তৈরি করুন</span>
                 <button class="modal-close" onclick="closeCreatePageModal()">✕</button>
             </div>
-            <div class="modal-body">
-                <input type="text" id="pageNameInput" class="search-input" style="height: 42px; border: 1px solid var(--fb-border); border-radius: 8px; padding: 0 12px;" placeholder="পেজের নাম (e.g. টেক রিভিউ বিডি)">
-                <input type="text" id="pageCategoryInput" class="search-input" style="height: 42px; border: 1px solid var(--fb-border); border-radius: 8px; padding: 0 12px;" placeholder="ক্যাটাগরি (e.g. Media, Business, Creator)">
-                <textarea id="pageBioInput" class="search-input" style="height: 80px; border: 1px solid var(--fb-border); border-radius: 8px; padding: 8px 12px; resize: none;" placeholder="পেজের বিবরণ / বায়ো..."></textarea>
-
-                <button class="modal-btn-submit" style="background: #f35369;" onclick="submitCreatePage()">পেজ তৈরি সম্পন্ন করুন 🚀</button>
-            </div>
+            <form onsubmit="submitCreatePageForm(event)" class="modal-body" style="display: flex; flex-direction: column; gap: 12px; padding: 18px;">
+                <div>
+                    <label style="font-size: 13px; font-weight: 700;">পেজের নাম *</label>
+                    <input type="text" id="pageNameInput" class="search-input" style="width: 100%; height: 40px; border: 1px solid var(--fb-border); border-radius: 8px; padding: 0 12px; margin-top: 4px;" placeholder="উদা: টেক হাব বিডি" required>
+                </div>
+                <div>
+                    <label style="font-size: 13px; font-weight: 700;">ক্যাটাগরি *</label>
+                    <select id="pageCategoryInput" class="filter-select" style="width: 100%; height: 40px; border: 1px solid var(--fb-border); border-radius: 8px; padding: 0 10px; margin-top: 4px;" required>
+                        <option value="Business">💼 ব্যবসা ও বাণিজ্য (Business)</option>
+                        <option value="Technology">💻 প্রযুক্তি ও সফটওয়্যার (Tech)</option>
+                        <option value="Media">📰 সংবাদ ও মিডিয়া (Media)</option>
+                        <option value="Education">🎓 শিক্ষা ও প্রশিক্ষণ (Education)</option>
+                        <option value="Entertainment">🎬 বিনোদন ও ক্রিয়েটর (Entertainment)</option>
+                        <option value="Community">🌐 কমিউনিটি ও এনজিও (Community)</option>
+                        <option value="Brand">🏷️ পণ্য ও ব্র্যান্ড (Brand)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 13px; font-weight: 700;">পেজের বিবরণ / বায়ো</label>
+                    <textarea id="pageBioInput" class="search-input" style="width: 100%; height: 75px; border: 1px solid var(--fb-border); border-radius: 8px; padding: 8px 12px; resize: none; margin-top: 4px;" placeholder="আপনার পেজের লক্ষ্য ও উদ্দেশ্য সংক্ষেপে লিখুন..."></textarea>
+                </div>
+                <div>
+                    <label style="font-size: 13px; font-weight: 700;">ওয়েবসাইট বা সোশ্যাল লিংক (ঐচ্ছিক)</label>
+                    <input type="url" id="pageWebsiteInput" class="search-input" style="width: 100%; height: 40px; border: 1px solid var(--fb-border); border-radius: 8px; padding: 0 12px; margin-top: 4px;" placeholder="https://example.com">
+                </div>
+                <button type="submit" id="btnSubmitCreatePage" class="modal-btn-submit" style="background: #f43f5e; margin-top: 6px;">পেজ তৈরি সম্পন্ন করুন 🚀</button>
+            </form>
         </div>
     </div>
 
     <!-- PAGES DIRECTORY MODAL -->
     <div class="modal-overlay" id="pagesModal" style="display: none;">
-        <div class="modal-box" style="max-width: 520px; height: 500px; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <span class="modal-title">🚩 পেজসমূহ (Pages)</span>
-                <button class="modal-close" onclick="closePagesModal()">✕</button>
+        <div class="modal-box" style="max-width: 580px; height: 580px; display: flex; flex-direction: column;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="modal-title">🚩 পেজ ডিরেক্টরি (Pages Directory)</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="post-btn" style="background: #f43f5e; color: white; padding: 5px 12px; font-size: 12px; font-weight: 700; border-radius: 6px;" onclick="openCreatePageModal()">+ নতুন পেজ</button>
+                    <button class="modal-close" onclick="closePagesModal()">✕</button>
+                </div>
             </div>
-            <div style="padding: 10px 14px; border-bottom: 1px solid var(--fb-border); display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 13px; color: var(--fb-text-secondary);">জনপ্রিয় ও অফিসিয়াল পেজসমূহ</span>
-                <button class="post-btn" style="background: #f35369; color: white; padding: 4px 10px; font-size: 12px; border-radius: 6px;" onclick="openCreatePageModal()">+ নতুন পেজ</button>
+            <!-- Search & Filters -->
+            <div style="padding: 10px 14px; border-bottom: 1px solid var(--fb-border); display: flex; flex-direction: column; gap: 8px; background: var(--fb-hover);">
+                <input type="text" id="pageSearchInput" class="search-input" style="width: 100%; height: 36px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 12px; font-size: 13px;" placeholder="পেজের নাম বা ক্যাটাগরি দিয়ে খুঁজুন..." oninput="debouncePageSearch()">
+                <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;" id="pageCategoryFilters">
+                    <button type="button" class="category-pill active" onclick="filterPagesCategory('all', this)">সব ক্যাটাগরি</button>
+                    <button type="button" class="category-pill" onclick="filterPagesCategory('Business', this)">💼 ব্যবসা</button>
+                    <button type="button" class="category-pill" onclick="filterPagesCategory('Technology', this)">💻 প্রযুক্তি</button>
+                    <button type="button" class="category-pill" onclick="filterPagesCategory('Media', this)">📰 মিডিয়া</button>
+                    <button type="button" class="category-pill" onclick="filterPagesCategory('Education', this)">🎓 শিক্ষা</button>
+                    <button type="button" class="category-pill" onclick="filterPagesCategory('Entertainment', this)">🎬 বিনোদন</button>
+                </div>
             </div>
             <div id="pagesListContainer" style="flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
                 <!-- Dynamically loaded -->
@@ -4452,7 +4551,7 @@
 
     <!-- SAVED POSTS MODAL -->
     <div class="modal-overlay" id="savedPostsModal" style="display: none;">
-        <div class="modal-box" style="max-width: 540px; height: 520px; display: flex; flex-direction: column;">
+        <div class="modal-box" style="max-width: 580px; height: 560px; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <span class="modal-title">🔖 সংরক্ষিত পোস্টসমূহ (Saved Items)</span>
                 <button class="modal-close" onclick="closeSavedPostsModal()">✕</button>
@@ -4465,14 +4564,245 @@
 
     <!-- EVENTS MODAL -->
     <div class="modal-overlay" id="eventsModal" style="display: none;">
-        <div class="modal-box" style="max-width: 520px; height: 500px; display: flex; flex-direction: column;">
-            <div class="modal-header">
+        <div class="modal-box" style="max-width: 580px; height: 580px; display: flex; flex-direction: column;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="modal-title">📅 অনুষ্ঠান ও মিটআপ (Events)</span>
-                <button class="modal-close" onclick="closeEventsModal()">✕</button>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button type="button" class="post-btn" style="background: var(--fb-primary); color: white; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 700;" onclick="openCreateEventModal()">➕ নতুন ইভেন্ট</button>
+                    <button class="modal-close" onclick="closeEventsModal()">✕</button>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--fb-border); background: var(--fb-hover);">
+                <button type="button" class="category-pill active" onclick="filterEvents('all', this)">সব ইভেন্ট</button>
+                <button type="button" class="category-pill" onclick="filterEvents('online', this)">🌐 অনলাইন</button>
+                <button type="button" class="category-pill" onclick="filterEvents('venue', this)">📍 ভেন্যু/উপস্থিতি</button>
             </div>
             <div id="eventsListContainer" style="flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
                 <!-- Dynamically loaded events -->
             </div>
+        </div>
+    </div>
+
+    <!-- CREATE EVENT MODAL -->
+    <div class="modal-overlay" id="createEventModal" style="display: none;">
+        <div class="modal-box" style="max-width: 500px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <span class="modal-title">➕ নতুন অনুষ্ঠান তৈরি করুন</span>
+                <button class="modal-close" onclick="closeCreateEventModal()">✕</button>
+            </div>
+            <form onsubmit="submitCreateEvent(event)" style="padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                    <label style="font-size: 13px; font-weight: 700;">ইভেন্টের শিরোনাম *</label>
+                    <input type="text" id="eventTitleInput" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="উদা: বাংলা নববর্ষ মিলনমেলা" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-size: 13px; font-weight: 700;">শুরুর সময় *</label>
+                        <input type="datetime-local" id="eventStartTimeInput" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 13px; font-weight: 700;">ধরন *</label>
+                        <select id="eventLocationTypeSelect" class="filter-select" style="width: 100%; height: 38px; margin-top: 4px;">
+                            <option value="venue">📍 সরাসরি ভেন্যুতে</option>
+                            <option value="online">🌐 অনলাইন</option>
+                            <option value="hybrid">🔀 হাইব্রিড</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size: 13px; font-weight: 700;">স্থান / ঠিকানা</label>
+                    <input type="text" id="eventAddressInput" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="উদা: ইন্টারকন্টিনেন্টাল ঢাকা / ধানমন্ডি লেক">
+                </div>
+                <div>
+                    <label style="font-size: 13px; font-weight: 700;">অনলাইন মিটিং বা ওয়েব লিংক (ঐচ্ছিক)</label>
+                    <input type="url" id="eventOnlineLinkInput" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="https://meet.google.com/...">
+                </div>
+                <div>
+                    <label style="font-size: 13px; font-weight: 700;">বিস্তারিত বর্ণনা</label>
+                    <textarea id="eventDescriptionInput" class="search-input" style="width: 100%; height: 80px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 8px 10px; margin-top: 4px; resize: none;" placeholder="অনুষ্ঠানের উদ্দেশ্য ও সময়সূচী লিখুন..."></textarea>
+                </div>
+                <button type="submit" id="btnSubmitCreateEvent" class="modal-btn-submit" style="margin-top: 8px;">ইভেন্ট প্রকাশ করুন 🎉</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JOBS & CAREER HUB MODAL -->
+    <div class="modal-overlay" id="jobsModal" style="display: none;">
+        <div class="modal-box" style="max-width: 650px; height: 600px; display: flex; flex-direction: column;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">💼</span>
+                    <span class="modal-title">ক্যারিয়ার হাব ও চাকরির সার্কুলার</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button type="button" class="post-btn" style="background: #0284c7; color: white; padding: 5px 12px; font-size: 12px; font-weight: 700; border-radius: 6px;" onclick="openCreateJobModal()">➕ নিয়োগ বিজ্ঞপ্তি প্রকাশ</button>
+                    <button class="modal-close" onclick="closeJobsModal()">✕</button>
+                </div>
+            </div>
+            <!-- Sub-tabs: All Jobs vs My Applications -->
+            <div style="display: flex; border-bottom: 1px solid var(--fb-border); background: #f8fafc;">
+                <button type="button" id="tabBtnAllJobs" class="tab-btn active" style="flex: 1; padding: 10px; font-weight: 700; border-bottom: 3px solid #0284c7; color: #0284c7; background: none; border-top: none; border-left: none; border-right: none; cursor: pointer;" onclick="switchJobTab('all')">
+                    🔍 সকল চাকরির সার্কুলার
+                </button>
+                <button type="button" id="tabBtnMyApplications" class="tab-btn" style="flex: 1; padding: 10px; font-weight: 600; border-bottom: 3px solid transparent; color: var(--fb-text-secondary); background: none; border-top: none; border-left: none; border-right: none; cursor: pointer;" onclick="switchJobTab('applied')">
+                    📄 আমার আবেদনসমূহ (<span id="myApplicationsCount">0</span>)
+                </button>
+            </div>
+
+            <!-- Job Filters Section (Shown on All Jobs) -->
+            <div id="jobFiltersSection" style="padding: 10px 14px; border-bottom: 1px solid var(--fb-border); display: flex; flex-direction: column; gap: 8px; background: var(--fb-hover);">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="jobSearchInput" class="search-input" style="flex: 1; height: 36px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; font-size: 13px;" placeholder="পদবী, কোম্পানি বা কাজের স্থান দিয়ে খুঁজুন..." oninput="debounceJobSearch()">
+                    <select id="jobLocationTypeSelect" class="filter-select" style="height: 36px; font-size: 12.5px;" onchange="loadJobs()">
+                        <option value="all">সকল লোকেশন</option>
+                        <option value="onsite">📍 অনসাইট (অফিস)</option>
+                        <option value="remote">🌐 রিমোট</option>
+                        <option value="hybrid">🔀 হাইব্রিড</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;" id="jobTypeFilters">
+                    <button type="button" class="category-pill active" onclick="filterJobType('all', this)">সব কাজের ধরন</button>
+                    <button type="button" class="category-pill" onclick="filterJobType('full_time', this)">ফুল-টাইম</button>
+                    <button type="button" class="category-pill" onclick="filterJobType('remote', this)">🌐 রিমোট</button>
+                    <button type="button" class="category-pill" onclick="filterJobType('part_time', this)">পার্ট-টাইম</button>
+                    <button type="button" class="category-pill" onclick="filterJobType('internship', this)">ইন্টার্নশিপ</button>
+                    <button type="button" class="category-pill" onclick="filterJobType('contract', this)">চুক্তিভিত্তিক</button>
+                </div>
+            </div>
+
+            <!-- All Jobs List Container -->
+            <div id="jobsListContainer" style="flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+                <!-- Dynamically loaded jobs -->
+            </div>
+
+            <!-- My Applications Container (Hidden by default) -->
+            <div id="myApplicationsContainer" style="display: none; flex: 1; overflow-y: auto; padding: 14px; flex-direction: column; gap: 12px;">
+                <!-- Dynamically loaded applications -->
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLY FOR JOB MODAL -->
+    <div class="modal-overlay" id="applyJobModal" style="display: none;">
+        <div class="modal-box" style="max-width: 500px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <span class="modal-title">🎯 চাকরির আবেদন দাখিল করুন</span>
+                <button class="modal-close" onclick="closeApplyJobModal()">✕</button>
+            </div>
+            <div style="padding: 10px 16px; background: #f0f9ff; border-bottom: 1px solid #bae6fd;">
+                <div style="font-size: 14px; font-weight: 700; color: #0369a1;" id="applyModalJobTitle">--</div>
+                <div style="font-size: 12px; color: #0284c7;" id="applyModalCompanyName">--</div>
+            </div>
+            <form onsubmit="submitJobApplication(event)" style="padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+                <input type="hidden" id="applyJobId">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-size: 12.5px; font-weight: 700;">আপনার নাম *</label>
+                        <input type="text" id="applyFullName" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 12.5px; font-weight: 700;">ফোন নম্বর *</label>
+                        <input type="text" id="applyPhone" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="017xxxxxxxx" required>
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size: 12.5px; font-weight: 700;">ইমেইল ঠিকানা *</label>
+                    <input type="email" id="applyEmail" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-size: 12.5px; font-weight: 700;">প্রত্যাশিত বেতন (BDT)</label>
+                        <input type="number" id="applyExpectedSalary" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="উদা: 50000">
+                    </div>
+                    <div>
+                        <label style="font-size: 12.5px; font-weight: 700;">পোর্টফোলিও / লিঙ্কডইন</label>
+                        <input type="url" id="applyPortfolioUrl" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="https://...">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size: 12.5px; font-weight: 700;">সিভি / রেজুমে লিংক *</label>
+                    <input type="url" id="applyResumeUrl" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="Google Drive / Dropbox / রেজুমে লিঙ্ক..." required>
+                </div>
+                <div>
+                    <label style="font-size: 12.5px; font-weight: 700;">আবেদনপত্র / কভার লেটার</label>
+                    <textarea id="applyCoverLetter" class="search-input" style="width: 100%; height: 80px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 8px 10px; margin-top: 4px; resize: none;" placeholder="আপনার অভিজ্ঞতা ও কেন আপনি এই পদের জন্য উপযুক্ত তা সংক্ষেপে লিখুন..."></textarea>
+                </div>
+                <button type="submit" id="btnSubmitJobApplication" class="modal-btn-submit" style="background: #0284c7; margin-top: 6px;">আবেদন নিশ্চিত করুন 🚀</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CREATE JOB POSTING MODAL -->
+    <div class="modal-overlay" id="createJobModal" style="display: none;">
+        <div class="modal-box" style="max-width: 540px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <span class="modal-title">💼 নতুন চাকরির নিয়োগ বিজ্ঞপ্তি তৈরি করুন</span>
+                <button class="modal-close" onclick="closeCreateJobModal()">✕</button>
+            </div>
+            <form onsubmit="submitCreateJobPosting(event)" style="padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                    <label style="font-size: 12.5px; font-weight: 700;">পদের নাম / Job Title *</label>
+                    <input type="text" id="createJobTitle" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="উদা: সিনিয়র সফটওয়্যার ইঞ্জিনিয়ার (PHP/Laravel)" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-size: 12.5px; font-weight: 700;">কোম্পানি বা প্রতিষ্ঠানের নাম *</label>
+                        <input type="text" id="createJobCompany" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="উদা: ইনোভেশনস লিমিটেড" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 12.5px; font-weight: 700;">কাজের ধরন *</label>
+                        <select id="createJobEmploymentType" class="filter-select" style="width: 100%; height: 38px; margin-top: 4px;" required>
+                            <option value="full_time">ফুল-টাইম (Full-time)</option>
+                            <option value="part_time">পার্ট-টাইম (Part-time)</option>
+                            <option value="contract">চুক্তিভিত্তিক (Contract)</option>
+                            <option value="internship">ইন্টার্নশিপ (Internship)</option>
+                            <option value="freelance">ফ্রিল্যান্স (Freelance)</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-size: 12.5px; font-weight: 700;">কাজের স্থান / ঠিকানা *</label>
+                        <input type="text" id="createJobLocation" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="উদা: গুলশান, ঢাকা / সমগ্র বাংলাদেশ" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 12.5px; font-weight: 700;">লোকেশন ধরন *</label>
+                        <select id="createJobLocationType" class="filter-select" style="width: 100%; height: 38px; margin-top: 4px;" required>
+                            <option value="onsite">📍 অনসাইট (অফিস)</option>
+                            <option value="remote">🌐 রিমোট (বাসা থেকে)</option>
+                            <option value="hybrid">🔀 হাইব্রিড</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: 700;">সর্বনিম্ন বেতন</label>
+                        <input type="number" id="createJobSalaryMin" class="search-input" style="width: 100%; height: 36px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 8px; margin-top: 4px;" placeholder="40000">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 700;">সর্বোচ্চ বেতন</label>
+                        <input type="number" id="createJobSalaryMax" class="search-input" style="width: 100%; height: 36px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 8px; margin-top: 4px;" placeholder="80000">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 700;">আবেদনের শেষ সময় *</label>
+                        <input type="date" id="createJobDeadline" class="search-input" style="width: 100%; height: 36px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 6px; margin-top: 4px;" required>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer;">
+                        <input type="checkbox" id="createJobNegotiable"> বেতন আলোচনা সাপেক্ষে (Negotiable)
+                    </label>
+                </div>
+                <div>
+                    <label style="font-size: 12.5px; font-weight: 700;">দায়িত্ব ও কাজের বিবরণ *</label>
+                    <textarea id="createJobDescription" class="search-input" style="width: 100%; height: 75px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 8px 10px; margin-top: 4px; resize: none;" placeholder="কাজের মূল দায়িত্ব ও ক্ষেত্রসমূহ বিস্তারিত লিখুন..." required></textarea>
+                </div>
+                <div>
+                    <label style="font-size: 12.5px; font-weight: 700;">শিক্ষাগত যোগ্যতা ও প্রয়োজনীয় দক্ষতা</label>
+                    <textarea id="createJobRequirements" class="search-input" style="width: 100%; height: 60px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 8px 10px; margin-top: 4px; resize: none;" placeholder="শিক্ষাগত যোগ্যতা, অভিজ্ঞতা ও প্রযুক্তিগত দক্ষতা..."></textarea>
+                </div>
+                <button type="submit" id="btnSubmitCreateJob" class="modal-btn-submit" style="background: #0284c7; margin-top: 6px;">সার্কুলার প্রকাশ করুন 🎉</button>
+            </form>
         </div>
     </div>
 
@@ -4496,11 +4826,19 @@
         <div style="max-width: 980px; width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 40px; padding: 20px;">
             <!-- Left Branding -->
             <div style="flex: 1; min-width: 320px;">
-                <div style="margin-bottom: 16px;">
-                    <img src="/images/bondhoo-logo.png" alt="Bondhoo" style="height: 54px; max-width: 240px; object-fit: contain;">
+                <div style="margin-bottom: 16px; display: inline-flex; align-items: center; gap: 12px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px;background:#1877f2;color:#fff;box-shadow:0 4px 14px rgba(24,119,242,0.38);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </span>
+                    <span style="font-size: 2.25rem; font-weight: 800; letter-spacing: -0.035em; color: #1877f2; font-family: 'Inter', sans-serif;">SocialHub</span>
                 </div>
                 <p style="font-size: 24px; color: #1c1e21; line-height: 1.35; font-weight: 500;">
-                    Bondhoo আপনাকে আপনার জীবনের মানুষের সাথে সংযুক্ত হতে এবং শেয়ার করতে সাহায্য করে।
+                    SocialHub আপনাকে আপনার জীবনের মানুষের সাথে সংযুক্ত হতে এবং শেয়ার করতে সাহায্য করে।
                 </p>
             </div>
 
@@ -5175,7 +5513,7 @@
                                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                                         <img src="${ls.user?.profile?.avatar_url || '/images/default-avatar.svg'}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #ef4444;" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">
                                         <div>
-                                            <div style="font-weight: 800; font-size: 15px;">${escapeHtml(ls.user?.name || 'Bondhoo ক্রিয়েটর')}</div>
+                                            <div style="font-weight: 800; font-size: 15px;">${escapeHtml(ls.user?.name || 'SocialHub ক্রিয়েটর')}</div>
                                             <div style="font-size: 12px; color: var(--fb-text-secondary);">${escapeHtml(ls.title)}</div>
                                         </div>
                                     </div>
@@ -5247,7 +5585,7 @@
 
         function renderFeedPostCard(p) {
             const authorObj = p.author || p.user || {};
-            const author = authorObj.name || 'Bondhoo মেম্বার';
+            const author = authorObj.name || 'SocialHub মেম্বার';
             const username = authorObj.username || 'user';
             const authorProfileUrl = window.getUserProfileUrl ? window.getUserProfileUrl(authorObj) : `/u/${encodeURIComponent(username)}`;
             const postAvatarUrl = normalizeMediaUrl(authorObj.avatar_url || authorObj.profile?.avatar_url || '') || '/images/default-avatar.svg';
@@ -6155,20 +6493,34 @@
             });
         }
 
-        function toggleSavePostAction(id, contentEncoded) {
-            const content = decodeURIComponent(contentEncoded);
-            let saved = JSON.parse(localStorage.getItem('jugajug_saved_posts') || '[]');
-            const index = saved.findIndex(item => item.id === id);
-            if (index >= 0) {
-                saved.splice(index, 1);
-                localStorage.setItem('jugajug_saved_posts', JSON.stringify(saved));
-                showToast('সংরক্ষিত তালিকা থেকে সরানো হয়েছে! 🔖');
-            } else {
-                saved.push({ id, content, saved_at: new Date().toISOString() });
-                localStorage.setItem('jugajug_saved_posts', JSON.stringify(saved));
-                showToast('পোস্ট সফলভাবে সংরক্ষিত তালিকায় সেভ হয়েছে! 🔖');
+        async function toggleSavePostAction(id, contentEncoded) {
+            try {
+                const res = await fetch('/api/v1/profile/saved-items/toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({ item_type: 'post', item_id: id })
+                });
+                const data = await res.json();
+                if (data.status === 'success' || data.data) {
+                    const isSaved = data.data?.saved;
+                    if (isSaved) {
+                        showToast('পোস্ট সফলভাবে সংরক্ষিত তালিকায় সেভ হয়েছে! 🔖');
+                    } else {
+                        showToast('সংরক্ষিত তালিকা থেকে সরানো হয়েছে! 🔖');
+                    }
+                } else {
+                    showToast(data.message || 'সেভ স্ট্যাটাস পরিবর্তন করা সম্ভব হয়নি।');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('সার্ভার যোগাযোগে সমস্যা হয়েছে।');
             }
-            fetchUnreadCounters();
+            if (typeof fetchUnreadCounters === 'function') fetchUnreadCounters();
         }
 
         let currentLightboxScale = 1.0;
@@ -8797,7 +9149,7 @@
             // Typing indicator
             const typingDiv = document.createElement('div');
             typingDiv.style.cssText = 'background: #f0f2f5; padding: 8px 12px; border-radius: 12px 12px 12px 0; max-width: 85%; font-style: italic; color: #65676b;';
-            typingDiv.innerText = 'Bondhoo AI লিখছে...';
+            typingDiv.innerText = 'SocialHub AI লিখছে...';
             chatBox.appendChild(typingDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -8974,89 +9326,194 @@
         });
 
         /* ------------------------------------------------------------- */
-        /* MEMORIES (YOUR HISTORICAL POSTS) */
+        /* MEMORIES (AUTHENTIC "ON THIS DAY" DATABASE IMPLEMENTATION) */
         /* ------------------------------------------------------------- */
         function openMemoriesModal() {
             document.getElementById('memoriesModal').style.display = 'flex';
             loadMemories();
         }
+
         function closeMemoriesModal() {
             document.getElementById('memoriesModal').style.display = 'none';
         }
+
         async function loadMemories() {
             const container = document.getElementById('memoriesListContainer');
-            container.innerHTML = '<div style="text-align: center; padding: 20px;">স্মৃতিচারণ পোস্ট লোড হচ্ছে...</div>';
-            if (!currentUser) return;
-            try {
-                const res = await fetch(`/api/v1/users/${currentUser.username || 'user'}/posts`, {
-                    headers: { 'Accept': 'application/json' }
-                });
-                const data = await res.json();
-                const posts = Array.isArray(data.data) ? data.data : (data.data?.posts || []);
+            if (!container) return;
+            container.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); padding: 24px;">⏳ স্মৃতিচারণ পোস্ট অনুসন্ধান করা হচ্ছে...</div>';
 
-                if (posts.length === 0) {
-                    container.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); padding: 20px;">আজ আপনার কোনো স্মৃতিচারণ পোস্ট নেই। নতুন পোস্ট শেয়ার করুন!</div>';
+            try {
+                const res = await fetch('/api/v1/memories', {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                const json = await res.json();
+                const data = json.data || {};
+                const todayMemories = data.today_memories || [];
+                const pastWeekMemories = data.past_week_memories || [];
+                const allMemories = [...todayMemories, ...pastWeekMemories];
+
+                if (allMemories.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: var(--fb-text-secondary); padding: 36px 16px;">
+                            <div style="font-size: 42px; margin-bottom: 8px;">🕰️</div>
+                            <div style="font-size: 16px; font-weight: 700; color: var(--fb-text-primary);">আজকের দিনে আপনার কোনো অতীত স্মৃতি নেই</div>
+                            <div style="font-size: 13px; line-height: 1.5; margin-top: 6px; color: var(--fb-text-secondary);">
+                                আজকের দিনটি সুন্দর করতে এখনই আপনার বন্ধুদের সাথে একটি নতুন পোস্ট বা ফটো শেয়ার করুন!
+                            </div>
+                            <button type="button" class="modal-btn-submit" style="margin-top: 14px; width: auto; padding: 0 18px;" onclick="closeMemoriesModal(); openCreatePostModal();">
+                                ✍️ নতুন পোস্ট তৈরি করুন
+                            </button>
+                        </div>
+                    `;
                     return;
                 }
 
-                container.innerHTML = posts.map(p => `
-                    <div class="fb-card" style="padding: 14px;">
-                        <div style="font-size: 12px; color: var(--fb-primary); font-weight: 700; margin-bottom: 6px;">📅 ${new Date(p.created_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                        <div style="font-size: 14px; line-height: 1.5;">${p.content}</div>
-                        <div style="margin-top: 8px; font-size: 12px; color: var(--fb-text-secondary);">👍 ${p.reactions_count || 0} লাইক · 💬 ${p.comments_count || 0} মন্তব্য</div>
+                container.innerHTML = allMemories.map(m => `
+                    <div class="fb-card" style="padding: 14px; border: 1px solid var(--fb-border); border-radius: 10px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--fb-divider); padding-bottom: 8px; margin-bottom: 10px;">
+                            <span style="font-size: 12.5px; font-weight: 800; color: var(--fb-primary); background: #e7f3ff; padding: 3px 10px; border-radius: 12px;">
+                                📅 ${m.years_ago_label}
+                            </span>
+                            <span style="font-size: 11px; color: var(--fb-text-secondary);">
+                                ${m.created_at_formatted}
+                            </span>
+                        </div>
+                        <div style="font-size: 14px; line-height: 1.5; color: var(--fb-text-primary); white-space: pre-wrap;">${m.content}</div>
+                        ${(m.media && m.media.length > 0) ? `
+                            <div style="margin-top: 10px; border-radius: 8px; overflow: hidden; max-height: 260px;">
+                                <img src="${m.media[0].url}" alt="Memory Attachment" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                        ` : ''}
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--fb-divider); font-size: 12px; color: var(--fb-text-secondary);">
+                            <span>👍 ${m.likes_count} লাইক · 💬 ${m.comments_count} মন্তব্য</span>
+                            <button type="button" class="post-btn" style="background: #e7f3ff; color: #1877f2; padding: 4px 12px; font-size: 12px; border-radius: 14px; font-weight: 700;" onclick="shareMemoryToFeed(${m.id}, '${encodeURIComponent(m.content || '')}')">
+                                🔄 স্মৃতি শেয়ার করুন
+                            </button>
+                        </div>
                     </div>
                 `).join('');
-            } catch (e) {
-                container.innerHTML = '<div style="color: red; text-align: center; padding: 20px;">লোড করা সম্ভব হয়নি।</div>';
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 20px;">স্মৃতিচারণ লোড করা সম্ভব হয়নি।</div>';
+            }
+        }
+
+        function shareMemoryToFeed(id, contentEncoded) {
+            closeMemoriesModal();
+            const rawContent = decodeURIComponent(contentEncoded || '');
+            openCreatePostModal();
+            const textarea = document.getElementById('postContent');
+            if (textarea) {
+                textarea.value = `🕰️ আজকের স্মৃতিচারণ পোস্ট:\n"${rawContent}"`;
             }
         }
 
         /* ------------------------------------------------------------- */
-        /* SAVED POSTS (LOCAL STORAGE + BACKEND BOOKMARKS) */
+        /* SAVED POSTS (FULL DATABASE API IMPLEMENTATION) */
         /* ------------------------------------------------------------- */
-        function savePost(id, contentEncoded) {
-            const content = decodeURIComponent(contentEncoded);
-            let saved = JSON.parse(localStorage.getItem('jugajug_saved_posts') || '[]');
-            const exists = saved.find(item => item.id === id);
-            if (exists) {
-                showToast('পোস্টটি ইতোমধ্যে সংরক্ষিত তালিকায় রয়েছে!');
-                return;
-            }
-            saved.push({ id, content, saved_at: new Date().toISOString() });
-            localStorage.setItem('jugajug_saved_posts', JSON.stringify(saved));
-            showToast('পোস্ট সফলভাবে সংরক্ষিত তালিকায় সেভ হয়েছে! 🔖');
+        async function savePost(id, contentEncoded) {
+            await toggleSavePostAction(id, contentEncoded);
         }
 
         function openSavedPostsModal() {
             document.getElementById('savedPostsModal').style.display = 'flex';
             loadSavedPosts();
         }
+
         function closeSavedPostsModal() {
             document.getElementById('savedPostsModal').style.display = 'none';
         }
-        function loadSavedPosts() {
+
+        async function loadSavedPosts() {
             const container = document.getElementById('savedPostsContainer');
-            const saved = JSON.parse(localStorage.getItem('jugajug_saved_posts') || '[]');
-            if (saved.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); padding: 20px;">আপনার সংরক্ষিত কোনো পোস্ট নেই। ফিডের যেকোনো পোস্ট থেকে "সেভ" বাটনে ক্লিক করে সংরক্ষণ করুন।</div>';
-                return;
+            if (!container) return;
+            container.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); padding: 24px;">⏳ সংরক্ষিত পোস্টসমূহ লোড হচ্ছে...</div>';
+
+            try {
+                const res = await fetch('/api/v1/profile/saved-items', {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await res.json();
+                const items = Array.isArray(data.data) ? data.data : (data.data?.data || []);
+
+                if (items.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: var(--fb-text-secondary); padding: 32px 16px;">
+                            <div style="font-size: 40px; margin-bottom: 8px;">🔖</div>
+                            <div style="font-weight: 700; font-size: 15px; color: var(--fb-text-primary);">আপনার সংরক্ষিত কোনো পোস্ট নেই</div>
+                            <div style="font-size: 13px; margin-top: 4px;">ফিডের যেকোনো পোস্টের ৩-ডট মেনু থেকে "সেভ" বাটনে ক্লিক করে এখানে সংরক্ষণ করুন।</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = items.map(item => {
+                    const post = item.post || item.item || {};
+                    const content = post.content || item.content || `সংরক্ষিত পোস্ট #${item.item_id}`;
+                    const author = post.author || post.user || {};
+                    const authorName = author.name || 'SocialHub User';
+                    const authorAvatar = author.avatar || '/images/default-avatar.png';
+                    const timeAgo = post.created_at_human || (item.created_at ? formatTimeAgo(item.created_at) : '');
+                    const postUrl = `/dashboard#post-card-${item.item_id}`;
+
+                    return `
+                        <div class="fb-card" id="saved-card-${item.id}" style="padding: 14px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--fb-border); border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <img src="${authorAvatar}" alt="${authorName}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;" onerror="this.src='/images/default-avatar.png'">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 13.5px; color: var(--fb-text-primary);">${authorName}</div>
+                                        <div style="font-size: 11px; color: var(--fb-text-secondary);">${timeAgo ? 'মূল পোস্ট: ' + timeAgo : ''} • কালেকশন: <b>${item.collection_name || 'All Items'}</b></div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <a href="${postUrl}" class="post-btn" style="padding: 4px 10px; font-size: 12px; background: #e7f3ff; color: #1877f2; text-decoration: none; border-radius: 6px;" onclick="closeSavedPostsModal()">🔗 দেখুন</a>
+                                    <button class="post-btn" style="color: #dc2626; padding: 4px 10px; font-size: 12px; background: #fee2e2; border-radius: 6px;" onclick="removeSavedPost(${item.item_id}, ${item.id})">🗑️ মুছুন</button>
+                                </div>
+                            </div>
+                            <div style="font-size: 13.5px; line-height: 1.45; color: var(--fb-text-primary); margin-top: 2px;">
+                                ${content}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 20px;">সংরক্ষিত পোস্ট লোড করতে সমস্যা হয়েছে।</div>';
             }
-            container.innerHTML = saved.map(item => `
-                <div class="fb-card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
-                    <div style="flex: 1; padding-right: 12px;">
-                        <div style="font-size: 14px; font-weight: 500;">${item.content}</div>
-                        <div style="font-size: 11px; color: var(--fb-text-secondary); margin-top: 4px;">সংরক্ষণ সময়: ${formatTimeAgo(item.saved_at)}</div>
-                    </div>
-                    <button class="post-btn" style="color: red; padding: 4px 8px; font-size: 12px;" onclick="removeSavedPost(${item.id})">মুছুন</button>
-                </div>
-            `).join('');
         }
-        function removeSavedPost(id) {
-            let saved = JSON.parse(localStorage.getItem('jugajug_saved_posts') || '[]');
-            saved = saved.filter(i => i.id !== id);
-            localStorage.setItem('jugajug_saved_posts', JSON.stringify(saved));
-            showToast('সংরক্ষিত তালিকা থেকে সরানো হয়েছে।');
-            loadSavedPosts();
+
+        async function removeSavedPost(itemId, cardId) {
+            try {
+                const res = await fetch('/api/v1/profile/saved-items/toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({ item_type: 'post', item_id: itemId })
+                });
+                const data = await res.json();
+                if (cardId && document.getElementById(`saved-card-${cardId}`)) {
+                    document.getElementById(`saved-card-${cardId}`).remove();
+                }
+                showToast('সংরক্ষিত তালিকা থেকে সরানো হয়েছে।');
+                const remaining = document.querySelectorAll('#savedPostsContainer .fb-card');
+                if (remaining.length === 0) {
+                    loadSavedPosts();
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('মুছতে সমস্যা হয়েছে।');
+            }
         }
 
         /* ------------------------------------------------------------- */
@@ -9510,7 +9967,7 @@
                     </label>
                 </div>
                 <div style="background: #e6f4ea; border: 1px solid #137333; color: #137333; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 14px;">
-                    🔒 <b>এসক্রো প্রটেকশন সক্রিয়:</b> আপনার টাকা Bondhoo এসক্রো অ্যাকাউন্টে নিরাপদে সংরক্ষিত থাকবে। পণ্য বুঝে পাওয়ার পরই বিক্রেতা টাকা পাবেন।
+                    🔒 <b>এসক্রো প্রটেকশন সক্রিয়:</b> আপনার টাকা SocialHub এসক্রো অ্যাকাউন্টে নিরাপদে সংরক্ষিত থাকবে। পণ্য বুঝে পাওয়ার পরই বিক্রেতা টাকা পাবেন।
                 </div>
                 <button class="modal-btn-submit" onclick="submitOrderCheckout(${id})">নিরাপদে পেমেন্ট ও অর্ডার নিশ্চিত করুন 💳</button>
             `;
@@ -9692,7 +10149,7 @@
                                 </div>
 
                                 <div style="font-size: 12.5px; color: #475569; margin: 8px 0 auto; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                    ${g.description || 'Bondhoo এন্টারপ্রাইজ কমিউনিটি নেটওয়ার্ক। আলোচনা ও জ্ঞান বিনিময়ের উন্মুক্ত প্ল্যাটফর্ম।'}
+                                    ${g.description || 'SocialHub এন্টারপ্রাইজ কমিউনিটি নেটওয়ার্ক। আলোচনা ও জ্ঞান বিনিময়ের উন্মুক্ত প্ল্যাটফর্ম।'}
                                 </div>
 
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9;">
@@ -9829,75 +10286,143 @@
         }
 
         /* ------------------------------------------------------------- */
-        /* PAGES DIRECTORY & CREATION (REAL API) */
+        /* PAGES DIRECTORY & CREATION (REAL API & FILTERING) */
         /* ------------------------------------------------------------- */
+        let activePageCategory = 'all';
+        let pageSearchDebounceTimer = null;
+
         function openPagesModal() {
             document.getElementById('pagesModal').style.display = 'flex';
             loadPages();
         }
+
         function closePagesModal() {
             document.getElementById('pagesModal').style.display = 'none';
         }
+
+        function filterPagesCategory(cat, btn) {
+            activePageCategory = cat;
+            const pills = document.querySelectorAll('#pageCategoryFilters .category-pill');
+            pills.forEach(p => p.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            loadPages();
+        }
+
+        function debouncePageSearch() {
+            clearTimeout(pageSearchDebounceTimer);
+            pageSearchDebounceTimer = setTimeout(() => {
+                loadPages();
+            }, 300);
+        }
+
         async function loadPages() {
             const container = document.getElementById('pagesListContainer');
-            container.innerHTML = '<div style="padding: 16px; text-align: center;">পেজ লোড হচ্ছে...</div>';
+            if (!container) return;
+            container.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--fb-text-secondary);"><span style="font-size: 20px;">⏳</span> পেজ লোড হচ্ছে...</div>';
+
+            const search = document.getElementById('pageSearchInput')?.value?.trim() || '';
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (activePageCategory && activePageCategory !== 'all') params.append('category', activePageCategory);
+
             try {
-                const res = await fetch('/api/v1/pages', {
+                const res = await fetch(`/api/v1/pages?${params.toString()}`, {
                     headers: { 'Authorization': `Bearer ${currentToken}`, 'Accept': 'application/json' }
                 });
                 const data = await res.json();
                 const pages = Array.isArray(data.data) ? data.data : (data.data?.pages || []);
 
                 if (pages.length === 0) {
-                    container.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); padding: 16px;">কোনো পেজ পাওয়া যায়নি। নতুন পেজ তৈরি করুন!</div>';
+                    container.innerHTML = `
+                        <div style="text-align: center; color: var(--fb-text-secondary); padding: 32px 16px;">
+                            <div style="font-size: 32px; margin-bottom: 8px;">🚩</div>
+                            <div style="font-weight: 700; font-size: 14px; color: #1e293b;">কোনো পেজ পাওয়া যায়নি</div>
+                            <div style="font-size: 12px; margin-top: 4px;">ভিন্ন কি-ওয়ার্ড বা ক্যাটাগরি নির্বাচন করুন অথবা নতুন পেজ তৈরি করুন।</div>
+                            <button class="post-btn" style="margin-top: 12px; background: #f43f5e; color: white; padding: 6px 14px; font-size: 12px; border-radius: 6px;" onclick="openCreatePageModal()">➕ নতুন পেজ তৈরি করুন</button>
+                        </div>
+                    `;
                     return;
                 }
 
-                container.innerHTML = pages.map(p => `
-                    <div class="fb-card" style="padding: 12px; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <div class="avatar" style="width: 40px; height: 40px; background: #f35369;">${p.name.charAt(0)}</div>
-                            <div>
-                                <div style="font-weight: 700; font-size: 14px;">${p.name} ${p.is_verified ? '✔️' : ''}</div>
-                                <div style="font-size: 11px; color: var(--fb-text-secondary);">${p.category || 'অফিসিয়াল'} · ${p.followers_count || 0} ফলোয়ার</div>
+                container.innerHTML = pages.map(p => {
+                    const isFollowing = !!p.is_following;
+                    const avatarChar = (p.name || 'P').charAt(0).toUpperCase();
+                    const avatarImg = p.avatar_url || p.logo_url;
+                    return `
+                        <div class="fb-card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--fb-border); border-radius: 8px;">
+                            <div style="display: flex; gap: 12px; align-items: center; min-width: 0;">
+                                ${avatarImg ? `<img src="${avatarImg}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">` : `<div class="avatar" style="width: 44px; height: 44px; font-size: 18px; font-weight: 700; background: #f43f5e; color: white;">${avatarChar}</div>`}
+                                <div style="min-width: 0;">
+                                    <div style="font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        ${escapeHtml(p.name)}
+                                        ${p.is_verified ? '<span title="ভেরিফাইড পেজ" style="color: #1877f2; font-size: 13px;">✔️</span>' : ''}
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--fb-text-secondary); margin-top: 2px;">
+                                        <span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${escapeHtml(p.category || 'সাধারণ')}</span>
+                                        · ${p.followers_count || 0} ফলোয়ার
+                                    </div>
+                                    ${p.bio ? `<div style="font-size: 11.5px; color: #475569; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px;">${escapeHtml(p.bio)}</div>` : ''}
+                                </div>
                             </div>
+                            <button class="post-btn" style="${isFollowing ? 'background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;' : 'background: #e7f3ff; color: #1877f2; font-weight: 700;'} padding: 6px 14px; font-size: 12px; border-radius: 20px; flex-shrink: 0;" onclick="togglePageFollow(${p.id})">
+                                ${isFollowing ? '✓ আনফলো' : '+ ফলো'}
+                            </button>
                         </div>
-                        <button class="post-btn" style="background: #e7f3ff; color: #1877f2; padding: 4px 12px; font-size: 12px; border-radius: 16px;" onclick="togglePageFollow(${p.id})">ফলো</button>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch (e) {
-                container.innerHTML = '<div style="color: red; text-align: center; padding: 16px;">লোড করা যায়নি।</div>';
+                container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 24px;">পেজ তালিকা লোড করা সম্ভব হয়নি।</div>';
             }
         }
 
         function openCreatePageModal() {
             document.getElementById('createPageModal').style.display = 'flex';
         }
+
         function closeCreatePageModal() {
             document.getElementById('createPageModal').style.display = 'none';
         }
-        async function submitCreatePage() {
-            const name = document.getElementById('pageNameInput').value.trim();
-            const category = document.getElementById('pageCategoryInput').value.trim();
-            const bio = document.getElementById('pageBioInput').value.trim();
-            if (!name) return;
+
+        async function submitCreatePageForm(event) {
+            if (event) event.preventDefault();
+            const name = document.getElementById('pageNameInput')?.value?.trim();
+            const category = document.getElementById('pageCategoryInput')?.value?.trim();
+            const bio = document.getElementById('pageBioInput')?.value?.trim();
+            const website = document.getElementById('pageWebsiteInput')?.value?.trim();
+            const btn = document.getElementById('btnSubmitCreatePage');
+
+            if (!name || !category) {
+                showToast('পেজের নাম ও ক্যাটাগরি দেওয়া আবশ্যক।');
+                return;
+            }
+
+            if (btn) { btn.disabled = true; btn.innerText = 'তৈরি হচ্ছে...'; }
 
             try {
                 const res = await fetch('/api/v1/pages', {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${currentToken}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body: JSON.stringify({ name, category, bio })
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ name, category, bio, website: website || undefined })
                 });
                 const data = await res.json();
-                if (data.success || data.data) {
+                if (res.ok && (data.success || data.data)) {
                     closeCreatePageModal();
                     showToast('নতুন পেজ সফলভাবে তৈরি হয়েছে! 🚩');
+                    document.getElementById('pageNameInput').value = '';
+                    document.getElementById('pageBioInput').value = '';
+                    if (document.getElementById('pageWebsiteInput')) document.getElementById('pageWebsiteInput').value = '';
                     loadPages();
                 } else {
                     showToast(data.message || 'পেজ তৈরি করা সম্ভব হয়নি।');
                 }
             } catch (e) {
                 showToast('ত্রুটি: ' + e.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = 'পেজ তৈরি সম্পন্ন করুন 🚀'; }
             }
         }
 
@@ -9908,7 +10433,7 @@
                     headers: { 'Authorization': `Bearer ${currentToken}`, 'Accept': 'application/json' }
                 });
                 const data = await res.json();
-                showToast(data.message || 'আপনি পেজটি ফলো করেছেন! 🚩');
+                showToast(data.message || 'পেজ স্ট্যাটাস আপডেট হয়েছে! 🚩');
                 loadPages();
             } catch (e) {
                 showToast('ত্রুটি: ' + e.message);
@@ -9916,46 +10441,552 @@
         }
 
         /* ------------------------------------------------------------- */
-        /* EVENTS MODAL */
+        /* JOBS & CAREER HUB (REAL API, FILTERING & APPLICATIONS) */
         /* ------------------------------------------------------------- */
-        const sampleEvents = [
-            { id: 1, title: 'বাংলাদেশ টেক মিটআপ ২০২৬', date: '২৫ সেপ্টেম্বর, ২০২৬ · বিকেল ৪:০০', location: 'বিসিসি অডিটোরিয়াম, আগারগাঁও, ঢাকা', going: 128 },
-            { id: 2, title: 'ফটোগ্রাফি ও স্টোরিটেলিং কর্মশালা', date: '০২ অক্টোবর, ২০২৬ · সকাল ১০:০০', location: 'শিল্পকলা একাডেমি, সেগুনবাগিচা, ঢাকা', going: 64 },
-            { id: 3, title: 'লারাভেল ও ক্লাউড আর্কিটেকচার কনফারেন্স', date: '১০ অক্টোবর, ২০২৬ · সকাল ৯:০০', location: 'ইন্টারকন্টিনেন্টাল ঢাকা', going: 250 }
-        ];
+        let currentJobTab = 'all';
+        let activeJobType = 'all';
+        let jobSearchDebounceTimer = null;
+
+        function openJobsModal() {
+            document.getElementById('jobsModal').style.display = 'flex';
+            switchJobTab(currentJobTab);
+        }
+
+        function closeJobsModal() {
+            document.getElementById('jobsModal').style.display = 'none';
+        }
+
+        function switchJobTab(tabName) {
+            currentJobTab = tabName;
+            const btnAll = document.getElementById('tabBtnAllJobs');
+            const btnApp = document.getElementById('tabBtnMyApplications');
+            const filtersSection = document.getElementById('jobFiltersSection');
+            const jobsContainer = document.getElementById('jobsListContainer');
+            const appContainer = document.getElementById('myApplicationsContainer');
+
+            if (tabName === 'all') {
+                if (btnAll) {
+                    btnAll.style.borderBottom = '3px solid #0284c7';
+                    btnAll.style.color = '#0284c7';
+                    btnAll.style.fontWeight = '700';
+                }
+                if (btnApp) {
+                    btnApp.style.borderBottom = '3px solid transparent';
+                    btnApp.style.color = 'var(--fb-text-secondary)';
+                    btnApp.style.fontWeight = '600';
+                }
+                if (filtersSection) filtersSection.style.display = 'flex';
+                if (jobsContainer) jobsContainer.style.display = 'flex';
+                if (appContainer) appContainer.style.display = 'none';
+                loadJobs();
+            } else {
+                if (btnApp) {
+                    btnApp.style.borderBottom = '3px solid #0284c7';
+                    btnApp.style.color = '#0284c7';
+                    btnApp.style.fontWeight = '700';
+                }
+                if (btnAll) {
+                    btnAll.style.borderBottom = '3px solid transparent';
+                    btnAll.style.color = 'var(--fb-text-secondary)';
+                    btnAll.style.fontWeight = '600';
+                }
+                if (filtersSection) filtersSection.style.display = 'none';
+                if (jobsContainer) jobsContainer.style.display = 'none';
+                if (appContainer) appContainer.style.display = 'flex';
+                loadMyJobApplications();
+            }
+        }
+
+        function filterJobType(type, btn) {
+            activeJobType = type;
+            const pills = document.querySelectorAll('#jobTypeFilters .category-pill');
+            pills.forEach(p => p.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            loadJobs();
+        }
+
+        function debounceJobSearch() {
+            clearTimeout(jobSearchDebounceTimer);
+            jobSearchDebounceTimer = setTimeout(() => {
+                loadJobs();
+            }, 300);
+        }
+
+        async function loadJobs() {
+            const container = document.getElementById('jobsListContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--fb-text-secondary);"><span style="font-size: 20px;">⏳</span> চাকরির সার্কুলার লোড হচ্ছে...</div>';
+
+            const search = document.getElementById('jobSearchInput')?.value?.trim() || '';
+            const locationType = document.getElementById('jobLocationTypeSelect')?.value || 'all';
+
+            const params = new URLSearchParams();
+            params.append('status', 'active');
+            if (search) params.append('search', search);
+            if (activeJobType && activeJobType !== 'all') params.append('employment_type', activeJobType);
+            if (locationType && locationType !== 'all') params.append('location_type', locationType);
+
+            try {
+                const res = await fetch(`/api/v1/jobs?${params.toString()}`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}`, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                const jobs = Array.isArray(data.data) ? data.data : (data.data?.jobs || []);
+
+                if (jobs.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: var(--fb-text-secondary); padding: 36px 16px;">
+                            <div style="font-size: 34px; margin-bottom: 8px;">💼</div>
+                            <div style="font-weight: 700; font-size: 15px; color: #1e293b;">কোনো চাকরির সার্কুলার পাওয়া যায়নি</div>
+                            <div style="font-size: 12px; margin-top: 4px;">ভিন্ন কি-ওয়ার্ড দিয়ে খুঁজুন অথবা নিজে একটি নতুন চাকরির নিয়োগ বিজ্ঞপ্তি দিন।</div>
+                            <button class="post-btn" style="margin-top: 14px; background: #0284c7; color: white; padding: 6px 14px; font-size: 12px; border-radius: 6px; font-weight: 700;" onclick="openCreateJobModal()">➕ নিয়োগ বিজ্ঞপ্তি প্রকাশ করুন</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = jobs.map(job => {
+                    const empTypeBadge = {
+                        'full_time': 'ফুল-টাইম',
+                        'part_time': 'পার্ট-টাইম',
+                        'contract': 'চুক্তিভিত্তিক',
+                        'internship': 'ইন্টার্নশিপ',
+                        'freelance': 'ফ্রিল্যান্স'
+                    }[job.employment_type] || job.employment_type;
+
+                    const locTypeBadge = {
+                        'onsite': '📍 অনসাইট',
+                        'remote': '🌐 রিমোট',
+                        'hybrid': '🔀 হাইব্রিড'
+                    }[job.location_type] || job.location_type;
+
+                    return `
+                        <div class="fb-card" style="padding: 14px; border: 1px solid var(--fb-border); border-radius: 10px; display: flex; flex-direction: column; gap: 8px; transition: box-shadow 0.2s;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <div style="width: 44px; height: 44px; border-radius: 8px; background: linear-gradient(135deg, #0284c7, #0369a1); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex-shrink: 0;">
+                                        ${(job.company_name || 'C').charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 800; font-size: 14.5px; color: #0f172a;">${escapeHtml(job.title)}</div>
+                                        <div style="font-size: 12.5px; color: #0284c7; font-weight: 600;">${escapeHtml(job.company_name)}</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    ${job.has_applied ? `
+                                        <span style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 4px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                            ✓ আবেদনকৃত
+                                        </span>
+                                    ` : `
+                                        <button class="post-btn" style="background: #0284c7; color: white; padding: 5px 14px; font-size: 12px; border-radius: 6px; font-weight: 700;" onclick="openApplyJobModal(${job.id}, '${escapeHtml(job.title)}', '${escapeHtml(job.company_name)}')">
+                                            আবেদন করুন 🚀
+                                        </button>
+                                    `}
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+                                <span style="background: #f1f5f9; color: #334155; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${empTypeBadge}</span>
+                                <span style="background: #eff6ff; color: #1d4ed8; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${locTypeBadge}</span>
+                                <span style="background: #f0fdf4; color: #15803d; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600;">💰 ${escapeHtml(job.salary_formatted || 'আলোচনা সাপেক্ষে')}</span>
+                                ${job.location ? `<span style="background: #f8fafc; color: #64748b; font-size: 11px; padding: 2px 8px; border-radius: 4px;">📌 ${escapeHtml(job.location)}</span>` : ''}
+                            </div>
+                            ${job.description ? `<div style="font-size: 12px; color: #475569; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(job.description)}</div>` : ''}
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--fb-text-secondary); border-top: 1px dashed var(--fb-border); padding-top: 6px; margin-top: 2px;">
+                                <span>👥 ${job.applications_count || 0} জন আবেদন করেছেন</span>
+                                <span>⏰ শেষ তারিখ: ${job.deadline ? new Date(job.deadline).toLocaleDateString('bn-BD') : 'উন্মুক্ত'}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 24px;">চাকরির তালিকা লোড করা যায়নি।</div>';
+            }
+        }
+
+        async function loadMyJobApplications() {
+            const container = document.getElementById('myApplicationsContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--fb-text-secondary);"><span style="font-size: 20px;">⏳</span> আপনার আবেদনসমূহ লোড হচ্ছে...</div>';
+
+            try {
+                const res = await fetch('/api/v1/jobs/my/applications', {
+                    headers: { 'Authorization': `Bearer ${currentToken}`, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                const apps = Array.isArray(data.data) ? data.data : [];
+
+                const countBadge = document.getElementById('myApplicationsCount');
+                if (countBadge) countBadge.innerText = apps.length;
+
+                if (apps.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: var(--fb-text-secondary); padding: 36px 16px;">
+                            <div style="font-size: 34px; margin-bottom: 8px;">📄</div>
+                            <div style="font-weight: 700; font-size: 15px; color: #1e293b;">এখনো কোনো চাকরির আবেদন করেননি</div>
+                            <div style="font-size: 12px; margin-top: 4px;">চাকরির সার্কুলার ট্যাব থেকে পছন্দের পদে আবেদন দাখিল করুন।</div>
+                            <button class="post-btn" style="margin-top: 14px; background: #0284c7; color: white; padding: 6px 14px; font-size: 12px; border-radius: 6px; font-weight: 700;" onclick="switchJobTab('all')">🔍 চাকরির সার্কুলার দেখুন</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = apps.map(app => {
+                    const statusInfo = app.status_info || { label_bn: 'বিবেচনাধীন', color: '#f59e0b', bg_color: '#fef3c7' };
+                    const job = app.job_posting || {};
+
+                    return `
+                        <div class="fb-card" style="padding: 14px; border: 1px solid var(--fb-border); border-radius: 10px; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                                <div>
+                                    <div style="font-weight: 800; font-size: 14.5px; color: #0f172a;">${escapeHtml(job.title || 'চাকরি')}</div>
+                                    <div style="font-size: 12px; color: #0284c7; font-weight: 600;">${escapeHtml(job.company_name || 'প্রতিষ্ঠান')}</div>
+                                </div>
+                                <span style="background: ${statusInfo.bg_color}; color: ${statusInfo.color}; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">
+                                    ${statusInfo.label_bn}
+                                </span>
+                            </div>
+                            <div style="font-size: 12px; color: #475569; display: flex; flex-direction: column; gap: 3px;">
+                                <div><strong>প্রত্যাশিত বেতন:</strong> ${app.expected_salary ? app.expected_salary + ' BDT' : 'উল্লেখ নেই'}</div>
+                                ${app.resume_url ? `<div><strong>সিভি লিংক:</strong> <a href="${escapeHtml(app.resume_url)}" target="_blank" style="color: #0284c7; text-decoration: underline;">রেজুমে ফাইল দেখুন ↗</a></div>` : ''}
+                                ${app.cover_letter ? `<div style="margin-top: 2px; font-style: italic; color: #64748b;">"${escapeHtml(app.cover_letter.slice(0, 100))}${app.cover_letter.length > 100 ? '...' : ''}"</div>` : ''}
+                            </div>
+                            <div style="font-size: 11px; color: var(--fb-text-secondary); border-top: 1px dashed var(--fb-border); padding-top: 6px;">
+                                আবেদনের তারিখ: ${app.created_at ? new Date(app.created_at).toLocaleDateString('bn-BD') : 'সম্প্রতি'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 24px;">আবেদনের তথ্য লোড করা যায়নি।</div>';
+            }
+        }
+
+        function openApplyJobModal(jobId, title, company) {
+            document.getElementById('applyJobId').value = jobId;
+            document.getElementById('applyModalJobTitle').innerText = title;
+            document.getElementById('applyModalCompanyName').innerText = company;
+            if (currentUser) {
+                if (document.getElementById('applyFullName') && !document.getElementById('applyFullName').value) {
+                    document.getElementById('applyFullName').value = currentUser.name || '';
+                }
+                if (document.getElementById('applyEmail') && !document.getElementById('applyEmail').value) {
+                    document.getElementById('applyEmail').value = currentUser.email || '';
+                }
+            }
+            document.getElementById('applyJobModal').style.display = 'flex';
+        }
+
+        function closeApplyJobModal() {
+            document.getElementById('applyJobModal').style.display = 'none';
+        }
+
+        async function submitJobApplication(event) {
+            if (event) event.preventDefault();
+            const jobId = document.getElementById('applyJobId')?.value;
+            const full_name = document.getElementById('applyFullName')?.value?.trim();
+            const phone = document.getElementById('applyPhone')?.value?.trim();
+            const email = document.getElementById('applyEmail')?.value?.trim();
+            const expected_salary = document.getElementById('applyExpectedSalary')?.value;
+            const portfolio_url = document.getElementById('applyPortfolioUrl')?.value?.trim();
+            const resume_url = document.getElementById('applyResumeUrl')?.value?.trim();
+            const cover_letter = document.getElementById('applyCoverLetter')?.value?.trim();
+            const btn = document.getElementById('btnSubmitJobApplication');
+
+            if (!jobId || !full_name || !phone || !email || !resume_url) {
+                showToast('অনুগ্রহ করে আবশ্যক তথ্যগুলো পূরণ করুন।');
+                return;
+            }
+
+            if (btn) { btn.disabled = true; btn.innerText = 'আবেদন দাখিল হচ্ছে...'; }
+
+            try {
+                const res = await fetch(`/api/v1/jobs/${jobId}/apply`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        full_name,
+                        phone,
+                        email,
+                        expected_salary: expected_salary ? parseFloat(expected_salary) : null,
+                        portfolio_url: portfolio_url || null,
+                        resume_url,
+                        cover_letter: cover_letter || null
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    closeApplyJobModal();
+                    showToast('আপনার চাকরির আবেদন সফলভাবে গৃহীত হয়েছে! 🚀');
+                    loadJobs();
+                } else {
+                    showToast(data.message || 'আবেদন দাখিল ব্যর্থ হয়েছে।');
+                }
+            } catch (e) {
+                showToast('ত্রুটি: ' + e.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = 'আবেদন নিশ্চিত করুন 🚀'; }
+            }
+        }
+
+        function openCreateJobModal() {
+            document.getElementById('createJobModal').style.display = 'flex';
+        }
+
+        function closeCreateJobModal() {
+            document.getElementById('createJobModal').style.display = 'none';
+        }
+
+        async function submitCreateJobPosting(event) {
+            if (event) event.preventDefault();
+            const title = document.getElementById('createJobTitle')?.value?.trim();
+            const company_name = document.getElementById('createJobCompany')?.value?.trim();
+            const employment_type = document.getElementById('createJobEmploymentType')?.value;
+            const location = document.getElementById('createJobLocation')?.value?.trim();
+            const location_type = document.getElementById('createJobLocationType')?.value;
+            const salary_min = document.getElementById('createJobSalaryMin')?.value;
+            const salary_max = document.getElementById('createJobSalaryMax')?.value;
+            const deadline = document.getElementById('createJobDeadline')?.value;
+            const is_negotiable = document.getElementById('createJobNegotiable')?.checked || false;
+            const description = document.getElementById('createJobDescription')?.value?.trim();
+            const requirements = document.getElementById('createJobRequirements')?.value?.trim();
+            const btn = document.getElementById('btnSubmitCreateJob');
+
+            if (!title || !company_name || !location || !deadline || !description) {
+                showToast('অনুগ্রহ করে আবশ্যক তথ্যগুলো পূরণ করুন।');
+                return;
+            }
+
+            if (btn) { btn.disabled = true; btn.innerText = 'সার্কুলার প্রকাশ হচ্ছে...'; }
+
+            try {
+                const res = await fetch('/api/v1/jobs', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title,
+                        company_name,
+                        employment_type,
+                        location,
+                        location_type,
+                        salary_min: salary_min ? parseFloat(salary_min) : null,
+                        salary_max: salary_max ? parseFloat(salary_max) : null,
+                        salary_currency: 'BDT',
+                        is_negotiable,
+                        deadline,
+                        description,
+                        requirements: requirements || null
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    closeCreateJobModal();
+                    showToast('চাকরির নিয়োগ বিজ্ঞপ্তি সফলভাবে প্রকাশিত হয়েছে! 🎉');
+                    document.getElementById('createJobTitle').value = '';
+                    document.getElementById('createJobCompany').value = '';
+                    document.getElementById('createJobLocation').value = '';
+                    document.getElementById('createJobSalaryMin').value = '';
+                    document.getElementById('createJobSalaryMax').value = '';
+                    document.getElementById('createJobDeadline').value = '';
+                    document.getElementById('createJobDescription').value = '';
+                    if (document.getElementById('createJobRequirements')) document.getElementById('createJobRequirements').value = '';
+                    loadJobs();
+                } else {
+                    showToast(data.message || 'বিজ্ঞপ্তি প্রকাশ ব্যর্থ হয়েছে।');
+                }
+            } catch (e) {
+                showToast('ত্রুটি: ' + e.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = 'সার্কুলার প্রকাশ করুন 🎉'; }
+            }
+        }
+
+        /* ------------------------------------------------------------- */
+        /* COMMUNITY EVENTS (REAL DATABASE API & RSVP) */
+        /* ------------------------------------------------------------- */
+        let currentEventFilter = 'all';
 
         function openEventsModal() {
             document.getElementById('eventsModal').style.display = 'flex';
-            const container = document.getElementById('eventsListContainer');
-            container.innerHTML = sampleEvents.map(ev => `
-                <div class="fb-card" style="padding: 14px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="font-weight: 800; font-size: 15px;">${ev.title}</div>
-                        <div style="font-size: 12px; color: #f7b125; font-weight: 700; margin: 2px 0;">📅 ${ev.date}</div>
-                        <div style="font-size: 12px; color: var(--fb-text-secondary);">📍 ${ev.location}</div>
-                        <div style="font-size: 11px; color: var(--fb-text-secondary); margin-top: 4px;">👥 ${ev.going} জন আগ্রহী</div>
-                    </div>
-                    <button class="post-btn" id="event-btn-${ev.id}" style="background: #e7f3ff; color: #1877f2; border-radius: 16px; padding: 6px 14px; font-size: 13px;" onclick="rsvpEvent(${ev.id})">⭐ আগ্রহী</button>
-                </div>
-            `).join('');
+            loadEvents();
         }
+
         function closeEventsModal() {
             document.getElementById('eventsModal').style.display = 'none';
         }
-        function rsvpEvent(id) {
-            const btn = document.getElementById(`event-btn-${id}`);
-            if (btn) {
-                if (btn.innerText.includes('আগ্রহী')) {
-                    btn.innerText = '✔️ যাচ্ছি (Going)';
-                    btn.style.background = '#42b72a';
-                    btn.style.color = 'white';
-                    showToast('অনুষ্ঠানে যোগ দেওয়ার জন্য ধন্যবাদ! ইভেন্টটি আপনার ক্যালেন্ডারে যুক্ত হয়েছে।');
-                } else {
-                    btn.innerText = '⭐ আগ্রহী';
-                    btn.style.background = '#e7f3ff';
-                    btn.style.color = '#1877f2';
-                    showToast('স্ট্যাটাস আপডেট হয়েছে।');
+
+        function filterEvents(type, btn) {
+            currentEventFilter = type;
+            document.querySelectorAll('#eventsModal .category-pill').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            loadEvents();
+        }
+
+        async function loadEvents() {
+            const container = document.getElementById('eventsListContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align: center; color: var(--fb-text-secondary); padding: 24px;">⏳ অনুষ্ঠানসমূহ লোড হচ্ছে...</div>';
+
+            try {
+                let url = '/api/v1/events';
+                if (currentEventFilter && currentEventFilter !== 'all') {
+                    url += `?location_type=${encodeURIComponent(currentEventFilter)}`;
                 }
+                const res = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                const json = await res.json();
+                const events = Array.isArray(json.data) ? json.data : (json.data?.data || []);
+
+                if (events.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: var(--fb-text-secondary); padding: 36px 16px;">
+                            <div style="font-size: 40px; margin-bottom: 8px;">📅</div>
+                            <div style="font-size: 15px; font-weight: 700; color: var(--fb-text-primary);">কোনো আসন্ন অনুষ্ঠান পাওয়া যায়নি</div>
+                            <div style="font-size: 13px; margin-top: 4px;">নতুন কোনো মিটআপ, সেমিনার বা ওয়ার্কশপ আয়োজন করতে উপরের বাটনে ক্লিক করুন।</div>
+                            <button type="button" class="modal-btn-submit" style="margin-top: 14px; width: auto; padding: 0 16px;" onclick="openCreateEventModal()">
+                                ➕ নতুন ইভেন্ট তৈরি করুন
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = events.map(ev => {
+                    const isGoing = ev.user_rsvp === 'going';
+                    const isInterested = ev.user_rsvp === 'interested';
+                    const locationLabel = ev.location_type === 'online' ? '🌐 অনলাইন ইভেন্ট' : (ev.address ? `📍 ${ev.address}` : '📍 সরাসরি ভেন্যুতে');
+
+                    return `
+                        <div class="fb-card" id="event-card-${ev.id}" style="padding: 14px; border: 1px solid var(--fb-border); border-radius: 10px; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 800; font-size: 15.5px; color: var(--fb-text-primary);">${ev.title}</div>
+                                    <div style="font-size: 12.5px; color: #d97706; font-weight: 700; margin: 4px 0 2px;">📅 ${ev.start_time_formatted || ''}</div>
+                                    <div style="font-size: 12px; color: var(--fb-text-secondary);">${locationLabel}</div>
+                                    ${ev.online_link ? `<a href="${ev.online_link}" target="_blank" style="font-size: 11.5px; color: #1877f2; text-decoration: underline; margin-top: 2px; display: inline-block;">🔗 মিটিং লিংকে যান</a>` : ''}
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+                                    <button class="post-btn" id="event-going-btn-${ev.id}" style="${isGoing ? 'background: #10b981; color: white;' : 'background: #e7f3ff; color: #1877f2;'} border-radius: 14px; padding: 5px 12px; font-size: 12px; font-weight: 700;" onclick="rsvpEvent(${ev.id}, 'going')">
+                                        ${isGoing ? '✔️ যাচ্ছি' : 'যাব'}
+                                    </button>
+                                    <button class="post-btn" id="event-int-btn-${ev.id}" style="${isInterested ? 'background: #f59e0b; color: white;' : 'background: var(--fb-hover); color: var(--fb-text-secondary);'} border-radius: 14px; padding: 4px 10px; font-size: 11px;" onclick="rsvpEvent(${ev.id}, 'interested')">
+                                        ${isInterested ? '⭐ আগ্রহী আছেন' : '⭐ আগ্রহী'}
+                                    </button>
+                                </div>
+                            </div>
+                            ${ev.description ? `<div style="font-size: 13px; color: var(--fb-text-secondary); line-height: 1.4; margin-top: 4px;">${ev.description}</div>` : ''}
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--fb-divider); padding-top: 8px; margin-top: 4px; font-size: 11.5px; color: var(--fb-text-secondary);">
+                                <span id="event-counts-${ev.id}">👥 <b>${ev.going_count || 0}</b> জন যাচ্ছেন · <b>${ev.interested_count || 0}</b> জন আগ্রহী</span>
+                                <span>আয়োজক: <b>${ev.creator?.name || 'কমিউনিটি মেম্বার'}</b></span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 20px;">ইভেন্ট লোড করতে সমস্যা হয়েছে।</div>';
+            }
+        }
+
+        async function rsvpEvent(id, status = 'going') {
+            try {
+                const res = await fetch(`/api/v1/events/${id}/rsvp`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({ status })
+                });
+                const json = await res.json();
+                if (res.ok && json.data) {
+                    showToast(json.message || 'আরএসভিপি আপডেট হয়েছে!');
+                    loadEvents();
+                } else {
+                    showToast(json.message || 'আপডেট করা যায়নি।');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('সার্ভার যোগাযোগ ত্রুটি।');
+            }
+        }
+
+        function openCreateEventModal() {
+            document.getElementById('createEventModal').style.display = 'flex';
+        }
+
+        function closeCreateEventModal() {
+            document.getElementById('createEventModal').style.display = 'none';
+        }
+
+        async function submitCreateEvent(e) {
+            e.preventDefault();
+            const title = document.getElementById('eventTitleInput').value.trim();
+            const start_time = document.getElementById('eventStartTimeInput').value;
+            const location_type = document.getElementById('eventLocationTypeSelect').value;
+            const address = document.getElementById('eventAddressInput').value.trim();
+            const online_link = document.getElementById('eventOnlineLinkInput').value.trim();
+            const description = document.getElementById('eventDescriptionInput').value.trim();
+
+            if (!title || !start_time) {
+                alert('অনুগ্রহ করে শিরোনাম ও শুরুর সময় প্রদান করুন।');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitCreateEvent');
+            btn.disabled = true;
+            btn.innerText = 'প্রকাশ হচ্ছে... ⏳';
+
+            try {
+                const res = await fetch('/api/v1/events', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({
+                        title,
+                        start_time,
+                        location_type,
+                        address: address || undefined,
+                        online_link: online_link || undefined,
+                        description: description || undefined
+                    })
+                });
+                const json = await res.json();
+                if (res.ok && (json.status === 'success' || json.data)) {
+                    closeCreateEventModal();
+                    showToast('নতুন অনুষ্ঠান সফলভাবে তৈরি হয়েছে! 🎉');
+                    document.getElementById('eventTitleInput').value = '';
+                    document.getElementById('eventStartTimeInput').value = '';
+                    document.getElementById('eventAddressInput').value = '';
+                    document.getElementById('eventOnlineLinkInput').value = '';
+                    document.getElementById('eventDescriptionInput').value = '';
+                    loadEvents();
+                } else {
+                    showToast(json.message || 'অনুষ্ঠান তৈরি ব্যর্থ হয়েছে।');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('সার্ভার যোগাযোগে সমস্যা হয়েছে।');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'ইভেন্ট প্রকাশ করুন 🎉';
             }
         }
 
@@ -10011,6 +11042,23 @@
                 fetchStories();
                 fetchConversations();
                 loadNotifications();
+            }
+
+            // Tab parameter auto-opener (e.g. /dashboard?tab=saved or /jobs redirect)
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('tab');
+            if (activeTab === 'saved') {
+                openSavedPostsModal();
+            } else if (activeTab === 'memories') {
+                openMemoriesModal();
+            } else if (activeTab === 'events') {
+                openEventsModal();
+            } else if (activeTab === 'jobs') {
+                openJobsModal();
+            } else if (activeTab === 'pages') {
+                openPagesModal();
+            } else if (activeTab === 'groups') {
+                switchMainTab('groups');
             }
         });
     </script>

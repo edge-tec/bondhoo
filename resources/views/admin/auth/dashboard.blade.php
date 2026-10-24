@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>অথেন্টিকেশন ও সিকিউরিটি অ্যাডমিন ড্যাশবোর্ড — Bondhoo</title>
+    <title>অথেন্টিকেশন ও সিকিউরিটি অ্যাডমিন ড্যাশবোর্ড — SocialHub</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
-    <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="admin-token" content="{{ $adminToken ?? session('admin_api_token') ?? '' }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -159,8 +158,15 @@
 <body>
     <header>
         <div class="logo-box" style="display: flex; align-items: center; gap: 10px;">
-            <img src="/images/bondhoo-icon.png" alt="Bondhoo" style="width: 32px; height: 32px; object-fit: contain;">
-            <span class="logo-title">Bondhoo Admin</span>
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:#1877f2;color:#fff;box-shadow:0 2px 6px rgba(24,119,242,0.35);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </span>
+            <span class="logo-title">SocialHub Admin</span>
             <span class="badge-gov">Enterprise Authentication Console</span>
         </div>
         <div class="header-actions">
@@ -246,6 +252,13 @@
                 <div id="statTotalLogins" class="widget-val blue">--</div>
                 <div class="widget-sub">সর্বমোট লগইন প্রচেষ্টা</div>
             </div>
+
+            <!-- 9. Citizen Identity Verification Queue -->
+            <div class="widget-card purple" style="cursor: pointer;" onclick="switchTab('verifications')">
+                <div class="widget-title">🛡️ Identity Verification</div>
+                <div id="statVerificationQueue" class="widget-val purple">--</div>
+                <div id="statVerificationQueueSub" class="widget-sub">অপেক্ষমান আবেদনসমূহ</div>
+            </div>
         </div>
 
         <!-- Navigation Tabs -->
@@ -260,6 +273,7 @@
             <button class="tab-btn" data-tab="audits" onclick="switchTab('audits')">📜 অডিট ট্রেইল</button>
             <button class="tab-btn" data-tab="media" onclick="switchTab('media')">📹 মিডিয়া ও রিসোর্স কন্ট্রোল</button>
             <button class="tab-btn" data-tab="smtp" onclick="switchTab('smtp')">📧 SMTP ও ইমেইল ম্যানেজমেন্ট</button>
+            <button class="tab-btn" data-tab="verifications" onclick="switchTab('verifications')">🛡️ পরিচয় ভেরিফিকেশন কিউ</button>
         </div>
 
         <!-- TAB 1: USERS -->
@@ -590,7 +604,7 @@
                         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">SMTP Host *</label>
-                                <input type="text" id="smtpHost" class="search-input" style="width: 100%;" placeholder="e.g. mail.bondhoo.com" value="{{ $smtpSettings['mail_host'] ?? '' }}" required>
+                                <input type="text" id="smtpHost" class="search-input" style="width: 100%;" placeholder="e.g. mail.socialhub.com" value="{{ $smtpSettings['mail_host'] ?? '' }}" required>
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Port *</label>
@@ -627,18 +641,18 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">From Email *</label>
-                                <input type="email" id="smtpFromAddress" class="search-input" style="width: 100%;" placeholder="noreply@bondhoo.com" value="{{ $smtpSettings['mail_from_address'] ?? '' }}" required>
+                                <input type="email" id="smtpFromAddress" class="search-input" style="width: 100%;" placeholder="noreply@socialhub.com" value="{{ $smtpSettings['mail_from_address'] ?? '' }}" required>
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">From Name *</label>
-                                <input type="text" id="smtpFromName" class="search-input" style="width: 100%;" placeholder="Bondhoo" value="{{ $smtpSettings['mail_from_name'] ?? 'Bondhoo' }}" required>
+                                <input type="text" id="smtpFromName" class="search-input" style="width: 100%;" placeholder="SocialHub" value="{{ $smtpSettings['mail_from_name'] ?? 'SocialHub' }}" required>
                             </div>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Reply-To Email</label>
-                                <input type="email" id="smtpReplyTo" class="search-input" style="width: 100%;" placeholder="support@bondhoo.com" value="{{ $smtpSettings['mail_reply_to'] ?? '' }}">
+                                <input type="email" id="smtpReplyTo" class="search-input" style="width: 100%;" placeholder="support@socialhub.com" value="{{ $smtpSettings['mail_reply_to'] ?? '' }}">
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Rate Limit (প্রতি মিনিটে)</label>
@@ -681,7 +695,7 @@
                     <div style="margin-bottom: 16px;">
                         <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 6px;">২. টেস্ট ইমেইল প্রাপক (Recipient):</label>
                         <div style="display: flex; gap: 8px;">
-                            <input type="email" id="smtpTestRecipient" class="search-input" style="flex: 1;" placeholder="admin@bondhoo.com">
+                            <input type="email" id="smtpTestRecipient" class="search-input" style="flex: 1;" placeholder="admin@socialhub.com">
                             <button type="button" id="btnSendTestEmail" class="btn-export green" onclick="sendTestSmtpEmail()">টেস্ট পাঠান ✉️</button>
                         </div>
                     </div>
@@ -755,6 +769,149 @@
                         <tr><td colspan="8" style="text-align: center; padding: 24px;">লগ লোড হচ্ছে...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- TAB 11: CITIZEN IDENTITY VERIFICATION QUEUE -->
+        <div id="tabVerifications" style="display: none;">
+            <div class="controls-bar">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; flex: 1;">
+                    <input type="text" id="verificationSearch" class="search-input" placeholder="নাগরিক নাম, ইউজারনেম, এনআইডি বা পাসপোর্ট..." oninput="debounceSearchVerifications()">
+                    <select id="verificationStatusFilter" class="filter-select" onchange="loadVerifications(1)">
+                        <option value="">সকল স্ট্যাটাস</option>
+                        <option value="pending" selected>অপেক্ষমান (Pending)</option>
+                        <option value="verified">অনুমোদিত (Verified)</option>
+                        <option value="needs_info">অতিরিক্ত তথ্য প্রয়োজন (Needs Info)</option>
+                        <option value="rejected">বাতিলকৃত (Rejected)</option>
+                    </select>
+                    <select id="verificationTypeFilter" class="filter-select" onchange="loadVerifications(1)">
+                        <option value="">সকল নথির ধরন</option>
+                        <option value="nid">জাতীয় পরিচয়পত্র (NID)</option>
+                        <option value="passport">পাসপোর্ট (Passport)</option>
+                        <option value="driving_license">ড্রাইভিং লাইসেন্স</option>
+                        <option value="organizational">প্রাতিষ্ঠানিক ডকুমেন্ট</option>
+                    </select>
+                </div>
+                <div class="export-group">
+                    <button type="button" class="btn-export secondary" onclick="loadVerifications(1)">
+                        🔄 রিফ্রেশ তালিকা
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">আইডি</th>
+                            <th>নাগরিক / আবেদনকারী</th>
+                            <th>নথির ধরন</th>
+                            <th>ডকুমেন্ট নম্বর</th>
+                            <th>আবেদনের সময়</th>
+                            <th>বর্তমান অবস্থা</th>
+                            <th style="text-align: right;">পর্যালোচনা ও একশন</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verificationsTableBody">
+                        <tr><td colspan="7" style="text-align: center; padding: 24px;">ভেরিফিকেশন আবেদন লোড হচ্ছে...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div id="verificationsPagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 13px; color: var(--fb-text-secondary);">
+                <div id="verificationsPageInfo">০ টি আবেদনের মধ্যে ০ টি প্রদর্শিত</div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" id="btnPrevVerifications" class="btn-act" onclick="changeVerificationsPage(-1)" disabled>&laquo; পূর্ববর্তী</button>
+                    <button type="button" id="btnNextVerifications" class="btn-act" onclick="changeVerificationsPage(1)" disabled>পরবর্তী &raquo;</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CITIZEN VERIFICATION REVIEW MODAL -->
+        <div id="verificationReviewModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+            <div style="background: white; border-radius: 12px; width: 100%; max-width: 840px; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 35px rgba(0,0,0,0.35);">
+                <!-- Header -->
+                <div style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h4 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 0;">🛡️ নাগরিক পরিচয় ভেরিফিকেশন পর্যালোচনা</h4>
+                        <span id="reviewModalStatusBadge" class="badge-gov">অপেক্ষমান</span>
+                    </div>
+                    <button type="button" onclick="closeVerificationReviewModal()" style="border: none; background: none; font-size: 22px; cursor: pointer; color: #64748b; padding: 0 4px;">&times;</button>
+                </div>
+
+                <!-- Scrollable Content -->
+                <div style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px;">
+                    <!-- User & Request Info Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div>
+                            <div style="font-size: 11px; color: #64748b; font-weight: 600;">নাগরিক / ব্যবহারকারী</div>
+                            <div id="reviewUserName" style="font-size: 14px; font-weight: 700; color: #0f172a;">--</div>
+                            <div id="reviewUserEmailPhone" style="font-size: 12px; color: #64748b;">--</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: #64748b; font-weight: 600;">নথির ধরন ও নম্বর</div>
+                            <div id="reviewDocType" style="font-size: 14px; font-weight: 700; color: #0f172a;">--</div>
+                            <div id="reviewDocNumber" style="font-size: 12px; font-family: monospace; color: #0284c7;">--</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: #64748b; font-weight: 600;">আবেদনের সময়</div>
+                            <div id="reviewSubmittedAt" style="font-size: 13px; font-weight: 600; color: #334155;">--</div>
+                            <div id="reviewReviewedBy" style="font-size: 11px; color: #64748b;">পর্যালোচক: এখনও হয়নি</div>
+                        </div>
+                    </div>
+
+                    <!-- Documents Preview Section -->
+                    <div>
+                        <h5 style="font-size: 13px; font-weight: 700; color: #334155; margin: 0 0 10px 0;">দাখিলকৃত আইডেন্টিটি ডকুমেন্টস ও সেলফি</h5>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+                            <!-- Front Document -->
+                            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fafafa; text-align: center;">
+                                <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">📄 ডকুমেন্টের সম্মুখভাগ (Front)</div>
+                                <div id="reviewFrontPreview" style="min-height: 140px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 6px; border: 1px dashed #cbd5e1; overflow: hidden; padding: 4px;">
+                                    <span style="color: #94a3b8; font-size: 12px;">কোনো ছবি নেই</span>
+                                </div>
+                            </div>
+
+                            <!-- Back Document -->
+                            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fafafa; text-align: center;">
+                                <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">📄 ডকুমেন্টের পেছনের ভাগ (Back)</div>
+                                <div id="reviewBackPreview" style="min-height: 140px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 6px; border: 1px dashed #cbd5e1; overflow: hidden; padding: 4px;">
+                                    <span style="color: #94a3b8; font-size: 12px;">কোনো ছবি নেই</span>
+                                </div>
+                            </div>
+
+                            <!-- Selfie Document -->
+                            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fafafa; text-align: center;">
+                                <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">🤳 লাইভ সেলফি / ভেরিফিকেশন ফটো</div>
+                                <div id="reviewSelfiePreview" style="min-height: 140px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 6px; border: 1px dashed #cbd5e1; overflow: hidden; padding: 4px;">
+                                    <span style="color: #94a3b8; font-size: 12px;">কোনো ছবি নেই</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Notes / Rejection Reason Input -->
+                    <div>
+                        <label for="reviewAdminNotes" style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                            প্রশাসনিক মন্তব্য বা পর্যালোচনার নোট (বাতিল বা রিকোয়েস্ট ইনফোর ক্ষেত্রে আবশ্যক, নতুবা ঐচ্ছিক):
+                        </label>
+                        <textarea id="reviewAdminNotes" rows="3" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; font-size: 13px; font-family: inherit; box-sizing: border-box;" placeholder="প্রয়োজনে কারণ বা দিকনির্দেশনা লিখুন..."></textarea>
+                    </div>
+
+                    <div id="reviewActionFeedback" style="display: none; padding: 10px; border-radius: 6px; font-size: 13px;"></div>
+                </div>
+
+                <!-- Footer with Action Buttons -->
+                <div style="padding: 14px 20px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <button type="button" class="btn-act" onclick="closeVerificationReviewModal()">বন্ধ করুন</button>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" id="btnReviewReject" class="btn-act red" onclick="submitVerificationDecision('reject')">❌ বাতিল করুন</button>
+                        <button type="button" id="btnReviewNeedInfo" class="btn-act" style="color: #0284c7; border-color: #7dd3fc;" onclick="submitVerificationDecision('request-info')">❓ তথ্য চান</button>
+                        <button type="button" id="btnReviewApprove" class="btn-act green" style="font-weight: 700; padding: 6px 14px;" onclick="submitVerificationDecision('approve')">✅ অনুমোদন ও ব্লু ব্যাজ প্রদান</button>
+                        <button type="button" id="btnReviewRevoke" class="btn-act red" style="display: none;" onclick="submitVerificationDecision('revoke')">⚠️ ব্যাজ প্রত্যাহার</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -892,6 +1049,21 @@
                     // 8. Login Analytics
                     document.getElementById('statTotalLogins').innerText = d.login_analytics?.total ?? 0;
 
+                    // 9. Pending Verifications Queue Stat
+                    try {
+                        const verRes = await adminFetch('/api/v2/admin/verifications?status=pending&per_page=1');
+                        const verJson = await verRes.json();
+                        if (verJson.success && verJson.data) {
+                            const pendingCount = verJson.data.total ?? 0;
+                            const el = document.getElementById('statVerificationQueue');
+                            if (el) el.innerText = pendingCount;
+                            const elSub = document.getElementById('statVerificationQueueSub');
+                            if (elSub) elSub.innerText = `${pendingCount} টি নাগরিক আবেদন অপেক্ষমান`;
+                        }
+                    } catch (e) {
+                        console.error('Verification stat load error:', e);
+                    }
+
                     const curTab = localStorage.getItem('admin_active_tab');
                     if (curTab === 'analytics') {
                         renderAnalytics();
@@ -904,7 +1076,7 @@
 
         // --- TAB SWITCHING ---
         function switchTab(tab) {
-            const validTabs = ['users', 'sessions', 'failed', 'otps', 'emails', 'passwords', 'analytics', 'audits', 'media', 'smtp'];
+            const validTabs = ['users', 'sessions', 'failed', 'otps', 'emails', 'passwords', 'analytics', 'audits', 'media', 'smtp', 'verifications'];
             if (!validTabs.includes(tab)) {
                 tab = 'users';
             }
@@ -936,6 +1108,7 @@
             if (tab === 'audits') loadAudits();
             if (tab === 'media') loadMediaMetrics();
             if (tab === 'smtp') loadSmtpTab();
+            if (tab === 'verifications') loadVerifications();
         }
 
         // --- USERS MANAGEMENT ---
@@ -1496,7 +1669,7 @@
                 mail_username: username ? username : null,
                 mail_encryption: document.getElementById('smtpEncryption').value,
                 mail_from_address: fromAddr,
-                mail_from_name: fromName || 'Bondhoo',
+                mail_from_name: fromName || 'SocialHub',
                 mail_reply_to: replyTo ? replyTo : null,
                 timeout: parseInt(document.getElementById('smtpTimeout').value) || 30,
                 rate_limit_per_minute: parseInt(document.getElementById('smtpRateLimit').value) || 60,
@@ -1627,8 +1800,7 @@
                                 <strong style="font-size: 13px;">❌ কানেকশন ব্যর্থ হয়েছে</strong>
                                 ${json.details?.latency_ms ? `<span style="background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 999px; font-weight: 700; font-size: 11px;">${json.details.latency_ms} ms</span>` : ''}
                             </div>
-                            <div style="margin-top: 4px; font-size: 12px;">${json.message || 'SMTP সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি।'}</div>
-                            <div style="margin-top: 6px; padding: 6px 8px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; font-family: monospace; font-size: 11px; word-break: break-all;">${errText}</div>
+                                                                                                                                                             <div style="margin-top: 6px; padding: 6px 8px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; font-family: monospace; font-size: 11px; word-break: break-all;">${errText}</div>
                             <div style="margin-top: 6px; font-size: 11px; opacity: 0.9;">${hint}</div>
                         `;
                     }
@@ -1942,6 +2114,328 @@
 
         function setPreviewWidth(w) {
             document.getElementById('templatePreviewIframe').style.width = w;
+        }
+
+        // ==========================================
+        // CITIZEN IDENTITY VERIFICATION QUEUE LOGIC
+        // ==========================================
+        let verificationSearchTimeout;
+        let currentVerificationsPage = 1;
+        let totalVerificationsPages = 1;
+        let activeVerificationDetail = null;
+
+        function debounceSearchVerifications() {
+            clearTimeout(verificationSearchTimeout);
+            verificationSearchTimeout = setTimeout(() => {
+                loadVerifications(1);
+            }, 350);
+        }
+
+        async function loadVerifications(page = 1) {
+            currentVerificationsPage = page;
+            const search = document.getElementById('verificationSearch')?.value?.trim() || '';
+            const status = document.getElementById('verificationStatusFilter')?.value || '';
+            const type = document.getElementById('verificationTypeFilter')?.value || '';
+            const tbody = document.getElementById('verificationsTableBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 24px;">তথ্য লোড হচ্ছে...</td></tr>';
+            }
+
+            try {
+                const params = new URLSearchParams({
+                    page: page,
+                    per_page: 15
+                });
+                if (search) params.append('search', search);
+                if (status) params.append('status', status);
+                if (type) params.append('verification_type', type);
+
+                const res = await adminFetch(`/api/v2/admin/verifications?${params.toString()}`);
+                const json = await res.json();
+
+                if (!res.ok || !json.success) {
+                    throw new Error(json.message || 'ভেরিফিকেশন তালিকা লোড করতে সমস্যা হয়েছে');
+                }
+
+                const paginator = json.data;
+                const items = paginator.data || [];
+                totalVerificationsPages = paginator.last_page || 1;
+
+                // Update page info
+                const pageInfoEl = document.getElementById('verificationsPageInfo');
+                if (pageInfoEl) {
+                    pageInfoEl.innerText = `${paginator.total || 0} টি আবেদনের মধ্যে পৃষ্ঠা ${paginator.current_page || 1} / ${totalVerificationsPages} (মোট ${items.length} টি প্রদর্শিত)`;
+                }
+                const btnPrev = document.getElementById('btnPrevVerifications');
+                if (btnPrev) btnPrev.disabled = currentVerificationsPage <= 1;
+                const btnNext = document.getElementById('btnNextVerifications');
+                if (btnNext) btnNext.disabled = currentVerificationsPage >= totalVerificationsPages;
+
+                if (items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 32px; color: #64748b;">কোনো ভেরিফিকেশন আবেদন পাওয়া যায়নি।</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = items.map(item => {
+                    const user = item.user || {};
+                    const avatarLetter = (user.name || user.username || 'U').charAt(0).toUpperCase();
+                    const avatarHtml = user.avatar
+                        ? `<img src="${user.avatar}" alt="${user.name}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover;">`
+                        : `<div class="avatar">${avatarLetter}</div>`;
+
+                    const docTypeMap = {
+                        'nid': 'জাতীয় পরিচয়পত্র (NID)',
+                        'passport': 'পাসপোর্ট',
+                        'driving_license': 'ড্রাইভিং লাইসেন্স',
+                        'organizational': 'প্রাতিষ্ঠানিক'
+                    };
+                    const docTypeLabel = docTypeMap[item.verification_type] || item.verification_type || '--';
+
+                    let statusClass = 'status-pending';
+                    let statusLabel = 'অপেক্ষমান';
+                    if (item.status === 'verified' || item.status === 'approved') {
+                        statusClass = 'status-active';
+                        statusLabel = 'অনুমোদিত ও ভেরিফাইড';
+                    } else if (item.status === 'rejected') {
+                        statusClass = 'status-suspended';
+                        statusLabel = 'বাতিলকৃত';
+                    } else if (item.status === 'needs_info') {
+                        statusClass = 'status-pending';
+                        statusLabel = 'তথ্য প্রয়োজন';
+                    }
+
+                    const submitted = item.submitted_at ? new Date(item.submitted_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : (item.created_at ? new Date(item.created_at).toLocaleDateString('bn-BD') : '--');
+
+                    return `
+                        <tr>
+                            <td>#${item.id}</td>
+                            <td>
+                                <div class="user-cell">
+                                    ${avatarHtml}
+                                    <div>
+                                        <div style="font-weight: 700; color: #0f172a;">${user.name || 'অজ্ঞাত'}</div>
+                                        <div style="font-size: 11px; color: #64748b;">@${user.username || 'user'} • ID: ${user.id}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span style="font-weight: 600; color: #334155;">${docTypeLabel}</span>
+                            </td>
+                            <td>
+                                <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #0369a1;">${item.document_number || 'অনুল্লেখিত'}</code>
+                            </td>
+                            <td style="font-size: 12px; color: #64748b;">${submitted}</td>
+                            <td>
+                                <span class="status-badge ${statusClass}">${statusLabel}</span>
+                            </td>
+                            <td style="text-align: right;">
+                                <div class="action-btns" style="justify-content: flex-end;">
+                                    <button type="button" class="btn-act blue" onclick="openVerificationReviewModal(${item.id})">
+                                        🔍 যাচাই ও পর্যালোচনা
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Load verifications error:', err);
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #dc2626;">ত্রুটি: ${err.message}</td></tr>`;
+                }
+            }
+        }
+
+        function changeVerificationsPage(delta) {
+            const next = currentVerificationsPage + delta;
+            if (next >= 1 && next <= totalVerificationsPages) {
+                loadVerifications(next);
+            }
+        }
+
+        async function openVerificationReviewModal(id) {
+            const modal = document.getElementById('verificationReviewModal');
+            const feedback = document.getElementById('reviewActionFeedback');
+            if (feedback) feedback.style.display = 'none';
+            document.getElementById('reviewAdminNotes').value = '';
+
+            try {
+                const res = await adminFetch(`/api/v2/admin/verifications/${id}`);
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    alert('ভেরিফিকেশন বিস্তারিত লোড করা সম্ভব হয়নি: ' + (json.message || 'ত্রুটি'));
+                    return;
+                }
+
+                activeVerificationDetail = json.data;
+                const v = activeVerificationDetail;
+                const user = v.user || {};
+
+                document.getElementById('reviewUserName').innerText = `${user.name || 'অজ্ঞাত'} (@${user.username || 'user'})`;
+                document.getElementById('reviewUserEmailPhone').innerText = `${user.email || 'ইমেইল নেই'} • ${user.phone || 'ফোন নেই'}`;
+
+                const docTypeMap = {
+                    'nid': 'জাতীয় পরিচয়পত্র (NID)',
+                    'passport': 'আন্তর্জাতিক পাসপোর্ট',
+                    'driving_license': 'ড্রাইভিং লাইসেন্স',
+                    'organizational': 'প্রাতিষ্ঠানিক ডকুমেন্ট'
+                };
+                document.getElementById('reviewDocType').innerText = docTypeMap[v.verification_type] || v.verification_type;
+                document.getElementById('reviewDocNumber').innerText = `ডকুমেন্ট নং: ${v.document_number || 'নেই'}`;
+
+                document.getElementById('reviewSubmittedAt').innerText = v.submitted_at
+                    ? new Date(v.submitted_at).toLocaleString('bn-BD')
+                    : (v.created_at ? new Date(v.created_at).toLocaleString('bn-BD') : '--');
+
+                const reviewer = v.admin ? (v.admin.name || v.admin.username) : 'এখনও হয়নি';
+                document.getElementById('reviewReviewedBy').innerText = `পর্যালোচক: ${reviewer}`;
+
+                const badge = document.getElementById('reviewModalStatusBadge');
+                if (badge) {
+                    badge.innerText = v.status.toUpperCase();
+                }
+
+                // Render document images/links
+                renderDocPreview('reviewFrontPreview', v.document_front_url || v.document_front_key);
+                renderDocPreview('reviewBackPreview', v.document_back_url || v.document_back_key);
+                renderDocPreview('reviewSelfiePreview', v.selfie_url || v.selfie_key);
+
+                // Configure buttons based on current status
+                const isVerified = (v.status === 'verified' || v.status === 'approved');
+                const btnApprove = document.getElementById('btnReviewApprove');
+                const btnReject = document.getElementById('btnReviewReject');
+                const btnNeedInfo = document.getElementById('btnReviewNeedInfo');
+                const btnRevoke = document.getElementById('btnReviewRevoke');
+
+                if (isVerified) {
+                    if (btnApprove) btnApprove.style.display = 'none';
+                    if (btnReject) btnReject.style.display = 'none';
+                    if (btnNeedInfo) btnNeedInfo.style.display = 'none';
+                    if (btnRevoke) btnRevoke.style.display = 'inline-block';
+                } else {
+                    if (btnApprove) btnApprove.style.display = 'inline-block';
+                    if (btnReject) btnReject.style.display = 'inline-block';
+                    if (btnNeedInfo) btnNeedInfo.style.display = 'inline-block';
+                    if (btnRevoke) btnRevoke.style.display = 'none';
+                }
+
+                if (v.admin_notes) {
+                    document.getElementById('reviewAdminNotes').value = v.admin_notes;
+                } else if (v.rejection_reason) {
+                    document.getElementById('reviewAdminNotes').value = v.rejection_reason;
+                }
+
+                if (modal) modal.style.display = 'flex';
+            } catch (err) {
+                console.error('Open verification error:', err);
+                alert('অনুরোধ প্রক্রিয়াকরণে সমস্যা: ' + err.message);
+            }
+        }
+
+        function renderDocPreview(containerId, urlOrKey) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            if (!urlOrKey) {
+                container.innerHTML = '<span style="color: #94a3b8; font-size: 12px;">কোনো ছবি দাখিল করা হয়নি</span>';
+                return;
+            }
+
+            const src = urlOrKey.startsWith('http') || urlOrKey.startsWith('/') ? urlOrKey : `/storage/${urlOrKey}`;
+            container.innerHTML = `
+                <div style="position: relative; width: 100%;">
+                    <a href="${src}" target="_blank" rel="noopener noreferrer" title="পূর্ণ আকারে দেখুন">
+                        <img src="${src}" alt="Document" style="max-height: 160px; max-width: 100%; object-fit: contain; border-radius: 4px; display: block; margin: 0 auto;" onerror="this.parentElement.innerHTML='<span style=\\'color:#64748b; font-size:11px;\\'>নথি ফাইল: <a href=\\'${src}\\' target=\\'_blank\\'>ডাউনলোড করুন</a></span>'">
+                    </a>
+                </div>
+            `;
+        }
+
+        function closeVerificationReviewModal() {
+            const modal = document.getElementById('verificationReviewModal');
+            if (modal) modal.style.display = 'none';
+            activeVerificationDetail = null;
+        }
+
+        async function submitVerificationDecision(action) {
+            if (!activeVerificationDetail) return;
+            const id = activeVerificationDetail.id;
+            const notes = document.getElementById('reviewAdminNotes')?.value?.trim() || '';
+            const feedback = document.getElementById('reviewActionFeedback');
+
+            let url = '';
+            let payload = {};
+
+            if (action === 'approve') {
+                if (!confirm('আপনি কি এই নাগরিকের পরিচয় ভেরিফিকেশন অনুমোদন এবং আইডিতে ব্লু ভেরিফাইড ব্যাজ প্রদান করতে নিশ্চিত?')) {
+                    return;
+                }
+                url = `/api/v2/admin/verifications/${id}/approve`;
+                payload = { admin_notes: notes };
+            } else if (action === 'reject') {
+                if (notes.length < 5) {
+                    alert('বাতিল করার জন্য প্রশাসনিক মন্তব্য ঘরে কমপক্ষে ৫ অক্ষরের কারণ উল্লেখ করুন।');
+                    return;
+                }
+                if (!confirm('আপনি কি এই ভেরিফিকেশন আবেদন বাতিল করতে নিশ্চিত?')) {
+                    return;
+                }
+                url = `/api/v2/admin/verifications/${id}/reject`;
+                payload = { rejection_reason: notes, admin_notes: notes };
+            } else if (action === 'request-info') {
+                if (notes.length < 5) {
+                    alert('ব্যবহারকারীর কাছ থেকে তথ্য চাইতে মন্তব্য ঘরে কমপক্ষে ৫ অক্ষরের দিকনির্দেশনা লিখুন।');
+                    return;
+                }
+                url = `/api/v2/admin/verifications/${id}/request-info`;
+                payload = { instructions: notes };
+            } else if (action === 'revoke') {
+                if (notes.length < 5) {
+                    alert('ভেরিফিকেশন স্ট্যাটাস প্রত্যাহারের জন্য কমপক্ষে ৫ অক্ষরের কারণ উল্লেখ করুন।');
+                    return;
+                }
+                if (!confirm('সতর্কতা: এটি ব্যবহারকারীর ব্লু ব্যাজ ও ভেরিফাইড স্ট্যাটাস প্রত্যাহার করবে। নিশ্চিত?')) {
+                    return;
+                }
+                url = `/api/v2/admin/verifications/${id}/revoke`;
+                payload = { revocation_reason: notes };
+            }
+
+            try {
+                if (feedback) {
+                    feedback.style.display = 'block';
+                    feedback.style.background = '#eff6ff';
+                    feedback.style.color = '#1e40af';
+                    feedback.innerText = 'অনুরোধ প্রক্রিয়াকরণ হচ্ছে...';
+                }
+
+                const res = await adminFetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+
+                if (res.ok && json.success) {
+                    alert(json.message || 'কার্যক্রম সফলভাবে সম্পন্ন হয়েছে!');
+                    closeVerificationReviewModal();
+                    loadVerifications(currentVerificationsPage);
+                    loadStats();
+                } else {
+                    const errMsg = json.message || (json.errors ? Object.values(json.errors).flat().join(', ') : 'ত্রুটি ঘটেছে');
+                    if (feedback) {
+                        feedback.style.display = 'block';
+                        feedback.style.background = '#fef2f2';
+                        feedback.style.color = '#dc2626';
+                        feedback.innerText = 'ব্যর্থ: ' + errMsg;
+                    }
+                    alert('ব্যর্থ: ' + errMsg);
+                }
+            } catch (err) {
+                console.error('Submit decision error:', err);
+                alert('অনুরোধ ব্যর্থ: ' + err.message);
+            }
         }
     </script>
 </body>

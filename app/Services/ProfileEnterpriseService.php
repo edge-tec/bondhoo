@@ -6,8 +6,10 @@ namespace App\Services;
 
 use App\Models\CoverPhoto;
 use App\Models\Friendship;
+use App\Models\Media;
 use App\Models\PhotoAlbum;
 use App\Models\PhotoAlbumItem;
+use App\Models\Post;
 use App\Models\ProfilePhoto;
 use App\Models\SavedItem;
 use App\Models\StoryHighlight;
@@ -498,13 +500,62 @@ class ProfileEnterpriseService
             $query->where('collection_name', $collection);
         }
 
-        return $query->latest('id')->get();
+        $items = $query->latest('id')->get();
+
+        // Eager-load post items so the UI gets full post content, author, media
+        $postIds = $items->filter(function (SavedItem $i): bool {
+            $t = strtolower($i->item_type);
+
+            return str_contains($t, 'post');
+        })->pluck('item_id')->unique();
+
+        $posts = $postIds->isNotEmpty()
+            ? Post::with(['user.profile', 'media'])->whereIn('id', $postIds)->get()->keyBy('id')
+            : collect();
+
+        return $items->map(function (SavedItem $saved) use ($posts): SavedItem {
+            $post = $posts->get($saved->item_id);
+            if ($post) {
+                $saved->setRelation('item', $post);
+                $saved->post = [
+                    'id' => $post->id,
+                    'content' => $post->content,
+                    'created_at' => $post->created_at?->toIso8601String(),
+                    'created_at_human' => $post->created_at?->diffForHumans(),
+                    'likes_count' => $post->likes_count ?? $post->reactions_count ?? 0,
+                    'comments_count' => $post->comments_count ?? 0,
+                    'author' => [
+                        'id' => $post->user?->id,
+                        'name' => $post->user?->name,
+                        'username' => $post->user?->username,
+                        'avatar' => $post->user?->avatar_url ?? $post->user?->profile?->avatar_url,
+                    ],
+                    'media' => $post->media?->map(fn ($m) => [
+                        'id' => $m->id,
+                        'url' => $m->file_url ?? $m->url,
+                        'type' => $m->file_type ?? $m->type,
+                    ])->values()->all() ?? [],
+                ];
+            }
+
+            return $saved;
+        });
     }
 
     public function toggleSaveItem(User $user, string $itemType, int $itemId, ?string $collection = 'All Items'): array
     {
+        $normalizedType = match (strtolower(trim($itemType))) {
+            'post', 'posts', 'app\\models\\post' => 'post',
+            'media', 'app\\models\\media' => 'media',
+            default => strtolower(trim($itemType)),
+        };
+
         $existing = SavedItem::where('user_id', $user->id)
-            ->where('item_type', $itemType)
+            ->where(function ($q) use ($normalizedType, $itemType): void {
+                $q->where('item_type', $normalizedType)
+                    ->orWhere('item_type', $itemType)
+                    ->orWhere('item_type', Post::class);
+            })
             ->where('item_id', $itemId)
             ->first();
 
@@ -516,7 +567,7 @@ class ProfileEnterpriseService
 
         $saved = SavedItem::create([
             'user_id' => $user->id,
-            'item_type' => $itemType,
+            'item_type' => $normalizedType,
             'item_id' => $itemId,
             'collection_name' => $collection ?? 'All Items',
         ]);

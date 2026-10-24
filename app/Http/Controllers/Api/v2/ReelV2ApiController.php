@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v2;
 
 use App\Http\Controllers\Controller;
+use App\Models\Page;
 use App\Models\Reel;
 use App\Models\ReelComment;
 use App\Models\User;
@@ -56,6 +57,7 @@ class ReelV2ApiController extends Controller
         $request->merge($raw);
 
         $validated = $request->validate([
+            'page_id' => ['nullable', 'integer', 'exists:pages,id'],
             'media_id' => ['required', 'integer', 'exists:media,id'],
             'caption' => ['nullable', 'string', 'max:2000'],
             'audio_title' => ['nullable', 'string', 'max:100'],
@@ -78,6 +80,25 @@ class ReelV2ApiController extends Controller
             'duet_enabled' => ['nullable', 'boolean'],
             'is_draft' => ['nullable', 'boolean'],
         ]);
+
+        if (! empty($validated['page_id'])) {
+            $page = Page::findOrFail($validated['page_id']);
+            $user = $request->user();
+            $isOwner = (int) $page->owner_id === (int) $user->id;
+            $canManage = $isOwner || in_array($page->getMemberRole($user->id), [
+                Page::ROLE_OWNER,
+                Page::ROLE_ADMIN,
+                Page::ROLE_MANAGER,
+                Page::ROLE_CONTENT_MANAGER,
+                Page::ROLE_MODERATOR,
+            ], true);
+            if (! $canManage) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'এই পেইজের পক্ষে রিল আপলোড করার অনুমতি আপনার নেই।',
+                ], 403);
+            }
+        }
 
         try {
             $reel = $this->reelService->createReel($request->user(), $validated);
@@ -239,6 +260,10 @@ class ReelV2ApiController extends Controller
             ], 410);
         }
 
+        if (! $request->has('type') && $request->has('reaction')) {
+            $request->merge(['type' => $request->input('reaction')]);
+        }
+
         $validated = $request->validate([
             'type' => ['nullable', 'string', 'in:like,love,haha,wow,sad,angry'],
         ]);
@@ -296,6 +321,10 @@ class ReelV2ApiController extends Controller
                 'is_expired' => true,
                 'message' => 'এই রিলটির মেয়াদ শেষ হয়ে গেছে। মন্তব্য করা সম্ভব নয়।',
             ], 410);
+        }
+
+        if (! $request->has('comment') && $request->has('content')) {
+            $request->merge(['comment' => $request->input('content')]);
         }
 
         $validated = $request->validate([
@@ -424,7 +453,7 @@ class ReelV2ApiController extends Controller
     }
 
     /**
-     * রিল শেয়ার করা
+     * রিল শেয়ার করা (স্ট্যাটিস্টিকস / এক্সটার্নাল ট্র্যাকিং)
      */
     public function share(Request $request, Reel $reel): JsonResponse
     {
@@ -443,6 +472,163 @@ class ReelV2ApiController extends Controller
                 'message' => $e->getMessage(),
             ], 410);
         }
+    }
+
+    /**
+     * রিল সরাসরি মেসেজের মাধ্যমে ইউজারদের পাঠানো
+     */
+    public function message(Request $request, Reel $reel): JsonResponse
+    {
+        $validated = $request->validate([
+            'recipient_ids' => ['required', 'array', 'min:1'],
+            'recipient_ids.*' => ['integer', 'exists:users,id'],
+            'message' => ['nullable', 'string', 'max:1000'],
+            'idempotency_key' => ['nullable', 'string', 'max:128'],
+        ]);
+
+        try {
+            $result = $this->reelService->shareToDirectMessages(
+                $reel,
+                $request->user(),
+                $validated['recipient_ids'],
+                $validated['message'] ?? null,
+                $validated['idempotency_key'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reel sent via message successfully.',
+                'data' => $result,
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * রিল নিজের প্রোফাইল / ওয়ালে পোস্ট হিসেবে শেয়ার করা
+     */
+    public function sharePost(Request $request, Reel $reel): JsonResponse
+    {
+        $validated = $request->validate([
+            'caption' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        try {
+            $post = $this->reelService->shareToProfile($reel, $request->user(), $validated['caption'] ?? null);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reel shared to your timeline successfully.',
+                'data' => [
+                    'post' => $post->toResponseArray($request->user()),
+                    'shares_count' => $reel->fresh()->shares_count,
+                ],
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * রিল অনুমোদিত গ্রুপে পোস্ট হিসেবে শেয়ার করা
+     */
+    public function shareGroup(Request $request, Reel $reel): JsonResponse
+    {
+        $validated = $request->validate([
+            'group_id' => ['required', 'integer', 'exists:groups,id'],
+            'caption' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        try {
+            $post = $this->reelService->shareToGroup($reel, $request->user(), (int) $validated['group_id'], $validated['caption'] ?? null);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reel shared to group successfully.',
+                'data' => [
+                    'post' => $post->toResponseArray($request->user()),
+                    'shares_count' => $reel->fresh()->shares_count,
+                ],
+            ], 201);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * রিল পরিচালিত পেইজে পোস্ট হিসেবে শেয়ার করা
+     */
+    public function sharePage(Request $request, Reel $reel): JsonResponse
+    {
+        $validated = $request->validate([
+            'page_id' => ['required', 'integer', 'exists:pages,id'],
+            'caption' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        try {
+            $post = $this->reelService->shareToPage($reel, $request->user(), (int) $validated['page_id'], $validated['caption'] ?? null);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reel shared to page successfully.',
+                'data' => [
+                    'post' => $post->toResponseArray($request->user()),
+                    'shares_count' => $reel->fresh()->shares_count,
+                ],
+            ], 201);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * শেয়ারিংয়ের জন্য গ্রুপ, পেইজ ও ফ্রেন্ডসদের তালিকা
+     */
+    public function shareTargets(Request $request): JsonResponse
+    {
+        $targets = $this->reelService->getShareableTargets($request->user());
+
+        return response()->json([
+            'success' => true,
+            'data' => $targets,
+        ]);
+    }
+
+    /**
+     * মেসেজে রিল পাঠানোর জন্য প্রাপক সার্চ করা
+     */
+    public function searchRecipients(Request $request): JsonResponse
+    {
+        $query = (string) $request->input('q', '');
+        $recipients = $this->reelService->searchShareRecipients($request->user(), $query);
+
+        return response()->json([
+            'success' => true,
+            'data' => $recipients,
+        ]);
     }
 
     /**

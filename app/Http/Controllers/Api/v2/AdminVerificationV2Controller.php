@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\ProfileVerificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AdminVerificationV2Controller extends Controller
 {
@@ -42,9 +43,16 @@ class AdminVerificationV2Controller extends Controller
     public function show(int $id): JsonResponse
     {
         $verification = $this->verificationService->getVerificationDetails($id);
+        $verification->makeVisible(['document_front_key', 'document_back_key', 'selfie_key', 'media_meta']);
+
+        $data = $verification->toArray();
+        $disk = config('filesystems.default', 'public');
+        $data['document_front_url'] = $verification->document_front_key ? Storage::disk($disk)->url($verification->document_front_key) : null;
+        $data['document_back_url'] = $verification->document_back_key ? Storage::disk($disk)->url($verification->document_back_key) : null;
+        $data['selfie_url'] = $verification->selfie_key ? Storage::disk($disk)->url($verification->selfie_key) : null;
 
         return $this->successResponse(
-            data: $verification,
+            data: $data,
             message: 'ভেরিফিকেশন বিস্তারিত তথ্য সফলভাবে লোড হয়েছে।'
         );
     }

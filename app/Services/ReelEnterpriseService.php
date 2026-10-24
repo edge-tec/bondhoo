@@ -2,8 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Group;
+use App\Models\GroupMember;
 use App\Models\Media;
 use App\Models\MusicTrack;
+use App\Models\Page;
+use App\Models\Post;
 use App\Models\Reel;
 use App\Models\ReelComment;
 use App\Models\ReelCommentLike;
@@ -14,6 +18,7 @@ use App\Models\ReelShare;
 use App\Models\ReelView;
 use App\Models\Report;
 use App\Models\User;
+use App\Services\Contracts\MessengerServiceInterface;
 use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\Contracts\RealtimeServiceInterface;
 use Exception;
@@ -96,13 +101,14 @@ class ReelEnterpriseService
 
             $reel = Reel::create([
                 'user_id' => $user->id,
+                'page_id' => $data['page_id'] ?? null,
                 'caption' => $data['caption'] ?? null,
                 'audio_title' => $audioTitle,
                 'audio_artist' => $audioArtist,
                 'cover_image_path' => $coverPath,
                 'music_track_id' => $musicTrack?->id,
-                'audio_volume' => (int) ($data['audio_volume'] ?? 100),
-                'music_volume' => (int) ($data['music_volume'] ?? 100),
+                'audio_volume' => $this->normalizeVolume($data['audio_volume'] ?? 100),
+                'music_volume' => $this->normalizeVolume($data['music_volume'] ?? 100),
                 'music_start_offset' => (float) ($data['music_start_offset'] ?? 0.0),
                 'trim_start' => $trimStart,
                 'trim_end' => $trimEnd,
@@ -136,7 +142,7 @@ class ReelEnterpriseService
                     $user,
                     (float) ($data['music_start_offset'] ?? 0.0),
                     $duration,
-                    (int) ($data['music_volume'] ?? 100)
+                    $this->normalizeVolume($data['music_volume'] ?? 100)
                 );
             }
 
@@ -169,13 +175,38 @@ class ReelEnterpriseService
     }
 
     /**
+     * Accept the editor's normalized 0..1 values and the API's percentage 0..100 values.
+     */
+    private function normalizeVolume(mixed $volume): int
+    {
+        $volume = (float) $volume;
+
+        return (int) round($volume <= 1 ? $volume * 100 : $volume);
+    }
+
+    /**
      * ড্রাফট বা প্রসেসিং রিল পাবলিশ করা (২৪ ঘণ্টার লাইফসাইকেল এখানে শুরু হবে)
      *
      * @throws AuthorizationException
      */
     public function publishReel(Reel $reel, User $user): Reel
     {
-        if ($reel->user_id !== $user->id) {
+        $isPageManager = false;
+        if ($reel->page_id) {
+            $page = $reel->page ?? Page::find($reel->page_id);
+            if ($page) {
+                $isPageManager = (int) $page->owner_id === (int) $user->id
+                    || in_array($page->getMemberRole($user->id), [
+                        Page::ROLE_OWNER,
+                        Page::ROLE_ADMIN,
+                        Page::ROLE_MANAGER,
+                        Page::ROLE_CONTENT_MANAGER,
+                        Page::ROLE_MODERATOR,
+                    ], true);
+            }
+        }
+
+        if ($reel->user_id !== $user->id && ! $isPageManager) {
             throw new AuthorizationException('You are not authorized to publish this reel.');
         }
 
@@ -207,7 +238,22 @@ class ReelEnterpriseService
      */
     public function updateReel(Reel $reel, User $user, array $data): Reel
     {
-        if ($reel->user_id !== $user->id) {
+        $isPageManager = false;
+        if ($reel->page_id) {
+            $page = $reel->page ?? Page::find($reel->page_id);
+            if ($page) {
+                $isPageManager = (int) $page->owner_id === (int) $user->id
+                    || in_array($page->getMemberRole($user->id), [
+                        Page::ROLE_OWNER,
+                        Page::ROLE_ADMIN,
+                        Page::ROLE_MANAGER,
+                        Page::ROLE_CONTENT_MANAGER,
+                        Page::ROLE_MODERATOR,
+                    ], true);
+            }
+        }
+
+        if ($reel->user_id !== $user->id && ! $isPageManager) {
             throw new AuthorizationException('You are not authorized to edit this reel.');
         }
 
@@ -735,9 +781,30 @@ class ReelEnterpriseService
      *
      * @throws AuthorizationException
      */
+    /**
+     * রিল ডিলিট করা
+     *
+     * @throws AuthorizationException
+     */
     public function deleteReel(Reel $reel, User $user): bool
     {
-        if ($reel->user_id !== $user->id) {
+        $isPageManager = false;
+        if ($reel->page_id) {
+            $page = $reel->page ?? Page::find($reel->page_id);
+            if ($page) {
+                $isPageManager = (int) $page->owner_id === (int) $user->id
+                    || in_array($page->getMemberRole($user->id), [
+                        Page::ROLE_OWNER,
+                        Page::ROLE_ADMIN,
+                        Page::ROLE_MANAGER,
+                        Page::ROLE_CONTENT_MANAGER,
+                        Page::ROLE_MODERATOR,
+                    ], true);
+            }
+        }
+
+        $isAdmin = method_exists($user, 'isAdmin') ? $user->isAdmin() : false;
+        if ($reel->user_id !== $user->id && ! $isPageManager && ! $isAdmin) {
             throw new AuthorizationException('You are not authorized to delete this reel.');
         }
 
@@ -750,6 +817,468 @@ class ReelEnterpriseService
         }
 
         return (bool) $deleted;
+    }
+
+    /**
+     * রিল সরাসরি মেসেজের মাধ্যমে এক বা একাধিক ব্যবহারকারীকে পাঠানো
+     *
+     * @param  array<int>  $recipientIds
+     * @return array{sent_count: int, failed_count: int, shares_count: int}
+     *
+     * @throws Exception
+     */
+    public function shareToDirectMessages(
+        Reel $reel,
+        User $sender,
+        array $recipientIds,
+        ?string $message = null,
+        ?string $idempotencyKey = null
+    ): array {
+        if ($reel->isExpired()) {
+            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। মেসেজে পাঠানো সম্ভব নয়।');
+        }
+
+        $recipientIds = array_unique(array_filter(
+            $recipientIds,
+            fn ($id) => is_numeric($id) && (int) $id !== (int) $sender->id
+        ));
+
+        if (empty($recipientIds)) {
+            throw new Exception('অন্তত একজন বৈধ প্রাপক নির্বাচন করুন।');
+        }
+
+        $messenger = app(MessengerServiceInterface::class);
+        $primaryMedia = $reel->media->firstWhere('quality', 'original') ?? $reel->media->first();
+        $coverUrl = $reel->cover_url ?: ($primaryMedia?->thumbnail_url ?: $reel->thumbnail_url);
+        $videoUrl = $reel->video_url ?: $primaryMedia?->video_url;
+
+        $reelPayload = [
+            'id' => $reel->id,
+            'caption' => $reel->caption,
+            'duration' => $reel->duration,
+            'cover_url' => $coverUrl,
+            'thumbnail_url' => $coverUrl,
+            'video_url' => $videoUrl,
+            'audio_title' => $reel->audio_title ?: 'Original Audio',
+            'audio_artist' => $reel->audio_artist ?: $reel->user?->name,
+            'author' => [
+                'id' => $reel->user?->id,
+                'name' => $reel->user?->name,
+                'username' => $reel->user?->username,
+                'avatar_url' => $reel->user?->profile?->avatar_url ?? $reel->user?->avatar_url,
+                'is_verified' => (bool) ($reel->user?->profile?->is_verified ?? false),
+            ],
+            'created_at' => $reel->created_at?->toIso8601String(),
+        ];
+
+        $sentCount = 0;
+        $failedCount = 0;
+
+        foreach ($recipientIds as $recipientId) {
+            $recipient = User::find((int) $recipientId);
+            if (! $recipient) {
+                $failedCount++;
+
+                continue;
+            }
+
+            // ব্লক বা প্রাইভেসি রেস্ট্রিকশন চেক
+            if ($this->privacyService->isBlocked($recipient, $sender) || $this->privacyService->isBlocked($sender, $recipient)) {
+                $failedCount++;
+
+                continue;
+            }
+
+            try {
+                $conversation = $messenger->getOrCreateDirectConversation($sender, (int) $recipientId);
+
+                $msgData = [
+                    'type' => 'reel',
+                    'body' => trim($message ?? '') ?: "Shared a Reel by {$reel->user?->name}",
+                    'metadata' => [
+                        'reel_id' => $reel->id,
+                        'reel' => $reelPayload,
+                    ],
+                    'client_message_id' => $idempotencyKey ? "{$idempotencyKey}_{$recipientId}" : null,
+                ];
+
+                $messenger->sendMessage($sender, $conversation, $msgData);
+
+                ReelShare::create([
+                    'reel_id' => $reel->id,
+                    'user_id' => $sender->id,
+                    'platform' => 'message',
+                    'created_at' => now(),
+                ]);
+
+                $sentCount++;
+            } catch (Exception) {
+                $failedCount++;
+            }
+        }
+
+        if ($sentCount > 0) {
+            $reel->increment('shares_count', $sentCount);
+            $newCount = $reel->fresh()->shares_count;
+
+            $this->realtimeService->broadcast("reel.{$reel->id}", 'reel.shared', [
+                'reel_id' => $reel->id,
+                'shares_count' => $newCount,
+                'platform' => 'message',
+            ]);
+
+            return [
+                'sent_count' => $sentCount,
+                'failed_count' => $failedCount,
+                'shares_count' => $newCount,
+            ];
+        }
+
+        if ($failedCount > 0 && $sentCount === 0) {
+            throw new Exception('বার্তা পাঠানো সম্ভব হয়নি। ব্যবহারকারীর মেসেজিং অথবা প্রাইভেসি সেটিংস পরীক্ষা করুন।');
+        }
+
+        return [
+            'sent_count' => 0,
+            'failed_count' => $failedCount,
+            'shares_count' => $reel->shares_count,
+        ];
+    }
+
+    /**
+     * রিল নিজের প্রোফাইল বা ওয়ালের ফিডে শেয়ার করা
+     *
+     * @throws Exception
+     */
+    public function shareToProfile(Reel $reel, User $user, ?string $caption = null): Post
+    {
+        if ($reel->isExpired()) {
+            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। শেয়ার করা সম্ভব নয়।');
+        }
+
+        $primaryMedia = $reel->media->firstWhere('quality', 'original') ?? $reel->media->first();
+        $coverUrl = $reel->cover_url ?: ($primaryMedia?->thumbnail_url ?: $reel->thumbnail_url);
+
+        $post = DB::transaction(function () use ($reel, $user, $caption, $primaryMedia, $coverUrl) {
+            $createdPost = Post::create([
+                'user_id' => $user->id,
+                'content' => $caption ? trim($caption) : null,
+                'type' => 'reel',
+                'audience' => 'public',
+                'status' => 'published',
+                'media_meta' => [
+                    'shared_reel_id' => $reel->id,
+                    'reel' => [
+                        'id' => $reel->id,
+                        'caption' => $reel->caption,
+                        'duration' => $reel->duration,
+                        'cover_url' => $coverUrl,
+                        'thumbnail_url' => $coverUrl,
+                        'video_url' => $reel->video_url ?: $primaryMedia?->video_url,
+                        'audio_title' => $reel->audio_title ?: 'Original Audio',
+                        'audio_artist' => $reel->audio_artist ?: $reel->user?->name,
+                        'author' => [
+                            'id' => $reel->user?->id,
+                            'name' => $reel->user?->name,
+                            'username' => $reel->user?->username,
+                            'avatar_url' => $reel->user?->profile?->avatar_url ?? $reel->user?->avatar_url,
+                            'is_verified' => (bool) ($reel->user?->profile?->is_verified ?? false),
+                        ],
+                    ],
+                ],
+            ]);
+
+            ReelShare::create([
+                'reel_id' => $reel->id,
+                'user_id' => $user->id,
+                'platform' => 'profile',
+                'created_at' => now(),
+            ]);
+
+            $reel->increment('shares_count');
+
+            if ($reel->user_id !== $user->id) {
+                try {
+                    $this->notificationService->send(
+                        $reel->user_id,
+                        'reel.share',
+                        [
+                            'reel_id' => $reel->id,
+                            'actor_id' => $user->id,
+                            'actor_name' => $user->name,
+                            'message' => "{$user->name} আপনার রিলটি নিজের প্রোফাইলে শেয়ার করেছেন।",
+                        ],
+                        ['database', 'broadcast']
+                    );
+                } catch (Exception) {
+                }
+            }
+
+            $this->realtimeService->broadcast("reel.{$reel->id}", 'reel.shared', [
+                'reel_id' => $reel->id,
+                'shares_count' => $reel->fresh()->shares_count,
+                'platform' => 'profile',
+            ]);
+
+            return $createdPost;
+        });
+
+        return $post->load(['user.profile']);
+    }
+
+    /**
+     * অনুমোদিত গ্রুপে রিল শেয়ার করা
+     *
+     * @throws AuthorizationException
+     * @throws Exception
+     */
+    public function shareToGroup(Reel $reel, User $user, int $groupId, ?string $caption = null): Post
+    {
+        if ($reel->isExpired()) {
+            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। শেয়ার করা সম্ভব নয়।');
+        }
+
+        $group = Group::findOrFail($groupId);
+        if (! $group->isMember($user->id)) {
+            throw new AuthorizationException('এই গ্রুপে পোস্ট করার জন্য আপনাকে গ্রুপের সক্রিয় সদস্য হতে হবে।');
+        }
+
+        $primaryMedia = $reel->media->firstWhere('quality', 'original') ?? $reel->media->first();
+        $coverUrl = $reel->cover_url ?: ($primaryMedia?->thumbnail_url ?: $reel->thumbnail_url);
+
+        $status = 'published';
+        if ($group->requires_post_approval) {
+            $member = $group->members()->where('user_id', $user->id)->first();
+            $isAdminOrMod = in_array($member?->role, [GroupMember::ROLE_OWNER, GroupMember::ROLE_ADMIN, GroupMember::ROLE_MODERATOR], true);
+            if (! $isAdminOrMod) {
+                $status = 'pending';
+            }
+        }
+
+        $post = DB::transaction(function () use ($reel, $user, $group, $caption, $status, $primaryMedia, $coverUrl) {
+            $createdPost = Post::create([
+                'user_id' => $user->id,
+                'group_id' => $group->id,
+                'content' => $caption ? trim($caption) : null,
+                'type' => 'reel',
+                'audience' => $group->privacy === 'public' ? 'public' : 'friends',
+                'status' => $status,
+                'media_meta' => [
+                    'shared_reel_id' => $reel->id,
+                    'reel' => [
+                        'id' => $reel->id,
+                        'caption' => $reel->caption,
+                        'duration' => $reel->duration,
+                        'cover_url' => $coverUrl,
+                        'thumbnail_url' => $coverUrl,
+                        'video_url' => $reel->video_url ?: $primaryMedia?->video_url,
+                        'audio_title' => $reel->audio_title ?: 'Original Audio',
+                        'audio_artist' => $reel->audio_artist ?: $reel->user?->name,
+                        'author' => [
+                            'id' => $reel->user?->id,
+                            'name' => $reel->user?->name,
+                            'username' => $reel->user?->username,
+                            'avatar_url' => $reel->user?->profile?->avatar_url ?? $reel->user?->avatar_url,
+                            'is_verified' => (bool) ($reel->user?->profile?->is_verified ?? false),
+                        ],
+                    ],
+                ],
+            ]);
+
+            if ($status === 'published') {
+                $group->increment('posts_count');
+            }
+
+            ReelShare::create([
+                'reel_id' => $reel->id,
+                'user_id' => $user->id,
+                'platform' => 'group',
+                'created_at' => now(),
+            ]);
+
+            $reel->increment('shares_count');
+
+            $this->realtimeService->broadcast("reel.{$reel->id}", 'reel.shared', [
+                'reel_id' => $reel->id,
+                'shares_count' => $reel->fresh()->shares_count,
+                'platform' => 'group',
+            ]);
+
+            return $createdPost;
+        });
+
+        return $post->load(['user.profile', 'group']);
+    }
+
+    /**
+     * নিজের পরিচালিত পেইজে রিল শেয়ার করা
+     *
+     * @throws AuthorizationException
+     * @throws Exception
+     */
+    public function shareToPage(Reel $reel, User $user, int $pageId, ?string $caption = null): Post
+    {
+        if ($reel->isExpired()) {
+            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। শেয়ার করা সম্ভব নয়।');
+        }
+
+        $page = Page::findOrFail($pageId);
+        $isPageManager = (int) $page->owner_id === (int) $user->id
+            || in_array($page->getMemberRole($user->id), [
+                Page::ROLE_OWNER,
+                Page::ROLE_ADMIN,
+                Page::ROLE_MANAGER,
+                Page::ROLE_CONTENT_MANAGER,
+                Page::ROLE_MODERATOR,
+                Page::ROLE_EDITOR,
+            ], true);
+
+        if (! $isPageManager) {
+            throw new AuthorizationException('এই পেইজের পক্ষে পোস্ট পাবলিশ করার অনুমতি আপনার নেই।');
+        }
+
+        $primaryMedia = $reel->media->firstWhere('quality', 'original') ?? $reel->media->first();
+        $coverUrl = $reel->cover_url ?: ($primaryMedia?->thumbnail_url ?: $reel->thumbnail_url);
+
+        $post = DB::transaction(function () use ($reel, $user, $page, $caption, $primaryMedia, $coverUrl) {
+            $createdPost = Post::create([
+                'user_id' => $user->id,
+                'page_id' => $page->id,
+                'content' => $caption ? trim($caption) : null,
+                'type' => 'reel',
+                'audience' => 'public',
+                'status' => 'published',
+                'media_meta' => [
+                    'shared_reel_id' => $reel->id,
+                    'reel' => [
+                        'id' => $reel->id,
+                        'caption' => $reel->caption,
+                        'duration' => $reel->duration,
+                        'cover_url' => $coverUrl,
+                        'thumbnail_url' => $coverUrl,
+                        'video_url' => $reel->video_url ?: $primaryMedia?->video_url,
+                        'audio_title' => $reel->audio_title ?: 'Original Audio',
+                        'audio_artist' => $reel->audio_artist ?: $reel->user?->name,
+                        'author' => [
+                            'id' => $reel->user?->id,
+                            'name' => $reel->user?->name,
+                            'username' => $reel->user?->username,
+                            'avatar_url' => $reel->user?->profile?->avatar_url ?? $reel->user?->avatar_url,
+                            'is_verified' => (bool) ($reel->user?->profile?->is_verified ?? false),
+                        ],
+                    ],
+                ],
+            ]);
+
+            ReelShare::create([
+                'reel_id' => $reel->id,
+                'user_id' => $user->id,
+                'platform' => 'page',
+                'created_at' => now(),
+            ]);
+
+            $reel->increment('shares_count');
+
+            $this->realtimeService->broadcast("reel.{$reel->id}", 'reel.shared', [
+                'reel_id' => $reel->id,
+                'shares_count' => $reel->fresh()->shares_count,
+                'platform' => 'page',
+            ]);
+
+            return $createdPost;
+        });
+
+        return $post->load(['user.profile', 'page']);
+    }
+
+    /**
+     * শেয়ারিংয়ের জন্য ব্যবহারকারীর সক্রিয় গ্রুপ এবং পরিচালিত পেইজসমূহ লোড করা
+     *
+     * @return array{groups: array<int, array<string, mixed>>, pages: array<int, array<string, mixed>>, friends: array<int, array<string, mixed>>}
+     */
+    public function getShareableTargets(User $user): array
+    {
+        $groups = Group::whereHas('members', fn ($q) => $q->where('user_id', $user->id)->where('status', GroupMember::STATUS_ACTIVE))
+            ->orderBy('name')
+            ->limit(30)
+            ->get()
+            ->map(fn ($g) => [
+                'id' => $g->id,
+                'name' => $g->name,
+                'privacy' => $g->privacy,
+                'avatar_url' => $g->avatar_url,
+                'members_count' => $g->members_count ?? $g->members()->count(),
+            ])
+            ->values()
+            ->toArray();
+
+        $pages = Page::where(function ($q) use ($user) {
+            $q->where('owner_id', $user->id)
+                ->orWhereHas('members', fn ($tm) => $tm->where('user_id', $user->id)->whereIn('role', [
+                    Page::ROLE_OWNER,
+                    Page::ROLE_ADMIN,
+                    Page::ROLE_MANAGER,
+                    Page::ROLE_CONTENT_MANAGER,
+                    Page::ROLE_MODERATOR,
+                    Page::ROLE_EDITOR,
+                ]));
+        })
+            ->orderBy('name')
+            ->limit(30)
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'slug' => $p->slug,
+                'avatar_url' => $p->avatar_url,
+                'is_verified' => (bool) $p->is_verified,
+            ])
+            ->values()
+            ->toArray();
+
+        $friends = $this->searchShareRecipients($user, null, 15);
+
+        return [
+            'groups' => $groups,
+            'pages' => $pages,
+            'friends' => $friends,
+        ];
+    }
+
+    /**
+     * মেসেজে রিল পাঠানোর জন্য ফ্রেন্ডস ও রেজিস্টার্ড ইউজার সার্চ করা
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function searchShareRecipients(User $user, ?string $query = null, int $limit = 20): array
+    {
+        $usersQuery = User::where('id', '!=', $user->id)
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', 'active');
+            })
+            ->with('profile');
+
+        if (! empty($query)) {
+            $term = trim($query);
+            $usersQuery->where(function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                    ->orWhere('username', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
+            });
+        }
+
+        $users = $usersQuery->limit($limit)->get();
+
+        return $users->filter(fn (User $other) => ! $this->privacyService->isBlocked($other, $user) && ! $this->privacyService->isBlocked($user, $other))
+            ->map(fn (User $u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'username' => $u->username,
+                'avatar_url' => $u->profile?->avatar_url ?? $u->avatar_url,
+                'is_verified' => (bool) ($u->profile?->is_verified ?? false),
+            ])
+            ->values()
+            ->toArray();
     }
 
     /**

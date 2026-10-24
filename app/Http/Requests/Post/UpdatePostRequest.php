@@ -19,6 +19,8 @@ class UpdatePostRequest extends FormRequest
             'location' => ['nullable', 'string', 'max:255'],
             'feeling_activity' => ['nullable', 'string', 'max:255'],
             'comments_disabled' => ['nullable', 'boolean'],
+            'media_ids' => ['nullable', 'array'],
+            'media_ids.*' => ['integer', 'exists:media,id'],
         ];
     }
 }

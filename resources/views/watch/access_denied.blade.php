@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'অননুমোদিত অ্যাক্সেস — Bondhoo লাইভ')
+@section('title', 'অননুমোদিত অ্যাক্সেস — SocialHub লাইভ')
 
 @section('content')
 <div style="max-width: 600px; width: 100%; margin: 40px auto; padding: 28px 18px; background: var(--fb-card); border: 1px solid var(--fb-border); border-radius: 14px; text-align: center; box-shadow: var(--shadow-md); word-break: break-word;">

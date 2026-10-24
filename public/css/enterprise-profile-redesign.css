@@ -1,90 +1,70 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * BONDHOO (বন্ধু) — UNIQUE PROFESSIONAL PROFILE DESIGN SYSTEM
- * An original, modern, elevated social profile experience.
+ * BONDHOO (বন্ধু) — FACEBOOK ENTERPRISE PROFILE DESIGN SYSTEM
+ * Authentic, premium desktop and mobile social profile experience.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
 :root {
-    /* ── Signature Brand Palette ── */
-    --bp-primary: #059669;            /* Bondhoo Emerald Teal */
-    --bp-primary-hover: #047857;
-    --bp-primary-light: rgba(5, 150, 105, 0.08);
-    --bp-primary-glow: rgba(5, 150, 105, 0.28);
+    /* ── Facebook Official Brand Palette ── */
+    --bp-primary: #1877f2;            /* Facebook Primary Blue */
+    --bp-primary-hover: #166fe5;
+    --bp-primary-light: rgba(24, 119, 242, 0.08);
+    --bp-primary-glow: rgba(24, 119, 242, 0.22);
 
-    --bp-accent: #4f46e5;             /* Deep Electric Indigo */
-    --bp-accent-hover: #4338ca;
-    --bp-accent-light: rgba(79, 70, 229, 0.08);
-    --bp-accent-glow: rgba(79, 70, 229, 0.25);
+    --bp-accent: #1877f2;
+    --bp-accent-hover: #166fe5;
+    --bp-accent-light: rgba(24, 119, 242, 0.08);
+    --bp-accent-glow: rgba(24, 119, 242, 0.22);
 
-    --bp-gradient-hero: linear-gradient(135deg, #059669 0%, #0d9488 40%, #4f46e5 100%);
-    --bp-gradient-badge: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    --bp-gradient-story: linear-gradient(135deg, #059669 0%, #3b82f6 50%, #8b5cf6 100%);
-    --bp-gradient-cover: radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.22) 0%, transparent 45%),
-                         radial-gradient(circle at 15% 85%, rgba(5, 150, 105, 0.35) 0%, transparent 55%),
-                         linear-gradient(135deg, #065f46 0%, #0f766e 40%, #1e3a8a 100%);
+    --bp-gradient-hero: linear-gradient(180deg, #1877f2 0%, #166fe5 100%);
+    --bp-gradient-badge: linear-gradient(135deg, #1877f2 0%, #0d5ec4 100%);
+    --bp-gradient-story: linear-gradient(135deg, #1877f2 0%, #00c6ff 100%);
+    --bp-gradient-cover: linear-gradient(180deg, #2b6cb0 0%, #1877f2 50%, #166fe5 100%);
 
     /* ── Surfaces & Backgrounds ── */
-    --bp-bg: #f8fafc;
+    --bp-bg: #f0f2f5;
     --bp-surface: #ffffff;
-    --bp-surface-subtle: #f1f5f9;
+    --bp-surface-subtle: #f0f2f5;
     --bp-surface-elevated: #ffffff;
-    --bp-glass-bg: rgba(255, 255, 255, 0.85);
-    --bp-glass-border: rgba(226, 232, 240, 0.85);
+    --bp-glass-bg: rgba(255, 255, 255, 0.95);
+    --bp-glass-border: #e4e6eb;
 
     /* ── Typography & Text ── */
-    --bp-text-primary: #0f172a;       /* Slate 900 */
-    --bp-text-secondary: #475569;     /* Slate 600 */
-    --bp-text-muted: #64748b;         /* Slate 500 */
+    --bp-text-primary: #050505;
+    --bp-text-secondary: #65676b;
+    --bp-text-muted: #8a8d91;
     --bp-text-inverse: #ffffff;
 
     /* ── Borders & Dividers ── */
-    --bp-border: #e2e8f0;
-    --bp-border-subtle: #edf2f7;
-    --bp-divider: #f1f5f9;
+    --bp-border: #e4e6eb;
+    --bp-border-subtle: #f0f2f5;
+    --bp-divider: #e4e6eb;
 
     /* ── Status & Functional ── */
-    --bp-success: #10b981;
-    --bp-danger: #ef4444;
-    --bp-warning: #f59e0b;
-    --bp-info: #0284c7;
+    --bp-success: #31a24c;
+    --bp-danger: #e41e3f;
+    --bp-warning: #f7b125;
+    --bp-info: #1877f2;
 
     /* ── Elevation Shadows ── */
-    --bp-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-    --bp-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
-    --bp-shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
-    --bp-shadow-lg: 0 10px 25px -4px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.04);
-    --bp-shadow-xl: 0 20px 40px -8px rgba(15, 23, 42, 0.12), 0 8px 16px -4px rgba(15, 23, 42, 0.06);
+    --bp-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --bp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+    --bp-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+    --bp-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --bp-shadow-xl: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 
     /* ── Radii ── */
-    --bp-radius-sm: 8px;
-    --bp-radius-md: 12px;
-    --bp-radius-lg: 16px;
-    --bp-radius-xl: 22px;
-    --bp-radius-pill: 9999px;
+    --bp-radius-sm: 4px;
+    --bp-radius-md: 6px;
+    --bp-radius-lg: 8px;
+    --bp-radius-xl: 8px;
+    --bp-radius-pill: 6px;
 
     /* ── Transitions ── */
     --bp-transition: cubic-bezier(0.16, 1, 0.3, 1);
-    --bp-duration-fast: 0.15s;
-    --bp-duration-normal: 0.25s;
-}
-
-/* Dark Mode Overrides */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bp-bg: #090d16;
-        --bp-surface: #111827;
-        --bp-surface-subtle: #1e293b;
-        --bp-surface-elevated: #1f293d;
-        --bp-glass-bg: rgba(17, 24, 39, 0.88);
-        --bp-glass-border: rgba(255, 255, 255, 0.08);
-        --bp-text-primary: #f8fafc;
-        --bp-text-secondary: #94a3b8;
-        --bp-text-muted: #64748b;
-        --bp-border: rgba(255, 255, 255, 0.08);
-        --bp-border-subtle: rgba(255, 255, 255, 0.04);
-        --bp-divider: rgba(255, 255, 255, 0.06);
-    }
+    --bp-duration-fast: 0.12s;
+    --bp-duration-normal: 0.2s;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -94,39 +74,42 @@
 body {
     background-color: var(--bp-bg) !important;
     color: var(--bp-text-primary);
-    font-family: 'Inter', 'Hind Siliguri', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-family: 'Inter', 'Hind Siliguri', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
     min-height: 100vh;
+    padding-left: 0 !important;
 }
 
 .profile-header-wrapper {
     width: 100%;
-    background: transparent;
+    background: #ffffff;
     padding: 0;
-    margin: 0;
+    margin: 0 0 16px 0;
     position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--bp-border);
 }
 
 .profile-header-container {
-    max-width: 1240px;
+    max-width: 1250px;
     margin: 0 auto;
-    padding: 16px 20px 0 20px;
+    padding: 0 32px;
     position: relative;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   2. ARCHITECTURAL PANORAMIC COVER CANVAS
+   2. PANORAMIC COVER CANVAS
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .cover-photo-wrapper {
     position: relative;
     width: 100%;
     height: 380px;
-    border-radius: var(--bp-radius-xl);
+    border-radius: 0 0 8px 8px;
     overflow: hidden;
     background: var(--bp-gradient-cover);
-    box-shadow: var(--bp-shadow-lg);
-    border: 1px solid var(--bp-border);
-    transition: transform var(--bp-duration-normal) var(--bp-transition);
+    box-shadow: none;
+    border: none;
+    transition: none;
 }
 
 .cover-photo-img {
@@ -136,44 +119,30 @@ body {
     display: block;
     user-select: none;
     -webkit-user-drag: none;
-    transition: opacity 0.3s ease;
 }
 
-/* Cover ambient gradient overlay for text readability */
-.cover-photo-wrapper::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, transparent 40%, rgba(0, 0, 0, 0.45) 100%);
-    pointer-events: none;
-    border-radius: inherit;
-}
-
-/* Cover Edit Floating Pill Button */
+/* Cover Edit Button (Facebook White Box with Camera) */
 .cover-photo-edit-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 18px;
-    background: rgba(15, 23, 42, 0.72);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    border-radius: var(--bp-radius-pill);
-    font-size: 13.5px;
+    padding: 8px 14px;
+    background: #ffffff;
+    color: #050505;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-    transition: all var(--bp-duration-fast) ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    transition: background 0.15s ease;
     z-index: 5;
 }
 
 .cover-photo-edit-btn:hover {
-    background: rgba(15, 23, 42, 0.9);
-    border-color: rgba(255, 255, 255, 0.4);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    background: #f2f2f2;
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .cover-photo-edit-btn svg {
@@ -186,14 +155,13 @@ body {
     position: absolute;
     bottom: 54px;
     right: 0;
-    width: 260px;
-    background: var(--bp-surface);
+    width: 270px;
+    background: #ffffff;
     border: 1px solid var(--bp-border);
-    border-radius: var(--bp-radius-lg);
+    border-radius: 8px;
     box-shadow: var(--bp-shadow-xl);
     padding: 8px;
     z-index: 100;
-    animation: bpScaleFadeIn 0.2s var(--bp-transition);
 }
 
 .cover-menu-dropdown.show {
@@ -201,47 +169,54 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   3. PROFILE INFO BAR & IDENTITY ISLAND
+   3. PROFILE INFO BAR & IDENTITY ROW (AUTHENTIC FACEBOOK HORIZONTAL ALIGNMENT)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .profile-main-bar {
     position: relative;
-    background: var(--bp-surface);
-    border: 1px solid var(--bp-border);
-    border-top: none;
-    border-radius: 0 0 var(--bp-radius-xl) var(--bp-radius-xl);
-    padding: 0 32px 28px 32px;
-    margin-top: -4px;
-    box-shadow: var(--bp-shadow-md);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0 0 16px 0;
+    margin-top: 0;
+    box-shadow: none;
     display: flex;
-    flex-direction: column;
-    gap: 20px;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
 }
 
 .profile-avatar-and-names {
     display: flex;
-    align-items: flex-start;
-    gap: 28px;
-    margin-top: -72px;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 24px;
+    margin-top: 0;
     position: relative;
     z-index: 10;
+    flex: 1;
+    min-width: 0;
 }
 
-/* Avatar Island */
+/* Avatar Island (168px circle overlapping cover by 36px) */
 .avatar-wrapper {
     position: relative;
     flex-shrink: 0;
-    width: 156px;
-    height: 156px;
+    width: 168px;
+    height: 168px;
     border-radius: 50%;
-    background: var(--bp-surface);
+    background: #ffffff;
     padding: 4px;
-    box-shadow: var(--bp-shadow-xl);
-    transition: transform var(--bp-duration-normal) var(--bp-transition);
+    border: 4px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    margin-top: -64px;
+    z-index: 5;
+    transition: none;
 }
 
 .avatar-wrapper:hover {
-    transform: scale(1.02);
+    transform: none;
 }
 
 .avatar-img {
@@ -250,15 +225,9 @@ body {
     border-radius: 50%;
     object-fit: cover;
     display: block;
-    border: 3px solid #ffffff;
-    background: var(--bp-surface-subtle);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-/* Live / Story Dynamic Status Rings */
-.avatar-wrapper .avatar-has-story {
-    border-color: transparent !important;
-    background: var(--bp-gradient-story) padding-box, var(--bp-gradient-story) border-box;
+    border: none;
+    background: #e4e6eb;
+    box-shadow: none;
 }
 
 /* Floating Camera Upload Button */
@@ -266,25 +235,25 @@ body {
     position: absolute;
     bottom: 6px;
     right: 6px;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background: var(--bp-primary);
-    color: #ffffff;
-    border: 3px solid var(--bp-surface);
-    box-shadow: var(--bp-shadow-md);
+    background: #e4e6eb;
+    color: #050505;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all var(--bp-duration-fast) ease;
+    transition: background 0.15s ease;
     z-index: 12;
 }
 
 .avatar-edit-btn:hover {
-    background: var(--bp-primary-hover);
-    transform: scale(1.08);
-    box-shadow: 0 4px 14px var(--bp-primary-glow);
+    background: #d8dadf;
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* Avatar Menu Dropdown */
@@ -294,13 +263,12 @@ body {
     top: calc(100% + 12px);
     left: 0;
     width: 290px;
-    background: var(--bp-surface);
+    background: #ffffff;
     border: 1px solid var(--bp-border);
-    border-radius: var(--bp-radius-lg);
+    border-radius: 8px;
     box-shadow: var(--bp-shadow-xl);
     padding: 8px;
     z-index: 100;
-    animation: bpScaleFadeIn 0.2s var(--bp-transition);
 }
 
 .avatar-menu-dropdown.show {
@@ -312,31 +280,31 @@ body {
     align-items: center;
     gap: 12px;
     width: 100%;
-    padding: 10px 14px;
-    border-radius: var(--bp-radius-md);
+    padding: 10px 12px;
+    border-radius: 6px;
     background: transparent;
     border: none;
     color: var(--bp-text-primary);
-    font-size: 13.5px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     text-align: left;
-    transition: background var(--bp-duration-fast) ease;
+    transition: background 0.15s ease;
 }
 
 .avatar-menu-item:hover {
-    background: var(--bp-surface-subtle);
+    background: #f0f2f5;
 }
 
 .avatar-menu-item .menu-icon {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background: var(--bp-surface-subtle);
+    background: #e4e6eb;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--bp-text-secondary);
+    color: #050505;
     flex-shrink: 0;
 }
 
@@ -348,9 +316,9 @@ body {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: var(--bp-gradient-badge);
+    background: #1877f2;
     color: #ffffff;
-    border: 2px solid var(--bp-surface);
+    border: 2px solid #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -363,14 +331,15 @@ body {
 .profile-names-block {
     flex: 1;
     min-width: 0;
-    padding-top: 80px;
+    padding-top: 0;
+    margin-bottom: 12px;
 }
 
 .profile-fullname {
-    font-size: clamp(22px, 2.2vw, 30px);
-    font-weight: 800;
-    color: var(--bp-text-primary);
-    line-height: 1.25;
+    font-size: 32px;
+    font-weight: 700;
+    color: #050505;
+    line-height: 1.2;
     margin: 0;
     display: flex;
     align-items: center;
@@ -383,55 +352,54 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #0284c7;
-    filter: drop-shadow(0 2px 4px rgba(2, 132, 199, 0.3));
+    color: #1877f2;
     cursor: pointer;
 }
 
 .profile-username-id-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
-    margin-top: 4px;
+    margin-top: 3px;
 }
 
 .profile-username-sub {
-    font-size: 14.5px;
-    font-weight: 600;
-    color: var(--bp-text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    color: #65676b;
 }
 
 .profile-id-pill {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 3px 10px;
-    border-radius: var(--bp-radius-pill);
-    background: var(--bp-surface-subtle);
-    border: 1px solid var(--bp-border);
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #f0f2f5;
+    border: 1px solid #e4e6eb;
     font-size: 11.5px;
-    font-weight: 700;
-    color: var(--bp-text-muted);
+    font-weight: 600;
+    color: #65676b;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .profile-bio-text {
-    font-size: 14.5px;
-    line-height: 1.55;
-    color: var(--bp-text-secondary);
-    margin-top: 8px;
-    max-width: 680px;
+    font-size: 14px;
+    line-height: 1.45;
+    color: #65676b;
+    margin-top: 6px;
+    max-width: 650px;
 }
 
 .profile-loc-time-row {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 14px;
     flex-wrap: wrap;
-    margin-top: 10px;
+    margin-top: 6px;
     font-size: 13px;
-    color: var(--bp-text-muted);
+    color: #65676b;
 }
 
 .profile-loc-time-row span,
@@ -444,138 +412,132 @@ body {
 }
 
 .profile-loc-time-row a:hover {
-    color: var(--bp-primary);
+    color: #1877f2;
+    text-decoration: underline;
+}
+
+.profile-friends-count-sub {
+    margin-top: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #65676b;
+}
+
+.profile-friends-count-sub a {
+    color: #65676b;
+    text-decoration: none;
+}
+
+.profile-friends-count-sub a:hover {
     text-decoration: underline;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   4. INTERACTIVE STATISTICS DECK
+   4. CONTEXT-AWARE ACTION BUTTONS (CLEAN SINGLE ROW ALIGNED WITH NAMES)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .profile-actions-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
-    border-top: 1px solid var(--bp-divider);
-    padding-top: 18px;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+    border-top: none;
+    padding-top: 0;
 }
 
+/* Hide the giant metric box deck on desktop to maintain clean Facebook profile */
 .profile-desktop-stats-box {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    display: none !important;
 }
-
-.desktop-stat-counter {
-    display: flex;
-    flex-direction: column;
-    padding: 8px 18px;
-    background: var(--bp-surface-subtle);
-    border: 1px solid var(--bp-border);
-    border-radius: var(--bp-radius-md);
-    cursor: pointer;
-    transition: all var(--bp-duration-fast) ease;
-    user-select: none;
-}
-
-.desktop-stat-counter:hover {
-    background: var(--bp-surface);
-    border-color: var(--bp-primary);
-    box-shadow: var(--bp-shadow-sm);
-    transform: translateY(-1px);
-}
-
-.desktop-stat-counter .stat-count {
-    font-size: 17px;
-    font-weight: 800;
-    color: var(--bp-text-primary);
-    font-feature-settings: 'tnum';
-    line-height: 1.2;
-}
-
-.desktop-stat-counter .stat-label {
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--bp-text-muted);
-    margin-top: 2px;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   5. CONTEXT-AWARE ACTION BUTTONS
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .profile-actions-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    gap: 8px;
+    flex-wrap: nowrap;
 }
 
-/* Standardized Bondhoo Button Framework */
+.profile-actions-row-secondary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Standardized Facebook Button Framework */
 .fb-btn, .bp-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 9px 18px;
-    border-radius: var(--bp-radius-pill);
+    gap: 6px;
+    padding: 0 16px;
+    height: 36px;
+    border-radius: 6px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    border: 1px solid transparent;
-    transition: all var(--bp-duration-fast) ease;
+    border: none;
     text-decoration: none;
-    line-height: 1.3;
+    line-height: 1;
     white-space: nowrap;
+    transition: background 0.15s ease;
 }
 
 .fb-btn:active, .bp-btn:active {
-    transform: scale(0.97);
+    transform: scale(0.98);
 }
 
-/* Primary Story / Connect Button */
+/* Primary Button (+ স্টোরি যোগ করুন / বন্ধু যোগ করুন) */
 .fb-btn-primary, .btn-action-story {
-    background: var(--bp-gradient-hero) !important;
+    background: #1877f2 !important;
     color: #ffffff !important;
     border: none !important;
-    box-shadow: 0 4px 14px var(--bp-primary-glow) !important;
+    box-shadow: none !important;
 }
 
 .fb-btn-primary:hover, .btn-action-story:hover {
-    box-shadow: 0 6px 20px var(--bp-primary-glow) !important;
-    transform: translateY(-1px);
-    filter: brightness(1.05);
+    background: #166fe5 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    filter: none;
 }
 
-/* Secondary Action Button */
-.fb-btn-secondary, .btn-action-edit, .btn-action-message {
-    background: var(--bp-surface) !important;
-    color: var(--bp-text-primary) !important;
-    border: 1px solid var(--bp-border) !important;
-    box-shadow: var(--bp-shadow-xs) !important;
+/* Secondary Button (প্রোফাইল সম্পাদনা / বার্তা পাঠান / বন্ধু আছেন) */
+.fb-btn-secondary, .btn-action-edit, .btn-action-message, .btn-action-lock, .btn-action-share, .btn-action-dashboard, .btn-action-friend {
+    background: #e4e6eb !important;
+    color: #050505 !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
-.fb-btn-secondary:hover, .btn-action-edit:hover, .btn-action-message:hover {
-    background: var(--bp-surface-subtle) !important;
-    border-color: var(--bp-text-muted) !important;
-    box-shadow: var(--bp-shadow-sm) !important;
+.fb-btn-secondary:hover, .btn-action-edit:hover, .btn-action-message:hover, .btn-action-lock:hover, .btn-action-share:hover, .btn-action-dashboard:hover, .btn-action-friend:hover {
+    background: #d8dadf !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
 /* Follow / Unfollow Button */
 .btn-action-follow {
-    min-width: 110px;
+    min-width: 100px;
 }
 
 /* More Options Dropdown (...) Button */
 .btn-action-more {
-    width: 40px;
-    height: 40px;
+    width: 36px !important;
+    height: 36px !important;
     padding: 0 !important;
-    border-radius: 50% !important;
-    font-size: 16px;
+    border-radius: 6px !important;
+    background: #e4e6eb !important;
+    color: #050505 !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
     letter-spacing: 1px;
+}
+
+.btn-action-more:hover {
+    background: #d8dadf !important;
 }
 
 .profile-action-more-wrap {
@@ -588,13 +550,12 @@ body {
     top: calc(100% + 8px);
     right: 0;
     width: 270px;
-    background: var(--bp-surface);
+    background: #ffffff;
     border: 1px solid var(--bp-border);
-    border-radius: var(--bp-radius-lg);
+    border-radius: 8px;
     box-shadow: var(--bp-shadow-xl);
     padding: 8px;
     z-index: 120;
-    animation: bpScaleFadeIn 0.2s var(--bp-transition);
 }
 
 .profile-nav-more-dropdown.show {
@@ -606,20 +567,20 @@ body {
     align-items: center;
     gap: 12px;
     padding: 9px 12px;
-    border-radius: var(--bp-radius-md);
-    color: var(--bp-text-primary);
-    font-size: 13.5px;
+    border-radius: 6px;
+    color: #050505;
+    font-size: 14px;
     font-weight: 500;
     text-decoration: none;
-    transition: background var(--bp-duration-fast) ease;
+    transition: background 0.15s ease;
 }
 
 .more-tab-link:hover {
-    background: var(--bp-surface-subtle);
+    background: #f0f2f5;
 }
 
 .more-tab-link svg {
-    color: var(--bp-text-muted);
+    color: #65676b;
     flex-shrink: 0;
 }
 
@@ -630,7 +591,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   6. STORY HIGHLIGHTS CAROUSEL
+   5. STORY HIGHLIGHTS CAROUSEL
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .story-highlights-container {
@@ -638,7 +599,7 @@ body {
     align-items: center;
     gap: 16px;
     overflow-x: auto;
-    padding: 14px 4px 6px 4px;
+    padding: 12px 0 8px 0;
     scrollbar-width: none;
     -ms-overflow-style: none;
     border-top: 1px solid var(--bp-divider);
@@ -655,7 +616,7 @@ body {
     gap: 6px;
     cursor: pointer;
     flex-shrink: 0;
-    transition: transform var(--bp-duration-fast) ease;
+    transition: transform 0.15s ease;
 }
 
 .highlight-item:hover {
@@ -663,16 +624,16 @@ body {
 }
 
 .highlight-circle, .highlight-add-circle {
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    border: 2.5px solid var(--bp-primary);
-    padding: 2.5px;
-    background: var(--bp-surface);
+    border: 2px solid #e4e6eb;
+    padding: 2px;
+    background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--bp-shadow-sm);
+    box-shadow: none;
 }
 
 .highlight-circle img {
@@ -683,33 +644,39 @@ body {
 }
 
 .highlight-add-circle {
-    border: 2px dashed var(--bp-text-muted);
-    color: var(--bp-text-muted);
-    font-size: 24px;
-    font-weight: 300;
-    transition: all var(--bp-duration-fast) ease;
+    border: 2px dashed #8a8d91;
+    color: #65676b;
+    font-size: 22px;
+    font-weight: 400;
+    transition: all 0.15s ease;
 }
 
 .highlight-add-circle:hover {
-    border-color: var(--bp-primary);
-    color: var(--bp-primary);
-    background: var(--bp-primary-light);
+    border-color: #1877f2;
+    color: #1877f2;
+    background: rgba(24, 119, 242, 0.05);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   7. PROFILE NAVIGATION PILL BAR
+   6. PROFILE NAVIGATION TABS (AUTHENTIC FACEBOOK TAB BAR)
    ═══════════════════════════════════════════════════════════════════════════ */
+
+.profile-quick-shortcuts-bar {
+    display: none !important;
+}
 
 .profile-nav-tabs {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     list-style: none;
-    margin: 14px 0 0 0;
-    padding: 6px;
-    background: var(--bp-surface-subtle);
-    border: 1px solid var(--bp-border);
-    border-radius: var(--bp-radius-pill);
+    margin: 0;
+    padding: 0;
+    height: 52px;
+    background: #ffffff;
+    border: none;
+    border-top: 1px solid var(--bp-divider);
+    border-radius: 0;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -726,77 +693,38 @@ body {
 .profile-nav-tab {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 8px 18px;
-    border-radius: var(--bp-radius-pill);
-    color: var(--bp-text-secondary);
-    font-size: 13.5px;
+    gap: 6px;
+    height: 52px;
+    padding: 0 16px;
+    border-radius: 6px;
+    color: #65676b;
+    font-size: 15px;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
     background: transparent;
     border: none;
-    transition: all var(--bp-duration-fast) ease;
+    transition: background 0.15s ease, color 0.15s ease;
     white-space: nowrap;
+    box-shadow: none !important;
 }
 
 .profile-nav-tab:hover {
-    color: var(--bp-text-primary);
-    background: rgba(255, 255, 255, 0.6);
+    color: #050505;
+    background: #f2f2f2;
 }
 
 .profile-nav-tab.active {
-    background: var(--bp-surface) !important;
-    color: var(--bp-primary) !important;
-    box-shadow: var(--bp-shadow-sm);
+    background: transparent !important;
+    color: #1877f2 !important;
+    border-bottom: 3px solid #1877f2 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     font-weight: 700;
 }
 
 .profile-nav-more-item {
     position: relative;
-}
-
-/* Quick shortcut row (memory, saved, groups, etc) */
-.profile-quick-shortcuts-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    overflow-x: auto;
-    padding: 10px 0;
-    scrollbar-width: none;
-}
-.profile-quick-shortcuts-bar::-webkit-scrollbar { display: none; }
-
-.quick-shortcut-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    background: var(--bp-surface-subtle);
-    border: 1px solid var(--bp-border);
-    border-radius: var(--bp-radius-pill);
-    text-decoration: none;
-    color: var(--bp-text-primary);
-    font-size: 12.5px;
-    font-weight: 600;
-    transition: all var(--bp-duration-fast) ease;
-    flex-shrink: 0;
-}
-
-.quick-shortcut-item:hover {
-    background: var(--bp-surface);
-    border-color: var(--bp-primary);
-    transform: translateY(-1px);
-    box-shadow: var(--bp-shadow-xs);
-}
-
-.quick-shortcut-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -990,88 +918,320 @@ body {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+    .profile-header-wrapper {
+        margin-bottom: 8px !important;
+        border-bottom: 1px solid var(--bp-border) !important;
+    }
+
     .profile-header-container {
-        padding: 0 0 0 0;
+        padding: 0 !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
     }
 
     .cover-photo-wrapper {
-        height: 220px;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
+        height: 200px !important;
+        border-radius: 0 !important;
+        border: none !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    .cover-photo-edit-btn {
+        bottom: 12px !important;
+        right: 12px !important;
+        width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .cover-photo-edit-btn span {
+        display: none !important;
     }
 
     .profile-main-bar {
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        padding: 0 16px 20px 16px;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 16px 16px 16px !important;
+        margin-top: 0 !important;
+        gap: 8px !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-sizing: border-box !important;
     }
 
     .profile-avatar-and-names {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        margin-top: -60px;
-        gap: 12px;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-top: -64px !important;
+        gap: 8px !important;
+        box-sizing: border-box !important;
+        flex: none !important;
     }
 
     .avatar-wrapper {
-        width: 124px;
-        height: 124px;
-        padding: 3px;
+        width: 128px !important;
+        height: 128px !important;
+        min-width: 128px !important;
+        min-height: 128px !important;
+        border-radius: 50% !important;
+        margin: 0 auto !important;
+        border: 4px solid #ffffff !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+        position: relative !important;
+        flex-shrink: 0 !important;
+        background: #ffffff !important;
+    }
+
+    .avatar-img {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+    }
+
+    .avatar-edit-btn {
+        width: 36px !important;
+        height: 36px !important;
+        bottom: 2px !important;
+        right: 2px !important;
+        border: 2px solid #ffffff !important;
+        background: #e4e6eb !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
     .profile-names-block {
-        padding-top: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 4px !important;
+        margin-top: 6px !important;
+        margin-bottom: 0 !important;
+        box-sizing: border-box !important;
     }
 
     .profile-fullname {
-        font-size: 22px;
-        justify-content: center;
+        font-size: 22px !important;
+        font-weight: 700 !important;
+        color: #050505 !important;
+        line-height: 1.25 !important;
+        text-align: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        word-break: break-word !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+    }
+
+    .profile-username-id-row {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+        width: 100% !important;
+        margin-top: 4px !important;
+    }
+
+    .profile-username-sub {
+        font-size: 14px !important;
+        color: #65676b !important;
+        font-weight: 500 !important;
+    }
+
+    .profile-id-pill {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        padding: 2px 8px !important;
+        border-radius: 6px !important;
+        background: #f0f2f5 !important;
+        border: 1px solid #e4e6eb !important;
+        font-size: 11.5px !important;
+        color: #65676b !important;
+    }
+
+    .profile-bio-text {
+        font-size: 14px !important;
+        line-height: 1.45 !important;
+        color: #65676b !important;
+        text-align: center !important;
+        width: 100% !important;
+        max-width: 96% !important;
+        margin: 6px auto !important;
+        word-break: break-word !important;
     }
 
     .profile-loc-time-row {
-        justify-content: center;
-        gap: 12px;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        width: 100% !important;
+        text-align: center !important;
+        margin-top: 4px !important;
+        font-size: 13px !important;
+        color: #65676b !important;
+    }
+
+    .profile-friends-count-sub {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        width: 100% !important;
+        text-align: center !important;
+        margin-top: 6px !important;
+        font-size: 13.5px !important;
+        color: #65676b !important;
     }
 
     .profile-actions-bar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 14px;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-top: 12px !important;
+        margin-bottom: 8px !important;
+        gap: 8px !important;
+        box-sizing: border-box !important;
     }
 
     .profile-actions-row {
-        justify-content: center;
-        width: 100%;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        gap: 8px !important;
+        box-sizing: border-box !important;
     }
 
-    .profile-actions-row .fb-btn {
-        flex: 1;
+    .profile-actions-row-primary .btn-action-story {
+        flex: 1.2 1 0 !important;
+        min-width: 0 !important;
+        height: 38px !important;
+        font-size: 13.5px !important;
+        font-weight: 600 !important;
+        padding: 0 10px !important;
+        border-radius: 6px !important;
+        box-sizing: border-box !important;
     }
 
-    .profile-actions-row .btn-action-more {
-        flex: 0 0 40px;
+    .profile-actions-row-primary .btn-action-edit,
+    .profile-actions-row-primary .btn-action-friend,
+    .profile-actions-row-primary .btn-action-message {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        height: 38px !important;
+        font-size: 13.5px !important;
+        font-weight: 600 !important;
+        padding: 0 10px !important;
+        border-radius: 6px !important;
+        box-sizing: border-box !important;
+    }
+
+    .profile-actions-row-primary .btn-action-more {
+        flex: 0 0 38px !important;
+        width: 38px !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        padding: 0 !important;
+        border-radius: 6px !important;
+    }
+
+    .profile-actions-row-secondary {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        gap: 8px !important;
+        box-sizing: border-box !important;
+    }
+
+    .profile-actions-row-secondary .fb-btn {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        height: 36px !important;
+        font-size: 13px !important;
+        padding: 0 8px !important;
+        border-radius: 6px !important;
     }
 
     .profile-desktop-stats-box {
         display: none !important;
     }
 
-    .profile-content-container {
-        padding: 0 12px;
-        margin-top: 14px;
+    .profile-quick-shortcuts-bar {
+        display: none !important;
     }
 
-        /* On mobile when switching to tabs other than posts, hide left sidebar to display tab content immediately */
-        body.tab-not-posts .profile-left-col {
-            display: none !important;
-        }
+    .profile-nav-tabs {
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        height: 48px !important;
+        padding: 0 8px !important;
+        gap: 4px !important;
+        overflow-x: auto !important;
+        scrollbar-width: none !important;
+        -webkit-overflow-scrolling: touch !important;
+        border-top: 1px solid #e4e6eb !important;
+        border-bottom: 1px solid #e4e6eb !important;
+        margin-top: 6px !important;
+    }
+
+    .profile-nav-tab {
+        height: 48px !important;
+        padding: 0 12px !important;
+        font-size: 14px !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+    }
+
+    .profile-content-container {
+        grid-template-columns: 1fr !important;
+        padding: 0 10px !important;
+        margin-top: 10px !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    /* On mobile when switching to tabs other than posts, hide left sidebar to display tab content immediately */
+    body.tab-not-posts .profile-left-col {
+        display: none !important;
     }
 }
 

@@ -304,6 +304,7 @@ class LiveGatewayService
 
         $post = Post::create([
             'user_id' => $user->id,
+            'page_id' => $stream->page_id,
             'content' => $stream->title.($stream->description ? "\n\n".$stream->description : ''),
             'audience' => $postAudience,
             'type' => 'video',

@@ -6,26 +6,26 @@
 
 :root {
     --jj-primary: #1877f2;
-    --jj-primary-hover: #166fe5;
+    --jj-primary-hover: #1666d8;
     --jj-primary-light: rgba(24, 119, 242, 0.1);
-    --jj-primary-gradient: linear-gradient(135deg, #1877f2 0%, #0084ff 100%);
-    --jj-accent: #00c6ff;
-    --jj-success: #10b981;
-    --jj-danger: #ef4444;
+    --jj-primary-gradient: linear-gradient(135deg, #1877f2 0%, #1666d8 100%);
+    --jj-accent: #0084ff;
+    --jj-success: #12b76a;
+    --jj-danger: #f04438;
     --jj-warning: #f59e0b;
     --jj-purple: #8b5cf6;
     
-    --jj-bg: #f0f2f5;
+    --jj-bg: #f5f7fb;
     --jj-card: #ffffff;
     --jj-card-subtle: #f8fafc;
-    --jj-text-primary: #0f172a;
-    --jj-text-secondary: #64748b;
+    --jj-text-primary: #172033;
+    --jj-text-secondary: #667085;
     --jj-text-muted: #94a3b8;
-    --jj-border: #e2e8f0;
+    --jj-border: #e4e7ec;
     --jj-border-light: #f1f5f9;
-    --jj-divider: #e2e8f0;
-    --jj-hover: #f1f5f9;
-    --jj-active: #e2e8f0;
+    --jj-divider: #e4e7ec;
+    --jj-hover: #f5f7fb;
+    --jj-active: #e4e7ec;
     
     --jj-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --jj-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);

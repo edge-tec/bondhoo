@@ -21,7 +21,7 @@ class SignedUploadUrlRequest extends FormRequest
                 'in:image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/webm,application/pdf',
             ],
             'size' => ['required', 'integer', 'min:1', 'max:104857600'], // 100MB limit
-            'collection' => ['required', 'string', 'in:profile,cover,post,story,message,group,page,general'],
+            'collection' => ['required', 'string', 'in:profile,cover,post,story,message,group,page,general,reel'],
             'entity_id' => ['nullable', 'integer'],
         ];
     }

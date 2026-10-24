@@ -20,6 +20,7 @@ use App\Models\GroupMember;
 use App\Models\GroupMemberBadge;
 use App\Models\GroupMemberStrike;
 use App\Models\GroupModerationAction;
+use App\Models\GroupNotificationPreference;
 use App\Models\GroupPoll;
 use App\Models\GroupPollOption;
 use App\Models\GroupPollVote;
@@ -30,12 +31,14 @@ use App\Models\GroupRule;
 use App\Models\GroupSubscription;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\Group\EnterpriseGroupService;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -49,6 +52,25 @@ class GroupService
     public function __construct(
         protected EnterpriseGroupService $enterpriseGroupService
     ) {}
+
+    /**
+     * Send persistent notification via unified notification engine.
+     */
+    protected function notifyUser(int $recipientId, string $type, array $data): void
+    {
+        try {
+            if (app()->bound(NotificationServiceInterface::class)) {
+                app(NotificationServiceInterface::class)->send(
+                    recipientId: $recipientId,
+                    type: $type,
+                    data: $data,
+                    channels: ['database']
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Notification failed ({$type}): ".$e->getMessage());
+        }
+    }
 
     /**
      * নতুন গ্রুপ তৈরি করা এবং ওনার ও গ্রুপ চ্যাট কনভার্সন ইনিশিয়ালাইজ করা।
@@ -331,12 +353,41 @@ class GroupService
                 // রিয়েল-টাইম ব্রডকাস্ট
                 broadcast(new GroupMemberJoinedEvent($group->id, $member->toResponseArray(), $group->fresh()->members_count))->toOthers();
 
+                if ($group->creator_id !== $user->id) {
+                    $this->notifyUser(
+                        recipientId: $group->creator_id,
+                        type: 'notification.group_member_joined',
+                        data: [
+                            'group_id' => $group->id,
+                            'group_name' => $group->name,
+                            'user_id' => $user->id,
+                            'user_name' => $user->name,
+                            'title' => 'New Group Member',
+                            'message' => "{$user->name} joined {$group->name}.",
+                        ]
+                    );
+                }
+
                 return [
                     'status' => 'joined',
                     'message' => 'Successfully joined the group.',
                     'members_count' => $group->fresh()->members_count,
                 ];
             }
+
+            // If pending, notify creator
+            $this->notifyUser(
+                recipientId: $group->creator_id,
+                type: 'notification.group_join_request',
+                data: [
+                    'group_id' => $group->id,
+                    'group_name' => $group->name,
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'title' => 'New Group Join Request',
+                    'message' => "{$user->name} requested to join {$group->name}.",
+                ]
+            );
 
             return [
                 'status' => 'pending',
@@ -388,6 +439,17 @@ class GroupService
 
             broadcast(new GroupMemberJoinedEvent($group->id, $membership->toResponseArray(), $group->fresh()->members_count))->toOthers();
 
+            $this->notifyUser(
+                recipientId: $userId,
+                type: 'notification.group_request_approved',
+                data: [
+                    'group_id' => $group->id,
+                    'group_name' => $group->name,
+                    'title' => 'Join Request Approved',
+                    'message' => "Your request to join {$group->name} has been approved.",
+                ]
+            );
+
             return true;
         });
     }
@@ -413,6 +475,17 @@ class GroupService
         $membership->delete();
 
         $this->logAction($group, $admin, 'reject_member', 'user', $userId, 'Rejected pending join request.');
+
+        $this->notifyUser(
+            recipientId: $userId,
+            type: 'notification.group_request_rejected',
+            data: [
+                'group_id' => $group->id,
+                'group_name' => $group->name,
+                'title' => 'Join Request Declined',
+                'message' => "Your request to join {$group->name} was not approved.",
+            ]
+        );
 
         return true;
     }
@@ -514,8 +587,16 @@ class GroupService
             throw new AuthorizationException('Only group administrators can change member roles.');
         }
 
-        if ($group->isOwner($targetUserId) && $actor->id !== $targetUserId) {
+        if ($group->isOwner($targetUserId)) {
             throw new AuthorizationException('Cannot modify group owner role.');
+        }
+
+        if ($group->isAdmin($targetUserId) && ! $group->isOwner($actor->id)) {
+            throw new AuthorizationException('Only group owner can modify another administrator\'s role.');
+        }
+
+        if ($newRole === GroupMember::ROLE_ADMIN && ! $group->isOwner($actor->id)) {
+            throw new AuthorizationException('Only group owner can promote members to administrator.');
         }
 
         $member = GroupMember::where('group_id', $group->id)
@@ -546,6 +627,56 @@ class GroupService
         $this->logAction($group, $actor, 'update_role', 'user', $targetUserId, "Role changed to {$newRole}");
 
         return $member;
+    }
+
+    /**
+     * Transfer group ownership to another member.
+     */
+    public function transferOwnership(Group $group, User $currentOwner, User $newOwner): Group
+    {
+        if (! $group->isOwner($currentOwner->id)) {
+            throw new AuthorizationException('Only the group owner can transfer ownership.');
+        }
+
+        if ($currentOwner->id === $newOwner->id) {
+            throw new InvalidArgumentException('You already own this group.');
+        }
+
+        return DB::transaction(function () use ($group, $currentOwner, $newOwner) {
+            // Update group creator/owner
+            $group->update(['creator_id' => $newOwner->id]);
+
+            // Ensure new owner has admin membership
+            GroupMember::updateOrCreate([
+                'group_id' => $group->id,
+                'user_id' => $newOwner->id,
+            ], [
+                'role' => GroupMember::ROLE_ADMIN,
+                'status' => GroupMember::STATUS_ACTIVE,
+                'joined_at' => now(),
+            ]);
+
+            // Demote old owner to admin if they remain in group
+            $oldOwnerMember = GroupMember::where('group_id', $group->id)->where('user_id', $currentOwner->id)->first();
+            if ($oldOwnerMember) {
+                $oldOwnerMember->update(['role' => GroupMember::ROLE_ADMIN]);
+            }
+
+            $this->logAction($group, $currentOwner, 'transfer_ownership', 'user', $newOwner->id, "Transferred ownership to user {$newOwner->id}");
+
+            $this->notifyUser(
+                recipientId: $newOwner->id,
+                type: 'notification.group_ownership_transferred',
+                data: [
+                    'group_id' => $group->id,
+                    'group_name' => $group->name,
+                    'title' => 'Group Ownership Transferred',
+                    'message' => "You are now the owner of {$group->name}.",
+                ]
+            );
+
+            return $group;
+        });
     }
 
     /**
@@ -734,6 +865,31 @@ class GroupService
 
                 // রিয়েল-টাইম ফিড ব্রডকাস্ট
                 broadcast(new GroupPostCreatedEvent($group->id, $post->toResponseArray($user)))->toOthers();
+
+                // Notify active members who allow post notifications
+                $memberIds = GroupMember::where('group_id', $group->id)
+                    ->where('status', GroupMember::STATUS_ACTIVE)
+                    ->where('user_id', '!=', $user->id)
+                    ->limit(50)
+                    ->pluck('user_id');
+
+                foreach ($memberIds as $mId) {
+                    if (GroupNotificationPreference::allowsNotification((int) $mId, $group->id, 'new_posts')) {
+                        $this->notifyUser(
+                            recipientId: (int) $mId,
+                            type: 'notification.group_post',
+                            data: [
+                                'group_id' => $group->id,
+                                'group_name' => $group->name,
+                                'post_id' => $post->id,
+                                'author_id' => $user->id,
+                                'author_name' => $user->name,
+                                'title' => 'New post in '.$group->name,
+                                'message' => "{$user->name} posted in {$group->name}: ".Str::limit($content, 60),
+                            ]
+                        );
+                    }
+                }
             } else {
                 $this->logAction($group, $user, 'post_queued_for_review', 'post', $post->id, 'Flagged by moderation engine.');
             }

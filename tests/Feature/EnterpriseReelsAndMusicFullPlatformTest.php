@@ -129,6 +129,8 @@ class EnterpriseReelsAndMusicFullPlatformTest extends TestCase
             ->assertJsonPath('data.trim_end', 17.5)
             ->assertJsonPath('data.rotation_deg', 90)
             ->assertJsonPath('data.crop_aspect', '9:16')
+            ->assertJsonPath('data.audio_volume', 60)
+            ->assertJsonPath('data.music_volume', 85)
             ->assertJsonPath('data.music_track.title', 'Serene Rain');
 
         $reelId = $response->json('data.id');
@@ -136,6 +138,8 @@ class EnterpriseReelsAndMusicFullPlatformTest extends TestCase
         $this->assertDatabaseHas('reels', [
             'id' => $reelId,
             'music_track_id' => $track->id,
+            'audio_volume' => 60,
+            'music_volume' => 85,
             'rotation_deg' => 90,
             'crop_aspect' => '9:16',
             'is_draft' => false,

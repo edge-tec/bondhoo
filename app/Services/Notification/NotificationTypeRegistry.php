@@ -81,6 +81,20 @@ class NotificationTypeRegistry
             'default_title' => 'পেইজে নতুন পোস্ট',
             'action_url' => '/pages',
         ],
+        'page.invitation' => [
+            'category' => NotificationCategory::SOCIAL,
+            'icon' => 'mail',
+            'priority' => 'normal',
+            'default_title' => 'পেইজ ফলো করার আমন্ত্রণ',
+            'action_url' => '/pages',
+        ],
+        'page.invitation_accepted' => [
+            'category' => NotificationCategory::SOCIAL,
+            'icon' => 'user_check',
+            'priority' => 'normal',
+            'default_title' => 'পেইজ আমন্ত্রণ গৃহীত হয়েছে',
+            'action_url' => '/pages',
+        ],
         'social.like' => [
             'category' => NotificationCategory::SOCIAL,
             'icon' => 'heart',

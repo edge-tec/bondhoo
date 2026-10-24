@@ -770,6 +770,16 @@ const JugajugMediaSuite = {
         }
     },
 
+    escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    },
+
     /* =====================================================================
      * STORIES FEED & CAROUSEL
      * ===================================================================== */
@@ -788,41 +798,63 @@ const JugajugMediaSuite = {
 
             let html = `
                 <div class="fb-story-card fb-create-story-card" onclick="JugajugMediaSuite.openCreateStoryModal()" title="স্টোরি তৈরি করুন">
-                    <div class="story-circle-avatar-wrap">
-                        ${userAvatar ? `<img src="${userAvatar}" alt="You" class="story-circle-avatar-img" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">` : `<div class="story-circle-avatar-fallback">${userInitial}</div>`}
-                        <div class="story-create-badge-plus">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        </div>
+                    <div class="avatar-preview">
+                        ${userAvatar ? `<img src="${userAvatar}" alt="You" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">` : `<div class="avatar-letter">${userInitial}</div>`}
                     </div>
-                    <div class="story-circle-name">স্টোরি তৈরি করুন</div>
+                    <div class="bottom-action">
+                        <div class="fb-create-story-plus">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </div>
+                        <div class="fb-create-story-label">স্টোরি তৈরি করুন</div>
+                    </div>
                 </div>
             `;
-
-            const ringGradients = [
-                'linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #ec4899 100%)',
-                'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-                'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
-                'linear-gradient(135deg, #f97316 0%, #eab308 100%)',
-                'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)'
-            ];
 
             this.storiesFeed.forEach((userGroup, uIdx) => {
                 const author = userGroup.user?.name || 'ব্যবহারকারী';
                 const avatar = this.normalizeUrl(userGroup.user?.avatar_url || '');
                 const initial = author.charAt(0);
-                const allViewed = userGroup.all_viewed;
-                const isOnline = userGroup.user?.is_online || (uIdx % 2 === 0);
-                const grad = ringGradients[uIdx % ringGradients.length];
+                const allViewed = Boolean(userGroup.all_viewed);
+                const stories = userGroup.stories || [];
+                const firstStory = stories[0] || {};
+
+                let bgStyle = '';
+                let textPreviewHtml = '';
+
+                if (firstStory.type === 'media' && firstStory.media && firstStory.media.length > 0) {
+                    const m = firstStory.media[0];
+                    const mUrl = this.normalizeUrl(m.urls?.large || m.urls?.original || m.url || '');
+                    if (mUrl) {
+                        bgStyle = `background-image: url('${mUrl}');`;
+                    }
+                } else if (firstStory.type === 'text') {
+                    const bgColor = firstStory.background_color || 'linear-gradient(135deg, #1877f2, #7c3aed)';
+                    bgStyle = `background: ${bgColor};`;
+                    if (firstStory.content) {
+                        const snippet = firstStory.content.length > 60 ? firstStory.content.substring(0, 60) + '...' : firstStory.content;
+                        textPreviewHtml = `<div class="fb-story-text-preview">${this.escapeHtml(snippet)}</div>`;
+                    }
+                }
+
+                if (!bgStyle) {
+                    if (avatar) {
+                        bgStyle = `background-image: url('${avatar}');`;
+                    } else {
+                        bgStyle = `background: linear-gradient(135deg, #1877f2, #00c6ff);`;
+                    }
+                }
 
                 html += `
-                    <div class="fb-story-card" onclick="JugajugMediaSuite.openStoryViewer(${uIdx}, 0)" title="${author}">
-                        <div class="story-circle-avatar-wrap ${allViewed ? 'viewed' : 'unseen'}">
-                            <div class="story-gradient-ring" style="background: ${allViewed ? '#cbd5e1' : grad};">
-                                ${avatar ? `<img src="${avatar}" alt="${author}" class="story-circle-avatar-img" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">` : `<div class="story-circle-avatar-fallback">${initial}</div>`}
+                    <div class="fb-story-card" onclick="JugajugMediaSuite.openStoryViewer(${uIdx}, 0)" title="${this.escapeHtml(author)}">
+                        <div class="fb-story-card-inner">
+                            <div class="fb-story-bg" style="${bgStyle}"></div>
+                            <div class="fb-story-overlay"></div>
+                            <div class="fb-story-author-avatar-wrap ${allViewed ? 'viewed' : 'unseen'}">
+                                ${avatar ? `<img src="${avatar}" alt="${this.escapeHtml(author)}" class="fb-story-author-avatar-img" onerror="this.onerror=null; this.src='/images/default-avatar.svg';">` : `<div class="fb-story-author-avatar-fallback">${initial}</div>`}
                             </div>
-                            ${isOnline ? `<span class="story-online-dot"></span>` : ''}
+                            ${textPreviewHtml}
+                            <div class="fb-story-author-name">${this.escapeHtml(author)}</div>
                         </div>
-                        <div class="story-circle-name">${author}</div>
                     </div>
                 `;
             });
@@ -2935,20 +2967,26 @@ const JugajugMediaSuite = {
                     if (progressStatus) progressStatus.innerText = 'রিল প্রসেসিং ও পাবলিশিং কনফিগার হচ্ছে...';
 
                     // Optional Custom Cover Upload
-                    let coverPath = null;
+                    let coverMediaId = null;
                     if (this.reelCustomCoverFile) {
                         try {
                             const coverForm = new FormData();
                             coverForm.append('file', this.reelCustomCoverFile);
-                            coverForm.append('collection', 'reel_thumbnail');
-                            const coverRes = await fetch('/api/v2/uploads/direct', {
+                            coverForm.append('collection', 'reel');
+                            const coverRes = await fetch('/api/v1/media/upload', {
                                 method: 'POST',
+                                credentials: 'same-origin',
                                 headers: this.getAuthHeaders(),
                                 body: coverForm
                             });
                             const coverData = await coverRes.json();
-                            if (coverData.success) coverPath = coverData.data.file_path;
-                        } catch (e) {}
+                            if (!coverRes.ok || !coverData.success || !coverData.data?.id) {
+                                throw new Error(coverData.message || 'কভার ছবি আপলোড করা যায়নি।');
+                            }
+                            coverMediaId = coverData.data.id;
+                        } catch (e) {
+                            showToast('কভার ছবি আপলোড করা যায়নি। ভিডিওর স্বয়ংক্রিয় কভার ব্যবহার করা হবে।', '⚠');
+                        }
                     }
 
                     const caption = document.getElementById('reelCaptionInput')?.value.trim() || '';
@@ -2964,7 +3002,7 @@ const JugajugMediaSuite = {
                         comments_enabled: commentsEnabled ? 1 : 0,
                         allow_duet: duetEnabled,
                         duet_enabled: duetEnabled ? 1 : 0,
-                        cover_image_path: coverPath,
+                        cover_media_id: coverMediaId,
                         trim_start: this.reelTrimStart,
                         trim_end: this.reelTrimEnd,
                         rotation_deg: this.reelRotation,

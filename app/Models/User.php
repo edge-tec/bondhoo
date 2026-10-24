@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,7 +14,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
@@ -238,6 +239,16 @@ class User extends Authenticatable
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
+    }
+
+    public function reels(): HasMany
+    {
+        return $this->hasMany(Reel::class);
+    }
+
+    public function stories(): HasMany
+    {
+        return $this->hasMany(Story::class);
     }
 
     public function comments(): HasMany
@@ -639,5 +650,20 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute(): ?string
     {
         return $this->profile?->avatar_url;
+    }
+
+    public function marketplaceProducts(): HasMany
+    {
+        return $this->hasMany(MarketplaceProduct::class, 'seller_id');
+    }
+
+    public function marketplaceOrders(): HasMany
+    {
+        return $this->hasMany(MarketplaceOrder::class, 'buyer_id');
+    }
+
+    public function marketplaceSales(): HasMany
+    {
+        return $this->hasMany(MarketplaceOrder::class, 'seller_id');
     }
 }

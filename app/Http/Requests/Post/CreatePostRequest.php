@@ -16,7 +16,7 @@ class CreatePostRequest extends FormRequest
         return [
             'content' => ['nullable', 'string', 'max:5000'],
             'audience' => ['nullable', 'string', 'in:public,friends,followers,only_me'],
-            'type' => ['nullable', 'string', 'in:text,media,link,poll,life_event,question'],
+            'type' => ['nullable', 'string', 'in:text,media,link,poll,life_event,question,reel'],
             'location' => ['nullable', 'string', 'max:255'],
             'feeling_activity' => ['nullable', 'string', 'max:255'],
             'media_ids' => ['nullable', 'array'],

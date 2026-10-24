@@ -349,28 +349,40 @@ class PresenceController extends Controller
     {
         $request->validate([
             'conversation_id' => ['required', 'integer'],
+            'is_typing' => ['nullable', 'boolean'],
         ]);
 
         $user = $request->user();
         $conversationId = (int) $request->input('conversation_id');
 
-        $this->cacheService->setTyping($conversationId, $user->id);
+        $conversation = Conversation::find($conversationId);
+        if ($conversation && ! $conversation->hasParticipant($user->id)) {
+            return $this->errorResponse('You are not a participant in this conversation.', 403);
+        }
+
+        $isTyping = $request->boolean('is_typing', true);
+
+        if ($isTyping) {
+            $this->cacheService->setTyping($conversationId, $user->id);
+        } else {
+            $this->cacheService->forget("conversation:{$conversationId}:typing:{$user->id}");
+        }
 
         // সংশ্লিষ্ট কনভার্সনে লাইভ টাইপিং ইভেন্ট ব্রডকাস্ট করা
         $this->realtimeService->broadcastTyping(
             conversationId: $conversationId,
             userId: $user->id,
             userName: $user->name ?? $user->username,
-            isTyping: true
+            isTyping: $isTyping
         );
 
         return $this->successResponse(
             data: [
                 'conversation_id' => $conversationId,
                 'user_id' => $user->id,
-                'is_typing' => true,
+                'is_typing' => $isTyping,
             ],
-            message: 'Typing status recorded.'
+            message: $isTyping ? 'Typing status recorded.' : 'Typing status cleared.'
         );
     }
 

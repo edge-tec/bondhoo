@@ -25,6 +25,7 @@ class Reel extends Model
 
     protected $fillable = [
         'user_id',
+        'page_id',
         'caption',
         'audio_title',
         'audio_artist',
@@ -89,6 +90,11 @@ class Reel extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function page(): BelongsTo
+    {
+        return $this->belongsTo(Page::class);
     }
 
     public function media(): HasMany
@@ -225,6 +231,14 @@ class Reel extends Model
 
         return [
             'id' => $this->id,
+            'page_id' => $this->page_id,
+            'page' => $this->page ? [
+                'id' => $this->page->id,
+                'name' => $this->page->name,
+                'slug' => $this->page->slug,
+                'avatar_url' => $this->page->avatar_url,
+                'is_verified' => (bool) $this->page->is_verified,
+            ] : null,
             'user' => [
                 'id' => $this->user?->id,
                 'name' => $this->user?->name,

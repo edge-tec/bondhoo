@@ -406,7 +406,9 @@ class MessengerService implements MessengerServiceInterface
         $type = $data['type'] ?? 'text';
         $replyToId = isset($data['reply_to_message_id']) ? (int) $data['reply_to_message_id'] : (isset($data['reply_to_id']) ? (int) $data['reply_to_id'] : null);
 
-        if (empty($body) && empty($mediaIds)) {
+        if ($type === 'reel') {
+            $body = $body ?: 'Shared a Reel';
+        } elseif (empty($body) && empty($mediaIds)) {
             throw new InvalidArgumentException('A message must contain text, media, or voice recording.');
         }
 

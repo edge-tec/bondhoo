@@ -3,7 +3,7 @@
 @section('content')
     <div class="email-greeting">অভিনন্দন! SMTP টেস্ট সফল হয়েছে 🎉</div>
     <p class="email-text">
-        আপনার <strong>Bondhoo</strong> সোশ্যাল প্ল্যাটফর্মের SMTP ইমেইল সার্ভার সফলভাবে কনফিগার করা হয়েছে এবং কাজ করছে।
+        আপনার <strong>SocialHub</strong> সোশ্যাল প্ল্যাটফর্মের SMTP ইমেইল সার্ভার সফলভাবে কনফিগার করা হয়েছে এবং কাজ করছে।
     </p>
 
     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;">

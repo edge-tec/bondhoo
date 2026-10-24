@@ -116,7 +116,11 @@ class MediaController extends Controller
         );
 
         $disk = $this->storageService->getDisk();
-        Storage::disk($disk)->put($path, file_get_contents($file->getRealPath()), 'public');
+        $stream = fopen($file->getRealPath(), 'r');
+        Storage::disk($disk)->put($path, $stream, 'public');
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
 
         $media = Media::create([
             'user_id' => $user->id,

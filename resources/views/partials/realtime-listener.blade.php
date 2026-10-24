@@ -167,7 +167,7 @@
             const isVideo = payload.call_type === 'video' || payload.call_type === 'group_video';
             const box = document.getElementById('jjIncomingCall');
             if (!box) return;
-            document.getElementById('jjIncomingCallName').textContent = payload.caller?.name || 'Bondhoo ব্যবহারকারী';
+            document.getElementById('jjIncomingCallName').textContent = payload.caller?.name || 'SocialHub ব্যবহারকারী';
             document.getElementById('jjIncomingCallType').textContent = isVideo ? '📹 ভিডিও কল আসছে...' : '📞 অডিও কল আসছে...';
             document.getElementById('jjIncomingCallAvatar').src = payload.caller?.avatar_url || '/images/default-avatar.svg';
             document.getElementById('jjIncomingCallAccept').disabled = false;

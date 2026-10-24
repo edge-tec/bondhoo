@@ -172,6 +172,32 @@ class MediaUploadTest extends TestCase
             ->assertJsonValidationErrors(['file']);
     }
 
+    public function test_direct_upload_accepts_large_reels_video(): void
+    {
+        Storage::fake('public');
+        Queue::fake();
+
+        $user = User::factory()->create();
+        $token = $user->createToken('test')->plainTextToken;
+
+        // 5.5 MB video
+        $file = UploadedFile::fake()->create('reel_video.mp4', 5500, 'video/mp4');
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/media/upload', [
+                'file' => $file,
+                'collection' => 'reel',
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'collection' => 'reel',
+                ],
+            ]);
+    }
+
     public function test_can_retrieve_media_details(): void
     {
         $user = User::factory()->create();

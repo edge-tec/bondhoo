@@ -3,7 +3,7 @@
 @section('content')
     <div class="email-greeting">আসসালামু আলাইকুম, {{ $recipient->name ?: $recipient->username }}!</div>
     <p class="email-text">
-        আনন্দময় সংবাদ! <strong>{{ $friend->name ?: $friend->username }}</strong> (@ {{ $friend->username }}) আপনার পাঠানো ফ্রেন্ড রিকোয়েস্ট গ্রহণ করেছেন। আপনারা এখন <strong>Bondhoo</strong>-তে পরস্পরের বন্ধু।
+        আনন্দময় সংবাদ! <strong>{{ $friend->name ?: $friend->username }}</strong> (@ {{ $friend->username }}) আপনার পাঠানো ফ্রেন্ড রিকোয়েস্ট গ্রহণ করেছেন। আপনারা এখন <strong>SocialHub</strong>-তে পরস্পরের বন্ধু।
     </p>
 
     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; text-align: center; margin: 24px 0;">

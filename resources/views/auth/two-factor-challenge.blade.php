@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>টু-ফ্যাক্টর অথেন্টিকেশন — Bondhoo</title>
-    <meta name="description" content="Bondhoo টু-ফ্যাক্টর নিরাপত্তা যাচাই">
+    <title>টু-ফ্যাক্টর অথেন্টিকেশন — SocialHub</title>
+    <meta name="description" content="SocialHub টু-ফ্যাক্টর নিরাপত্তা যাচাই">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-    <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
     <link rel="manifest" href="/manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -143,8 +142,16 @@
 </head>
 <body>
     <div class="brand-header">
-        <a href="/" title="Bondhoo">
-            <img src="/images/bondhoo-logo.png" alt="Bondhoo Logo" class="logo-img">
+        <a href="/" title="SocialHub" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:#1877f2;color:#fff;box-shadow:0 2px 8px rgba(24,119,242,0.35);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </span>
+            <span style="font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;color:#1877f2;font-family:'Inter',sans-serif;">SocialHub</span>
         </a>
     </div>
 

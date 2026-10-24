@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>ইমেইল ও নোটিফিকেশন সেটিংস — Bondhoo</title>
+    <title>ইমেইল ও নোটিফিকেশন সেটিংস — SocialHub</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/images/bondhoo-favicon.png">
-    <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,7 +89,7 @@
         </div>
 
         <h1 class="page-title">ইমেইল ও নোটিফিকেশন পছন্দসমূহ</h1>
-        <p class="page-subtitle">আপনি Bondhoo থেকে কোন কোন কার্যকলাপের জন্য ইমেইল নোটিফিকেশন পেতে চান তা নির্ধারণ করুন।</p>
+        <p class="page-subtitle">আপনি SocialHub থেকে কোন কোন কার্যকলাপের জন্য ইমেইল নোটিফিকেশন পেতে চান তা নির্ধারণ করুন।</p>
 
         <div id="saveAlert" class="alert-box" style="background: #e7f3ff; color: #1877f2; border: 1px solid #1877f2;">
             নোটিফিকেশন সেটিংস সফলভাবে সংরক্ষিত হয়েছে! ✅

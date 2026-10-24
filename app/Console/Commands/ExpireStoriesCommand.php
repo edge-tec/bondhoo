@@ -11,15 +11,21 @@ use Illuminate\Console\Command;
  */
 class ExpireStoriesCommand extends Command
 {
-    protected $signature = 'stories:expire';
+    protected $signature = 'stories:expire {--cleanup : Also clean up media files for stories exceeding retention policy} {--retention=24 : Retention period in hours}';
 
-    protected $description = 'Expire stories that have passed their 24-hour expiration threshold';
+    protected $description = 'Expire stories that have passed their 24-hour expiration threshold and clean up media per retention policy';
 
     public function handle(StoryEnterpriseService $storyService): int
     {
         $expiredCount = $storyService->expireStaleStories();
 
         $this->info("Successfully expired {$expiredCount} stories.");
+
+        if ($this->option('cleanup')) {
+            $retentionHours = (int) $this->option('retention');
+            $cleanupResult = $storyService->cleanupExpiredStories($retentionHours);
+            $this->info("Cleaned up media for {$cleanupResult['cleaned_stories']} stories ({$cleanupResult['deleted_files']} files removed).");
+        }
 
         return Command::SUCCESS;
     }

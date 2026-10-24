@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\v2\Page;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
-use App\Models\PageMember;
 use App\Services\Page\EnterprisePageService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -112,6 +111,9 @@ class PageTeamV2ApiController extends Controller
     /**
      * আমন্ত্রণ প্রত্যাখ্যান করা (ইনভাইটেড ইউজার কর্তৃক)
      */
+    /**
+     * আমন্ত্রণ প্রত্যাখ্যান করা (ইনভাইটেড ইউজার কর্তৃক)
+     */
     public function declineInvite(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -119,24 +121,19 @@ class PageTeamV2ApiController extends Controller
             'token' => ['required', 'string'],
         ]);
 
-        $member = PageMember::where('invitation_token', $validated['token'])
-            ->where('user_id', $user->id)
-            ->where('status', 'invited')
-            ->first();
+        try {
+            $this->enterprisePageService->declineInvitation($validated['token'], $user);
 
-        if (! $member) {
+            return response()->json([
+                'success' => true,
+                'message' => 'আমন্ত্রণ প্রত্যাখ্যান করা হয়েছে।',
+            ]);
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'আমন্ত্রণটি খুঁজে পাওয়া যায়নি বা ইতোমধ্যে প্রক্রিয়াধীন রয়েছে।',
+                'message' => $e->getMessage(),
             ], 404);
         }
-
-        $member->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'আমন্ত্রণ প্রত্যাখ্যান করা হয়েছে।',
-        ]);
     }
 
     public function accept(Request $request): JsonResponse
@@ -150,6 +147,31 @@ class PageTeamV2ApiController extends Controller
     }
 
     /**
+     * টিম ইনভাইটেশন বাতিল / প্রত্যাহার করা
+     */
+    public function revoke(Request $request, Page $page, int $memberId): JsonResponse
+    {
+        $user = $request->user();
+        if (! Gate::forUser($user)->allows('manageTeam', $page)) {
+            abort(403, 'You do not have permission to revoke team invitations.');
+        }
+
+        try {
+            $this->enterprisePageService->revokeInvitation($page, $user, $memberId);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Team invitation revoked successfully.',
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
      * টিম মেম্বারের রোল বা পারমিশন পরিবর্তন
      */
     public function updateRole(Request $request, Page $page, int $memberId): JsonResponse
@@ -160,7 +182,7 @@ class PageTeamV2ApiController extends Controller
         }
 
         $validated = $request->validate([
-            'role' => ['required', 'string', 'in:admin,manager,content_manager,moderator,analyst,viewer'],
+            'role' => ['required', 'string', 'in:admin,manager,editor,content_manager,moderator,analyst,viewer'],
             'custom_permissions' => ['nullable', 'array'],
         ]);
 

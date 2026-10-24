@@ -1,4 +1,4 @@
-নিরাপত্তা বিজ্ঞপ্তি: {{ $actionTitle }} — Bondhoo
+নিরাপত্তা বিজ্ঞপ্তি: {{ $actionTitle }} — SocialHub
 
 আসসালামু আলাইকুম, {{ $user->name ?: $user->username }}!
 {{ $actionDescription }}
@@ -10,4 +10,4 @@
 নিরাপত্তা সেটিংস পরীক্ষা করতে প্রবেশ করুন:
 {{ config('app.url') }}/settings/two-factor
 
-(C) {{ date('Y') }} Bondhoo Platform.
+(C) {{ date('Y') }} SocialHub Platform.

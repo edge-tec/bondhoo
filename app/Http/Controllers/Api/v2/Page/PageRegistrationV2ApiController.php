@@ -11,6 +11,8 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * এন্টারপ্রাইজ পেজ রেজিস্ট্রেশন ও ট্যাক্সোনমি কন্ট্রোলার (API v2)
@@ -228,6 +230,7 @@ class PageRegistrationV2ApiController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:100'],
             'username' => ['nullable', 'string', 'max:60'],
+            'slug' => ['nullable', 'string', 'max:100'],
             'page_type_id' => ['nullable', 'integer', 'exists:page_types,id'],
             'page_category_id' => ['nullable', 'integer', 'exists:page_categories,id'],
             'page_subcategory_id' => ['nullable', 'integer', 'exists:page_subcategories,id'],
@@ -236,10 +239,12 @@ class PageRegistrationV2ApiController extends Controller
             'short_description' => ['nullable', 'string', 'max:300'],
             'bio' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string', 'max:3000'],
-            'avatar_url' => ['nullable', 'string', 'url'],
-            'logo_url' => ['nullable', 'string', 'url'],
-            'cover_image_url' => ['nullable', 'string', 'url'],
-            'website' => ['nullable', 'string', 'url'],
+            'avatar' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:10240'],
+            'cover_image' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:15360'],
+            'avatar_url' => ['nullable', 'string'],
+            'logo_url' => ['nullable', 'string'],
+            'cover_image_url' => ['nullable', 'string'],
+            'website' => ['nullable', 'string', 'max:500'],
             'email' => ['nullable', 'email', 'max:100'],
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:255'],
@@ -257,8 +262,9 @@ class PageRegistrationV2ApiController extends Controller
             'gallery_urls' => ['nullable', 'array'],
             'cta_type' => ['nullable', 'string', 'max:40'],
             'cta_url' => ['nullable', 'string', 'url'],
-            'visibility' => ['nullable', 'string', 'in:public,unlisted,restricted'],
+            'visibility' => ['nullable', 'string', 'in:public,friends,private,unlisted,restricted'],
             'privacy_settings' => ['nullable', 'array'],
+            'settings' => ['nullable', 'array'],
             'branches' => ['nullable', 'array'],
             'request_verification' => ['nullable', 'boolean'],
             'verification_type' => ['nullable', 'string'],
@@ -267,7 +273,29 @@ class PageRegistrationV2ApiController extends Controller
             'draft_id' => ['nullable', 'integer'],
         ]);
 
+        $newlyUploadedPaths = [];
+
         try {
+            if ($request->hasFile('avatar')) {
+                $path = $request->file('avatar')->store('pages/avatars', 'public');
+                $validated['avatar_url'] = '/storage/'.$path;
+                $newlyUploadedPaths[] = $path;
+            } elseif (! empty($validated['avatar_url']) && str_starts_with($validated['avatar_url'], 'data:image/')) {
+                $url = $this->registrationService->processBase64Image($validated['avatar_url'], 'pages/avatars');
+                $validated['avatar_url'] = $url;
+                $newlyUploadedPaths[] = Str::after($url, '/storage/');
+            }
+
+            if ($request->hasFile('cover_image')) {
+                $path = $request->file('cover_image')->store('pages/covers', 'public');
+                $validated['cover_image_url'] = '/storage/'.$path;
+                $newlyUploadedPaths[] = $path;
+            } elseif (! empty($validated['cover_image_url']) && str_starts_with($validated['cover_image_url'], 'data:image/')) {
+                $url = $this->registrationService->processBase64Image($validated['cover_image_url'], 'pages/covers');
+                $validated['cover_image_url'] = $url;
+                $newlyUploadedPaths[] = Str::after($url, '/storage/');
+            }
+
             $page = $this->registrationService->registerPage($user, $validated);
 
             return response()->json([
@@ -276,6 +304,12 @@ class PageRegistrationV2ApiController extends Controller
                 'data' => $page->toResponseArray($user),
             ], 201);
         } catch (Exception $e) {
+            foreach ($newlyUploadedPaths as $p) {
+                if (Storage::disk('public')->exists($p)) {
+                    Storage::disk('public')->delete($p);
+                }
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),

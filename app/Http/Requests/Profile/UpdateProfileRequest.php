@@ -15,9 +15,15 @@ class UpdateProfileRequest extends FormRequest
     {
         return [
             'name' => ['nullable', 'string', 'max:100'],
+            'first_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
             'display_name' => ['nullable', 'string', 'max:100'],
+            'headline' => ['nullable', 'string', 'max:255'],
             'bio' => ['nullable', 'string', 'max:500'],
             'location' => ['nullable', 'string', 'max:100'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'hometown' => ['nullable', 'string', 'max:100'],
+            'relationship_status' => ['nullable', 'string', 'max:50'],
             'website' => ['nullable', 'url', 'max:255'],
             'birth_date' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', 'in:male,female,other,prefer_not_to_say'],

@@ -503,7 +503,7 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="search" id="mobileSearchModalInput" placeholder="Bondhoo-তে অনুসন্ধান করুন..." autocomplete="off">
+                <input type="search" id="mobileSearchModalInput" placeholder="Search for people, posts, or groups..." autocomplete="off">
                 <button type="button" id="mobileSearchClearBtn" style="display: none;" onclick="clearMobileSearchInput()" title="মুছুন">✕</button>
             </div>
             <button type="button" class="mobile-search-cancel-btn" onclick="closeMobileSearchModal()">বাতিল</button>

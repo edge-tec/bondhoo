@@ -3,7 +3,7 @@
 @section('content')
     <div class="email-greeting">আসসালামু আলাইকুম, {{ $recipient->name ?: $recipient->username }}!</div>
     <p class="email-text">
-        <strong>{{ $sender->name ?: $sender->username }}</strong> (@ {{ $sender->username }}) আপনাকে <strong>Bondhoo</strong> সোশ্যাল প্ল্যাটফর্মে ফ্রেন্ড রিকোয়েস্ট পাঠিয়েছেন।
+        <strong>{{ $sender->name ?: $sender->username }}</strong> (@ {{ $sender->username }}) আপনাকে <strong>SocialHub</strong> সোশ্যাল প্ল্যাটফর্মে ফ্রেন্ড রিকোয়েস্ট পাঠিয়েছেন।
     </p>
 
     <!-- Sender Profile Card -->

@@ -474,8 +474,8 @@ class EnterprisePageRegistrationSystemTest extends TestCase
         $guestRes = $this->get('/pages/create');
         $guestRes->assertRedirect('/login');
 
-        // অথেনটিকেটেড ইউজার 200 OK পাবে
-        $authRes = $this->actingAs($this->user)->get('/pages/create');
+        // অথেনটিকেটেড ইউজার 200 OK পাবে (ব্লেড মোড)
+        $authRes = $this->actingAs($this->user)->get('/pages/create?blade=1');
         $authRes->assertStatus(200);
         $authRes->assertSee('এন্টারপ্রাইজ পেইজ ক্রিয়েশন অপারেটিং সিস্টেম');
         $authRes->assertSee('Restaurant / Food');

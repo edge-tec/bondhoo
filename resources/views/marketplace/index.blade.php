@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'মার্কেটপ্লেস — Bondhoo')
+@section('title', 'মার্কেটপ্লেস — SocialHub')
 
 @section('styles')
 <style>
@@ -215,12 +215,19 @@
         <h1 style="font-size: 26px; font-weight: 800; margin-bottom: 6px;">🏪 মার্কেটপ্লেস ও কেনাবেচা</h1>
         <p style="font-size: 14px; opacity: 0.95;">১০০% নিরাপদ এসক্রো গ্যারান্টি: পণ্য হাতে না পাওয়া পর্যন্ত টাকা সুরক্ষিত থাকে।</p>
     </div>
-    <div>
-        <button class="btn-fb-primary" style="background: white; color: #ea580c;" onclick="openSellModal()">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn-fb-primary" style="background: white; color: #ea580c; border: none; font-weight: 700;" onclick="openSellModal()">
             💰 পণ্য বিক্রি করুন
         </button>
+        <a href="{{ route('marketplace.orders') }}" class="btn-fb-secondary" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); text-decoration: none;">
+            📦 আমার অর্ডার ও এসক্রো
+        </a>
+        <a href="{{ route('marketplace.my-listings') }}" class="btn-fb-secondary" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); text-decoration: none;">
+            🏷️ আমার বিজ্ঞাপন
+        </a>
     </div>
 </div>
+
 
 <!-- Search & Filters -->
 <div class="fb-card" style="margin-bottom: 20px;">
@@ -330,6 +337,10 @@
                 <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 4px;">লোকেশন (শহর বা এলাকা)</label>
                 <input type="text" id="prodLocation" class="search-input" style="border: 1px solid var(--fb-border);" placeholder="উদাঃ ধানমন্ডি, ঢাকা">
             </div>
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 4px;">পণ্যের ছবির লিংক (Image URL)</label>
+                <input type="url" id="prodImage" class="search-input" style="border: 1px solid var(--fb-border);" placeholder="https://example.com/product.jpg">
+            </div>
             <div style="margin-bottom: 16px;">
                 <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 4px;">বিস্তারিত বিবরণ</label>
                 <textarea id="prodDesc" rows="3" class="search-input" style="border: 1px solid var(--fb-border); width: 100%; height: auto; border-radius: 8px; padding: 10px;" placeholder="পণ্যের বিস্তারিত বিবরণ দিন..."></textarea>
@@ -364,10 +375,13 @@
         const condition = document.getElementById('prodCondition').value;
         const category_id = document.getElementById('prodCategory').value;
         const location = document.getElementById('prodLocation').value.trim();
+        const imageUrl = document.getElementById('prodImage').value.trim();
         const description = document.getElementById('prodDesc').value.trim();
         const btn = document.getElementById('btnSellSubmit');
         btn.disabled = true;
         btn.textContent = 'পোস্ট হচ্ছে...';
+
+        const images = imageUrl ? [imageUrl] : [];
 
         fetch('/api/v2/marketplace/products', {
             method: 'POST',
@@ -376,7 +390,7 @@
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ title, price, condition, category_id, location, description, images: [] })
+            body: JSON.stringify({ title, price, condition, category_id, location, description, images })
         })
         .then(res => res.json())
         .then(data => {
@@ -396,4 +410,5 @@
         });
     }
 </script>
+
 @endsection

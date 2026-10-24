@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'অ্যাডমিন লাইভ কন্ট্রোল সেন্টার — Bondhoo')
+@section('title', 'অ্যাডমিন লাইভ কন্ট্রোল সেন্টার — SocialHub')
 
 @section('styles')
 <style>

@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-    <title>নতুন অ্যাকাউন্ট তৈরি করুন — Bondhoo সোশ্যাল নেটওয়ার্ক</title>
-    <meta name="description" content="Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্কে যুক্ত হোন। সহজে ও নিরাপদে আপনার নতুন অ্যাকাউন্ট তৈরি করুন।">
+    <title>নতুন অ্যাকাউন্ট তৈরি করুন — SocialHub সোশ্যাল নেটওয়ার্ক</title>
+    <meta name="description" content="SocialHub — আধুনিক সোশ্যাল নেটওয়ার্কে যুক্ত হোন। সহজে ও নিরাপদে আপনার নতুন অ্যাকাউন্ট তৈরি করুন।">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-    <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
     <link rel="manifest" href="/manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -482,8 +481,16 @@
 </head>
 <body>
     <header class="header">
-        <a href="/" class="logo-link" title="Bondhoo — হোম পেজে যান">
-            <img src="/images/bondhoo-logo.png" alt="Bondhoo Logo" class="logo-img">
+        <a href="/" class="logo-link" title="SocialHub" style="text-decoration:none;display:inline-flex;align-items:center;gap:10px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:#1877f2;color:#fff;box-shadow:0 2px 8px rgba(24,119,242,0.35);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </span>
+            <span style="font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;color:#1877f2;font-family:'Inter',sans-serif;">SocialHub</span>
         </a>
         <a href="/login" class="login-btn-top">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -507,7 +514,7 @@
                     </svg>
                     <span>নতুন সদস্য নিবন্ধন</span>
                 </div>
-                <h1 class="card-title">Bondhoo-তে স্বাগতম</h1>
+                <h1 class="card-title">SocialHub-এ স্বাগতম</h1>
                 <p class="card-subtitle">বন্ধু ও শুভানুধ্যায়ীদের সাথে যুক্ত হতে মাত্র ১ মিনিটে অ্যাকাউন্ট খুলুন।</p>
             </div>
 
@@ -718,7 +725,7 @@
                     <label class="terms-label">
                         <input type="checkbox" id="acceptTerms" class="terms-checkbox" required>
                         <span>
-                            আমি Bondhoo প্ল্যাটফর্মের <a href="#" onclick="event.preventDefault(); alert('Bondhoo ব্যবহারের শর্তাবলী: পারস্পরিক শ্রদ্ধা বজায় রাখুন এবং নিরাপদ কমিউনিটি গড়ে তুলুন।');">ব্যবহারের শর্তাবলী</a> এবং <a href="#" onclick="event.preventDefault(); alert('Bondhoo প্রাইভেসি পলিসি: আপনার ব্যক্তিগত তথ্য ও গোপনীয়তা সর্বদা সুরক্ষিত।');">প্রাইভেসি পলিসি</a> পড়েছি ও এতে পূর্ণ সম্মতি প্রদান করছি।
+                            আমি SocialHub প্ল্যাটফর্মের <a href="#" onclick="event.preventDefault(); alert('SocialHub ব্যবহারের শর্তাবলী: পারস্পরিক শ্রদ্ধা বজায় রাখুন এবং নিরাপদ কমিউনিটি গড়ে তুলুন।');">ব্যবহারের শর্তাবলী</a> এবং <a href="#" onclick="event.preventDefault(); alert('SocialHub প্রাইভেসি পলিসি: আপনার ব্যক্তিগত তথ্য ও গোপনীয়তা সর্বদা সুরক্ষিত।');">প্রাইভেসি পলিসি</a> পড়েছি ও এতে পূর্ণ সম্মতি প্রদান করছি।
                         </span>
                     </label>
                 </div>
@@ -742,7 +749,7 @@
     </main>
 
     <footer>
-        <p>&copy; {{ date('Y') }} <strong>Bondhoo</strong>. সর্বস্বত্ব সংরক্ষিত। আধুনিক সামাজিক যোগাযোগের নিরাপদ ঠিকানা।</p>
+        <p>&copy; {{ date('Y') }} <strong>SocialHub</strong>. সর্বস্বত্ব সংরক্ষিত। আধুনিক সামাজিক যোগাযোগের নিরাপদ ঠিকানা।</p>
     </footer>
 
     <script>

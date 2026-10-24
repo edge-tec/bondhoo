@@ -3,11 +3,18 @@
 namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
+use App\Models\ConversationParticipant;
 use App\Models\Group;
+use App\Models\GroupInvitation;
 use App\Models\GroupMember;
+use App\Models\GroupNotificationPreference;
+use App\Models\User;
+use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\GroupService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 /**
  * এন্টারপ্রাইজ গ্রুপ কন্ট্রোলার:
@@ -87,9 +94,81 @@ class GroupController extends Controller
             'features' => ['nullable', 'array'],
             'rules' => ['nullable', 'array'],
             'questions' => ['nullable', 'array'],
+            'invited_user_ids' => ['nullable', 'array'],
+            'invited_user_ids.*' => ['integer', 'exists:users,id'],
+            'invite_user_ids' => ['nullable', 'array'],
+            'invite_user_ids.*' => ['integer', 'exists:users,id'],
+            'allow_member_invites' => ['nullable', 'boolean'],
+            'allow_member_posts' => ['nullable', 'boolean'],
+            'require_admin_approval' => ['nullable', 'boolean'],
         ]);
 
+        if (! empty($validated['require_admin_approval'])) {
+            $validated['membership_approval_mode'] = Group::APPROVAL_REQUIRED;
+        }
+
+        if (isset($validated['allow_member_posts']) && ! $validated['allow_member_posts']) {
+            $validated['post_approval_mode'] = Group::POST_APPROVAL_ADMIN;
+        }
+
+        $features = $validated['features'] ?? [];
+        if (isset($validated['allow_member_invites'])) {
+            $features['member_invites'] = (bool) $validated['allow_member_invites'];
+        }
+        $validated['features'] = $features;
+
         $group = $this->groupService->createGroup($user, $validated);
+
+        // Process invited members if specified
+        $invitedIds = $validated['invited_user_ids'] ?? ($validated['invite_user_ids'] ?? []);
+        if (! empty($invitedIds)) {
+            foreach (array_unique($invitedIds) as $inviteeId) {
+                if ((int) $inviteeId === (int) $user->id) {
+                    continue;
+                }
+                $inv = GroupInvitation::where('group_id', $group->id)
+                    ->where('invitee_id', (int) $inviteeId)
+                    ->first();
+
+                if (! $inv) {
+                    $inv = GroupInvitation::create([
+                        'group_id' => $group->id,
+                        'invitee_id' => (int) $inviteeId,
+                        'inviter_id' => $user->id,
+                        'token' => Str::random(40),
+                        'role' => GroupMember::ROLE_MEMBER,
+                        'status' => GroupInvitation::STATUS_PENDING,
+                        'expires_at' => now()->addDays(14),
+                    ]);
+                } elseif ($inv->status !== GroupInvitation::STATUS_PENDING) {
+                    $inv->update([
+                        'inviter_id' => $user->id,
+                        'token' => Str::random(40),
+                        'status' => GroupInvitation::STATUS_PENDING,
+                        'expires_at' => now()->addDays(14),
+                    ]);
+                }
+
+                try {
+                    if (app()->bound(NotificationServiceInterface::class)) {
+                        app(NotificationServiceInterface::class)->send(
+                            recipientId: (int) $inviteeId,
+                            type: 'notification.group_invitation',
+                            data: [
+                                'group_id' => $group->id,
+                                'group_name' => $group->name,
+                                'inviter_id' => $user->id,
+                                'inviter_name' => $user->name,
+                                'title' => 'Group Invitation',
+                                'message' => "{$user->name} invited you to join {$group->name}.",
+                            ],
+                            channels: ['database']
+                        );
+                    }
+                } catch (\Throwable) {
+                }
+            }
+        }
 
         return $this->successResponse(
             data: $group->toResponseArray($user),
@@ -200,10 +279,44 @@ class GroupController extends Controller
         $user = $request->user();
         $group = Group::findOrFail($id);
 
-        $this->groupService->leaveGroup($group, $user);
+        try {
+            $this->groupService->leaveGroup($group, $user);
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
 
         return $this->successResponse(
             message: 'Left the group successfully.'
+        );
+    }
+
+    /**
+     * ওনারশিপ অন্য মেম্বারকে হস্তান্তর করা (শুধুমাত্র ওনার)।
+     */
+    public function transferOwnership(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'new_owner_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $newOwner = User::findOrFail($validated['new_owner_id']);
+
+        try {
+            $transferred = $this->groupService->transferOwnership($group, $user, $newOwner);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+
+        return $this->successResponse(
+            data: $transferred->toResponseArray($user),
+            message: 'Group ownership transferred successfully.'
         );
     }
 
@@ -251,6 +364,61 @@ class GroupController extends Controller
     }
 
     /**
+     * পেন্ডিং মেম্বারশিপ রিকোয়েস্ট তালিকা (শুধুমাত্র অ্যাডমিন/মডারেটর)।
+     */
+    public function requests(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        if (! $group->hasPermission($user->id, 'approve_members')) {
+            return $this->errorResponse('Permission denied.', 403);
+        }
+
+        $requests = GroupMember::where('group_id', $group->id)
+            ->where('status', GroupMember::STATUS_PENDING)
+            ->with(['user.profile'])
+            ->latest('id')
+            ->paginate((int) $request->query('per_page', 20));
+
+        $requests->getCollection()->transform(fn (GroupMember $m) => $m->toResponseArray());
+
+        return $this->successResponse(
+            data: $requests->items(),
+            message: 'Pending membership requests retrieved successfully.',
+            meta: [
+                'current_page' => $requests->currentPage(),
+                'last_page' => $requests->lastPage(),
+                'total' => $requests->total(),
+            ]
+        );
+    }
+
+    /**
+     * নিজের পেন্ডিং রিকোয়েস্ট ক্যানসেল করা।
+     */
+    public function cancelRequest(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $pending = GroupMember::where('group_id', $group->id)
+            ->where('user_id', $user->id)
+            ->where('status', GroupMember::STATUS_PENDING)
+            ->first();
+
+        if (! $pending) {
+            return $this->errorResponse('No pending join request found.', 404);
+        }
+
+        $pending->delete();
+
+        return $this->successResponse(
+            message: 'Join request cancelled successfully.'
+        );
+    }
+
+    /**
      * পেন্ডিং মেম্বারশিপ অনুমোদন করা।
      */
     public function approve(Request $request, int $id, int $userId): JsonResponse
@@ -258,7 +426,11 @@ class GroupController extends Controller
         $admin = $request->user();
         $group = Group::findOrFail($id);
 
-        $approved = $this->groupService->approveMember($group, $admin, $userId);
+        try {
+            $approved = $this->groupService->approveMember($group, $admin, $userId);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
+        }
 
         if (! $approved) {
             return $this->errorResponse('Pending membership request not found.', 404);
@@ -277,7 +449,11 @@ class GroupController extends Controller
         $admin = $request->user();
         $group = Group::findOrFail($id);
 
-        $this->groupService->rejectMember($group, $admin, $userId);
+        try {
+            $this->groupService->rejectMember($group, $admin, $userId);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
+        }
 
         return $this->successResponse(
             message: 'Member join request rejected.'
@@ -514,6 +690,10 @@ class GroupController extends Controller
         $user = $request->user();
         $group = Group::findOrFail($id);
 
+        if ($group->isPrivate() && (! $user || ! $group->hasMember($user->id))) {
+            return $this->errorResponse('This group is private.', 403);
+        }
+
         $polls = $group->polls()->with(['options', 'creator'])->paginate((int) $request->query('per_page', 10));
         $polls->getCollection()->transform(fn ($p) => $p->toResponseArray($user));
 
@@ -577,6 +757,10 @@ class GroupController extends Controller
     {
         $user = $request->user();
         $group = Group::findOrFail($id);
+
+        if ($group->isPrivate() && (! $user || ! $group->hasMember($user->id))) {
+            return $this->errorResponse('This group is private.', 403);
+        }
 
         $events = $group->events()->with('creator')->paginate((int) $request->query('per_page', 10));
         $events->getCollection()->transform(fn ($e) => $e->toResponseArray($user));
@@ -732,7 +916,12 @@ class GroupController extends Controller
      */
     public function files(Request $request, int $id): JsonResponse
     {
+        $user = $request->user();
         $group = Group::findOrFail($id);
+
+        if ($group->isPrivate() && (! $user || ! $group->hasMember($user->id))) {
+            return $this->errorResponse('This group is private.', 403);
+        }
 
         return $this->successResponse(
             data: $group->files()->with('user')->get()->map(fn ($f) => $f->toResponseArray()),
@@ -856,6 +1045,369 @@ class GroupController extends Controller
         return $this->successResponse(
             data: $history->items(),
             message: 'Moderation history retrieved successfully.'
+        );
+    }
+
+    /**
+     * ক্যাটাগরি তালিকা।
+     */
+    public function categories(Request $request): JsonResponse
+    {
+        $categories = [
+            ['id' => 'technology', 'name' => 'Technology', 'slug' => 'technology', 'icon' => 'laptop-outline'],
+            ['id' => 'education', 'name' => 'Education', 'slug' => 'education', 'icon' => 'school-outline'],
+            ['id' => 'business', 'name' => 'Business', 'slug' => 'business', 'icon' => 'briefcase-outline'],
+            ['id' => 'entertainment', 'name' => 'Entertainment', 'slug' => 'entertainment', 'icon' => 'film-outline'],
+            ['id' => 'sports', 'name' => 'Sports', 'slug' => 'sports', 'icon' => 'football-outline'],
+            ['id' => 'gaming', 'name' => 'Gaming', 'slug' => 'gaming', 'icon' => 'game-controller-outline'],
+            ['id' => 'photography', 'name' => 'Photography', 'slug' => 'photography', 'icon' => 'camera-outline'],
+            ['id' => 'travel', 'name' => 'Travel', 'slug' => 'travel', 'icon' => 'airplane-outline'],
+            ['id' => 'food', 'name' => 'Food', 'slug' => 'food', 'icon' => 'restaurant-outline'],
+            ['id' => 'health_fitness', 'name' => 'Health and Fitness', 'slug' => 'health-and-fitness', 'icon' => 'fitness-outline'],
+            ['id' => 'local_community', 'name' => 'Local Community', 'slug' => 'local-community', 'icon' => 'people-outline'],
+            ['id' => 'other', 'name' => 'Other', 'slug' => 'other', 'icon' => 'grid-outline'],
+        ];
+
+        return $this->successResponse(
+            data: $categories,
+            message: 'Categories retrieved successfully.'
+        );
+    }
+
+    /**
+     * গ্রুপ ইমেজ আপলোড (কভার ও প্রোফাইল ফটো)।
+     */
+    public function uploadMedia(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:15360'],
+            'file' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:15360'],
+            'avatar' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:15360'],
+            'cover' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:15360'],
+            'type' => ['nullable', 'string', 'in:avatar,cover,general'],
+            'group_id' => ['nullable', 'integer', 'exists:groups,id'],
+        ]);
+
+        $file = $request->file('image') ?? $request->file('file') ?? $request->file('avatar') ?? $request->file('cover');
+        if (! $file) {
+            return $this->errorResponse('No image file uploaded.', 422);
+        }
+
+        $type = $request->input('type') ?: ($request->hasFile('avatar') ? 'avatar' : ($request->hasFile('cover') ? 'cover' : 'general'));
+        $folder = $type === 'cover' ? 'groups/covers' : ($type === 'avatar' ? 'groups/avatars' : 'groups/media');
+        $path = $file->store($folder, 'public');
+        $url = '/storage/'.$path;
+
+        if ($groupId = $request->input('group_id')) {
+            $group = Group::findOrFail($groupId);
+            $user = $request->user();
+            if (! $group->hasPermission($user->id, 'manage_settings')) {
+                return $this->errorResponse('Permission denied to update group media.', 403);
+            }
+            if ($type === 'avatar') {
+                $group->update(['avatar_url' => $url]);
+            } elseif ($type === 'cover') {
+                $group->update(['cover_image_url' => $url]);
+            }
+        }
+
+        return $this->successResponse(
+            data: [
+                'url' => $url,
+                'path' => $path,
+                'type' => $type,
+            ],
+            message: 'Image uploaded successfully.'
+        );
+    }
+
+    /**
+     * নির্দিষ্ট গ্রুপের জন্য মিডিয়া আপলোড।
+     */
+    public function uploadGroupMedia(Request $request, int $id): JsonResponse
+    {
+        $request->merge(['group_id' => $id]);
+
+        return $this->uploadMedia($request);
+    }
+
+    /**
+     * ইউজারের পেন্ডিং ইনভিটেশন তালিকা।
+     */
+    public function myInvitations(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $invitations = GroupInvitation::where('invitee_id', $user->id)
+            ->where('status', GroupInvitation::STATUS_PENDING)
+            ->with(['group', 'inviter'])
+            ->latest()
+            ->get();
+
+        return $this->successResponse(
+            data: $invitations->map(fn ($inv) => $inv->toResponseArray())->values(),
+            message: 'Pending group invitations retrieved successfully.'
+        );
+    }
+
+    /**
+     * নির্দিষ্ট গ্রুপের ইনভিটেশন তালিকা।
+     */
+    public function groupInvitations(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        if (! $group->hasPermission($user->id, 'invite_members') && ! $group->isAdmin($user->id)) {
+            return $this->errorResponse('Permission denied.', 403);
+        }
+
+        $invitations = GroupInvitation::where('group_id', $group->id)
+            ->with(['invitee', 'inviter'])
+            ->latest()
+            ->paginate((int) $request->query('per_page', 20));
+
+        $invitations->getCollection()->transform(fn ($i) => $i->toResponseArray());
+
+        return $this->successResponse(
+            data: $invitations->items(),
+            message: 'Group invitations retrieved successfully.',
+            meta: [
+                'current_page' => $invitations->currentPage(),
+                'last_page' => $invitations->lastPage(),
+                'total' => $invitations->total(),
+            ]
+        );
+    }
+
+    /**
+     * ফ্রেন্ডদের গ্রুপে ইনভাইট পাঠানো।
+     */
+    public function inviteMembers(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        if (! $group->hasPermission($user->id, 'invite_members') && ! $group->isAdmin($user->id)) {
+            return $this->errorResponse('Permission denied to invite members.', 403);
+        }
+
+        $validated = $request->validate([
+            'user_ids' => ['required', 'array', 'min:1'],
+            'user_ids.*' => ['integer', 'exists:users,id'],
+        ]);
+
+        $created = [];
+        foreach (array_unique($validated['user_ids']) as $inviteeId) {
+            if ((int) $inviteeId === (int) $user->id) {
+                continue;
+            }
+
+            // Don't invite if already a member
+            if ($group->isMember($inviteeId)) {
+                continue;
+            }
+
+            $invitation = GroupInvitation::where('group_id', $group->id)
+                ->where('invitee_id', (int) $inviteeId)
+                ->first();
+
+            if (! $invitation) {
+                $invitation = GroupInvitation::create([
+                    'group_id' => $group->id,
+                    'invitee_id' => (int) $inviteeId,
+                    'inviter_id' => $user->id,
+                    'token' => Str::random(40),
+                    'role' => GroupMember::ROLE_MEMBER,
+                    'status' => GroupInvitation::STATUS_PENDING,
+                    'expires_at' => now()->addDays(14),
+                ]);
+            } elseif ($invitation->status !== GroupInvitation::STATUS_PENDING) {
+                $invitation->update([
+                    'inviter_id' => $user->id,
+                    'token' => Str::random(40),
+                    'status' => GroupInvitation::STATUS_PENDING,
+                    'expires_at' => now()->addDays(14),
+                ]);
+            }
+
+            try {
+                if (app()->bound(NotificationServiceInterface::class)) {
+                    app(NotificationServiceInterface::class)->send(
+                        recipientId: (int) $inviteeId,
+                        type: 'notification.group_invitation',
+                        data: [
+                            'group_id' => $group->id,
+                            'group_name' => $group->name,
+                            'inviter_id' => $user->id,
+                            'inviter_name' => $user->name,
+                            'title' => 'Group Invitation',
+                            'message' => "{$user->name} invited you to join {$group->name}.",
+                        ],
+                        channels: ['database']
+                    );
+                }
+            } catch (\Throwable) {
+            }
+
+            $created[] = $invitation->id;
+        }
+
+        return $this->successResponse(
+            data: [
+                'invited_count' => count($created),
+            ],
+            message: 'Invitations sent successfully.'
+        );
+    }
+
+    /**
+     * ইনভিটেশন গ্রহণ করা।
+     */
+    public function acceptInvitation(Request $request, int $invitationId): JsonResponse
+    {
+        $user = $request->user();
+        $invitation = GroupInvitation::where('id', $invitationId)
+            ->where('invitee_id', $user->id)
+            ->firstOrFail();
+
+        if ($invitation->status !== GroupInvitation::STATUS_PENDING || $invitation->isExpired()) {
+            return $this->errorResponse('This invitation is no longer valid.', 422);
+        }
+
+        $group = $invitation->group;
+
+        $existing = GroupMember::where('group_id', $group->id)->where('user_id', $user->id)->first();
+        $wasActive = $existing && $existing->isActive();
+
+        // Add member
+        $member = GroupMember::updateOrCreate([
+            'group_id' => $group->id,
+            'user_id' => $user->id,
+        ], [
+            'role' => $invitation->role ?: GroupMember::ROLE_MEMBER,
+            'status' => GroupMember::STATUS_ACTIVE,
+            'joined_at' => now(),
+            'invited_by' => $invitation->inviter_id,
+        ]);
+
+        $invitation->update([
+            'status' => GroupInvitation::STATUS_ACCEPTED,
+            'uses_count' => $invitation->uses_count + 1,
+        ]);
+
+        if (! $wasActive) {
+            $group->increment('members_count');
+            if (isset($group->active_members_count)) {
+                $group->increment('active_members_count');
+            }
+        }
+
+        if ($group->conversation_id) {
+            ConversationParticipant::firstOrCreate([
+                'conversation_id' => $group->conversation_id,
+                'user_id' => $user->id,
+            ], [
+                'role' => 'member',
+                'last_read_at' => now(),
+            ]);
+        }
+
+        return $this->successResponse(
+            data: [
+                'group_id' => $group->id,
+                'slug' => $group->slug,
+                'role' => $member->role,
+            ],
+            message: 'You have joined '.$group->name.' successfully.'
+        );
+    }
+
+    /**
+     * ইনভিটেশন প্রত্যাখ্যান করা।
+     */
+    public function declineInvitation(Request $request, int $invitationId): JsonResponse
+    {
+        $user = $request->user();
+        $invitation = GroupInvitation::where('id', $invitationId)
+            ->where('invitee_id', $user->id)
+            ->firstOrFail();
+
+        $invitation->update([
+            'status' => GroupInvitation::STATUS_DECLINED,
+        ]);
+
+        return $this->successResponse(
+            message: 'Invitation declined.'
+        );
+    }
+
+    /**
+     * গ্রুপের নোটিফিকেশন প্রেফারেন্স পাওয়া।
+     */
+    public function getNotificationPreferences(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $pref = GroupNotificationPreference::where('group_id', $group->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        $defaultSettings = [
+            'new_posts' => true,
+            'comments' => true,
+            'member_requests' => true,
+            'mentions' => true,
+            'events' => true,
+        ];
+
+        return $this->successResponse(
+            data: [
+                'preference' => $pref?->preference ?? GroupNotificationPreference::PREF_ALL,
+                'settings' => $pref?->settings ?? $defaultSettings,
+            ],
+            message: 'Notification preferences retrieved successfully.'
+        );
+    }
+
+    /**
+     * গ্রুপের নোটিফিকেশন প্রেফারেন্স আপডেট করা।
+     */
+    public function updateNotificationPreferences(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'preference' => ['nullable', 'string', 'in:all,highlights,friends,admin_only,off'],
+            'settings' => ['nullable', 'array'],
+            'settings.new_posts' => ['nullable', 'boolean'],
+            'settings.comments' => ['nullable', 'boolean'],
+            'settings.member_requests' => ['nullable', 'boolean'],
+            'settings.mentions' => ['nullable', 'boolean'],
+            'settings.events' => ['nullable', 'boolean'],
+        ]);
+
+        $pref = GroupNotificationPreference::updateOrCreate([
+            'group_id' => $group->id,
+            'user_id' => $user->id,
+        ], [
+            'preference' => $validated['preference'] ?? GroupNotificationPreference::PREF_ALL,
+            'settings' => $validated['settings'] ?? [
+                'new_posts' => true,
+                'comments' => true,
+                'member_requests' => true,
+                'mentions' => true,
+                'events' => true,
+            ],
+        ]);
+
+        return $this->successResponse(
+            data: [
+                'preference' => $pref->preference,
+                'settings' => $pref->settings,
+            ],
+            message: 'Notification preferences updated successfully.'
         );
     }
 }

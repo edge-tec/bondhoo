@@ -437,7 +437,7 @@ class EnterpriseSmtpEmailSystemTest extends TestCase
         foreach ($templates as $key) {
             $response = $this->actingAs($this->admin)->get("/admin/smtp/templates/{$key}/preview");
             $response->assertStatus(200);
-            $this->assertStringContainsString('bondhoo', strtolower($response->getContent()));
+            $this->assertStringContainsString('socialhub', strtolower($response->getContent()));
             $this->assertStringContainsString('<!DOCTYPE html>', $response->getContent());
         }
     }

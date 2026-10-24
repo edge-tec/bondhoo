@@ -3,11 +3,10 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-        <title>Bondhoo — Next-Generation Social Network</title>
-        <meta name="description" content="Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্ক। বন্ধু ও পরিজনদের সাথে যুক্ত থাকুন, মনের ভাব প্রকাশ করুন নিরাপদে।">
+        <title>SocialHub — Next-Generation Social Network</title>
+        <meta name="description" content="SocialHub — আধুনিক সোশ্যাল নেটওয়ার্ক। বন্ধু ও পরিজনদের সাথে যুক্ত থাকুন, মনের ভাব প্রকাশ করুন নিরাপদে।">
         <link rel="icon" type="image/x-icon" href="/favicon.ico">
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-        <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
         <link rel="manifest" href="/manifest.json">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -314,13 +313,21 @@
         <div class="glow-bg"></div>
 
         <header>
-            <a href="/" class="logo" title="Bondhoo">
-                <img src="/images/bondhoo-logo-white.png" alt="Bondhoo" class="logo-img">
+            <a href="/" class="logo" title="SocialHub" style="display: inline-flex; align-items: center; gap: 10px; text-decoration: none;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:#1877f2;color:#fff;box-shadow:0 2px 8px rgba(24,119,242,0.4);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </span>
+                <span style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; color: #ffffff; font-family: 'Inter', sans-serif;">SocialHub</span>
             </a>
             <div class="header-actions">
                 <div class="badge-live">
                     <div class="pulse-dot"></div>
-                    Bondhoo Core Online
+                    SocialHub Core Online
                 </div>
                 <a href="/login" class="btn-nav-login">লগইন</a>
                 <a href="/register" class="btn-nav-register">নতুন অ্যাকাউন্ট</a>
@@ -332,7 +339,7 @@
                 <div class="badge-live">
                     Enterprise Social Platform • Clean Service Layer
                 </div>
-                <h1>Bondhoo — আধুনিক সামাজিক যোগাযোগ</h1>
+                <h1>SocialHub — আধুনিক সামাজিক যোগাযোগ</h1>
                 <p>
                     বন্ধু ও শুভাকাঙ্ক্ষীদের সাথে সহজে যোগাযোগ, ছবি ও ভিডিও প্রকাশ, রিয়েলটাইম মেসেজিং ও অডিও-ভিডিও কলের নিরাপদ উন্মুক্ত ঠিকানা।
                 </p>
@@ -408,7 +415,7 @@
                         </li>
                         <li class="endpoint-item">
                             <span>Brand Identity</span>
-                            <span style="color: #60a5fa;">Bondhoo</span>
+                            <span style="color: #60a5fa;">SocialHub</span>
                         </li>
                     </ul>
                 </div>
@@ -416,7 +423,7 @@
         </main>
 
         <footer>
-            &copy; {{ date('Y') }} <strong>Bondhoo</strong> Social Network. Developed with Enterprise Clean Architecture.
+            &copy; {{ date('Y') }} <strong>SocialHub</strong> Social Network. Developed with Enterprise Clean Architecture.
         </footer>
     </body>
 </html>
