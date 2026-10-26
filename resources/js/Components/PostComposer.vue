@@ -22,11 +22,11 @@
 
     <!-- Top Row: Avatar & Rounded Input / Textarea -->
     <div class="flex items-start gap-3">
-      <a :href="'/profile/' + (user?.username || 'user')" class="shrink-0" title="Your Profile">
+      <a :href="'/profile/' + (user?.username || 'user')" class="shrink-0 relative group/avatar" title="Your Profile">
         <img
           :src="user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
           alt="Avatar"
-          class="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500/10 mt-0.5 hover:opacity-90 transition-opacity"
+          class="w-10 h-10 rounded-full object-cover ring-2 ring-slate-200/80 dark:ring-slate-700 shadow-sm mt-0.5 group-hover/avatar:scale-105 transition-transform"
         />
       </a>
 

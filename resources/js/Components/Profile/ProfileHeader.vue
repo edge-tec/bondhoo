@@ -58,44 +58,99 @@
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 -mt-14 sm:-mt-20 md:-mt-24 mb-5">
         <!-- Avatar and Main Meta Block -->
         <div class="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-5 text-center sm:text-left flex-1 min-w-0">
-          <!-- Circular Avatar with Camera Overlay -->
+          <!-- Circular Avatar with Camera Overlay (Social Site Style) -->
           <div class="relative shrink-0 group">
-            <img
-              :src="avatarUrl"
-              :alt="user.name"
-              class="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full object-cover ring-4 ring-white dark:ring-slate-900 shadow-xl bg-white dark:bg-slate-800"
-            />
-            <!-- Camera & Remove Button Overlay for Owner -->
-            <div v-if="isOwner" class="absolute bottom-1 right-1 flex items-center gap-1">
+            <!-- Multi-layer Premium Ring Frame -->
+            <div
+              class="relative rounded-full p-1.5 sm:p-2 bg-white dark:bg-slate-900 ring-2 sm:ring-4 ring-black/5 dark:ring-white/10 shadow-2xl transition-all duration-300 group-hover:shadow-blue-500/20 cursor-pointer"
+              @click="isAvatarModalOpen = true"
+              title="Click to view full picture"
+            >
+              <!-- Image Wrapper with Border -->
+              <div class="relative w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden border-2 sm:border-3 border-slate-100 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
+                <img
+                  :src="avatarUrl"
+                  :alt="user.name"
+                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+
+                <!-- Hover Overlay (Facebook Style: Dark Glass with Camera / View Icon) -->
+                <div class="absolute inset-0 bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 select-none">
+                  <svg class="w-6 h-6 drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span class="text-[11px] font-bold drop-shadow tracking-wide">{{ isOwner ? 'View / Change' : 'View Photo' }}</span>
+                </div>
+              </div>
+
+              <!-- Online Presence Dot Indicator -->
+              <span
+                class="absolute bottom-2.5 left-2.5 w-4 h-4 sm:w-5 sm:h-5 bg-emerald-500 rounded-full border-2 sm:border-3 border-white dark:border-slate-900 shadow-md ring-1 ring-black/5"
+                title="Active Now"
+              ></span>
+            </div>
+
+            <!-- Camera & Actions Trigger for Owner (Bottom Right) -->
+            <div v-if="isOwner" class="absolute bottom-2 right-2 z-10" ref="avatarMenuRef">
               <button
                 type="button"
-                @click="triggerAvatarUpload"
+                @click.stop="showAvatarMenu = !showAvatarMenu"
                 :disabled="isUploadingAvatar"
-                class="p-2 rounded-full bg-[#1877F2] hover:bg-[#1666D8] text-white ring-3 ring-white dark:ring-slate-900 shadow-md transition-transform hover:scale-105 cursor-pointer disabled:opacity-50"
+                class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-100 border-2 sm:border-3 border-white dark:border-slate-900 shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer disabled:opacity-50"
                 title="Update profile picture"
               >
-                <svg v-if="!isUploadingAvatar" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg v-if="!isUploadingAvatar" class="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <svg v-else class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <svg v-else class="animate-spin w-4 h-4 text-[#1877F2]" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
               </button>
 
-              <button
-                v-if="user.avatar_url"
-                type="button"
-                @click="handleRemoveAvatar"
-                :disabled="isRemovingAvatar"
-                class="p-2 rounded-full bg-slate-800 hover:bg-rose-600 text-white ring-3 ring-white dark:ring-slate-900 shadow-md transition-transform hover:scale-105 cursor-pointer disabled:opacity-50"
-                title="Remove profile picture"
+              <!-- Avatar Dropdown Menu (Facebook Style) -->
+              <div
+                v-if="showAvatarMenu"
+                class="absolute left-0 sm:left-auto sm:right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-[#E4E7EC] dark:border-slate-800 shadow-2xl py-1.5 z-50 animate-fade-in"
+                @click.stop
               >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
+                <button
+                  type="button"
+                  @click="showAvatarMenu = false; isAvatarModalOpen = true;"
+                  class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                >
+                  <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>View Profile Picture</span>
+                </button>
+
+                <button
+                  type="button"
+                  @click="showAvatarMenu = false; triggerAvatarUpload();"
+                  class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                >
+                  <svg class="w-4 h-4 text-[#1877F2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>Upload New Photo</span>
+                </button>
+
+                <button
+                  v-if="user.avatar_url"
+                  type="button"
+                  @click="showAvatarMenu = false; handleRemoveAvatar();"
+                  class="w-full text-left px-4 py-2.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2.5 font-medium cursor-pointer transition-colors"
+                >
+                  <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span>Remove Photo</span>
+                </button>
+              </div>
             </div>
 
             <!-- Hidden Avatar File Input -->
@@ -544,6 +599,69 @@
         </div>
       </div>
     </div>
+
+    <!-- 4. Profile Picture Lightbox Preview Modal -->
+    <div
+      v-if="isAvatarModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+      @click="isAvatarModalOpen = false"
+    >
+      <div
+        class="relative max-w-lg w-full bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl p-6 flex flex-col items-center"
+        @click.stop
+      >
+        <div class="w-full flex items-center justify-between pb-4 border-b border-slate-800 text-white">
+          <div class="flex items-center gap-3">
+            <img :src="avatarUrl" class="w-9 h-9 rounded-full object-cover ring-2 ring-white/20" />
+            <div>
+              <h3 class="font-bold text-sm text-white">{{ user.name }}</h3>
+              <p class="text-xs text-slate-400">Profile Picture</p>
+            </div>
+          </div>
+          <button
+            @click="isAvatarModalOpen = false"
+            class="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="my-6 relative flex items-center justify-center">
+          <img
+            :src="avatarUrl"
+            :alt="user.name"
+            class="max-h-[55vh] max-w-full rounded-2xl object-contain shadow-2xl ring-4 ring-white/10"
+          />
+        </div>
+
+        <div class="w-full flex items-center justify-between pt-4 border-t border-slate-800">
+          <a
+            :href="avatarUrl"
+            target="_blank"
+            download
+            class="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors font-medium"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Download</span>
+          </a>
+
+          <div v-if="isOwner" class="flex items-center gap-2">
+            <button
+              type="button"
+              @click="isAvatarModalOpen = false; triggerAvatarUpload();"
+              class="px-4 py-2 bg-[#1877F2] hover:bg-[#1666D8] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              </svg>
+              <span>Update Picture</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -616,6 +734,8 @@ const normalizedRelationship = computed(() => {
 const showMoreMenu = ref(false);
 const showFriendsDropdown = ref(false);
 const showMoreTabsDropdown = ref(false);
+const showAvatarMenu = ref(false);
+const isAvatarModalOpen = ref(false);
 const isUploadingAvatar = ref(false);
 const isUploadingCover = ref(false);
 const isRemovingAvatar = ref(false);
@@ -624,6 +744,7 @@ const isRemovingCover = ref(false);
 const moreMenuRef = ref<HTMLElement | null>(null);
 const friendsDropdownRef = ref<HTMLElement | null>(null);
 const moreTabsDropdownRef = ref<HTMLElement | null>(null);
+const avatarMenuRef = ref<HTMLElement | null>(null);
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const coverInputRef = ref<HTMLInputElement | null>(null);
 
@@ -637,6 +758,9 @@ const handleClickOutside = (e: MouseEvent) => {
   }
   if (moreTabsDropdownRef.value && !moreTabsDropdownRef.value.contains(target)) {
     showMoreTabsDropdown.value = false;
+  }
+  if (avatarMenuRef.value && !avatarMenuRef.value.contains(target)) {
+    showAvatarMenu.value = false;
   }
 };
 
