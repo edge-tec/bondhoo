@@ -67,7 +67,7 @@
             <img
               :src="item.data?.sender?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
               alt="Avatar"
-              class="w-10 h-10 rounded-full object-cover"
+              class="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-800 shadow-xs"
             />
             <span
               class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white shadow-sm"

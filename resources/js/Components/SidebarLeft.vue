@@ -9,9 +9,9 @@
         <img
           :src="user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
           alt="Avatar"
-          class="w-10 h-10 rounded-full object-cover ring-2 ring-slate-200/80 dark:ring-slate-700 shadow-sm group-hover:scale-105 transition-transform"
+          class="w-10 h-10 rounded-full object-cover ring-2 ring-slate-200/90 dark:ring-slate-700/80 shadow-xs group-hover:ring-[#1877F2]/50 group-hover:scale-105 transition-all"
         />
-        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-slate-900 shadow-xs"></span>
       </div>
       <div class="overflow-hidden">
         <h3 class="font-bold text-sm text-[#172033] dark:text-slate-100 truncate group-hover:text-[#1877F2] transition-colors">

@@ -90,7 +90,7 @@
                 <img
                   :src="req.sender?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
                   alt="Avatar"
-                  class="w-12 h-12 rounded-full object-cover ring-2 ring-blue-500/20"
+                  class="w-12 h-12 rounded-full object-cover ring-2 ring-slate-200 dark:ring-slate-700 hover:ring-[#1877F2]/50 shadow-xs transition-all"
                 />
               </a>
               <div class="min-w-0 flex-1">
@@ -141,7 +141,7 @@
                 <img
                   :src="friend.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
                   alt="Avatar"
-                  class="w-12 h-12 rounded-full object-cover ring-2 ring-blue-500/20 shrink-0"
+                  class="w-12 h-12 rounded-full object-cover ring-2 ring-slate-200 dark:ring-slate-700 hover:ring-[#1877F2]/50 shadow-xs transition-all shrink-0"
                 />
               </a>
               <div class="min-w-0">
@@ -199,7 +199,7 @@
                 <img
                   :src="sugg.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80'"
                   alt="Avatar"
-                  class="w-12 h-12 rounded-full object-cover ring-2 ring-blue-500/20"
+                  class="w-12 h-12 rounded-full object-cover ring-2 ring-slate-200 dark:ring-slate-700 hover:ring-[#1877F2]/50 shadow-xs transition-all shrink-0"
                 />
               </a>
               <div class="min-w-0 flex-1">

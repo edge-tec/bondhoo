@@ -3,11 +3,11 @@
     <!-- 1. Post Header: Author, Timestamp, Privacy & Options Menu -->
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-3">
-        <a :href="'/profile/' + (post.author?.username || 'user')" class="group shrink-0">
+        <a :href="'/profile/' + (post.author?.username || 'user')" class="group shrink-0 relative">
           <img
             :src="post.author?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
             alt="Avatar"
-            class="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500/10 group-hover:scale-105 transition-transform"
+            class="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-800 group-hover:ring-[#1877F2]/40 group-hover:scale-105 transition-all shadow-xs"
           />
         </a>
         <div>
@@ -399,7 +399,7 @@
         >
           <img
             :src="c.author?.avatar_url || c.user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
-            class="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5"
+            class="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5 ring-1.5 ring-slate-100 dark:ring-slate-800 shadow-2xs"
             alt="Avatar"
           />
           <div class="flex-1 bg-[#F5F7FB] dark:bg-slate-800/60 rounded-2xl p-2.5 px-3 text-xs">

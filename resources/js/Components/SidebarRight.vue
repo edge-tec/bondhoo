@@ -19,7 +19,7 @@
           <div class="flex items-center gap-2.5">
             <img
               :src="req.sender?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
-              class="w-10 h-10 rounded-full object-cover"
+              class="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-800 shadow-xs"
               alt="Avatar"
             />
             <div class="min-w-0 flex-1">
@@ -133,9 +133,9 @@
               <img
                 :src="friend.avatar_url || friend.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
                 alt="Avatar"
-                class="w-8 h-8 rounded-full object-cover"
+                class="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-800 shadow-xs group-hover:ring-[#1877F2]/40 transition-all"
               />
-              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#12B76A] ring-2 ring-white dark:ring-slate-900"></span>
+              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#12B76A] ring-2 ring-white dark:ring-slate-900 shadow-xs"></span>
             </div>
             <div class="min-w-0">
               <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#1877F2] transition-colors truncate block">

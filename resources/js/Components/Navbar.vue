@@ -222,13 +222,16 @@
           <div class="relative" ref="dropdownRef">
             <button
               @click="isDropdownOpen = !isDropdownOpen"
-              class="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none cursor-pointer"
+              class="flex items-center gap-2 p-1 pl-1 pr-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none cursor-pointer group"
             >
-              <img
-                :src="user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
-                alt="Avatar"
-                class="w-9 h-9 rounded-full object-cover ring-2 ring-[#1877F2]/20"
-              />
+              <div class="relative shrink-0">
+                <img
+                  :src="user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
+                  alt="Avatar"
+                  class="w-9 h-9 rounded-full object-cover ring-2 ring-slate-200 dark:ring-slate-700 group-hover:ring-[#1877F2] transition-all shadow-xs"
+                />
+                <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-1.5 ring-white dark:ring-slate-900"></span>
+              </div>
               <span class="text-sm font-semibold text-[#172033] dark:text-slate-200 hidden xl:inline">
                 {{ user?.name || 'Guest' }}
               </span>
@@ -249,7 +252,7 @@
                 <img
                   :src="user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'"
                   alt="Avatar"
-                  class="w-9 h-9 rounded-full object-cover"
+                  class="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-800 shadow-xs"
                 />
                 <div class="overflow-hidden">
                   <p class="text-xs font-bold text-[#172033] dark:text-white truncate">{{ user?.name || 'Guest' }}</p>

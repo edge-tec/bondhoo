@@ -54,50 +54,47 @@
     </div>
 
     <!-- 2. Avatar & Profile Information Header -->
-    <div class="px-4 sm:px-6 pb-2 pt-0 relative z-20">
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 -mt-14 sm:-mt-20 md:-mt-24 mb-5">
+    <div class="px-4 sm:px-6 md:px-8 pb-3 pt-0 relative z-20">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-4">
         <!-- Avatar and Main Meta Block -->
-        <div class="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-5 text-center sm:text-left flex-1 min-w-0">
+        <div class="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 text-center sm:text-left flex-1 min-w-0">
           <!-- Circular Avatar with Camera Overlay (Social Site Style) -->
-          <div class="relative shrink-0 group">
-            <!-- Multi-layer Premium Ring Frame -->
+          <div class="relative shrink-0 -mt-16 sm:-mt-20 md:-mt-24 group">
+            <!-- Crisp Circular Frame: Solid 4px/5px Border, Rich Drop Shadow, Clean Edge-to-Edge Photo -->
             <div
-              class="relative rounded-full p-1.5 sm:p-2 bg-white dark:bg-slate-900 ring-2 sm:ring-4 ring-black/5 dark:ring-white/10 shadow-2xl transition-all duration-300 group-hover:shadow-blue-500/20 cursor-pointer"
+              class="relative w-32 h-32 sm:w-36 sm:h-36 md:w-42 md:h-42 rounded-full overflow-hidden border-4 sm:border-[5px] border-white dark:border-slate-900 shadow-xl bg-slate-100 dark:bg-slate-800 cursor-pointer select-none"
               @click="isAvatarModalOpen = true"
               title="Click to view full picture"
             >
-              <!-- Image Wrapper with Border -->
-              <div class="relative w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden border-2 sm:border-3 border-slate-100 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
-                <img
-                  :src="avatarUrl"
-                  :alt="user.name"
-                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+              <img
+                :src="avatarUrl"
+                :alt="user.name"
+                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
 
-                <!-- Hover Overlay (Facebook Style: Dark Glass with Camera / View Icon) -->
-                <div class="absolute inset-0 bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 select-none">
-                  <svg class="w-6 h-6 drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <span class="text-[11px] font-bold drop-shadow tracking-wide">{{ isOwner ? 'View / Change' : 'View Photo' }}</span>
-                </div>
+              <!-- Hover Overlay (Facebook Style: Dark Glass with Camera / View Icon) -->
+              <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 select-none">
+                <svg class="w-6 h-6 drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <span class="text-[11px] font-bold drop-shadow tracking-wide">{{ isOwner ? 'View / Change' : 'View Photo' }}</span>
               </div>
-
-              <!-- Online Presence Dot Indicator -->
-              <span
-                class="absolute bottom-2.5 left-2.5 w-4 h-4 sm:w-5 sm:h-5 bg-emerald-500 rounded-full border-2 sm:border-3 border-white dark:border-slate-900 shadow-md ring-1 ring-black/5"
-                title="Active Now"
-              ></span>
             </div>
 
+            <!-- Online Status Indicator (Clean Dot on Bottom-Left Border) -->
+            <span
+              class="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 w-4 h-4 sm:w-5 sm:h-5 bg-emerald-500 rounded-full border-2 sm:border-3 border-white dark:border-slate-900 shadow-md ring-1 ring-black/5"
+              title="Active Now"
+            ></span>
+
             <!-- Camera & Actions Trigger for Owner (Bottom Right) -->
-            <div v-if="isOwner" class="absolute bottom-2 right-2 z-10" ref="avatarMenuRef">
+            <div v-if="isOwner" class="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 z-10" ref="avatarMenuRef">
               <button
                 type="button"
                 @click.stop="showAvatarMenu = !showAvatarMenu"
                 :disabled="isUploadingAvatar"
-                class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-100 border-2 sm:border-3 border-white dark:border-slate-900 shadow-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer disabled:opacity-50"
+                class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-100 border-2 sm:border-3 border-white dark:border-slate-900 shadow-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
                 title="Update profile picture"
               >
                 <svg v-if="!isUploadingAvatar" class="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
