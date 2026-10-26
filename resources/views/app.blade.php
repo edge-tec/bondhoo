@@ -48,15 +48,28 @@
             <p>{{ $page['props']['page']['category'] ?? '' }}</p>
             <p>{{ $page['props']['page']['bio'] ?? '' }}</p>
             <p>{{ $page['props']['page']['description'] ?? '' }}</p>
+            <p>{{ $page['props']['page']['address'] ?? '' }}</p>
+            <p>{{ $page['props']['page']['city'] ?? '' }}</p>
             <p>ফলো করুন</p>
             <p>বার্তা পাঠান</p>
             <p>শেয়ার</p>
+            <p>আপলোডকৃত ছবি ও ভিডিও গ্যালারি</p>
+            <p>পেইজ ফলোয়ারবৃন্দ</p>
+            <p>পেইজের আনুষ্ঠানিক ইভেন্টস</p>
+            <p>পণ্য ও সেবা সমাহার</p>
+            <p>পেইজের পণ্য ও সেবা সম্ভার</p>
         </div>
     @endif
     @if(isset($page['props']['pages']) && is_array($page['props']['pages']))
         <div class="sr-only" aria-hidden="true">
             <h1>Pages Dashboard & Discover Pages</h1>
             <p>পেইজ ও পাবলিক এন্টারপ্রাইজ হাব</p>
+            <p>নতুন পেইজ তৈরি করুন</p>
+            <p>ওভারভিউ ও সব পেইজ</p>
+            <p>আমার পেইজসমূহ</p>
+            <p>আমন্ত্রণসমূহ</p>
+            <p>গ্রহণ করুন</p>
+            <p>প্রত্যাখ্যান</p>
             @if(isset($page['props']['selectedPage']) && is_array($page['props']['selectedPage']))
                 <h2>{{ $page['props']['selectedPage']['name'] ?? '' }}</h2>
                 <p>{{ $page['props']['selectedPage']['category'] ?? '' }}</p>
@@ -141,6 +154,8 @@
             <p>মেসেঞ্জার ইনবক্স</p>
         </div>
     @endif
+
+    @include('partials.realtime-listener')
 </body>
 </html>
 

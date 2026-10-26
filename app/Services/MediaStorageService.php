@@ -34,7 +34,9 @@ class MediaStorageService implements MediaStorageServiceInterface
         return match ($collection) {
             'profile' => "users/{$userId}/profile/{$filename}",
             'cover' => "users/{$userId}/cover/{$filename}",
-            'post' => 'posts/'.($entityId ?? 'pending')."/images/{$filename}",
+            'post' => in_array(strtolower($extension), ['mp4', 'webm', 'mov', 'qt', 'm4v', '3gp', 'ogg', 'ogv'])
+                ? 'posts/'.($entityId ?? 'pending')."/videos/{$filename}"
+                : 'posts/'.($entityId ?? 'pending')."/images/{$filename}",
             'video' => 'posts/'.($entityId ?? 'pending')."/videos/{$filename}",
             'story' => 'stories/'.($entityId ?? 'pending')."/{$filename}",
             'reel' => 'reels/'.($entityId ?? 'pending')."/{$filename}",

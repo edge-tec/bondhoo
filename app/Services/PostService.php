@@ -106,7 +106,7 @@ class PostService
                 'tagged_user_ids' => ! empty($taggedUserIds) ? $taggedUserIds : null,
                 'content' => $data['content'] ?? null,
                 'audience' => $data['audience'] ?? 'public',
-                'type' => $data['type'] ?? 'text',
+                'type' => $data['type'] ?? (! empty($data['media_ids']) ? 'media' : 'text'),
                 'background_style' => $data['background_style'] ?? null,
                 'is_ai_generated' => (bool) ($data['is_ai_generated'] ?? false),
                 'content_warning' => $data['content_warning'] ?? null,

@@ -26,13 +26,13 @@
     </div>
 
     <!-- Main Content Area: Unified Responsive Layout Shell -->
-    <div class="flex-1 mx-auto w-full max-w-[1920px] px-4 sm:px-6 lg:px-8 py-5 pb-24 md:pb-8">
-      <div class="flex items-start justify-between gap-6">
+    <div :class="['flex-1 mx-auto w-full max-w-[1920px]', currentRoute === 'reels' ? 'p-0 pb-14 md:px-6 lg:px-8 md:py-5 md:pb-8' : 'px-4 sm:px-6 lg:px-8 py-5 pb-24 md:pb-8']">
+      <div :class="['flex items-start justify-between', currentRoute === 'reels' ? 'gap-0 md:gap-6' : 'gap-6']">
         <!-- Column 1: Left Navigation Sidebar (Desktop) - Anchored at the exact same position across ALL pages -->
         <SidebarLeft :user="currentUser" :current-route="currentRoute" />
 
         <!-- Column 2: Center Feed / Main Body -->
-        <main class="flex-1 min-w-0 flex justify-center">
+        <main class="flex-1 min-w-0 flex justify-center w-full">
           <div :class="['w-full', !fullWidth ? 'max-w-[680px]' : 'max-w-full']">
             <slot />
           </div>

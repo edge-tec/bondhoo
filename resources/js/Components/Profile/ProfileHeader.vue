@@ -1,7 +1,7 @@
 <template>
-  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-[#E4E7EC] dark:border-slate-800 overflow-hidden shadow-sm">
+  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-[#E4E7EC] dark:border-slate-800 shadow-sm relative z-20">
     <!-- 1. Cover Photo Banner -->
-    <div class="relative h-56 sm:h-64 md:h-72 lg:h-80 w-full bg-slate-200 dark:bg-slate-800 overflow-hidden group">
+    <div class="relative h-56 sm:h-64 md:h-72 lg:h-80 w-full bg-slate-200 dark:bg-slate-800 rounded-t-2xl overflow-hidden group">
       <img
         :src="coverUrl"
         alt="Cover Photo"
@@ -404,11 +404,12 @@
       </div>
 
       <!-- 4. Navigation Tab Bar -->
-      <div class="flex items-center gap-1 sm:gap-2 border-t border-[#E4E7EC] dark:border-slate-800 pt-1 overflow-x-auto no-scrollbar relative">
-        <template v-for="tab in availableTabs" :key="tab.id">
-          <!-- Standard Tab Button -->
+      <div class="flex items-center justify-between border-t border-[#E4E7EC] dark:border-slate-800 pt-1 relative">
+        <!-- Scrollable Primary Tabs -->
+        <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar flex-1 min-w-0">
           <button
-            v-if="!tab.hasDropdown"
+            v-for="tab in primaryTabs"
+            :key="tab.id"
             type="button"
             @click="$emit('update:active-tab', tab.id)"
             :class="[
@@ -427,63 +428,120 @@
               class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1877F2] rounded-full"
             ></span>
           </button>
+        </div>
 
-          <!-- Dropdown Tab (More) -->
-          <div v-else class="relative shrink-0">
-            <button
-              type="button"
-              @click="showMoreTabsDropdown = !showMoreTabsDropdown"
-              :class="[
-                'px-4 py-3 text-sm font-semibold transition-all relative shrink-0 flex items-center gap-1.5 focus:outline-none cursor-pointer',
-                ['videos', 'saved'].includes(activeTab) || showMoreTabsDropdown
-                  ? 'text-[#1877F2]'
-                  : 'text-[#667085] hover:text-[#172033] dark:text-slate-400 dark:hover:text-slate-200'
-              ]"
+        <!-- More Dropdown Tab (Outside overflow-x-auto to prevent any clipping) -->
+        <div class="relative shrink-0 pl-1" ref="moreTabsDropdownRef">
+          <button
+            type="button"
+            @click.stop="showMoreTabsDropdown = !showMoreTabsDropdown"
+            :class="[
+              'px-4 py-3 text-sm font-semibold transition-all relative shrink-0 flex items-center gap-1.5 focus:outline-none cursor-pointer',
+              isMoreActive || showMoreTabsDropdown
+                ? 'text-[#1877F2]'
+                : 'text-[#667085] hover:text-[#172033] dark:text-slate-400 dark:hover:text-slate-200'
+            ]"
+          >
+            <span>More</span>
+            <svg
+              class="w-3.5 h-3.5 transition-transform"
+              :class="showMoreTabsDropdown ? 'rotate-180 text-[#1877F2]' : 'text-slate-400'"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <span>{{ tab.label }}</span>
-              <svg
-                class="w-3.5 h-3.5 transition-transform"
-                :class="showMoreTabsDropdown ? 'rotate-180' : ''"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+
+            <!-- Active Blue Bottom Line Indicator when a More item is active -->
+            <span
+              v-if="isMoreActive"
+              class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1877F2] rounded-full"
+            ></span>
+          </button>
+
+          <!-- Dropdown Items: Positioned right-0 and top-full with z-50 to guarantee 100% full visibility -->
+          <div
+            v-if="showMoreTabsDropdown"
+            class="absolute right-0 top-full mt-1.5 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-[#E4E7EC] dark:border-slate-800 shadow-2xl py-1.5 z-50 animate-fade-in divide-y divide-slate-100 dark:divide-slate-800"
+          >
+            <div class="py-1">
+              <!-- Saved Posts Tab (for owner) -->
+              <button
+                v-if="isOwner"
+                type="button"
+                @click="$emit('update:active-tab', 'saved'); showMoreTabsDropdown = false;"
+                class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer transition-colors"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+                <div class="flex items-center gap-2.5">
+                  <span class="text-sm">🔖</span>
+                  <span class="font-medium">Saved Posts</span>
+                </div>
+                <span v-if="activeTab === 'saved'" class="w-1.5 h-1.5 rounded-full bg-[#1877F2]"></span>
+              </button>
 
-            <!-- Dropdown Items -->
-            <div
-              v-if="showMoreTabsDropdown"
-              class="absolute left-0 mt-1 w-44 rounded-2xl bg-white dark:bg-slate-900 border border-[#E4E7EC] dark:border-slate-800 shadow-xl py-1.5 z-40 animate-fade-in"
-            >
+              <!-- Groups Tab -->
               <button
                 type="button"
-                @click="$emit('update:active-tab', 'videos'); showMoreTabsDropdown = false;"
-                class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                @click="$emit('update:active-tab', 'groups'); showMoreTabsDropdown = false;"
+                class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer transition-colors"
               >
-                <span>🎥</span>
-                <span>Videos &amp; Reels</span>
+                <div class="flex items-center gap-2.5">
+                  <span class="text-sm">👥</span>
+                  <span class="font-medium">Groups</span>
+                </div>
+                <span v-if="activeTab === 'groups'" class="w-1.5 h-1.5 rounded-full bg-[#1877F2]"></span>
               </button>
-              <a
-                v-if="isOwner"
-                href="/saved"
-                class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+
+              <!-- Events Tab -->
+              <button
+                type="button"
+                @click="$emit('update:active-tab', 'events'); showMoreTabsDropdown = false;"
+                class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer transition-colors"
               >
-                <span>🔖</span>
-                <span>Saved Posts</span>
-              </a>
-              <a
-                v-if="isOwner"
-                href="/settings/notifications"
-                class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                <div class="flex items-center gap-2.5">
+                  <span class="text-sm">📅</span>
+                  <span class="font-medium">Events</span>
+                </div>
+                <span v-if="activeTab === 'events'" class="w-1.5 h-1.5 rounded-full bg-[#1877F2]"></span>
+              </button>
+            </div>
+
+            <div v-if="isOwner" class="py-1">
+              <!-- Account Settings -->
+              <button
+                type="button"
+                @click="$emit('open-account-settings'); showMoreTabsDropdown = false;"
+                class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer transition-colors"
               >
-                <span>⚙️</span>
-                <span>Preferences</span>
-              </a>
+                <span class="text-sm">⚙️</span>
+                <span class="font-medium">Account Settings</span>
+              </button>
+
+              <!-- Privacy Settings -->
+              <button
+                type="button"
+                @click="$emit('open-privacy-settings'); showMoreTabsDropdown = false;"
+                class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer transition-colors"
+              >
+                <span class="text-sm">🔒</span>
+                <span class="font-medium">Privacy Settings</span>
+              </button>
+            </div>
+
+            <div class="py-1">
+              <!-- Copy Profile Link -->
+              <button
+                type="button"
+                @click="copyProfileLink(); showMoreTabsDropdown = false;"
+                class="w-full text-left px-4 py-2.5 text-xs text-[#172033] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer transition-colors"
+              >
+                <span class="text-sm">🔗</span>
+                <span class="font-medium">Copy Profile Link</span>
+              </button>
             </div>
           </div>
-        </template>
+        </div>
       </div>
     </div>
   </div>
@@ -535,6 +593,8 @@ const emit = defineEmits<{
   (e: 'decline-friend-request'): void;
   (e: 'unfriend'): void;
   (e: 'open-edit'): void;
+  (e: 'open-account-settings'): void;
+  (e: 'open-privacy-settings'): void;
   (e: 'avatar-uploaded', newUrl: string): void;
   (e: 'cover-uploaded', newUrl: string): void;
   (e: 'toggle-follow'): void;
@@ -762,12 +822,26 @@ const joinedText = computed(() => {
   return 'April 2018';
 });
 
+const primaryTabs = computed(() => {
+  const tabs = [
+    { id: 'posts', label: 'Posts' },
+    { id: 'about', label: 'About' },
+    { id: 'friends', label: 'Friends', count: props.friendsCount || undefined },
+    { id: 'photos', label: 'Photos' },
+    { id: 'videos', label: 'Videos' },
+    { id: 'reels', label: 'Reels' },
+  ];
+
+  return tabs;
+});
+
+const isMoreActive = computed(() => {
+  return ['saved', 'groups', 'events'].includes(props.activeTab);
+});
+
 const availableTabs = computed(() => [
-  { id: 'posts', label: 'Posts' },
-  { id: 'about', label: 'About' },
-  { id: 'friends', label: 'Friends', count: props.friendsCount || undefined },
-  { id: 'photos', label: 'Photos' },
-  { id: 'videos', label: 'Videos' },
+  ...primaryTabs.value,
+  ...(props.isOwner ? [{ id: 'saved', label: 'Saved' }] : []),
   { id: 'more', label: 'More', hasDropdown: true },
 ]);
 </script>

@@ -181,7 +181,23 @@ class Post extends Model
                 'comments' => $this->comments_count,
                 'shares' => $this->shares_count,
             ],
-            'media' => $this->media->map(fn (Media $m) => $m->toResponseArray())->values(),
+            'media' => (function () {
+                $items = $this->media;
+                if (! empty($this->media_meta['order']) && is_array($this->media_meta['order'])) {
+                    $orderMap = array_flip($this->media_meta['order']);
+                    $items = $items->sortBy(fn (Media $m) => $orderMap[$m->id] ?? 9999);
+                }
+                $altTexts = $this->media_meta['alt_texts'] ?? [];
+
+                return $items->map(function (Media $m) use ($altTexts) {
+                    $arr = $m->toResponseArray();
+                    if (isset($altTexts[$m->id]) && is_string($altTexts[$m->id])) {
+                        $arr['alt_text'] = $altTexts[$m->id];
+                    }
+
+                    return $arr;
+                })->values();
+            })(),
             'comments' => $this->relationLoaded('comments')
                 ? $this->comments->map(fn (Comment $c) => $c->toResponseArray($viewer))->values()
                 : ($this->relationLoaded('allComments')

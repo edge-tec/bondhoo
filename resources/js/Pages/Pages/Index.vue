@@ -33,30 +33,573 @@
         </button>
       </div>
 
-      <!-- Pending Invitations Banner -->
-      <div v-if="pendingInvitations && pendingInvitations.length > 0" class="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 rounded-3xl shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-[#1877F2] text-white flex items-center justify-center shadow-sm">
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- TOP HUB HEADER (All Pages / Enterprise Social Hub)                      -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">All Pages</h1>
+            <span v-if="pagesMeta?.total" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-900/40 text-[#1877F2] dark:text-blue-400">
+              {{ pagesMeta.total }}
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Discover verified organizations, technology hubs, creators, and brands.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a
+            href="/pages/create"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 active:scale-95 transition-all shrink-0"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Create Page</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- MAIN NAVIGATION TABS (Discover, Your Pages, Liked Pages, Studio)       -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar py-1">
+        <button
+          @click="setMainTab('discover')"
+          :class="[
+            'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer',
+            mainTab === 'discover'
+              ? 'bg-[#1877F2] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+          ]"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+          </svg>
+          <span>All Pages (ওভারভিউ ও সব পেইজ)</span>
+          <span v-if="pagesMeta?.total" class="px-1.5 py-0.5 text-[10px] rounded-full" :class="mainTab === 'discover' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'">
+            {{ pagesMeta.total }}
+          </span>
+        </button>
+
+        <button
+          @click="setMainTab('my_pages')"
+          :class="[
+            'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer',
+            mainTab === 'my_pages'
+              ? 'bg-[#1877F2] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+          ]"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+          </svg>
+          <span>Your Pages (আমার পেইজসমূহ)</span>
+          <span v-if="myPages.length" class="px-1.5 py-0.5 text-[10px] rounded-full" :class="mainTab === 'my_pages' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'">
+            {{ myPages.length }}
+          </span>
+        </button>
+
+        <button
+          @click="setMainTab('liked')"
+          :class="[
+            'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer',
+            mainTab === 'liked'
+              ? 'bg-[#1877F2] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+          ]"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+          </svg>
+          <span>Liked Pages (লাইক করা পেইজ)</span>
+          <span v-if="likedPages.length" class="px-1.5 py-0.5 text-[10px] rounded-full" :class="mainTab === 'liked' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'">
+            {{ likedPages.length }}
+          </span>
+        </button>
+
+        <button
+          @click="setMainTab('invitations')"
+          :class="[
+            'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer',
+            mainTab === 'invitations'
+              ? 'bg-[#1877F2] text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+          ]"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          <span>Invitations (আমন্ত্রণসমূহ)</span>
+          <span v-if="pendingInvitations && pendingInvitations.length" class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-500 text-white">
+            {{ pendingInvitations.length }}
+          </span>
+        </button>
+
+        <button
+          v-if="activePage"
+          @click="setMainTab('studio')"
+          :class="[
+            'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer sm:ml-auto',
+            mainTab === 'studio'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
+              : 'bg-blue-50 dark:bg-blue-950/40 text-[#1877F2] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50'
+          ]"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <span>Page Studio &bull; {{ activePage.name }}</span>
+        </button>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 1: DISCOVER / ALL PAGES SECTION (Directly matching screenshot)      -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <div v-if="mainTab === 'discover'" class="space-y-6 animate-fade-in">
+        <!-- Search, Quick Filter Pills, and Sort Row -->
+        <div class="bg-[#0b1120] border border-slate-800 rounded-2xl p-3 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm">
+          <!-- Search Input -->
+          <div class="relative flex-1 max-w-md">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+            </span>
+            <input
+              v-model="searchQuery"
+              @input="handleSearch"
+              type="text"
+              placeholder="Search pages..."
+              class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#1877F2] focus:border-transparent transition-all"
+            />
+          </div>
+
+          <!-- Quick Filters Pills & Sort Select -->
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between sm:justify-end">
+            <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-700/80">
+              <button
+                @click="switchDirectoryTab('all')"
+                :class="[
+                  'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                  activeDirectoryTab === 'all'
+                    ? 'bg-[#1877F2] text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                ]"
+              >
+                All
+              </button>
+              <button
+                @click="switchDirectoryTab('my_pages')"
+                :class="[
+                  'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                  activeDirectoryTab === 'my_pages'
+                    ? 'bg-[#1877F2] text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                ]"
+              >
+                Your Pages
+              </button>
+              <button
+                @click="switchDirectoryTab('followed')"
+                :class="[
+                  'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                  activeDirectoryTab === 'followed'
+                    ? 'bg-[#1877F2] text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white'
+                ]"
+              >
+                Liked Pages
+              </button>
             </div>
-            <div>
-              <h3 class="text-sm font-bold text-slate-900 dark:text-white">Page Management Invitations</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">You have been invited to manage or collaborate on {{ pendingInvitations.length }} Page(s).</p>
+
+            <!-- Sort Select -->
+            <div class="relative">
+              <select
+                v-model="selectedSort"
+                @change="handleFilterChange"
+                class="px-3 py-2 pr-8 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs font-semibold text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1877F2] cursor-pointer appearance-none"
+              >
+                <option value="popular">Most Followed &#8693;</option>
+                <option value="recent">Newest Pages</option>
+                <option value="name">Alphabetical</option>
+              </select>
+              <span class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">&#9662;</span>
             </div>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+        <!-- Categories Carousel / Horizontal Scroll Bar -->
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+          <button
+            @click="selectCategory('all')"
+            :class="[
+              'px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0',
+              selectedCategoryFilter === 'all'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            ]"
+          >
+            All Categories
+          </button>
+          <button
+            v-for="cat in categories"
+            :key="cat"
+            @click="selectCategory(cat)"
+            :class="[
+              'px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0',
+              selectedCategoryFilter === cat
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+            ]"
+          >
+            {{ cat }}
+          </button>
+        </div>
+
+        <!-- Directory Page Cards Grid (Pixel-matching screenshot) -->
+        <div v-if="pagesList.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div
+            v-for="page in pagesList"
+            :key="page.id"
+            class="bg-[#0b1120] border border-slate-800/90 rounded-2xl overflow-hidden hover:border-slate-700 transition-all flex flex-col group shadow-lg"
+          >
+            <!-- Scenic Cover Banner -->
+            <div class="relative h-40 w-full overflow-hidden bg-slate-800">
+              <img
+                :src="getPageCover(page)"
+                :alt="page.name"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-[#0b1120]/80 via-transparent to-black/30"></div>
+
+              <!-- Top-right Heart Bookmark button -->
+              <button
+                @click.stop="toggleFavorite(page)"
+                class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-900/60 backdrop-blur-md hover:bg-slate-900/90 text-white/80 hover:text-red-500 flex items-center justify-center transition-all cursor-pointer z-10"
+                title="Save Page"
+              >
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Card Content (relative z-10) -->
+            <div class="px-5 pb-5 pt-0 flex-1 flex flex-col justify-between relative z-10">
+              <div>
+                <!-- Overlapping Avatar - Floating above cover with relative z-20 -->
+                <div
+                  class="relative z-20 -mt-7 mb-3 w-14 h-14 rounded-2xl ring-4 ring-[#0b1120] bg-gradient-to-br text-white font-black flex items-center justify-center shadow-xl overflow-hidden text-xl shrink-0"
+                  :class="getAvatarGradient(page)"
+                >
+                  <img v-if="page.avatar_url" :src="page.avatar_url" :alt="page.name" class="w-full h-full object-cover" />
+                  <span v-else>{{ page.name.charAt(0) }}</span>
+                </div>
+
+                <!-- Page Name with Verified Checkmark -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <a
+                    :href="`/pages/${page.slug}`"
+                    class="font-extrabold text-base text-white hover:text-[#1877F2] transition-colors line-clamp-1"
+                  >
+                    {{ page.name }}
+                  </a>
+                  <span v-if="page.is_verified" class="text-[#1877F2] shrink-0" title="Verified Organization">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                    </svg>
+                  </span>
+                </div>
+
+                <!-- Category and Followers -->
+                <p class="text-xs text-slate-400 mt-0.5">
+                  {{ page.category || 'General' }} &bull; {{ formatNumber(page.followers_count) }} followers
+                </p>
+
+                <!-- Description / Bio -->
+                <p class="text-xs text-slate-300 line-clamp-2 mt-2 leading-relaxed min-h-[32px]">
+                  {{ page.description || page.bio || 'Official social page on SocialHub network. Discover updates, news, and official announcements.' }}
+                </p>
+              </div>
+
+              <!-- Actions Row (Matching screenshot thumbs up Like button + external link icon) -->
+              <div class="flex items-center gap-2.5 mt-4 pt-3 border-t border-slate-800">
+                <button
+                  @click.stop="toggleFollowPage(page)"
+                  :disabled="followLoadingId === page.id"
+                  :class="[
+                    'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50 active:scale-95',
+                    page.is_following
+                      ? 'bg-slate-800 text-white hover:bg-slate-700 border border-slate-700'
+                      : 'bg-[#1877F2] hover:bg-[#1666D8] text-white'
+                  ]"
+                >
+                  <svg v-if="page.is_following" class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                  </svg>
+                  <svg v-else class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" />
+                  </svg>
+                  <span>{{ page.is_following ? 'Liked Page' : 'Like Page' }}</span>
+                </button>
+
+                <!-- Visit Profile Icon Link -->
+                <a
+                  :href="`/pages/${page.slug}`"
+                  class="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all flex items-center justify-center border border-slate-700/60 shrink-0"
+                  title="Visit Page Profile"
+                >
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+
+                <!-- Studio shortcut if user has manage rights -->
+                <button
+                  v-if="page.is_owner || page.user_role"
+                  @click.stop="openStudio(page)"
+                  class="w-9 h-9 rounded-xl bg-blue-900/40 hover:bg-blue-900/60 text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center border border-blue-800/60 shrink-0 cursor-pointer"
+                  title="Manage Page"
+                >
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else class="bg-[#0b1120] border border-slate-800 rounded-3xl p-12 text-center">
+          <div class="w-16 h-16 rounded-2xl bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-white">No pages found</h3>
+          <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
+            No pages match your current search or category filter. Try refining your keywords.
+          </p>
+          <button
+            @click="clearFilters"
+            class="px-4 py-2 rounded-xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-xs font-bold transition-all"
+          >
+            Clear Filters
+          </button>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div
+          v-if="pagesMeta && pagesMeta.last_page > 1"
+          class="flex items-center justify-between border-t border-slate-800 pt-4"
+        >
+          <p class="text-xs text-slate-400">
+            Showing <span class="font-bold text-white">{{ (pagesMeta.current_page - 1) * pagesMeta.per_page + 1 }}</span> to
+            <span class="font-bold text-white">{{ Math.min(pagesMeta.current_page * pagesMeta.per_page, pagesMeta.total) }}</span> of
+            <span class="font-bold text-white">{{ pagesMeta.total }}</span> pages
+          </p>
+          <div class="flex items-center gap-1.5">
+            <button
+              :disabled="pagesMeta.current_page <= 1"
+              @click="goToPage(pagesMeta.current_page - 1)"
+              class="px-3 py-1.5 rounded-xl border border-slate-800 bg-[#0b1120] text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-40 transition-all"
+            >
+              Previous
+            </button>
+            <button
+              v-for="p in pagesMeta.last_page"
+              :key="p"
+              @click="goToPage(p)"
+              :class="[
+                'w-8 h-8 rounded-xl text-xs font-bold transition-all',
+                p === pagesMeta.current_page
+                  ? 'bg-[#1877F2] text-white'
+                  : 'border border-slate-800 bg-[#0b1120] text-slate-400 hover:bg-slate-800'
+              ]"
+            >
+              {{ p }}
+            </button>
+            <button
+              :disabled="pagesMeta.current_page >= pagesMeta.last_page"
+              @click="goToPage(pagesMeta.current_page + 1)"
+              class="px-3 py-1.5 rounded-xl border border-slate-800 bg-[#0b1120] text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-40 transition-all"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 2: YOUR PAGES SECTION (আমার পেইজসমূহ)                             -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <div v-else-if="mainTab === 'my_pages'" class="space-y-6 animate-fade-in">
+        <!-- Summary Stats Strip -->
+        <div v-if="summaryStats && myPages.length > 0" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <span class="text-xs font-bold text-slate-400">Total Managed Pages</span>
+            <div class="text-2xl font-black text-slate-900 dark:text-white mt-1">{{ summaryStats.total_managed_pages || myPages.length }}</div>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <span class="text-xs font-bold text-slate-400">Total Followers</span>
+            <div class="text-2xl font-black text-slate-900 dark:text-white mt-1">{{ formatNumber(summaryStats.total_followers) }}</div>
+            <span class="text-[11px] font-bold text-emerald-500">{{ summaryStats.followers_growth }} this month</span>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <span class="text-xs font-bold text-slate-400">Total Posts</span>
+            <div class="text-2xl font-black text-slate-900 dark:text-white mt-1">{{ summaryStats.total_posts }}</div>
+            <span class="text-[11px] font-bold text-blue-500">{{ summaryStats.posts_growth }} this month</span>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <span class="text-xs font-bold text-slate-400">Total Engagement</span>
+            <div class="text-2xl font-black text-slate-900 dark:text-white mt-1">{{ formatNumber(summaryStats.total_engagement) }}</div>
+            <span class="text-[11px] font-bold text-emerald-500">{{ summaryStats.engagement_growth }} this month</span>
+          </div>
+        </div>
+
+        <!-- Managed Pages Cards -->
+        <div v-if="myPages.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div
+            v-for="p in myPages"
+            :key="p.id"
+            class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div class="h-28 w-full bg-slate-200 dark:bg-slate-800 relative">
+                <img :src="getPageCover(p)" :alt="p.name" class="w-full h-full object-cover" />
+                <span class="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-900/70 backdrop-blur-xs text-white z-10">
+                  {{ p.is_owner ? 'Owner' : (p.user_role || 'Admin') }}
+                </span>
+              </div>
+              <div class="px-5 pt-0 pb-4 relative z-10">
+                <div
+                  class="relative z-20 -mt-8 mb-2 w-14 h-14 rounded-2xl ring-4 ring-white dark:ring-slate-900 bg-gradient-to-br text-white font-black flex items-center justify-center shadow-xl overflow-hidden text-xl shrink-0"
+                  :class="getAvatarGradient(p)"
+                >
+                  <img v-if="p.avatar_url" :src="p.avatar_url" :alt="p.name" class="w-full h-full object-cover" />
+                  <span v-else>{{ p.name.charAt(0) }}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <h3 class="font-extrabold text-base text-slate-900 dark:text-white">{{ p.name }}</h3>
+                  <span v-if="p.is_verified" class="text-[#1877F2]" title="Verified">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">{{ p.category || 'General' }} &bull; {{ formatNumber(p.followers_count) }} followers</p>
+              </div>
+            </div>
+            <div class="p-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2">
+              <button
+                @click="openStudio(p)"
+                class="flex-1 py-2 px-3 rounded-xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-xs font-bold transition-all text-center"
+              >
+                Open Studio
+              </button>
+              <a
+                :href="`/pages/${p.slug}`"
+                class="py-2 px-3 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 transition-all"
+              >
+                View Profile
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Managed Pages CTA -->
+        <div v-else class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-8 sm:p-12 shadow-sm text-center">
+          <div class="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-[#1877F2] flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white">Build your Brand with SocialHub Pages</h2>
+          <p class="text-sm text-slate-500 max-w-lg mx-auto mt-2 mb-6">
+            Connect with millions of people, build an active community, and grow your enterprise with a dedicated official page.
+          </p>
+          <a
+            href="/pages/create"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-sm font-bold shadow-md shadow-blue-500/20 transition-all"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Create Your First Page</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 3: LIKED PAGES SECTION (লাইক করা পেইজ)                            -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <div v-else-if="mainTab === 'liked'" class="space-y-6 animate-fade-in">
+        <div v-if="likedPages.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div
+            v-for="p in likedPages"
+            :key="p.id"
+            class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
+          >
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-12 h-12 rounded-2xl bg-[#1877F2] text-white font-extrabold flex items-center justify-center shadow-xs overflow-hidden shrink-0 text-lg">
+                <img v-if="p.avatar_url" :src="p.avatar_url" :alt="p.name" class="w-full h-full object-cover" />
+                <span v-else>{{ p.name.charAt(0) }}</span>
+              </div>
+              <div class="truncate">
+                <div class="flex items-center gap-1.5">
+                  <a :href="`/pages/${p.slug}`" class="font-bold text-sm text-slate-900 dark:text-white hover:text-[#1877F2] truncate">
+                    {{ p.name }}
+                  </a>
+                  <span v-if="p.is_verified" class="text-[#1877F2]" title="Verified">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500">{{ p.category || 'General' }} &bull; {{ formatNumber(p.followers_count) }} followers</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <a
+                :href="`/pages/${p.slug}`"
+                class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all"
+              >
+                Visit
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-12 text-center shadow-sm">
+          <div class="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-[#1877F2] flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">You haven't liked any pages yet</h3>
+          <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
+            Discover verified companies, tech hubs, and creators to stay up to date with their latest announcements.
+          </p>
+          <button
+            @click="setMainTab('discover')"
+            class="px-5 py-2.5 rounded-xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+          >
+            Explore All Pages
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 4: INVITATIONS SECTION (আমন্ত্রণসমূহ)                               -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <div v-else-if="mainTab === 'invitations'" class="space-y-6 animate-fade-in">
+        <div v-if="pendingInvitations && pendingInvitations.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
             v-for="inv in pendingInvitations"
             :key="inv.id"
-            class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-4 shadow-xs"
+            class="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-4 shadow-sm"
           >
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-[#1877F2] font-bold flex items-center justify-center shrink-0 overflow-hidden">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/50 text-[#1877F2] font-bold flex items-center justify-center shrink-0 overflow-hidden text-lg">
                 <img v-if="inv.page?.avatar_url" :src="inv.page.avatar_url" class="w-full h-full object-cover" />
                 <span v-else>{{ inv.page?.name?.charAt(0) || 'P' }}</span>
               </div>
@@ -69,26 +612,58 @@
               <button
                 @click="acceptInvitation(inv)"
                 :disabled="invActionLoading === inv.id"
-                class="px-3 py-1.5 rounded-xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-xs font-bold transition-all disabled:opacity-50"
+                class="px-4 py-2 rounded-xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-xs font-bold transition-all disabled:opacity-50"
               >
                 Accept
               </button>
               <button
                 @click="declineInvitation(inv)"
                 :disabled="invActionLoading === inv.id"
-                class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all disabled:opacity-50"
+                class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all disabled:opacity-50"
               >
                 Decline
               </button>
             </div>
           </div>
         </div>
+
+        <div v-else class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-12 text-center shadow-sm">
+          <div class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">No pending invitations</h3>
+          <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+            When someone invites you to collaborate on or manage a page, their invitation will appear here.
+          </p>
+        </div>
       </div>
 
       <!-- ═══════════════════════════════════════════════════════════════════════ -->
-      <!-- SECTION 1: ENTERPRISE PAGE MANAGEMENT DASHBOARD (Hero for active page) -->
+      <!-- TAB 5: ENTERPRISE PAGE MANAGEMENT STUDIO (Hero for active page)         -->
       <!-- ═══════════════════════════════════════════════════════════════════════ -->
-      <div v-if="activePage" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div v-else-if="mainTab === 'studio' && activePage" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden animate-fade-in">
+        <!-- Studio Notice Banner & Quick Switcher -->
+        <div class="px-6 py-3 bg-slate-100 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700/80 flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-[#1877F2] dark:bg-blue-900/40 dark:text-blue-300">
+              Studio Mode
+            </span>
+            <span class="text-xs font-medium text-slate-600 dark:text-slate-300">
+              Managing <strong>{{ activePage.name }}</strong>
+            </span>
+          </div>
+          <button
+            @click="setMainTab('discover')"
+            class="inline-flex items-center gap-1.5 text-xs font-bold text-[#1877F2] hover:text-[#1666D8] dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Back to All Pages</span>
+          </button>
+        </div>
         <!-- Cover Banner Photo with Scenic Mountain Gradient / Image -->
         <div class="relative h-48 sm:h-64 lg:h-72 w-full overflow-hidden bg-slate-200 dark:bg-slate-800">
           <img
@@ -1038,8 +1613,8 @@
         </div>
       </div>
 
-      <!-- Welcome Banner if no managed page exists -->
-      <div v-else class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-8 sm:p-12 shadow-sm text-center">
+      <!-- Welcome Banner if no managed page exists in studio -->
+      <div v-else-if="mainTab === 'studio' && !activePage" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-8 sm:p-12 shadow-sm text-center">
         <div class="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-[#1877F2] flex items-center justify-center mx-auto mb-4">
           <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
@@ -1058,232 +1633,6 @@
           </svg>
           <span>Create Your First Page</span>
         </a>
-      </div>
-
-      <!-- ═══════════════════════════════════════════════════════════════════════ -->
-      <!-- SECTION 2: ALL PAGES / DISCOVERY DIRECTORY                           -->
-      <!-- ═══════════════════════════════════════════════════════════════════════ -->
-      <div class="space-y-6 pt-4">
-        <!-- Header & Top "+ Create Page" Button -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              All Pages
-            </h2>
-            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              Discover verified organizations, technology hubs, creators, and brands.
-            </p>
-          </div>
-
-          <a
-            href="/pages/create"
-            class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-sm font-bold shadow-sm shadow-blue-500/20 transition-all self-start sm:self-auto"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Create Page</span>
-          </a>
-        </div>
-
-        <!-- Filter & Search Toolbar (Matching reference screenshot) -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3 sm:p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <!-- Search Input -->
-          <div class="relative flex-1 max-w-md">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <input
-              v-model="searchQuery"
-              @input="handleSearch"
-              type="text"
-              placeholder="Search pages..."
-              class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1877F2]"
-            />
-          </div>
-
-          <!-- Directory Tabs: All | Your Pages | Liked Pages | Categories -->
-          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-            <button
-              v-for="t in [
-                { id: 'all', label: 'All' },
-                { id: 'my_pages', label: 'Your Pages' },
-                { id: 'followed', label: 'Liked Pages' },
-              ]"
-              :key="t.id"
-              @click="switchDirectoryTab(t.id)"
-              class="px-4 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0"
-              :class="activeDirectoryTab === t.id ? 'bg-[#1877F2] text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'"
-            >
-              {{ t.label }}
-            </button>
-          </div>
-
-          <!-- Sort Selector -->
-          <div class="flex items-center gap-2 shrink-0">
-            <select
-              v-model="selectedSort"
-              @change="handleFilterChange"
-              class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none"
-            >
-              <option value="popular">Most Followed</option>
-              <option value="recent">Newest</option>
-              <option value="name">Alphabetical</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Category Pills Filter Row -->
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-          <button
-            @click="selectCategory('all')"
-            class="px-4 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all"
-            :class="selectedCategoryFilter === 'all' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50'"
-          >
-            All Categories
-          </button>
-          <button
-            v-for="cat in categories"
-            :key="cat"
-            @click="selectCategory(cat)"
-            class="px-4 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all"
-            :class="selectedCategoryFilter === cat ? 'bg-[#1877F2] text-white shadow-xs' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50'"
-          >
-            {{ cat }}
-          </button>
-        </div>
-
-        <!-- Directory Grid of Page Cards (Exact match to design screenshot) -->
-        <div v-if="pagesList && pagesList.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div
-            v-for="p in pagesList"
-            :key="p.id"
-            class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group"
-          >
-            <!-- Top Cover Banner -->
-            <div class="relative h-28 sm:h-32 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-              <img
-                :src="p.cover_image_url || defaultCoverUrl"
-                :alt="p.name"
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <!-- Heart bookmark icon on top right -->
-              <button
-                @click="toggleFavorite(p)"
-                class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm text-white hover:text-rose-400 flex items-center justify-center transition-colors"
-                aria-label="Bookmark"
-              >
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-              </button>
-            </div>
-
-            <!-- Page Identity & Details -->
-            <div class="px-5 pt-3 pb-5 flex-1 flex flex-col justify-between">
-              <div>
-                <!-- Category Icon Avatar overlapping cover -->
-                <div class="flex items-end gap-3 -mt-9 mb-2.5">
-                  <div class="w-14 h-14 rounded-2xl border-2 border-white dark:border-slate-900 bg-white dark:bg-slate-800 shadow-sm overflow-hidden shrink-0 flex items-center justify-center">
-                    <img v-if="p.avatar_url" :src="p.avatar_url" class="w-full h-full object-cover" />
-                    <div v-else class="w-full h-full bg-[#1877F2] text-white flex items-center justify-center font-bold text-lg">
-                      {{ p.name?.charAt(0) }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="space-y-1">
-                  <div class="flex items-center gap-1.5">
-                    <a :href="`/pages/${p.slug}`" class="text-base font-extrabold text-slate-900 dark:text-white hover:text-[#1877F2] transition-colors truncate">
-                      {{ p.name }}
-                    </a>
-                    <svg v-if="p.is_verified" class="w-4 h-4 text-[#1877F2] fill-current shrink-0" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                  </div>
-                  <p class="text-xs font-semibold text-slate-500">
-                    {{ p.category }} &bull; {{ formatNumber(p.followers_count) }} followers
-                  </p>
-                  <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mt-2">
-                    {{ p.bio || 'Official social page on SocialHub network.' }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Action Bar (Like Page / Liked Button & ... Menu) -->
-              <div class="flex items-center gap-2 pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  @click="toggleFollowPage(p)"
-                  :disabled="followLoadingId === p.id"
-                  class="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all shadow-xs"
-                  :class="p.is_following
-                    ? 'bg-blue-50 text-[#1877F2] border border-blue-200 dark:bg-blue-950/40 dark:border-blue-900'
-                    : 'bg-[#1877F2] hover:bg-[#1666D8] text-white'"
-                >
-                  <svg v-if="p.is_following" class="w-4 h-4 text-[#1877F2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <svg v-else class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
-                  </svg>
-                  <span>{{ p.is_following ? 'Liked' : 'Like Page' }}</span>
-                </button>
-
-                <div class="relative">
-                  <a
-                    :href="`/pages/${p.slug}`"
-                    class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors flex items-center justify-center"
-                    title="View Page"
-                  >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Empty State for Directory -->
-        <div v-else class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-12 text-center">
-          <div class="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-[#1877F2] flex items-center justify-center mx-auto mb-3">
-            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-bold text-slate-900 dark:text-white">No pages match your filter</h3>
-          <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">Try clearing filters or searching with a different term.</p>
-          <button
-            @click="clearFilters"
-            class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
-          >
-            Clear Filters
-          </button>
-        </div>
-
-        <!-- Pagination Controls -->
-        <div v-if="pagesMeta && pagesMeta.last_page > 1" class="flex items-center justify-center gap-2 pt-6">
-          <button
-            @click="goToPage(pagesMeta.current_page - 1)"
-            :disabled="pagesMeta.current_page <= 1"
-            class="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-40 transition-all"
-          >
-            Previous
-          </button>
-          <span class="text-xs font-semibold text-slate-500 px-3">
-            Page {{ pagesMeta.current_page }} of {{ pagesMeta.last_page }}
-          </span>
-          <button
-            @click="goToPage(pagesMeta.current_page + 1)"
-            :disabled="pagesMeta.current_page >= pagesMeta.last_page"
-            class="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-40 transition-all"
-          >
-            Next
-          </button>
-        </div>
       </div>
     </div>
 
@@ -1820,13 +2169,62 @@ const props = withDefaults(
   }
 );
 
-// Fallback high-res scenic mountain cover banner matching design
-const defaultCoverUrl = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80';
+// Dynamic and Category Tailored High-Resolution Cover Pools
+const categoryCovers: Record<string, string> = {
+  'Technology': 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+  'Technology & Social Network': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80',
+  'Business': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+  'Consumer Brand': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80',
+  'News & Media': 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
+  'Education': 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80',
+  'Entertainment': 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1200&q=80',
+  'Food & Drink': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
+  'Sports': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1200&q=80',
+  'Fashion': 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80',
+  'Community': 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80',
+  'Travel & Adventure': 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80',
+  'Photography': 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&w=1200&q=80',
+};
+
+const defaultCoverList = [
+  'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80',
+];
+
+const defaultCoverUrl = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80';
+
+const getPageCover = (page: any): string => {
+  if (page?.cover_image_url) return page.cover_image_url;
+  if (page?.category && categoryCovers[page.category]) return categoryCovers[page.category];
+  const idx = Math.abs((page?.id || 0)) % defaultCoverList.length;
+  return defaultCoverList[idx];
+};
+
+const avatarGradients = [
+  'from-blue-600 to-indigo-700',
+  'from-emerald-500 to-teal-700',
+  'from-violet-600 to-purple-800',
+  'from-rose-500 to-pink-700',
+  'from-amber-500 to-orange-600',
+  'from-cyan-600 to-blue-700',
+];
+
+const getAvatarGradient = (page: any): string => {
+  const code = (page?.name || 'P').charCodeAt(0) + (page?.id || 0);
+  return avatarGradients[code % avatarGradients.length];
+};
 
 // Active Selected Page State
 const activePage = ref<PageData | null>(props.selectedPage || props.managedPages[0] || null);
 
 // Navigation & Filters State
+const mainTab = ref<string>(
+  props.filters?.tab === 'my_pages' ? 'my_pages' : (props.filters?.tab === 'followed' ? 'liked' : (props.filters?.tab === 'studio' ? 'studio' : 'discover'))
+);
 const activeSubNav = ref<'overview' | 'posts' | 'about' | 'photos' | 'events'>('overview');
 const activeDirectoryTab = ref<string>(props.filters?.tab || 'all');
 const searchQuery = ref<string>(props.filters?.q || '');
@@ -1837,6 +2235,24 @@ const insightsRange = ref<string>('7');
 // Directory Pages List with Optimistic Reaction/Follow State
 const pagesList = ref<any[]>([...(props.pages?.data || [])]);
 const pagesMeta = computed(() => props.pages);
+
+const featuredPages = computed(() => {
+  return pagesList.value.filter((p: any) => p.is_verified || p.followers_count > 0).slice(0, 3);
+});
+
+const setMainTab = (tab: string) => {
+  mainTab.value = tab;
+  if (tab === 'discover') {
+    activeDirectoryTab.value = 'all';
+    applyFilters();
+  } else if (tab === 'my_pages') {
+    activeDirectoryTab.value = 'my_pages';
+    applyFilters();
+  } else if (tab === 'liked') {
+    activeDirectoryTab.value = 'followed';
+    applyFilters();
+  }
+};
 
 // Modals State
 const moreMenuOpen = ref(false);
@@ -1993,11 +2409,24 @@ const goToPage = (pageNumber: number) => {
   );
 };
 
+const isFollowingPage = computed(() => (activePage.value ? Boolean(activePage.value.is_following) : false));
+
+const openStudio = (p: PageData) => {
+  activePage.value = p;
+  mainTab.value = 'studio';
+};
+
+const myPages = computed(() => props.managedPages || []);
+const likedPages = computed(() => props.followedPages || []);
+
 // Follow / Unfollow Page with Optimistic Update
-const toggleFollowPage = async (page: any) => {
+const toggleFollowPage = async (targetPage?: any) => {
+  const page = targetPage || activePage.value;
+  if (!page) return;
+
   followLoadingId.value = page.id;
-  const prevFollowing = page.is_following;
-  const prevCount = page.followers_count;
+  const prevFollowing = Boolean(page.is_following);
+  const prevCount = page.followers_count || 0;
 
   // Optimistic update
   page.is_following = !prevFollowing;

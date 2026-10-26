@@ -41,7 +41,7 @@ class MessengerMobileMultiChatTest extends TestCase
         $messengerService->sendMessage($friend2, $conv2, ['body' => 'Meeting today?']);
         $messengerService->sendMessage($friend3, $conv3, ['body' => 'Check the design']);
 
-        $response = $this->actingAs($user)->get(route('messages.index'));
+        $response = $this->actingAs($user)->get(route('messages.index', ['blade' => 1]));
 
         $response->assertStatus(200);
         $response->assertViewHas('activeConversation', null);
@@ -85,7 +85,7 @@ class MessengerMobileMultiChatTest extends TestCase
         $messengerService->sendMessage($friend1, $conv1, ['body' => 'Msg 1']);
         $messengerService->sendMessage($friend2, $conv2, ['body' => 'Msg 2']);
 
-        $response = $this->actingAs($user)->get(route('messages.index', ['conversation_id' => $conv1->id]));
+        $response = $this->actingAs($user)->get(route('messages.index', ['conversation_id' => $conv1->id, 'blade' => 1]));
 
         $response->assertStatus(200);
         $response->assertViewHas('activeConversation');
@@ -223,7 +223,7 @@ class MessengerMobileMultiChatTest extends TestCase
         $targetUser = User::factory()->create(['name' => 'New Friend']);
         UserProfile::create(['user_id' => $targetUser->id]);
 
-        $response = $this->actingAs($user)->get(route('messages.index', ['user' => $targetUser->id]));
+        $response = $this->actingAs($user)->get(route('messages.index', ['user' => $targetUser->id, 'blade' => 1]));
 
         $response->assertStatus(200);
         $response->assertViewHas('activeConversation');

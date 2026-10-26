@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\GroupInvitation;
 use App\Models\GroupMember;
 use App\Models\GroupNotificationPreference;
+use App\Models\Media;
 use App\Models\User;
 use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\GroupService;
@@ -600,11 +601,17 @@ class GroupController extends Controller
         $group = Group::findOrFail($id);
 
         $validated = $request->validate([
-            'content' => ['required', 'string', 'max:5000'],
+            'content' => ['nullable', 'string', 'max:5000'],
             'type' => ['nullable', 'string', 'in:text,media,poll,announcement'],
+            'media_ids' => ['nullable', 'array'],
+            'media_ids.*' => ['integer', 'exists:media,id'],
             'poll_data' => ['nullable', 'array'],
             'link_preview' => ['nullable', 'array'],
         ]);
+
+        if (empty(trim($validated['content'] ?? '')) && empty($validated['media_ids'])) {
+            return $this->errorResponse('Post content or media is required.', 422);
+        }
 
         $post = $this->groupService->createGroupPost($group, $user, $validated);
 
@@ -1111,8 +1118,31 @@ class GroupController extends Controller
             }
         }
 
+        $mediaId = null;
+        if ($user = $request->user()) {
+            if ($type === 'general') {
+                $disk = config('filesystems.default', 'public');
+                $media = Media::create([
+                    'user_id' => $user->id,
+                    'collection' => 'groups',
+                    'disk' => $disk,
+                    'original_path' => $path,
+                    'mime_type' => $file->getMimeType(),
+                    'size' => $file->getSize(),
+                    'checksum' => hash_file('sha256', $file->getRealPath()),
+                    'processing_status' => 'completed',
+                    'metadata' => [
+                        'original_filename' => $file->getClientOriginalName(),
+                        'url' => $url,
+                    ],
+                ]);
+                $mediaId = $media->id;
+            }
+        }
+
         return $this->successResponse(
             data: [
+                'id' => $mediaId,
                 'url' => $url,
                 'path' => $path,
                 'type' => $type,

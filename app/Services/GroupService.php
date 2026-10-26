@@ -29,6 +29,7 @@ use App\Models\GroupQuestionAnswer;
 use App\Models\GroupReport;
 use App\Models\GroupRule;
 use App\Models\GroupSubscription;
+use App\Models\Media;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\Contracts\NotificationServiceInterface;
@@ -833,10 +834,10 @@ class GroupService
         }
 
         return DB::transaction(function () use ($group, $user, $data) {
-            $content = $data['content'];
+            $content = $data['content'] ?? '';
 
             // ১. কিওয়ার্ড ফিল্টার এবং স্বয়ংক্রিয় মডারেশন স্ক্যানিং
-            $alert = $this->enterpriseGroupService->checkKeywordAlerts($group, $content);
+            $alert = ! empty($content) ? $this->enterpriseGroupService->checkKeywordAlerts($group, $content) : ['requires_admin_review' => false];
 
             // ২. পোস্ট স্ট্যাটাস নির্ধারণ (অ্যাপ্রুভাল প্রয়োজন কিনা)
             $needsApproval = false;
@@ -853,11 +854,21 @@ class GroupService
                 'group_id' => $group->id,
                 'content' => $content,
                 'audience' => 'public',
-                'type' => $data['type'] ?? 'text',
+                'type' => $data['type'] ?? (! empty($data['media_ids']) ? 'media' : 'text'),
                 'status' => $postStatus,
                 'poll_data' => $data['poll_data'] ?? null,
                 'link_preview' => $data['link_preview'] ?? null,
             ]);
+
+            // Attach Media if IDs are passed
+            if (! empty($data['media_ids'])) {
+                Media::whereIn('id', $data['media_ids'])
+                    ->where('user_id', $user->id)
+                    ->update([
+                        'mediable_type' => Post::class,
+                        'mediable_id' => $post->id,
+                    ]);
+            }
 
             if ($postStatus === 'published') {
                 $group->increment('posts_count');

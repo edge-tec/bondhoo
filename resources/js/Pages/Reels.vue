@@ -1,8 +1,8 @@
 <template>
   <AppLayout title="Reels — Bondhoo" current-route="reels" :hide-right-sidebar="true" :full-width="true">
-    <div class="max-w-7xl mx-auto px-2 sm:px-4 py-2 lg:py-4 flex flex-col items-center min-h-[calc(100vh-80px)] select-none">
-      <!-- 1. Top Reels Subheader & Tab Switcher -->
-      <div class="w-full max-w-4xl flex flex-wrap items-center justify-between gap-3 mb-3 px-2">
+    <div class="w-full max-w-7xl mx-auto p-0 md:px-4 md:py-3 flex flex-col items-center h-[calc(100dvh-112px)] md:h-auto md:min-h-[calc(100vh-80px)] select-none overflow-hidden">
+      <!-- 1. Top Reels Subheader & Tab Switcher (Desktop) -->
+      <div class="hidden md:flex w-full max-w-4xl flex-wrap items-center justify-between gap-3 mb-3 px-2">
         <div class="flex items-center gap-1 sm:gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <button
             type="button"
@@ -61,7 +61,7 @@
           </button>
         </div>
 
-        <!-- Create Reel Trigger Button -->
+        <!-- Create Reel Trigger Button (Desktop) -->
         <button
           type="button"
           @click="isCreateModalOpen = true"
@@ -79,7 +79,7 @@
       <!-- 2. Main Reels Feed Container -->
       <div
         v-if="reelsList.length > 0 && currentReel"
-        class="relative w-full flex items-center justify-center gap-4 my-auto"
+        class="relative w-full h-full md:h-auto flex items-center justify-center gap-4 my-auto"
         @touchstart="handleTouchStart"
         @touchend="handleTouchEnd"
         @wheel.passive="handleWheelScroll"
@@ -98,14 +98,18 @@
         </button>
 
         <!-- Vertical 9:16 Video Player Card -->
-        <div class="relative w-full max-w-[420px] aspect-[9/16] max-h-[82vh] bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-slate-800/80 flex flex-col justify-between group select-none">
-          <!-- HTML5 Video Element -->
+        <div
+          :class="[
+            'relative w-full h-full md:h-[84vh] md:max-w-[420px] md:aspect-[9/16] bg-slate-950 rounded-none md:rounded-3xl overflow-hidden shadow-2xl border-0 md:border md:border-slate-800/80 flex flex-col justify-between group select-none transition-transform duration-300',
+            slideDirection === 'up' ? 'animate-slide-up' : slideDirection === 'down' ? 'animate-slide-down' : ''
+          ]"
+        >
+          <!-- HTML5 Video Element (Removed loop to allow continuous auto-advance) -->
           <video
             ref="videoEl"
             :src="currentReel.video_url"
             class="absolute inset-0 w-full h-full object-cover cursor-pointer"
             playsinline
-            loop
             autoplay
             :muted="isMuted"
             @click="togglePlay"
@@ -141,22 +145,66 @@
             </div>
           </div>
 
-          <!-- Top Gradient & Header Info -->
-          <div class="relative z-20 px-4 py-3 flex items-center justify-between text-white bg-gradient-to-b from-black/80 via-black/40 to-transparent">
+          <!-- Top Gradient & Header Info / Floating Controls -->
+          <div class="relative z-20 px-3 sm:px-4 pt-3 pb-4 flex items-center justify-between text-white bg-gradient-to-b from-black/85 via-black/40 to-transparent">
+            <!-- Left Side: Brand Logo (Desktop) + Auto-Advance Toggle Indicator -->
             <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse"></span>
-              <span class="text-xs font-black tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-pink-300 to-rose-300">
-                Bondhoo Reels
-              </span>
+              <div class="hidden md:flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse"></span>
+                <span class="text-xs font-black tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-pink-300 to-rose-300">
+                  Bondhoo Reels
+                </span>
+              </div>
+
+              <!-- Auto-Advance Toggle Pill (Desktop & Mobile) -->
+              <button
+                type="button"
+                @click.stop="toggleAutoAdvance"
+                :class="[
+                  'px-2.5 py-1 rounded-full text-[10px] font-black tracking-wide backdrop-blur-md flex items-center gap-1.5 transition-all cursor-pointer border shadow-sm',
+                  isAutoAdvanceEnabled
+                    ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/40 shadow-emerald-500/20'
+                    : 'bg-black/50 text-slate-300 border-white/10 hover:bg-black/70'
+                ]"
+                :title="isAutoAdvanceEnabled ? 'অটো-প্লে সক্রিয় (বন্ধ করতে ক্লিক করুন)' : 'অটো-প্লে বন্ধ (চালু করতে ক্লিক করুন)'"
+              >
+                <span class="w-1.5 h-1.5 rounded-full" :class="isAutoAdvanceEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'"></span>
+                <span>{{ isAutoAdvanceEnabled ? '⚡ AUTO' : '⏸️ LOOP' }}</span>
+              </button>
             </div>
 
-            <!-- Controls: Speed & Sound -->
-            <div class="flex items-center gap-2">
+            <!-- Center (Mobile Only): TikTok / Shorts Style Floating Tabs -->
+            <div class="flex md:hidden items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/15">
+              <button
+                type="button"
+                @click.stop="switchTab('for_you')"
+                :class="[
+                  'px-2.5 py-0.5 rounded-full text-xs font-bold transition-all cursor-pointer',
+                  currentTab === 'for_you' ? 'text-white font-extrabold drop-shadow' : 'text-white/60 hover:text-white'
+                ]"
+              >
+                For You
+              </button>
+              <span class="text-white/30 text-xs">|</span>
+              <button
+                type="button"
+                @click.stop="switchTab('following')"
+                :class="[
+                  'px-2.5 py-0.5 rounded-full text-xs font-bold transition-all cursor-pointer',
+                  currentTab === 'following' ? 'text-white font-extrabold drop-shadow' : 'text-white/60 hover:text-white'
+                ]"
+              >
+                Following
+              </button>
+            </div>
+
+            <!-- Right Controls: Speed, Sound & Mobile Create Button -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
               <!-- Playback Speed Switcher -->
               <button
                 type="button"
                 @click.stop="togglePlaybackRate"
-                class="px-2 py-0.5 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md text-[10px] font-bold border border-white/10 transition-colors cursor-pointer"
+                class="px-2 py-1 rounded-full bg-black/45 hover:bg-black/70 text-white backdrop-blur-md text-[10px] font-bold border border-white/15 transition-colors cursor-pointer"
                 title="Playback Speed"
               >
                 {{ playbackRate }}x
@@ -167,7 +215,7 @@
                 <button
                   type="button"
                   @click.stop="toggleMute"
-                  class="p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-colors cursor-pointer border border-white/10"
+                  class="p-2 rounded-full bg-black/45 hover:bg-black/70 text-white backdrop-blur-md transition-colors cursor-pointer border border-white/15"
                   :title="isMuted ? 'Unmute (M)' : 'Mute (M)'"
                 >
                   <svg v-if="isMuted" class="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,8 +227,8 @@
                   </svg>
                 </button>
 
-                <!-- Hidden/Hover Volume Slider -->
-                <div class="hidden group-hover/vol:flex items-center absolute right-full mr-1.5 px-2.5 py-1 bg-black/70 backdrop-blur-md rounded-full border border-white/10 z-30 animate-in fade-in duration-150">
+                <!-- Hidden/Hover Volume Slider (Desktop) -->
+                <div class="hidden md:group-hover/vol:flex items-center absolute right-full mr-1.5 px-2.5 py-1 bg-black/70 backdrop-blur-md rounded-full border border-white/10 z-30 animate-in fade-in duration-150">
                   <input
                     type="range"
                     min="0"
@@ -192,6 +240,18 @@
                   />
                 </div>
               </div>
+
+              <!-- Mobile Create Reel Button (+) -->
+              <button
+                type="button"
+                @click.stop="isCreateModalOpen = true"
+                class="md:hidden p-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md transition-transform active:scale-90 cursor-pointer"
+                title="Create Reel"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -735,8 +795,17 @@ const canNativeShare = ref(typeof navigator !== 'undefined' && !!navigator.share
 
 // Mobile touch state
 let touchStartY = 0;
+let touchStartX = 0;
+let touchStartTime = 0;
 let lastWheelTime = 0;
 const isMobileViewport = ref(false);
+
+const isAutoAdvanceEnabled = ref(true);
+const slideDirection = ref<'up' | 'down' | 'none'>('none');
+
+const toggleAutoAdvance = () => {
+  isAutoAdvanceEnabled.value = !isAutoAdvanceEnabled.value;
+};
 
 const currentReel = computed<ReelItem | undefined>(() => reelsList.value[currentIndex.value]);
 
@@ -840,9 +909,15 @@ const onTimeUpdate = () => {
 };
 
 const onVideoEnded = () => {
-  if (videoEl.value) {
-    videoEl.value.currentTime = 0;
-    videoEl.value.play();
+  if (isAutoAdvanceEnabled.value) {
+    // Automatically transition to the next reel
+    nextReel();
+  } else {
+    // Auto-advance is off, replay current video
+    if (videoEl.value) {
+      videoEl.value.currentTime = 0;
+      videoEl.value.play().catch(() => {});
+    }
   }
 };
 
@@ -868,15 +943,35 @@ const startViewTracking = () => {
 };
 
 const nextReel = () => {
+  if (reelsList.value.length === 0) return;
+  slideDirection.value = 'up';
+  setTimeout(() => {
+    slideDirection.value = 'none';
+  }, 320);
+
   if (currentIndex.value < reelsList.value.length - 1) {
     currentIndex.value++;
+    onReelSwitched();
+  } else if (reelsList.value.length > 1) {
+    // Loop back to start so reels continuously cycle automatically
+    currentIndex.value = 0;
     onReelSwitched();
   }
 };
 
 const prevReel = () => {
+  if (reelsList.value.length === 0) return;
+  slideDirection.value = 'down';
+  setTimeout(() => {
+    slideDirection.value = 'none';
+  }, 320);
+
   if (currentIndex.value > 0) {
     currentIndex.value--;
+    onReelSwitched();
+  } else if (reelsList.value.length > 1) {
+    // Wrap to the last reel
+    currentIndex.value = reelsList.value.length - 1;
     onReelSwitched();
   }
 };
@@ -1195,12 +1290,18 @@ const handleKeyDown = (e: KeyboardEvent) => {
 
 const handleTouchStart = (e: TouchEvent) => {
   touchStartY = e.touches[0].clientY;
+  touchStartX = e.touches[0].clientX;
+  touchStartTime = Date.now();
 };
 
 const handleTouchEnd = (e: TouchEvent) => {
   const touchEndY = e.changedTouches[0].clientY;
+  const touchEndX = e.changedTouches[0].clientX;
   const diffY = touchStartY - touchEndY;
-  if (Math.abs(diffY) > 50) {
+  const diffX = touchStartX - touchEndX;
+
+  // Threshold: at least 32px swipe vertically, and predominantly vertical
+  if (Math.abs(diffY) > 32 && Math.abs(diffY) > Math.abs(diffX) * 1.1) {
     if (diffY > 0) {
       nextReel();
     } else {
@@ -1236,3 +1337,35 @@ onUnmounted(() => {
   if (playPauseTimer) clearTimeout(playPauseTimer);
 });
 </script>
+
+<style scoped>
+@keyframes slideUpIn {
+  0% {
+    opacity: 0.65;
+    transform: translateY(35px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideDownIn {
+  0% {
+    opacity: 0.65;
+    transform: translateY(-35px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUpIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-down {
+  animation: slideDownIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+</style>

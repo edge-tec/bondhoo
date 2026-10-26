@@ -223,6 +223,8 @@ class AdminUserSeeder extends Seeder
                 'name' => 'Bondhoo Official',
                 'category' => 'Technology & Social Network',
                 'bio' => 'Bondhoo বাংলাদেশের নিজস্ব স্বাবলম্বী সোশ্যাল নেটওয়ার্ক। নতুন আপডেট ও ফিচারের জন্য সাথে থাকুন।',
+                'avatar_url' => 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
+                'cover_image_url' => 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1600&q=80',
                 'owner_id' => $admin->id,
                 'followers_count' => 12402,
                 'posts_count' => 6,

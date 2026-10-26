@@ -184,4 +184,45 @@ class MediaController extends Controller
             message: 'File stored successfully via signed URL.'
         );
     }
+
+    /**
+     * Delete an unattached or user-owned media record and remove its files from storage.
+     */
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return $this->errorResponse('Unauthenticated.', 401);
+        }
+
+        $media = Media::where('id', $id)->first();
+        if (! $media) {
+            return $this->errorResponse('Media not found.', 404);
+        }
+
+        if ($media->user_id !== $user->id) {
+            return $this->errorResponse('Unauthorized to delete this media.', 403);
+        }
+
+        $disk = $media->disk ?: config('filesystems.default', 'public');
+        $paths = array_filter([
+            $media->original_path,
+            $media->thumbnail_path,
+            $media->medium_path,
+            $media->large_path,
+        ]);
+
+        foreach ($paths as $path) {
+            if (Storage::disk($disk)->exists($path)) {
+                Storage::disk($disk)->delete($path);
+            }
+        }
+
+        $media->delete();
+
+        return $this->successResponse(
+            data: ['id' => $id],
+            message: 'Media deleted successfully.'
+        );
+    }
 }

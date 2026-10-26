@@ -30,6 +30,8 @@
           @decline-friend-request="declineFriendRequest"
           @unfriend="unfriend"
           @open-edit="isEditModalOpen = true"
+          @open-account-settings="isEditModalOpen = true"
+          @open-privacy-settings="isPrivacyModalOpen = true"
           @avatar-uploaded="handleAvatarUploaded"
           @cover-uploaded="handleCoverUploaded"
           @toggle-follow="toggleFollowUser"
@@ -271,6 +273,425 @@
             description="No published videos available on this profile."
           />
         </div>
+
+        <!-- TAB 6: Reels (Gallery Grid) -->
+        <div v-else-if="activeTab === 'reels'" class="bg-white dark:bg-slate-900 rounded-2xl border border-[#E4E7EC] dark:border-slate-800 p-6 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-[#E4E7EC] dark:border-slate-800 pb-4">
+            <h3 class="text-lg font-bold text-[#172033] dark:text-slate-100 flex items-center gap-2">
+              <span>Reels</span>
+              <span class="text-xs font-normal text-slate-500">({{ profileReels.length }})</span>
+            </h3>
+            <button
+              v-if="isOwnProfile"
+              type="button"
+              @click="isReelCreatorOpen = true"
+              class="px-3.5 py-1.5 rounded-xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+            >
+              <span>+ Create Reel</span>
+            </button>
+          </div>
+
+          <div v-if="profileReels && profileReels.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div
+              v-for="reel in profileReels"
+              :key="reel.id"
+              class="aspect-[9/16] rounded-2xl overflow-hidden bg-black border border-slate-200 dark:border-slate-800 relative group cursor-pointer shadow-sm hover:scale-[1.02] transition-transform"
+              @click="openReel(reel)"
+            >
+              <video
+                v-if="reel.video_url || reel.url"
+                :src="reel.video_url || reel.url"
+                :poster="reel.thumbnail_url || reel.thumbnail"
+                playsinline
+                muted
+                preload="metadata"
+                class="w-full h-full object-cover"
+              ></video>
+              <img
+                v-else-if="reel.thumbnail_url || reel.thumbnail"
+                :src="reel.thumbnail_url || reel.thumbnail"
+                class="w-full h-full object-cover"
+                alt="Reel Thumbnail"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-3 text-white pointer-events-none">
+                <div class="flex items-center gap-1.5 text-xs font-bold">
+                  <span class="text-sm">▶</span>
+                  <span class="truncate">{{ reel.caption || 'Reel' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <EmptyState
+            v-else
+            title="No Reels Published"
+            description="No short-form video reels published on this profile yet."
+            :action-label="isOwnProfile ? 'Create a Reel' : undefined"
+            @action="isReelCreatorOpen = true"
+          />
+        </div>
+
+        <!-- TAB 7: Saved Posts & Bookmarks (Interactive & Realtime) -->
+        <div v-else-if="activeTab === 'saved'" class="bg-white dark:bg-slate-900 rounded-2xl border border-[#E4E7EC] dark:border-slate-800 p-6 shadow-sm space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E4E7EC] dark:border-slate-800 pb-4">
+            <div>
+              <h3 class="text-lg font-bold text-[#172033] dark:text-slate-100 flex items-center gap-2">
+                <span>🏷️</span>
+                <span>Saved Posts &amp; Bookmarks</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-[#1877F2] dark:bg-blue-950/40">
+                  {{ savedItems.length }}
+                </span>
+              </h3>
+              <p class="text-xs text-[#667085] dark:text-slate-400 mt-0.5">Posts, videos, and articles saved for your private reference.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click="fetchSavedItems"
+                :disabled="isLoadingSaved"
+                class="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Refresh Saved Items"
+              >
+                <svg class="w-4 h-4" :class="isLoadingSaved ? 'animate-spin text-[#1877F2]' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <a
+                href="/saved"
+                class="px-3.5 py-1.5 rounded-xl border border-[#E4E7EC] dark:border-slate-700 text-xs font-semibold text-[#1877F2] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                All Collections →
+              </a>
+            </div>
+          </div>
+
+          <!-- Loading Skeleton -->
+          <div v-if="isLoadingSaved && savedItems.length === 0" class="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
+            <svg class="w-6 h-6 animate-spin text-[#1877F2]" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span class="text-xs">Loading saved posts...</span>
+          </div>
+
+          <!-- Saved Items Grid -->
+          <div v-else-if="savedItems.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              v-for="item in savedItems"
+              :key="item.id"
+              class="p-4 rounded-2xl border border-[#E4E7EC] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between group"
+            >
+              <div class="space-y-3">
+                <!-- Author & Time -->
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <img
+                      :src="item.post?.author?.avatar || '/images/default-avatar.svg'"
+                      class="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                      alt="Author Avatar"
+                    />
+                    <div>
+                      <div class="text-xs font-bold text-[#172033] dark:text-slate-200">
+                        {{ item.post?.author?.name || 'Social Post' }}
+                      </div>
+                      <div class="text-[11px] text-slate-400">
+                        {{ item.post?.created_at_human || 'Saved Item' }}
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Unsave Action Button -->
+                  <button
+                    type="button"
+                    @click="unsaveItem(item)"
+                    class="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                    title="Remove from Saved"
+                  >
+                    <svg class="w-4 h-4 fill-current text-rose-500" viewBox="0 0 20 20">
+                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Post Content Excerpt -->
+                <p v-if="item.post?.content" class="text-xs text-slate-700 dark:text-slate-300 line-clamp-3 leading-relaxed">
+                  {{ item.post.content }}
+                </p>
+
+                <!-- Media Preview if available -->
+                <div
+                  v-if="item.post?.media && item.post.media.length > 0"
+                  class="rounded-xl overflow-hidden max-h-40 bg-black/10 border border-slate-200 dark:border-slate-800"
+                >
+                  <img
+                    v-if="item.post.media[0].type?.startsWith('image') || !item.post.media[0].type"
+                    :src="item.post.media[0].url"
+                    alt="Post Media"
+                    class="w-full h-36 object-cover"
+                  />
+                  <video
+                    v-else
+                    :src="item.post.media[0].url"
+                    class="w-full h-36 object-cover"
+                    muted
+                  ></video>
+                </div>
+              </div>
+
+              <!-- Footer Actions -->
+              <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-medium text-[11px]">
+                  {{ item.post?.likes_count || 0 }} likes • {{ item.post?.comments_count || 0 }} comments
+                </span>
+                <a
+                  :href="'/post/' + (item.post?.id || item.item_id)"
+                  class="text-[#1877F2] font-semibold hover:underline flex items-center gap-1"
+                >
+                  <span>View Post</span>
+                  <span>→</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <EmptyState
+            v-else
+            title="No Saved Items"
+            description="You haven't saved any posts, reels, or links to your private collection yet."
+            action-label="Browse Feed"
+            @action="router.visit('/')"
+          />
+        </div>
+
+        <!-- TAB 8: Groups & Communities (Interactive & Realtime) -->
+        <div v-else-if="activeTab === 'groups'" class="bg-white dark:bg-slate-900 rounded-2xl border border-[#E4E7EC] dark:border-slate-800 p-6 shadow-sm space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E4E7EC] dark:border-slate-800 pb-4">
+            <div>
+              <h3 class="text-lg font-bold text-[#172033] dark:text-slate-100 flex items-center gap-2">
+                <span>👥</span>
+                <span>Groups &amp; Communities</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-[#1877F2] dark:bg-blue-950/40">
+                  {{ groupsList.length }}
+                </span>
+              </h3>
+              <p class="text-xs text-[#667085] dark:text-slate-400 mt-0.5">Explore the communities you belong to or find new interests.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click="fetchGroups"
+                :disabled="isLoadingGroups"
+                class="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Refresh Groups"
+              >
+                <svg class="w-4 h-4" :class="isLoadingGroups ? 'animate-spin text-[#1877F2]' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <a
+                href="/groups"
+                class="px-3.5 py-1.5 rounded-xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
+              >
+                <span>+ Discover More</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div v-if="isLoadingGroups && groupsList.length === 0" class="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
+            <svg class="w-6 h-6 animate-spin text-[#1877F2]" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span class="text-xs">Loading communities...</span>
+          </div>
+
+          <!-- Groups Cards Grid -->
+          <div v-else-if="groupsList.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div
+              v-for="group in groupsList"
+              :key="group.id"
+              class="rounded-2xl border border-[#E4E7EC] dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden hover:shadow-md transition-all flex flex-col justify-between group"
+            >
+              <div>
+                <!-- Group Cover Image -->
+                <div class="h-24 w-full bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
+                  <img
+                    v-if="group.cover_url || group.cover_image"
+                    :src="group.cover_url || group.cover_image"
+                    alt="Group Cover"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                  <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-black/50 text-white backdrop-blur-xs">
+                    {{ group.privacy || 'Public' }}
+                  </span>
+                </div>
+
+                <!-- Group Info -->
+                <div class="p-4 space-y-1.5">
+                  <h4 class="text-sm font-bold text-[#172033] dark:text-slate-100 line-clamp-1">
+                    {{ group.name }}
+                  </h4>
+                  <div class="text-[11px] text-[#667085] dark:text-slate-400 flex items-center gap-1.5">
+                    <span>👥 {{ group.members_count || group.member_count || 1 }} members</span>
+                    <span v-if="group.category">• {{ group.category }}</span>
+                  </div>
+                  <p v-if="group.description" class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 pt-1 leading-relaxed">
+                    {{ group.description }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Action Button -->
+              <div class="p-4 pt-0">
+                <a
+                  :href="'/groups/' + (group.slug || group.id)"
+                  class="w-full py-2 rounded-xl bg-slate-100 hover:bg-[#1877F2] text-slate-700 hover:text-white dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-[#1877F2] dark:hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <span>Visit Group</span>
+                  <span>→</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <EmptyState
+            v-else
+            title="No Groups Found"
+            description="You haven't joined or created any groups yet."
+            action-label="Explore Groups"
+            @action="router.visit('/groups')"
+          />
+        </div>
+
+        <!-- TAB 9: Events (Interactive & Realtime RSVP) -->
+        <div v-else-if="activeTab === 'events'" class="bg-white dark:bg-slate-900 rounded-2xl border border-[#E4E7EC] dark:border-slate-800 p-6 shadow-sm space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E4E7EC] dark:border-slate-800 pb-4">
+            <div>
+              <h3 class="text-lg font-bold text-[#172033] dark:text-slate-100 flex items-center gap-2">
+                <span>📅</span>
+                <span>Events</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-[#1877F2] dark:bg-blue-950/40">
+                  {{ eventsList.length }}
+                </span>
+              </h3>
+              <p class="text-xs text-[#667085] dark:text-slate-400 mt-0.5">Upcoming events, parties, webinars, and meetups.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click="fetchEvents"
+                :disabled="isLoadingEvents"
+                class="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Refresh Events"
+              >
+                <svg class="w-4 h-4" :class="isLoadingEvents ? 'animate-spin text-[#1877F2]' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <a
+                href="/events"
+                class="px-3.5 py-1.5 rounded-xl border border-[#E4E7EC] dark:border-slate-700 text-xs font-semibold text-[#1877F2] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                All Events Calendar →
+              </a>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div v-if="isLoadingEvents && eventsList.length === 0" class="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
+            <svg class="w-6 h-6 animate-spin text-[#1877F2]" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span class="text-xs">Loading events...</span>
+          </div>
+
+          <!-- Events Grid -->
+          <div v-else-if="eventsList.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              v-for="event in eventsList"
+              :key="event.id"
+              class="p-4 rounded-2xl border border-[#E4E7EC] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between gap-4"
+            >
+              <div class="flex items-start gap-4">
+                <!-- Date Badge -->
+                <div class="w-12 h-14 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xs flex flex-col items-center justify-center shrink-0 text-center">
+                  <span class="text-[10px] font-black uppercase text-rose-500 tracking-wider">
+                    {{ formatEventMonth(event.start_time) }}
+                  </span>
+                  <span class="text-lg font-bold text-[#172033] dark:text-slate-100 leading-none">
+                    {{ formatEventDay(event.start_time) }}
+                  </span>
+                </div>
+
+                <!-- Event Details -->
+                <div class="space-y-1 flex-1 min-w-0">
+                  <h4 class="text-sm font-bold text-[#172033] dark:text-slate-100 truncate">
+                    {{ event.title }}
+                  </h4>
+                  <div class="text-xs text-rose-600 dark:text-rose-400 font-medium">
+                    {{ event.start_time_formatted || event.start_time }}
+                  </div>
+                  <div v-if="event.address || event.location_type" class="text-[11px] text-[#667085] dark:text-slate-400 flex items-center gap-1">
+                    <span>📍</span>
+                    <span class="truncate">{{ event.address || (event.location_type === 'online' ? 'Online Event' : 'Venue TBA') }}</span>
+                  </div>
+                  <p v-if="event.description" class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 pt-1 leading-relaxed">
+                    {{ event.description }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Realtime RSVP Action Bar -->
+              <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+                <span class="text-[11px] text-slate-500 font-medium">
+                  {{ event.going_count || 0 }} Going • {{ event.interested_count || 0 }} Interested
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    @click="handleRsvp(event, 'going')"
+                    :class="[
+                      'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-1',
+                      event.user_rsvp === 'going'
+                        ? 'bg-[#12B76A] text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                    ]"
+                  >
+                    <span>✓</span>
+                    <span>Going</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    @click="handleRsvp(event, 'interested')"
+                    :class="[
+                      'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-1',
+                      event.user_rsvp === 'interested'
+                        ? 'bg-[#1877F2] text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                    ]"
+                  >
+                    <span>⭐</span>
+                    <span>Interested</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <EmptyState
+            v-else
+            title="No Events Found"
+            description="There are no upcoming events listed right now."
+            action-label="Browse Events"
+            @action="router.visit('/events')"
+          />
+        </div>
       </div>
 
       <!-- 3. Right Profile Sidebar (Photos, Basic Info, Friends, Interests) -->
@@ -360,6 +781,13 @@
       @toast="showToast($event.message, $event.type)"
     />
 
+    <!-- Realtime Privacy Settings Modal -->
+    <ProfilePrivacyModal
+      :is-open="isPrivacyModalOpen"
+      @close="isPrivacyModalOpen = false"
+      @saved="showToast($event, 'success')"
+    />
+
     <!-- Global Toast Feedback -->
     <ToastNotification
       :show="toast.show"
@@ -371,8 +799,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { ref, computed, watch } from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '../Layouts/AppLayout.vue';
 import ProfileHeader from '../Components/Profile/ProfileHeader.vue';
 import ProfileAboutCard from '../Components/Profile/ProfileAboutCard.vue';
@@ -382,6 +810,7 @@ import ProfileBasicInfoCard from '../Components/Profile/ProfileBasicInfoCard.vue
 import ProfileFriendsCard from '../Components/Profile/ProfileFriendsCard.vue';
 import ProfileInterestsCard from '../Components/Profile/ProfileInterestsCard.vue';
 import EditProfileModal from '../Components/Profile/EditProfileModal.vue';
+import ProfilePrivacyModal from '../Components/Profile/ProfilePrivacyModal.vue';
 import PhotoLightboxModal from '../Components/Profile/PhotoLightboxModal.vue';
 import ReportModal from '../Components/Profile/ReportModal.vue';
 import ToastNotification from '../Components/ToastNotification.vue';
@@ -456,6 +885,34 @@ const friendsList = ref<User[]>([...props.friends]);
 const photosList = ref([...props.photos]);
 const videosList = ref([...props.videos]);
 
+const profileReels = computed(() => {
+  const fromPosts = userPosts.value
+    .filter((p: any) => p.type === 'reel' || p.media_meta?.shared_reel_id || p.media_meta?.reel)
+    .map((p: any) => ({
+      id: p.media_meta?.shared_reel_id || p.media_meta?.reel?.id || p.id,
+      video_url: p.media_meta?.reel?.video_url || (p.media && p.media[0]?.url) || (p.media && p.media[0]?.original_url),
+      thumbnail_url: p.media_meta?.reel?.thumbnail_url || (p.media && p.media[0]?.thumbnail_url),
+      caption: p.media_meta?.reel?.caption || p.content,
+    }));
+
+  if (fromPosts.length > 0) return fromPosts;
+
+  return videosList.value.map((v: any) => ({
+    id: v.id,
+    video_url: v.url || v.original_url,
+    thumbnail_url: v.thumbnail_url || v.thumbnail,
+    caption: v.name || 'Video',
+  }));
+});
+
+const openReel = (reel: any) => {
+  if (reel?.id) {
+    router.visit(`/reels?reel=${reel.id}`);
+  } else {
+    router.visit('/reels');
+  }
+};
+
 // Modals State
 const isEditModalOpen = ref(false);
 const isLightboxOpen = ref(false);
@@ -467,6 +924,184 @@ const isShareModalOpen = ref(false);
 const activeSharePost = ref<any>(null);
 const isReelCreatorOpen = ref(false);
 const isLiveModalOpen = ref(false);
+const isPrivacyModalOpen = ref(false);
+
+// Realtime Saved Items State
+const savedItems = ref<any[]>([]);
+const isLoadingSaved = ref(false);
+
+const fetchSavedItems = async () => {
+  isLoadingSaved.value = true;
+  try {
+    const res = await fetch('/api/v1/profile/saved-items', {
+      headers: { 'Accept': 'application/json' },
+    });
+    if (res.ok) {
+      const result = await res.json();
+      savedItems.value = result.data || [];
+    }
+  } catch (err) {
+    console.error('Failed to fetch saved items:', err);
+  } finally {
+    isLoadingSaved.value = false;
+  }
+};
+
+const unsaveItem = async (item: any) => {
+  const itemType = item.item_type || 'post';
+  const itemId = item.item_id || item.id;
+
+  // Optimistic update
+  savedItems.value = savedItems.value.filter((i) => i.id !== item.id);
+  showToast('Item removed from saved bookmarks.', 'info');
+
+  try {
+    const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+    await fetch('/api/v1/profile/saved-items/toggle', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+      },
+      body: JSON.stringify({
+        item_type: itemType,
+        item_id: itemId,
+      }),
+    });
+  } catch (e) {
+    console.error('Error toggling saved item:', e);
+  }
+};
+
+// Realtime Groups State
+const groupsList = ref<any[]>([]);
+const isLoadingGroups = ref(false);
+
+const fetchGroups = async () => {
+  isLoadingGroups.value = true;
+  try {
+    const res = await fetch('/api/v1/groups/my', {
+      headers: { 'Accept': 'application/json' },
+    });
+    if (res.ok) {
+      const result = await res.json();
+      groupsList.value = result.data || [];
+      if (groupsList.value.length === 0) {
+        // Fallback to explore public groups
+        const publicRes = await fetch('/api/v1/groups', {
+          headers: { 'Accept': 'application/json' },
+        });
+        if (publicRes.ok) {
+          const publicResult = await publicRes.json();
+          groupsList.value = publicResult.data?.data || publicResult.data || [];
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch groups:', err);
+  } finally {
+    isLoadingGroups.value = false;
+  }
+};
+
+// Realtime Events State
+const eventsList = ref<any[]>([]);
+const isLoadingEvents = ref(false);
+
+const fetchEvents = async () => {
+  isLoadingEvents.value = true;
+  try {
+    const res = await fetch('/api/v1/events', {
+      headers: { 'Accept': 'application/json' },
+    });
+    if (res.ok) {
+      const result = await res.json();
+      eventsList.value = result.data?.data || result.data || [];
+    }
+  } catch (err) {
+    console.error('Failed to fetch events:', err);
+  } finally {
+    isLoadingEvents.value = false;
+  }
+};
+
+const formatEventMonth = (dateStr?: string) => {
+  if (!dateStr) return 'OCT';
+  try {
+    return new Date(dateStr).toLocaleString('en-US', { month: 'short' }).toUpperCase();
+  } catch {
+    return 'OCT';
+  }
+};
+
+const formatEventDay = (dateStr?: string) => {
+  if (!dateStr) return '25';
+  try {
+    return new Date(dateStr).getDate();
+  } catch {
+    return '25';
+  }
+};
+
+const handleRsvp = async (event: any, status: 'going' | 'interested' | 'cant_go') => {
+  const previousStatus = event.user_rsvp;
+  const newStatus = previousStatus === status ? 'cant_go' : status;
+  event.user_rsvp = newStatus;
+
+  // Optimistic adjustment
+  if (previousStatus === 'going') event.going_count = Math.max(0, (event.going_count || 1) - 1);
+  if (previousStatus === 'interested') event.interested_count = Math.max(0, (event.interested_count || 1) - 1);
+  if (newStatus === 'going') event.going_count = (event.going_count || 0) + 1;
+  if (newStatus === 'interested') event.interested_count = (event.interested_count || 0) + 1;
+
+  try {
+    const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+    const res = await fetch(`/api/v1/events/${event.id}/rsvp`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+      },
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.data) {
+        event.going_count = data.data.going_count ?? event.going_count;
+        event.interested_count = data.data.interested_count ?? event.interested_count;
+        event.user_rsvp = data.data.user_rsvp ?? newStatus;
+      }
+      showToast(
+        newStatus === 'going'
+          ? 'Marked as Going! Added to your schedule.'
+          : newStatus === 'interested'
+          ? 'Marked as Interested!'
+          : 'RSVP removed.',
+        'success'
+      );
+    }
+  } catch (err) {
+    console.error('RSVP error', err);
+  }
+};
+
+// Automatic realtime loader on tab switch
+watch(
+  () => activeTab.value,
+  (tab) => {
+    if (tab === 'saved' && savedItems.value.length === 0) {
+      fetchSavedItems();
+    } else if (tab === 'groups' && groupsList.value.length === 0) {
+      fetchGroups();
+    } else if (tab === 'events' && eventsList.value.length === 0) {
+      fetchEvents();
+    }
+  },
+  { immediate: true }
+);
 
 const handleReelCreated = (newReel: any) => {
   isReelCreatorOpen.value = false;

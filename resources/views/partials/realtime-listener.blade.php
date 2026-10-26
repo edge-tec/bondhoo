@@ -302,16 +302,19 @@
                 if (isCallRoom) return;
                 if (ringingCall && Number(ringingCall.call_id) === Number(p.call_id)) return;
                 if (myUserId && Number(p.caller?.id) === Number(myUserId)) return;
-                // Avoid stale invitations (more than 45 seconds old)
+                // Avoid stale invitations (only discard if demonstrably older than 60s in the past)
                 if (evt.timestamp) {
-                    const age = Math.abs(Date.now() - new Date(evt.timestamp).getTime());
-                    if (age > 45000) return;
+                    const diff = Date.now() - new Date(evt.timestamp).getTime();
+                    if (diff > 60000) return;
                 }
                 showIncoming(p);
+                window.dispatchEvent(new CustomEvent('jugajug:incoming-call', { detail: { event: evt, payload: p } }));
             } else if ((evt.event_type === 'call.ended' || evt.event_type === 'call.rejected') && ringingCall && Number(p.call_id) === Number(ringingCall.call_id)) {
                 hideIncoming();
+                window.dispatchEvent(new CustomEvent('jugajug:call-ended', { detail: { event: evt, payload: p } }));
             } else if (evt.event_type === 'call.accepted' && ringingCall && Number(p.call_id) === Number(ringingCall.call_id) && Number(p.user_id) === Number(myUserId)) {
                 hideIncoming(); // answered on another device/tab
+                window.dispatchEvent(new CustomEvent('jugajug:call-accepted', { detail: { event: evt, payload: p } }));
             } else if (evt.event_type === 'message.created') {
                 handleNewMessage(p);
                 window.dispatchEvent(new CustomEvent('jugajug:message-created', { detail: { event: evt, payload: p } }));
@@ -321,6 +324,12 @@
             } else if (evt.event_type === 'message.deleted' || evt.event_type === 'message.deleted_for_me') {
                 handleMessageDeleted(p, evt);
                 window.dispatchEvent(new CustomEvent('jugajug:message-deleted', { detail: { event: evt, payload: p } }));
+            } else if (evt.event_type === 'message.reaction') {
+                window.dispatchEvent(new CustomEvent('jugajug:message-reaction', { detail: { event: evt, payload: p } }));
+            } else if (evt.event_type === 'user.typing' || evt.event_type === 'presence.typing') {
+                window.dispatchEvent(new CustomEvent('jugajug:typing', { detail: { event: evt, payload: p } }));
+            } else if (evt.event_type === 'message.read' || evt.event_type === 'message.delivered') {
+                window.dispatchEvent(new CustomEvent('jugajug:message-status', { detail: { event: evt, payload: p } }));
             } else if (evt.event_type === 'conversation.cleared') {
                 handleConversationCleared(p, evt);
                 window.dispatchEvent(new CustomEvent('jugajug:conversation-cleared', { detail: { event: evt, payload: p } }));
@@ -392,8 +401,8 @@
             inFlight = true;
             pollIteration++;
             try {
-                // Periodically check active incoming call every 4 poll iterations (every ~8-10 seconds)
-                if (pollIteration % 4 === 1 && !ringingCall) {
+                // Check active incoming call every 2 poll iterations (~3-4 seconds) when idle
+                if (pollIteration % 2 === 1 && !ringingCall) {
                     checkActiveIncomingCall();
                 }
 

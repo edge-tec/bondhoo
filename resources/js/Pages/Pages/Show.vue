@@ -11,25 +11,19 @@
     :full-width="true"
   >
     <!-- 1. PAGE HEADER CARD -->
-    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden mb-6">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden mb-5">
       <!-- Cover Banner -->
-      <div class="relative h-52 sm:h-72 md:h-80 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-700 overflow-hidden">
+      <div class="relative h-48 sm:h-64 md:h-80 lg:h-96 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-700 overflow-hidden">
         <img
-          v-if="pageData.cover_image_url"
-          :src="pageData.cover_image_url"
+          :src="pageCoverUrl"
           :alt="pageData.name + ' Cover'"
           class="w-full h-full object-cover"
         />
-        <div v-else class="w-full h-full flex items-center justify-center text-white/40">
-          <svg class="w-20 h-20 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/10"></div>
 
         <!-- Cover Change Button for Page Managers -->
-        <div v-if="canManage" class="absolute top-4 right-4">
-          <label class="px-3.5 py-2 rounded-xl bg-black/60 hover:bg-black/80 text-white text-xs font-semibold backdrop-blur-md transition-all cursor-pointer flex items-center gap-2 border border-white/20 shadow-sm">
+        <div v-if="canManage" class="absolute bottom-3 right-3 sm:top-4 sm:right-4">
+          <label class="px-3.5 py-2 rounded-xl bg-black/60 hover:bg-black/80 text-white text-xs font-semibold backdrop-blur-md transition-all cursor-pointer flex items-center gap-2 border border-white/20 shadow-sm active:scale-95">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -41,13 +35,13 @@
       </div>
 
       <!-- Header Info & Actions Row -->
-      <div class="px-6 sm:px-8 pb-5 pt-0">
-        <div class="flex flex-col md:flex-row items-center md:items-end justify-between gap-5 -mt-16 sm:-mt-20 relative z-10">
+      <div class="px-4 sm:px-8 pb-5 pt-0">
+        <div class="flex flex-col md:flex-row items-center md:items-end justify-between gap-4 -mt-14 sm:-mt-20 relative z-10">
           
           <!-- Avatar + Titles -->
-          <div class="flex flex-col md:flex-row items-center md:items-end gap-5 text-center md:text-left">
-            <div class="relative group">
-              <div class="w-28 h-28 sm:w-36 sm:h-36 rounded-full ring-4 ring-white dark:ring-slate-900 shadow-xl overflow-hidden bg-[#1877F2] flex items-center justify-center text-white text-3xl sm:text-4xl font-extrabold">
+          <div class="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
+            <div class="relative group shrink-0">
+              <div class="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full ring-4 ring-white dark:ring-slate-900 shadow-2xl overflow-hidden bg-[#1877F2] flex items-center justify-center text-white text-3xl sm:text-4xl font-extrabold">
                 <img
                   v-if="pageData.avatar_url"
                   :src="pageData.avatar_url"
@@ -60,7 +54,7 @@
               <!-- Avatar Change Button for Manager -->
               <label
                 v-if="canManage"
-                class="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-[#1877F2] hover:bg-blue-600 text-white flex items-center justify-center shadow-lg cursor-pointer border-2 border-white dark:border-slate-900 transition-all"
+                class="absolute bottom-1 right-1 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#1877F2] hover:bg-blue-600 text-white flex items-center justify-center shadow-lg cursor-pointer border-2 border-white dark:border-slate-900 transition-all active:scale-95"
                 title="প্রোফাইল ছবি পরিবর্তন করুন"
               >
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,9 +65,9 @@
               </label>
             </div>
 
-            <div class="mb-2">
-              <div class="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <div class="mb-1">
+              <div class="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                   {{ pageData.name }}
                 </h1>
                 <span v-if="pageData.is_verified" class="w-5 h-5 rounded-full bg-[#1877F2] text-white flex items-center justify-center shrink-0 shadow-sm" title="ভেরিফাইড পেজ">
@@ -81,41 +75,43 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                   </svg>
                 </span>
-                <span v-if="userRole" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-[#1877F2] border border-blue-200 dark:border-blue-800">
+                <span v-if="userRole" class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-[#1877F2] border border-blue-200 dark:border-blue-800">
                   {{ userRole }}
                 </span>
               </div>
 
-              <div class="flex items-center justify-center md:justify-start gap-2.5 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
-                <span class="text-slate-700 dark:text-slate-300 font-bold">{{ pageData.category || 'Technology' }}</span>
-                <span>•</span>
-                <span>{{ formattedFollowersCount }} followers</span>
+              <div class="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
+                <span class="text-slate-800 dark:text-slate-200 font-bold">{{ pageData.category || 'Technology' }}</span>
+                <span>&bull;</span>
+                <span class="text-[#1877F2] font-bold">{{ formattedFollowersCount }} followers</span>
+                <span v-if="pageData.posts_count">&bull;</span>
+                <span v-if="pageData.posts_count">{{ pageData.posts_count }} posts</span>
               </div>
 
-              <p v-if="pageData.bio || pageData.description" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2 max-w-xl line-clamp-2">
+              <p v-if="pageData.bio || pageData.description" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2 max-w-xl line-clamp-2 leading-relaxed">
                 {{ pageData.bio || pageData.description || 'Connecting people, ideas and opportunities. Join our community and be part of something bigger!' }}
               </p>
             </div>
           </div>
 
-          <!-- Action Buttons Group -->
-          <div class="flex items-center gap-2.5 flex-wrap justify-center">
+          <!-- Action Buttons Group (Fully Responsive on Mobile & Desktop) -->
+          <div class="w-full md:w-auto grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5 justify-center md:justify-end mt-2 md:mt-0">
             <!-- Follow / Following Toggle Button -->
             <button
               type="button"
               @click="toggleFollow"
               :disabled="isTogglingFollow"
               :class="[
-                'px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-sm disabled:opacity-60 cursor-pointer',
+                'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 cursor-pointer active:scale-95',
                 isFollowingState
-                  ? 'bg-[#1877F2] text-white hover:bg-blue-600 shadow-blue-500/20'
-                  : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700'
+                  ? 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700'
+                  : 'bg-[#1877F2] text-white hover:bg-[#1666D8] shadow-blue-500/25'
               ]"
             >
-              <svg v-if="isFollowingState" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg v-if="isFollowingState" class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
               </svg>
-              <svg v-else class="w-4 h-4 text-[#1877F2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg v-else class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
               </svg>
               <span>{{ isFollowingState ? 'Following' : 'Follow' }}</span>
@@ -124,7 +120,7 @@
             <!-- Message Button -->
             <a
               :href="`/messages?page_id=${pageData.id}`"
-              class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold transition-all flex items-center gap-2 border border-slate-200 dark:border-slate-700"
+              class="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 active:scale-95"
             >
               <svg class="w-4 h-4 text-[#1877F2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -137,7 +133,7 @@
               v-if="canManage"
               type="button"
               @click="openStudio('post')"
-              class="px-4 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-sm font-bold border border-indigo-200 dark:border-indigo-800 transition-all flex items-center gap-2 cursor-pointer"
+              class="col-span-2 sm:col-span-1 py-2.5 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-xs sm:text-sm font-bold border border-indigo-200 dark:border-indigo-800 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -146,11 +142,11 @@
             </button>
 
             <!-- More Actions Dropdown Menu -->
-            <div class="relative" ref="moreMenuRef">
+            <div class="col-span-2 sm:col-span-1 relative flex justify-center sm:block" ref="moreMenuRef">
               <button
                 type="button"
                 @click="showMoreMenu = !showMoreMenu"
-                class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
+                class="w-full sm:w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer border border-slate-200 dark:border-slate-700 active:scale-95"
                 title="More options"
               >
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -160,7 +156,7 @@
 
               <div
                 v-if="showMoreMenu"
-                class="absolute right-0 mt-2 w-52 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl py-2 z-30 animate-in fade-in zoom-in-95 duration-150"
+                class="absolute right-0 top-12 sm:top-auto sm:mt-2 w-52 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl py-2 z-30 animate-in fade-in zoom-in-95 duration-150"
               >
                 <button
                   type="button"
@@ -215,13 +211,13 @@
 
         </div>
 
-        <!-- Navigation Tabs Bar (Home, Posts, About, Photos, Videos, Events, More) -->
-        <div class="flex items-center gap-2 sm:gap-6 mt-6 pt-2 border-t border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar">
+        <!-- Navigation Tabs Bar (Home, Posts, About, Photos, Videos, Events, Shop) -->
+        <div class="flex items-center gap-1 sm:gap-4 mt-5 pt-2 border-t border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar">
           <button
             type="button"
             @click="currentTab = 'home'"
-            class="px-3 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
-            :class="currentTab === 'home' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            class="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
+            :class="currentTab === 'home' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
           >
             Home
             <span v-if="currentTab === 'home'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1877F2] rounded-full"></span>
@@ -230,8 +226,8 @@
           <button
             type="button"
             @click="currentTab = 'posts'"
-            class="px-3 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
-            :class="currentTab === 'posts' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            class="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
+            :class="currentTab === 'posts' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
           >
             Posts
             <span v-if="currentTab === 'posts'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1877F2] rounded-full"></span>
@@ -240,8 +236,8 @@
           <button
             type="button"
             @click="currentTab = 'about'"
-            class="px-3 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
-            :class="currentTab === 'about' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            class="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
+            :class="currentTab === 'about' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
           >
             About
             <span v-if="currentTab === 'about'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1877F2] rounded-full"></span>
@@ -250,8 +246,8 @@
           <button
             type="button"
             @click="currentTab = 'photos'"
-            class="px-3 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
-            :class="currentTab === 'photos' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            class="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
+            :class="currentTab === 'photos' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
           >
             Photos
             <span v-if="currentTab === 'photos'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1877F2] rounded-full"></span>
@@ -260,8 +256,8 @@
           <button
             type="button"
             @click="currentTab = 'videos'"
-            class="px-3 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
-            :class="currentTab === 'videos' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            class="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
+            :class="currentTab === 'videos' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
           >
             Videos
             <span v-if="currentTab === 'videos'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1877F2] rounded-full"></span>
@@ -270,8 +266,8 @@
           <button
             type="button"
             @click="currentTab = 'events'"
-            class="px-3 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
-            :class="currentTab === 'events' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            class="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
+            :class="currentTab === 'events' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
           >
             Events
             <span v-if="currentTab === 'events'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1877F2] rounded-full"></span>
@@ -280,14 +276,52 @@
           <button
             type="button"
             @click="currentTab = 'shop'"
-            class="px-3 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
-            :class="currentTab === 'shop' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+            class="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold transition-all relative shrink-0 cursor-pointer"
+            :class="currentTab === 'shop' ? 'text-[#1877F2]' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
           >
             Shop
             <span v-if="currentTab === 'shop'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1877F2] rounded-full"></span>
           </button>
         </div>
 
+      </div>
+    </div>
+
+    <!-- MOBILE ONLY: QUICK INFORMATION & CONTACT HIGHLIGHTS CARD -->
+    <div class="lg:hidden bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 mb-5 shadow-xs space-y-3">
+      <div class="grid grid-cols-2 gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-800 text-center">
+        <div class="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-2xl">
+          <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Category</span>
+          <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block mt-0.5">{{ pageData.category || 'Technology' }}</span>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-2xl">
+          <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Followers</span>
+          <span class="text-xs font-bold text-[#1877F2] truncate block mt-0.5">{{ formattedFollowersCount }}</span>
+        </div>
+      </div>
+
+      <div class="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+        <div v-if="pageData.city || pageData.address" class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span class="truncate">{{ pageData.address || pageData.city || 'Dhaka, Bangladesh' }}</span>
+        </div>
+
+        <div v-if="pageData.website" class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-[#1877F2] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <a :href="pageData.website" target="_blank" rel="noopener noreferrer" class="text-[#1877F2] hover:underline font-semibold truncate">
+            {{ pageData.website.replace(/^https?:\/\//, '') }}
+          </a>
+        </div>
+
+        <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Open Now &bull; 9:00 AM - 6:00 PM</span>
+        </div>
       </div>
     </div>
 
@@ -2278,6 +2312,30 @@ const moreMenuRef = ref<HTMLElement | null>(null);
 const formattedFollowersCount = computed(() => {
   const cnt = followersCount.value;
   return cnt >= 1000 ? cnt.toLocaleString() : String(cnt);
+});
+
+const categoryCovers: Record<string, string> = {
+  'Technology': 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80',
+  'Technology & Social Network': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1600&q=80',
+  'Business': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1600&q=80',
+  'Consumer Brand': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80',
+  'News & Media': 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1600&q=80',
+  'Education': 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80',
+  'Entertainment': 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1600&q=80',
+  'Food & Drink': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1600&q=80',
+  'Sports': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1600&q=80',
+  'Fashion': 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&q=80',
+  'Community': 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=80',
+  'Travel & Adventure': 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1600&q=80',
+  'Photography': 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&w=1600&q=80',
+};
+
+const pageCoverUrl = computed(() => {
+  if (pageData.value.cover_image_url) return pageData.value.cover_image_url;
+  if (pageData.value.category && categoryCovers[pageData.value.category]) {
+    return categoryCovers[pageData.value.category];
+  }
+  return 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1600&q=80';
 });
 
 // Toast State

@@ -321,7 +321,7 @@ Route::get('/messages', function (Request $request) use ($resolveWebUser) {
         return redirect()->route('login');
     }
 
-    if ($request->query('blade') || ($request->has('user') && ! $request->header('X-Inertia')) || ($request->has('conversation_id') && ! $request->header('X-Inertia'))) {
+    if ($request->query('blade') || $request->has('blade') || (! $request->header('X-Inertia') && ($request->has('conversation_id') || $request->has('user')))) {
         return app(MessengerWebController::class)->index($request);
     }
 

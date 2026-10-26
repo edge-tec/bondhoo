@@ -557,6 +557,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/signed-upload-url', [MediaController::class, 'signedUploadUrl']);
             Route::post('/confirm-upload', [MediaController::class, 'confirmUpload']);
             Route::post('/upload', [MediaController::class, 'directUpload']);
+            Route::delete('/{id}', [MediaController::class, 'destroy'])->whereNumber('id');
         });
 
         // Live Streaming API v1 Compatibility
