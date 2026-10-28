@@ -1,11 +1,20 @@
 {
+  "id": "/",
   "name": "Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্ক",
   "short_name": "Bondhoo",
   "description": "বন্ধু সোশ্যাল নেটওয়ার্ক — যুক্ত থাকুন, শেয়ার করুন এবং বন্ধু তৈরি করুন",
-  "start_url": "/",
+  "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
   "theme_color": "#4f46e5",
+  "categories": [
+    "social",
+    "entertainment",
+    "communications",
+    "multimedia"
+  ],
   "icons": [
     {
       "src": "/favicon.ico",
@@ -24,5 +33,44 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "নতুন পোস্ট তৈরি করুন",
+      "short_name": "পোস্ট",
+      "description": "নতুন স্ট্যাটাস, ছবি বা ভিডিও শেয়ার করুন",
+      "url": "/dashboard?action=new_post",
+      "icons": [{ "src": "/favicon.ico", "sizes": "64x64" }]
+    },
+    {
+      "name": "মেসেঞ্জার",
+      "short_name": "মেসেজ",
+      "description": "বন্ধুদের সাথে চ্যাট ও কল করুন",
+      "url": "/messenger",
+      "icons": [{ "src": "/favicon.ico", "sizes": "64x64" }]
+    },
+    {
+      "name": "রিলস",
+      "short_name": "রিলস",
+      "description": "ছোট মজার ভিডিও দেখুন",
+      "url": "/reels",
+      "icons": [{ "src": "/favicon.ico", "sizes": "64x64" }]
+    },
+    {
+      "name": "লাইভ স্ট্রিমিং",
+      "short_name": "লাইভ",
+      "description": "লাইভ আড্ডা ও সম্প্রচার দেখুন",
+      "url": "/watch",
+      "icons": [{ "src": "/favicon.ico", "sizes": "64x64" }]
+    }
+  ],
+  "share_target": {
+    "action": "/dashboard",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

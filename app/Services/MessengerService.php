@@ -17,9 +17,11 @@ use App\Services\Contracts\MessengerServiceInterface;
 use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\Contracts\RealtimeServiceInterface;
 use App\Services\Messenger\SyncEventService;
+use App\Services\Push\PushNotificationService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -521,6 +523,27 @@ class MessengerService implements MessengerServiceInterface
             );
 
             app(SyncEventService::class)->recordEvent('message.created', $payload, null, $conversation->id);
+
+            // ৭. প্রাপকদের মোবাইলে পুশ নোটিফিকেশন পাঠানো (FCM Mobile Push)
+            try {
+                $pushService = app(PushNotificationService::class);
+                foreach ($recipientIds as $recipientId) {
+                    $recipientUser = User::find($recipientId);
+                    if ($recipientUser) {
+                        $pushService->sendMessagePush(
+                            recipient: $recipientUser,
+                            sender: $sender,
+                            messageBody: (string) ($message->body ?: 'নতুন একটি মিডিয়া ফাইল পাঠিয়েছেন'),
+                            metadata: [
+                                'conversation_id' => $conversation->id,
+                                'message_id' => $message->id,
+                            ]
+                        );
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Messenger push dispatch warning: '.$e->getMessage());
+            }
 
             return $message;
         });

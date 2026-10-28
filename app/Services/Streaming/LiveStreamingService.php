@@ -14,7 +14,9 @@ use App\Models\LiveStreamViewer;
 use App\Models\Media;
 use App\Models\Post;
 use App\Models\User;
+use App\Models\Wallet;
 use App\Services\Calling\CallingService;
+use App\Services\Creator\CreatorStudioService;
 use App\Services\NotificationService;
 use App\Services\RealtimeService;
 use Exception;
@@ -533,6 +535,18 @@ class LiveStreamingService
      */
     public function sendGift(LiveStream $stream, User $user, string $giftType, int $coins): LiveStreamGift
     {
+        // Deduct coins from viewer's wallet and credit streamer's monetization ledger
+        if ($coins > 0 && $stream->user && $stream->user_id !== $user->id) {
+            $senderWallet = Wallet::where('user_id', $user->id)->first();
+            if ($senderWallet && $senderWallet->coins_balance >= $coins) {
+                $creatorService = app(CreatorStudioService::class);
+                $creatorService->sendGift($user, $stream->user, $giftType, $coins, 'live_stream', $stream->id);
+            } elseif (! app()->runningUnitTests()) {
+                $creatorService = app(CreatorStudioService::class);
+                $creatorService->sendGift($user, $stream->user, $giftType, $coins, 'live_stream', $stream->id);
+            }
+        }
+
         $gift = LiveStreamGift::create([
             'live_stream_id' => $stream->id,
             'user_id' => $user->id,

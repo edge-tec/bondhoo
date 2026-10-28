@@ -6,7 +6,20 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>SocialHub - Enterprise Social Network</title>
+    <title>{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Jugajug (যোগাযোগ) - Enterprise Social Network') }}</title>
+
+    <!-- Canonical & Open Graph (OG) / Social Sharing Metadata -->
+    <link rel="canonical" href="{{ url()->current() }}">
+    <meta property="og:site_name" content="Jugajug (যোগাযোগ)">
+    <meta property="og:type" content="{{ $ogType ?? 'website' }}">
+    <meta property="og:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Jugajug (যোগাযোগ) - Enterprise Social Network') }}">
+    <meta property="og:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant communities on Jugajug Enterprise Platform.') }}">
+    <meta property="og:image" content="{{ $ogImage ?? ($page['props']['ogImage'] ?? asset('favicon.png')) }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Jugajug (যোগাযোগ) - Enterprise Social Network') }}">
+    <meta name="twitter:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant communities on Jugajug Enterprise Platform.') }}">
+    <meta name="twitter:image" content="{{ $ogImage ?? ($page['props']['ogImage'] ?? asset('favicon.png')) }}">
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -156,6 +169,45 @@
     @endif
 
     @include('partials.realtime-listener')
+
+    <!-- Cookie Consent Banner -->
+    <div id="jugajug-cookie-banner" style="display:none;" class="fixed bottom-0 inset-x-0 z-50 p-4 bg-slate-900/95 text-slate-100 backdrop-blur-md border-t border-slate-700 shadow-2xl transition-all">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl" aria-hidden="true">🍪</span>
+                <p class="leading-relaxed text-slate-300">
+                    আমরা এই প্ল্যাটফর্মে নিরাপদ ব্রাউজিং, সাইবার সুরক্ষা ও ব্যবহারকারীর অভিজ্ঞতা নিশ্চিত করতে কুকি ব্যবহার করি। বিস্তারিত জানতে আমাদের
+                    <a href="/cookies" class="text-blue-400 hover:text-blue-300 font-medium underline underline-offset-2">কুকি পলিসি</a> এবং
+                    <a href="/privacy" class="text-blue-400 hover:text-blue-300 font-medium underline underline-offset-2">প্রাইভেসি পলিসি</a> পড়ুন।
+                </p>
+            </div>
+            <div class="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+                <button type="button" onclick="setJugajugCookieConsent('essential')" class="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 transition">
+                    প্রয়োজনীয় শুধু
+                </button>
+                <button type="button" onclick="setJugajugCookieConsent('accepted')" class="flex-1 sm:flex-none px-5 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-md transition">
+                    সম্মতি দিচ্ছি
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function() {
+            try {
+                if (!localStorage.getItem('jugajug_cookie_consent')) {
+                    var el = document.getElementById('jugajug-cookie-banner');
+                    if (el) el.style.display = 'block';
+                }
+            } catch(e) {}
+        })();
+        function setJugajugCookieConsent(val) {
+            try {
+                localStorage.setItem('jugajug_cookie_consent', val);
+                var el = document.getElementById('jugajug-cookie-banner');
+                if (el) el.style.display = 'none';
+            } catch(e) {}
+        }
+    </script>
 </body>
 </html>
 

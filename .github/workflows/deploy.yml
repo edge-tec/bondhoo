@@ -1,4 +1,4 @@
-name: Jugajug CI/CD Zero-Downtime Deployment
+name: Jugajug CI/CD Zero-Downtime Deployment & Release Gates
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Run Unit & Feature Test Suite
+    name: SQLite Test Suite, Formatting, Security Audit & Asset Build
     runs-on: ubuntu-latest
 
     services:
@@ -30,16 +30,38 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, redis
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_mysql, redis, openssl, zlib
           coverage: none
 
-      - name: Install Composer Dependencies
-        run: composer install --prefer-dist --no-interaction --optimize-autoloader
+      - name: Validate composer.lock & Install Dependencies
+        run: |
+          composer validate --strict --no-check-publish
+          composer install --prefer-dist --no-interaction --optimize-autoloader
 
-      - name: Code Formatting Check (Pint)
+      - name: Dependency Vulnerability Audit Gate
+        run: composer audit --locked
+
+      - name: Code Formatting Gate (Laravel Pint)
         run: ./vendor/bin/pint --test
 
-      - name: Execute Tests
+      - name: Frontend Asset Build & Validation
+        run: |
+          if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi
+          npm run build
+
+      - name: SQLite Migration & Rollback Safety Gate
+        env:
+          APP_KEY: base64:J63qRTD3K5b9n8W1v2y4z6A8B0C2D4E6F8G0H2I4J6K=
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/ci_test.sqlite
+        run: |
+          touch database/ci_test.sqlite
+          php artisan migrate --force
+          php artisan migrate:rollback --step=2 --force
+          php artisan migrate --force
+          rm -f database/ci_test.sqlite
+
+      - name: Execute Unit & Feature Test Suite (SQLite)
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ":memory:"
@@ -47,9 +69,60 @@ jobs:
           QUEUE_CONNECTION: sync
         run: php artisan test
 
+  mysql-integration:
+    name: MySQL 8.0 Strict Integration & Concurrency Gate
+    needs: test
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_password
+          MYSQL_DATABASE: jugajug_test
+          MYSQL_USER: jugajug_ci
+          MYSQL_PASSWORD: ci_least_priv_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u jugajug_ci -pci_least_priv_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, openssl, zlib
+          coverage: none
+
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-interaction --optimize-autoloader
+
+      - name: Execute Enterprise Admin Phase 1-5 Suite on MySQL 8.0
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:J63qRTD3K5b9n8W1v2y4z6A8B0C2D4E6F8G0H2I4J6K=
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: jugajug_test
+          DB_USERNAME: jugajug_ci
+          DB_PASSWORD: ci_least_priv_password
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+        run: |
+          php artisan migrate:fresh --force
+          php artisan test tests/Feature/EnterpriseAdminDashboardTest.php tests/Feature/EnterpriseAdminSystemPhase2Test.php tests/Feature/EnterpriseAdminSystemPhase3Test.php tests/Feature/EnterpriseAdminSystemPhase4UiUxTest.php tests/Feature/EnterpriseAdminSystemPhase5ProductionReadinessTest.php
+
   deploy:
     name: Zero-Downtime Production Deployment
-    needs: test
+    needs: [ test, mysql-integration ]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 

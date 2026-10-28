@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v2;
 use App\Http\Controllers\Controller;
 use App\Models\MediaUploadSession;
 use App\Services\Media\ChunkedUploadService;
+use App\Services\Media\DirectCloudUploadService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,11 +13,13 @@ use Illuminate\Http\Request;
 /**
  * চাঙ্কড ও রেজুমেবল আপলোড এপিআই কন্ট্রোলার:
  * বড় মিডিয়া ফাইল টুকরো টুকরো করে আপলোড, রিট্রাই, রেজুম এবং মেমরি-সেফ অ্যাসেম্বলি করে।
+ * এবং সরাসরি S3 / Cloudflare R2 প্রিসাইনড মাল্টিপার্ট ভিডিও আপলোড সাপোর্ট করে।
  */
 class UploadApiController extends Controller
 {
     public function __construct(
-        protected ChunkedUploadService $uploadService
+        protected ChunkedUploadService $uploadService,
+        protected DirectCloudUploadService $cloudUploadService
     ) {}
 
     /**
@@ -238,6 +241,168 @@ class UploadApiController extends Controller
                 'uploaded_chunks_count' => $session->uploaded_chunks_count,
                 'total_chunks' => $session->total_chunks,
                 'progress' => $session->total_chunks > 0 ? round(($session->uploaded_chunks_count / $session->total_chunks) * 100, 1) : 0,
+            ],
+        ]);
+    }
+
+    /**
+     * সরাসরি ক্লাউড (S3 / Cloudflare R2) মাল্টিপার্ট ভিডিও আপলোড সেশন শুরু করা
+     */
+    public function initDirectMultipart(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'অননুমোদিত অ্যাক্সেস।'], 401);
+        }
+
+        $validated = $request->validate([
+            'filename' => ['required', 'string', 'max:255'],
+            'file_size' => ['required', 'integer', 'min:1'],
+            'mime_type' => ['required', 'string', 'max:120'],
+            'collection' => ['nullable', 'string', 'in:story,story_photo,story_video,reel,post,general'],
+            'disk' => ['nullable', 'string', 'in:s3,r2'],
+            'part_size' => ['nullable', 'integer', 'min:5242880', 'max:52428800'], // 5MB to 50MB
+            'checksum' => ['nullable', 'string', 'size:64'],
+            'metadata' => ['nullable', 'array'],
+        ]);
+
+        $disk = $validated['disk'] ?? 's3';
+
+        try {
+            $data = $this->cloudUploadService->initDirectMultipart($user, $validated, $disk);
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * সরাসরি ক্লাউড মাল্টিপার্ট আপলোড সম্পন্ন ও মিডিয়া অ্যাসেম্বলি নিশ্চিতকরণ
+     */
+    public function completeDirectMultipart(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'অননুমোদিত অ্যাক্সেস।'], 401);
+        }
+
+        $validated = $request->validate([
+            'session_id' => ['required', 'string', 'max:64'],
+            'parts' => ['required', 'array', 'min:1'],
+            'parts.*.PartNumber' => ['required', 'integer', 'min:1'],
+            'parts.*.ETag' => ['required', 'string'],
+        ]);
+
+        try {
+            $media = $this->cloudUploadService->completeDirectMultipart(
+                $user,
+                $validated['session_id'],
+                $validated['parts']
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'session_id' => $validated['session_id'],
+                    'media' => $media->toResponseArray(),
+                ],
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * সরাসরি ক্লাউড মাল্টিপার্ট আপলোড বাতিল করা
+     */
+    public function abortDirectMultipart(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'অননুমোদিত অ্যাক্সেস।'], 401);
+        }
+
+        $validated = $request->validate([
+            'session_id' => ['required', 'string', 'max:64'],
+        ]);
+
+        $success = $this->cloudUploadService->abortDirectMultipart($user, $validated['session_id']);
+
+        return response()->json([
+            'success' => $success,
+            'message' => $success ? 'Direct cloud upload session aborted successfully.' : 'Failed to abort session.',
+        ]);
+    }
+
+    /**
+     * একক ফাইলের জন্য প্রিসাইনড সরাসরি পুট (PUT) ইউআরএল তৈরি করা (< 10MB)
+     */
+    public function presignDirectUpload(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'অননুমোদিত অ্যাক্সেস।'], 401);
+        }
+
+        $validated = $request->validate([
+            'filename' => ['required', 'string', 'max:255'],
+            'file_size' => ['required', 'integer', 'min:1', 'max:10485760'], // max 10MB for single PUT
+            'mime_type' => ['required', 'string', 'max:120'],
+            'collection' => ['nullable', 'string', 'in:story,story_photo,story_video,reel,post,general'],
+            'disk' => ['nullable', 'string', 'in:s3,r2'],
+        ]);
+
+        $disk = $validated['disk'] ?? 's3';
+
+        try {
+            $data = $this->cloudUploadService->generatePresignedPutUrl($user, $validated, $disk);
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * ডিরেক্ট মাল্টিপার্ট আপলোডের স্ট্যাটাস চেক
+     */
+    public function statusDirectMultipart(Request $request, string $sessionId): JsonResponse
+    {
+        $session = MediaUploadSession::where('session_id', $sessionId)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (! $session) {
+            return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'session_id' => $session->session_id,
+                'status' => $session->status,
+                'disk' => $session->metadata['driver'] ?? 's3',
+                'bucket' => $session->metadata['bucket'] ?? null,
+                'key' => $session->metadata['s3_key'] ?? $session->target_path,
+                'total_parts' => $session->total_chunks,
+                'part_size' => $session->chunk_size,
+                'expires_at' => $session->expires_at?->toIso8601String(),
             ],
         ]);
     }

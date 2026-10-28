@@ -38,6 +38,7 @@ use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\Contracts\QueueServiceInterface;
 use App\Services\Contracts\RealtimeServiceInterface;
 use App\Services\Email\SmtpConfigService;
+use App\Services\Media\DirectCloudUploadService;
 use App\Services\MediaProcessingService;
 use App\Services\MediaStorageService;
 use App\Services\MessengerService;
@@ -66,6 +67,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(NotificationServiceInterface::class, NotificationService::class);
         $this->app->singleton(RealtimeServiceInterface::class, RealtimeService::class);
         $this->app->singleton(MessengerServiceInterface::class, MessengerService::class);
+        $this->app->singleton(DirectCloudUploadService::class);
     }
 
     /**

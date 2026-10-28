@@ -322,4 +322,22 @@ class CallController extends Controller
             message: 'ICE servers retrieved successfully.'
         );
     }
+
+    /**
+     * Get LiveKit SFU access token and room parameters for group audio/video call.
+     */
+    public function token(Request $request, int $id): JsonResponse
+    {
+        try {
+            $call = $this->callingService->getCall($id, $request->user());
+            $tokenData = $this->callingService->getLiveKitToken($call, $request->user());
+
+            return $this->successResponse(
+                data: $tokenData,
+                message: 'LiveKit SFU token generated successfully.'
+            );
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
+        }
+    }
 }

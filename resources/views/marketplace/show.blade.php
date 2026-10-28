@@ -246,7 +246,11 @@
                     </label>
                     <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--fb-border); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
                         <input type="radio" name="orderPaymentMethod" value="sslcommerz">
-                        <span>💳 কার্ড / ব্যাংক</span>
+                        <span>💳 SSLCommerz (কার্ড/ব্যাংক)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--fb-border); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                        <input type="radio" name="orderPaymentMethod" value="stripe">
+                        <span>🌍 স্ট্রাইপ (Stripe কার্ড)</span>
                     </label>
                     <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--fb-border); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">
                         <input type="radio" name="orderPaymentMethod" value="cod">

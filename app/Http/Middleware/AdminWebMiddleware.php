@@ -18,32 +18,25 @@ class AdminWebMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $isAdminGuard = Auth::guard('admin')->check();
-        $webUser = Auth::guard('web')->user();
-        $isWebAdmin = $webUser && method_exists($webUser, 'isAdmin') && $webUser->isAdmin();
+        $effectiveUser = Auth::user()
+            ?? Auth::guard('admin')->user()
+            ?? Auth::guard('web')->user()
+            ?? Auth::guard('sanctum')->user();
 
-        // Also recognize Sanctum authenticated administrator if Bearer token is provided
-        $sanctumUser = null;
-        if (! $isAdminGuard && ! $isWebAdmin && $request->bearerToken()) {
-            $sanctumUser = Auth::guard('sanctum')->user();
-        }
-        $isAdminSanctum = $sanctumUser && (
-            $sanctumUser instanceof Admin
-            || (method_exists($sanctumUser, 'isAdmin') && $sanctumUser->isAdmin())
-            || (method_exists($sanctumUser, 'hasRole') && ($sanctumUser->hasRole('ADMIN') || $sanctumUser->hasRole('SUPER_ADMIN')))
+        $isAuthorizedAdmin = $effectiveUser && (
+            $effectiveUser instanceof Admin
+            || (method_exists($effectiveUser, 'isAdmin') && $effectiveUser->isAdmin())
+            || (method_exists($effectiveUser, 'hasRole') && ($effectiveUser->hasRole('ADMIN') || $effectiveUser->hasRole('SUPER_ADMIN')))
         );
 
-        if ($isAdminGuard || $isWebAdmin || $isAdminSanctum) {
-            $effectiveUser = Auth::guard('admin')->user() ?? $webUser ?? $sanctumUser;
-            if ($effectiveUser) {
-                $request->setUserResolver(fn () => $effectiveUser);
-            }
+        if ($isAuthorizedAdmin) {
+            $request->setUserResolver(fn () => $effectiveUser);
 
             return $next($request);
         }
 
         // If authenticated as a normal user but NOT an administrator -> 403 Forbidden
-        if ($webUser || ($sanctumUser && ! $isAdminSanctum)) {
+        if ($effectiveUser) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'success' => false,

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Contracts\RealtimeServiceInterface;
 use App\Services\Messenger\SyncEventService;
 use App\Services\ProfilePrivacyService;
+use App\Services\Push\PushNotificationService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -23,8 +24,11 @@ class CallingService
     public function __construct(
         protected RealtimeServiceInterface $realtimeService,
         protected SyncEventService $syncEventService,
-        protected ProfilePrivacyService $profilePrivacyService
-    ) {}
+        protected ProfilePrivacyService $profilePrivacyService,
+        protected ?LiveKitService $liveKitService = null
+    ) {
+        $this->liveKitService ??= app(LiveKitService::class);
+    }
 
     /**
      * Standard WebRTC STUN/TURN ICE configuration with ephemeral credentials.
@@ -239,17 +243,29 @@ class CallingService
                 : Call::TYPE_AUDIO;
         }
 
-        return DB::transaction(function () use ($caller, $conversation, $callType, $receiverId, $receiverIds) {
+        return DB::transaction(function () use ($caller, $conversation, $callType, $receiverId, $receiverIds, $isMultiParty) {
+            $metadata = [
+                'ice_servers' => $this->getIceServers($caller),
+            ];
+
+            if ($isMultiParty) {
+                $metadata['sfu_provider'] = 'livekit';
+                $metadata['sfu_url'] = $this->liveKitService->getServerUrl();
+            }
+
             $call = Call::create([
                 'conversation_id' => $conversation->id,
                 'caller_id' => $caller->id,
                 'call_type' => $callType,
                 'status' => Call::STATUS_RINGING,
                 'started_at' => now(),
-                'metadata' => [
-                    'ice_servers' => $this->getIceServers($caller),
-                ],
+                'metadata' => $metadata,
             ]);
+
+            if ($isMultiParty) {
+                $metadata['livekit_token'] = $this->liveKitService->generateToken($caller, $call->room_id);
+                $call->update(['metadata' => $metadata]);
+            }
 
             // Add caller as participant
             CallParticipant::firstOrCreate([
@@ -312,6 +328,11 @@ class CallingService
                 'ice_servers' => $this->getIceServers($caller),
             ];
 
+            if ($isMultiParty) {
+                $payload['sfu_provider'] = 'livekit';
+                $payload['sfu_url'] = $this->liveKitService->getServerUrl();
+            }
+
             $this->realtimeService->broadcastToConversation($conversation->id, 'call.incoming', $payload);
 
             // Record sync event for conversation
@@ -321,6 +342,16 @@ class CallingService
             foreach ($otherUserIds as $otherId) {
                 $this->realtimeService->broadcast("private-user.{$otherId}", 'call.incoming', $payload);
                 $this->syncEventService->recordEvent('call.incoming', $payload, (int) $otherId, $conversation->id);
+
+                // High-priority FCM VoIP push for mobile devices to wake up and ring
+                try {
+                    $calleeUser = User::find($otherId);
+                    if ($calleeUser) {
+                        app(PushNotificationService::class)->sendVoipCallPush($calleeUser, $payload);
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Call VoIP push dispatch warning: '.$e->getMessage());
+                }
             }
 
             return $call;
@@ -891,5 +922,28 @@ class CallingService
                 'invited' => $invited,
             ];
         });
+    }
+
+    /**
+     * Get or generate a LiveKit SFU access token for an authorized participant in a call.
+     *
+     * @return array<string, mixed>
+     */
+    public function getLiveKitToken(Call $call, User $user): array
+    {
+        if (! $call->hasParticipant($user->id) && (int) $call->caller_id !== (int) $user->id) {
+            throw new AuthorizationException('You are not an authorized participant in this call.');
+        }
+
+        $token = $this->liveKitService->generateToken($user, $call->room_id);
+
+        return [
+            'call_id' => $call->id,
+            'room_id' => $call->room_id,
+            'sfu_provider' => 'livekit',
+            'server_url' => $this->liveKitService->getServerUrl(),
+            'token' => $token,
+            'ice_servers' => $this->getIceServers($user),
+        ];
     }
 }

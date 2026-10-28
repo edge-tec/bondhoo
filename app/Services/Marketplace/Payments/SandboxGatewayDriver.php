@@ -45,6 +45,7 @@ class SandboxGatewayDriver extends AbstractPaymentGateway
             'bkash' => "https://checkout.sandbox.bka.sh/v1.2.0-beta/checkout?trx={$trxId}&amount={$order->amount}&order={$order->order_number}&sig={$signature}",
             'nagad' => "https://api-sandbox.nagad.com.bd/checkout?trx={$trxId}&amount={$order->amount}&order={$order->order_number}&sig={$signature}",
             'sslcommerz' => "https://sandbox.sslcommerz.com/gwprocess/v4/api.php?trx={$trxId}&amount={$order->amount}&order={$order->order_number}&sig={$signature}",
+            'stripe' => "https://checkout.stripe.com/pay/cs_test_{$trxId}?amount={$order->amount}&order={$order->order_number}&sig={$signature}",
             default => "/marketplace/orders/{$order->id}/checkout-view?trx={$trxId}&amount={$order->amount}&sig={$signature}",
         };
 

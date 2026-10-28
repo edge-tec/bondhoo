@@ -47,12 +47,15 @@ use App\Http\Controllers\Api\v1\StoryController;
 use App\Http\Controllers\Api\v1\SystemController;
 use App\Http\Controllers\Api\v1\UserController;
 use App\Http\Controllers\Api\v1\VoiceMessageController;
+use App\Http\Controllers\Api\v2\Admin\AdminEnterpriseApiController;
 use App\Http\Controllers\Api\v2\Admin\MediaManagementApiController;
 use App\Http\Controllers\Api\v2\AdminVerificationV2Controller;
+use App\Http\Controllers\Api\v2\Ads\AdManagerApiController;
 use App\Http\Controllers\Api\v2\AIV2Controller;
 use App\Http\Controllers\Api\v2\ApiV2Controller;
 use App\Http\Controllers\Api\v2\Auth\AuthController as AuthV2Controller;
 use App\Http\Controllers\Api\v2\CommunityV2ApiController;
+use App\Http\Controllers\Api\v2\CreatorMonetizationController;
 use App\Http\Controllers\Api\v2\EducationV2Controller;
 use App\Http\Controllers\Api\v2\FederationV2Controller;
 use App\Http\Controllers\Api\v2\LiveStreamingV2Controller;
@@ -401,6 +404,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/calls/ice-servers', [CallController::class, 'iceServers']);
         Route::get('/calls/active', [CallController::class, 'active']);
         Route::get('/calls/{id}', [CallController::class, 'show']);
+        Route::get('/calls/{id}/token', [CallController::class, 'token']);
         Route::get('/calls/{id}/signals', [CallController::class, 'signals']);
         Route::post('/calls/{id}/respond', [CallController::class, 'respond']);
         Route::post('/calls/{id}/leave', [CallController::class, 'leave']);
@@ -703,6 +707,183 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         Route::get('/audit-logs', [AuthManagementController::class, 'auditLogs']);
         Route::get('/failed-logins', [AuthManagementController::class, 'failedLogins']);
         Route::get('/export', [AuthManagementController::class, 'exportUsers']);
+    });
+
+    // Public High-Availability Liveness & Readiness Probes (No credentials or internal topology disclosed)
+    Route::get('/health/live', [AdminEnterpriseApiController::class, 'livenessProbe']);
+    Route::get('/health/ready', [AdminEnterpriseApiController::class, 'readinessProbe']);
+
+    // Enterprise Social Network Admin Dashboard V2 API Endpoints
+    Route::prefix('admin/enterprise')->middleware(['auth:sanctum,admin,web', 'role:ADMIN,SUPER_ADMIN'])->group(function () {
+        Route::get('/overview', [AdminEnterpriseApiController::class, 'overview']);
+        Route::get('/intelligence', [AdminEnterpriseApiController::class, 'intelligence']);
+        Route::get('/intelligence/export', [AdminEnterpriseApiController::class, 'exportIntelligence']);
+        Route::get('/users', [AdminEnterpriseApiController::class, 'users']);
+        Route::get('/users/{id}', [AdminEnterpriseApiController::class, 'showUser'])->whereNumber('id');
+        Route::post('/users/{id}/action', [AdminEnterpriseApiController::class, 'actionUser'])->whereNumber('id');
+        Route::post('/users/bulk/preview', [AdminEnterpriseApiController::class, 'bulkUsersPreview']);
+        Route::post('/users/bulk', [AdminEnterpriseApiController::class, 'bulkUsers']);
+        Route::get('/posts', [AdminEnterpriseApiController::class, 'posts']);
+        Route::post('/posts/{id}/action', [AdminEnterpriseApiController::class, 'actionPost'])->whereNumber('id');
+        Route::get('/moderation', [AdminEnterpriseApiController::class, 'moderationQueue']);
+        Route::post('/moderation/{id}/resolve', [AdminEnterpriseApiController::class, 'resolveReport'])->whereNumber('id');
+        Route::post('/moderation/{id}/scan', [AdminEnterpriseApiController::class, 'scanAiContent'])->whereNumber('id');
+        Route::post('/moderation/{id}/appeal', [AdminEnterpriseApiController::class, 'submitAppeal'])->whereNumber('id');
+        Route::post('/moderation/{id}/resolve-appeal', [AdminEnterpriseApiController::class, 'resolveAppeal'])->whereNumber('id');
+        Route::get('/social', [AdminEnterpriseApiController::class, 'socialCommunities']);
+        Route::get('/messaging', [AdminEnterpriseApiController::class, 'messagingOverview']);
+        Route::post('/messaging/announcements', [AdminEnterpriseApiController::class, 'createAnnouncement']);
+        Route::get('/roles', [AdminEnterpriseApiController::class, 'rolesMatrix']);
+        Route::post('/roles/assign', [AdminEnterpriseApiController::class, 'assignRole']);
+        Route::get('/security', [AdminEnterpriseApiController::class, 'securityOverview']);
+        Route::get('/security/incidents', [AdminEnterpriseApiController::class, 'socOverview']);
+        Route::post('/security/incidents/{id}/resolve', [AdminEnterpriseApiController::class, 'resolveIncident'])->whereNumber('id');
+        Route::get('/settings', [AdminEnterpriseApiController::class, 'settings']);
+        Route::post('/settings', [AdminEnterpriseApiController::class, 'updateSettings']);
+        Route::post('/settings/rollback', [AdminEnterpriseApiController::class, 'rollbackSetting']);
+        Route::get('/settings/{key}/history', [AdminEnterpriseApiController::class, 'settingHistory']);
+        Route::get('/alerts', [AdminEnterpriseApiController::class, 'alerts']);
+        Route::post('/alerts/{id}/read', [AdminEnterpriseApiController::class, 'markAlertRead'])->whereNumber('id');
+        Route::post('/alerts/read-all', [AdminEnterpriseApiController::class, 'markAllAlertsRead']);
+        Route::get('/support', [AdminEnterpriseApiController::class, 'supportTickets']);
+        Route::get('/support/tickets', [AdminEnterpriseApiController::class, 'supportTickets']);
+        Route::post('/support/tickets/{id}/status', [AdminEnterpriseApiController::class, 'updateTicket'])->whereNumber('id');
+        Route::get('/monetization', [AdminEnterpriseApiController::class, 'monetization']);
+        Route::post('/monetization/payouts/{id}/action', [AdminEnterpriseApiController::class, 'actionPayout'])->whereNumber('id');
+        Route::post('/developer/action', [AdminEnterpriseApiController::class, 'developerOperations']);
+        Route::get('/audit-logs', [AdminEnterpriseApiController::class, 'auditLogs']);
+        Route::get('/audit/logs', [AdminEnterpriseApiController::class, 'auditLogs']);
+        Route::get('/audit/verify-integrity', [AdminEnterpriseApiController::class, 'verifyAuditIntegrity']);
+        Route::get('/search', [AdminEnterpriseApiController::class, 'globalSearch']);
+
+        // --- PHASE 3 ENTERPRISE COMMAND CENTER EXTENSIONS ---
+
+        // Module A Extensions: Intelligence funnels, cohorts & anomalies
+        Route::get('/intelligence/funnel', [AdminEnterpriseApiController::class, 'intelligenceFunnel']);
+        Route::get('/intelligence/cohorts', [AdminEnterpriseApiController::class, 'intelligenceCohorts']);
+        Route::get('/intelligence/anomalies', [AdminEnterpriseApiController::class, 'intelligenceAnomalies']);
+
+        // Module B Extensions: Trust & Safety reviewer assignments & metrics
+        Route::post('/moderation/{id}/assign', [AdminEnterpriseApiController::class, 'assignReport'])->whereNumber('id');
+        Route::post('/moderation/{id}/false-positive', [AdminEnterpriseApiController::class, 'markFalsePositive'])->whereNumber('id');
+        Route::get('/moderation/metrics', [AdminEnterpriseApiController::class, 'moderationMetrics']);
+
+        // Module C: Fraud, Abuse & Platform Integrity
+        Route::get('/abuse/restrictions', [AdminEnterpriseApiController::class, 'activeRestrictions']);
+        Route::get('/abuse/users/{id}/risk', [AdminEnterpriseApiController::class, 'userRisk'])->whereNumber('id');
+        Route::get('/abuse/users/{id}/timeline', [AdminEnterpriseApiController::class, 'userInvestigationTimeline'])->whereNumber('id');
+        Route::get('/abuse/users/{id}/related-accounts', [AdminEnterpriseApiController::class, 'userRelatedAccounts'])->whereNumber('id');
+        Route::post('/abuse/users/{id}/restrict', [AdminEnterpriseApiController::class, 'restrictUser'])->whereNumber('id');
+        Route::post('/abuse/restrictions/{id}/override', [AdminEnterpriseApiController::class, 'overrideRestriction'])->whereNumber('id');
+
+        // Module D Extensions: SOC 2.0 Sessions, Assignments & Trends
+        Route::post('/security/sessions/revoke', [AdminEnterpriseApiController::class, 'revokeSessions']);
+        Route::post('/security/incidents/{id}/assign', [AdminEnterpriseApiController::class, 'assignSecurityIncident'])->whereNumber('id');
+        Route::get('/security/auth-trends', [AdminEnterpriseApiController::class, 'authFailureTrends']);
+
+        // Module E Extensions: Time-Limited Privileged Access Elevations
+        Route::post('/governance/elevations', [AdminEnterpriseApiController::class, 'grantElevation']);
+        Route::post('/governance/elevations/{id}/revoke', [AdminEnterpriseApiController::class, 'revokeElevation'])->whereNumber('id');
+        Route::post('/roles/elevate', [AdminEnterpriseApiController::class, 'grantElevation']);
+        Route::post('/roles/elevations/{id}/revoke', [AdminEnterpriseApiController::class, 'revokeElevation'])->whereNumber('id');
+
+        // Module F Extensions: Checkpoints & Audit Export
+        Route::get('/audit/checkpoints', [AdminEnterpriseApiController::class, 'auditCheckpoints']);
+        Route::post('/audit/checkpoints', [AdminEnterpriseApiController::class, 'createAuditCheckpoint']);
+        Route::get('/audit/export', [AdminEnterpriseApiController::class, 'exportAuditLogs']);
+
+        // Module G Extensions: Feature Flags
+        Route::get('/flags', [AdminEnterpriseApiController::class, 'featureFlags']);
+        Route::post('/flags', [AdminEnterpriseApiController::class, 'createFeatureFlag']);
+        Route::post('/flags/{key}', [AdminEnterpriseApiController::class, 'updateFeatureFlag']);
+
+        // Module H Extensions: Real-Time Alerts Operations
+        Route::post('/alerts/{id}/acknowledge', [AdminEnterpriseApiController::class, 'acknowledgeAlert'])->whereNumber('id');
+        Route::post('/alerts/{id}/resolve', [AdminEnterpriseApiController::class, 'resolveAlert'])->whereNumber('id');
+        Route::post('/alerts/{id}/assign', [AdminEnterpriseApiController::class, 'assignAlert'])->whereNumber('id');
+        Route::get('/alerts/summary', [AdminEnterpriseApiController::class, 'alertSummary']);
+
+        // Module I: Background Jobs & Automation
+        Route::get('/jobs/health', [AdminEnterpriseApiController::class, 'jobsHealth']);
+        Route::get('/jobs/failed', [AdminEnterpriseApiController::class, 'failedJobs']);
+        Route::post('/jobs/retry', [AdminEnterpriseApiController::class, 'retryFailedJob']);
+        Route::delete('/jobs/failed/{id}', [AdminEnterpriseApiController::class, 'deleteFailedJob']);
+        Route::get('/jobs/schedules', [AdminEnterpriseApiController::class, 'scheduledTasks']);
+
+        // Module J: Database, Application & Infrastructure Health
+        Route::get('/health', [AdminEnterpriseApiController::class, 'infrastructureHealth']);
+
+        // Module K Extensions: User Investigation Dossier
+        Route::get('/search/dossier/{userId}', [AdminEnterpriseApiController::class, 'userDossier'])->whereNumber('userId');
+
+        // Module L: Data Governance, Privacy & Retention
+        Route::get('/governance/inventory', [AdminEnterpriseApiController::class, 'governanceInventory']);
+        Route::get('/governance/retention/policies', [AdminEnterpriseApiController::class, 'retentionPolicies']);
+        Route::post('/governance/retention/policies/{id}', [AdminEnterpriseApiController::class, 'updateRetentionPolicy'])->whereNumber('id');
+        Route::post('/governance/retention/enforce', [AdminEnterpriseApiController::class, 'enforceRetention']);
+        Route::get('/governance/privacy-requests', [AdminEnterpriseApiController::class, 'privacyRequests']);
+        Route::post('/governance/privacy-requests', [AdminEnterpriseApiController::class, 'submitPrivacyRequest']);
+        Route::post('/governance/privacy-requests/{id}/process', [AdminEnterpriseApiController::class, 'processPrivacyRequest'])->whereNumber('id');
+        Route::get('/governance/privacy-requests/{id}/download', [AdminEnterpriseApiController::class, 'downloadPrivacyExport'])->whereNumber('id');
+        Route::post('/governance/legal-hold', [AdminEnterpriseApiController::class, 'toggleLegalHold']);
+
+        // --- PHASE 5 PRODUCTION READINESS, DISASTER RECOVERY & SECURITY HARDENING ---
+        Route::get('/production-readiness', [AdminEnterpriseApiController::class, 'productionReadiness']);
+        Route::post('/production-readiness/run', [AdminEnterpriseApiController::class, 'runProductionReadinessAudit']);
+        Route::get('/disaster-recovery', [AdminEnterpriseApiController::class, 'disasterRecoveryStatus']);
+        Route::post('/disaster-recovery/objectives', [AdminEnterpriseApiController::class, 'updateDisasterRecoveryObjectives']);
+        Route::post('/disaster-recovery/backups', [AdminEnterpriseApiController::class, 'createDisasterRecoveryBackup']);
+        Route::post('/disaster-recovery/backups/{id}/verify', [AdminEnterpriseApiController::class, 'verifyDisasterRecoveryBackup'])->whereNumber('id');
+        Route::post('/disaster-recovery/backups/{id}/restore-drill', [AdminEnterpriseApiController::class, 'runDisasterRecoveryRestoreDrill'])->whereNumber('id');
+        Route::delete('/disaster-recovery/backups/{id}', [AdminEnterpriseApiController::class, 'deleteDisasterRecoveryBackup'])->whereNumber('id');
+        Route::get('/disaster-recovery/backups/{id}/download', [AdminEnterpriseApiController::class, 'downloadDisasterRecoveryBackup'])->whereNumber('id');
+        Route::post('/security/incidents/{id}/transition', [AdminEnterpriseApiController::class, 'transitionSecurityIncident'])->whereNumber('id');
+
+        // --- PHASE 6 ZERO-TRUST, HIGH AVAILABILITY, COMPLIANCE & AUTONOMOUS OPERATIONS ---
+        Route::get('/zero-trust', [AdminEnterpriseApiController::class, 'zeroTrustOverview']);
+        Route::get('/zero-trust/overview', [AdminEnterpriseApiController::class, 'zeroTrustOverview']);
+        Route::post('/zero-trust/evaluate', [AdminEnterpriseApiController::class, 'evaluateZeroTrustAccess']);
+        Route::post('/zero-trust/policies/{code}', [AdminEnterpriseApiController::class, 'updateZeroTrustPolicy']);
+        Route::put('/zero-trust/policies/{code}', [AdminEnterpriseApiController::class, 'updateZeroTrustPolicy']);
+
+        Route::get('/security/sessions', [AdminEnterpriseApiController::class, 'sessionSecurityWorkspace']);
+        Route::get('/session-security', [AdminEnterpriseApiController::class, 'sessionSecurityWorkspace']);
+        Route::post('/security/sessions/terminate', [AdminEnterpriseApiController::class, 'terminateSessionHandle']);
+        Route::post('/session-security/terminate-session', [AdminEnterpriseApiController::class, 'terminateSessionHandle']);
+        Route::post('/session-security/invalidate-account', [AdminEnterpriseApiController::class, 'terminateSessionHandle']);
+
+        Route::get('/threat-detection', [AdminEnterpriseApiController::class, 'threatDetectionWorkspace']);
+        Route::post('/threat-detection/evaluate', [AdminEnterpriseApiController::class, 'evaluateThreatRules']);
+        Route::post('/threat-detection/rules/{code}', [AdminEnterpriseApiController::class, 'updateThreatRule']);
+        Route::post('/threat-detection/detections/{id}/false-positive', [AdminEnterpriseApiController::class, 'markThreatDetectionFalsePositive'])->whereNumber('id');
+        Route::post('/response-actions', [AdminEnterpriseApiController::class, 'requestResponseAction']);
+        Route::post('/response-actions/{id}/approve', [AdminEnterpriseApiController::class, 'approveResponseAction'])->whereNumber('id');
+        Route::post('/response-actions/{id}/reject', [AdminEnterpriseApiController::class, 'rejectResponseAction'])->whereNumber('id');
+        Route::post('/response-actions/{id}/rollback', [AdminEnterpriseApiController::class, 'rollbackResponseAction'])->whereNumber('id');
+        Route::post('/threat-detection/actions/{id}/approve', [AdminEnterpriseApiController::class, 'approveResponseAction'])->whereNumber('id');
+        Route::post('/threat-detection/actions/{id}/reject', [AdminEnterpriseApiController::class, 'rejectResponseAction'])->whereNumber('id');
+        Route::post('/threat-detection/actions/{id}/rollback', [AdminEnterpriseApiController::class, 'rollbackResponseAction'])->whereNumber('id');
+
+        Route::get('/ha-resilience', [AdminEnterpriseApiController::class, 'haAndResilienceAssessment']);
+        Route::post('/disaster-recovery/offsite-verify', [AdminEnterpriseApiController::class, 'verifyOffsiteBackupGateC']);
+        Route::post('/disaster-recovery/remote-drill', [AdminEnterpriseApiController::class, 'runRemoteDisasterRecoveryDrillGateC']);
+        Route::post('/disaster-recovery/key-rotation-drill', [AdminEnterpriseApiController::class, 'runKeyRotationDrillGateD']);
+
+        Route::get('/compliance', [AdminEnterpriseApiController::class, 'complianceEvidenceCenter']);
+        Route::get('/compliance-controls', [AdminEnterpriseApiController::class, 'complianceEvidenceCenter']);
+        Route::post('/compliance/controls/{controlId}/review', [AdminEnterpriseApiController::class, 'reviewComplianceControl']);
+        Route::post('/compliance-controls/{controlId}/review', [AdminEnterpriseApiController::class, 'reviewComplianceControl']);
+
+        Route::get('/config-drift', [AdminEnterpriseApiController::class, 'configurationDrift']);
+        Route::post('/config-drift/exceptions', [AdminEnterpriseApiController::class, 'grantConfigurationDriftException']);
+
+        Route::get('/slos', [AdminEnterpriseApiController::class, 'sloAndErrorBudgets']);
+        Route::get('/slo', [AdminEnterpriseApiController::class, 'sloAndErrorBudgets']);
+        Route::post('/slos/{code}', [AdminEnterpriseApiController::class, 'updateSloDefinition']);
+
+        Route::get('/release-gates', [AdminEnterpriseApiController::class, 'releaseGatesAndSbom']);
+        Route::post('/release-gates/evaluate', [AdminEnterpriseApiController::class, 'releaseGatesAndSbom']);
+        Route::get('/sbom', [AdminEnterpriseApiController::class, 'downloadSbom']);
     });
 
     // Enterprise SMTP Email Management (RBAC protected)
@@ -1016,6 +1197,36 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         });
 
         // -------------------------------------------------------------
+        // Creator Monetization, Coins, Gifts & Wallet Cashout System
+        // -------------------------------------------------------------
+        Route::prefix('creator')->group(function () {
+            Route::get('/overview', [CreatorMonetizationController::class, 'overview']);
+            Route::get('/coins/packages', [CreatorMonetizationController::class, 'packages']);
+            Route::post('/coins/purchase', [CreatorMonetizationController::class, 'purchaseCoins']);
+            Route::post('/coins/verify', [CreatorMonetizationController::class, 'verifyCoinPurchase']);
+            Route::post('/gifts/send', [CreatorMonetizationController::class, 'sendGift']);
+            Route::post('/payout/request', [CreatorMonetizationController::class, 'requestPayout']);
+            Route::get('/payout/history', [CreatorMonetizationController::class, 'payoutHistory']);
+            Route::get('/wallet/transactions', [CreatorMonetizationController::class, 'transactions']);
+            Route::post('/payout/{id}/process', [CreatorMonetizationController::class, 'adminProcessPayout'])->whereNumber('id');
+        });
+
+        // -------------------------------------------------------------
+        // Self-Serve Ad Manager & Post Boosting System
+        // -------------------------------------------------------------
+        Route::prefix('ads')->group(function () {
+            Route::get('/campaigns', [AdManagerApiController::class, 'index']);
+            Route::post('/campaigns', [AdManagerApiController::class, 'create']);
+            Route::post('/boost/{postId}', [AdManagerApiController::class, 'boost'])->whereNumber('postId');
+            Route::get('/campaigns/{id}', [AdManagerApiController::class, 'show'])->whereNumber('id');
+            Route::post('/campaigns/{id}/pause', [AdManagerApiController::class, 'pause'])->whereNumber('id');
+            Route::post('/campaigns/{id}/resume', [AdManagerApiController::class, 'resume'])->whereNumber('id');
+            Route::post('/campaigns/{id}/impression', [AdManagerApiController::class, 'recordImpression'])->whereNumber('id');
+            Route::post('/campaigns/{id}/click', [AdManagerApiController::class, 'recordClick'])->whereNumber('id');
+            Route::get('/feed', [AdManagerApiController::class, 'feedAds']);
+        });
+
+        // -------------------------------------------------------------
         // Enterprise Chunked & Resumable Media Upload System
         // -------------------------------------------------------------
         Route::prefix('uploads')->group(function () {
@@ -1029,6 +1240,15 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
             Route::get('/{sessionId}/resume', [UploadApiController::class, 'resume']);
             Route::post('/{sessionId}/cancel', [UploadApiController::class, 'cancel']);
             Route::get('/{sessionId}/status', [UploadApiController::class, 'status']);
+
+            // Direct Cloud (S3 / Cloudflare R2) Presigned Multipart Video Upload
+            Route::prefix('direct')->group(function () {
+                Route::post('/presign', [UploadApiController::class, 'presignDirectUpload']);
+                Route::post('/init', [UploadApiController::class, 'initDirectMultipart']);
+                Route::post('/complete', [UploadApiController::class, 'completeDirectMultipart']);
+                Route::post('/abort', [UploadApiController::class, 'abortDirectMultipart']);
+                Route::get('/status/{sessionId}', [UploadApiController::class, 'statusDirectMultipart']);
+            });
         });
 
         // -------------------------------------------------------------

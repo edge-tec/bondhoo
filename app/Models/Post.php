@@ -80,6 +80,20 @@ class Post extends Model
         return $this->belongsTo(Page::class);
     }
 
+    public function adCampaigns(): HasMany
+    {
+        return $this->hasMany(AdCampaign::class);
+    }
+
+    public function activeCampaign(): HasOne
+    {
+        return $this->hasOne(AdCampaign::class)
+            ->where('status', AdCampaign::STATUS_ACTIVE)
+            ->where(function ($q) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', now());
+            });
+    }
+
     public function media(): MorphMany
     {
         return $this->morphMany(Media::class, 'mediable');
@@ -98,6 +112,11 @@ class Post extends Model
     public function reactions(): MorphMany
     {
         return $this->morphMany(Reaction::class, 'reactable');
+    }
+
+    public function reports(): MorphMany
+    {
+        return $this->morphMany(Report::class, 'reportable');
     }
 
     public function analytics(): HasOne

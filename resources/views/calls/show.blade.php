@@ -179,6 +179,64 @@
             background: #000;
         }
 
+        /* Multi-Party Group Video Grid (LiveKit SFU / Mesh) */
+        .group-video-grid {
+            position: absolute;
+            inset: 70px 16px 110px 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+            align-content: center;
+            justify-content: center;
+            z-index: 20;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .group-video-tile {
+            position: relative;
+            background: #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            aspect-ratio: 16/9;
+            min-height: 180px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+        }
+
+        .group-video-tile.active-speaker {
+            border-color: #10b981;
+            box-shadow: 0 0 18px rgba(16, 185, 129, 0.65);
+        }
+
+        .group-video-tile video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #0f172a;
+        }
+
+        .group-video-tile .tile-label {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 5;
+        }
+
         /* Draggable Picture-in-Picture Local Video */
         .local-video-pip {
             position: absolute;
@@ -611,6 +669,9 @@
             <!-- Remote Video Stream -->
             <video id="remoteVideo" class="remote-video" autoplay playsinline muted></video>
 
+            <!-- Multi-Party Group Video Grid (LiveKit SFU / Mesh) -->
+            <div id="groupGridContainer" class="group-video-grid" style="display: {{ ($isGroup ?? false) ? 'grid' : 'none' }};"></div>
+
             <!-- Local Video Picture-in-Picture (Default: Top-Right, Draggable) -->
             <div id="localVideoContainer" class="local-video-pip" title="টেনে অন্য স্থানে স্থানান্তর করতে পারেন (ডাবল-ক্লিক করে ডিফল্টে ফেরান)">
                 <video id="localVideo" autoplay playsinline muted></video>
@@ -737,6 +798,9 @@
         const CALLER_CALL_ID = @json($callerCallId ?? null);
         const PEER_USER_ID = @json($peerUser?->id ?? null);
         const SERVER_AUTH_TOKEN = @json($apiToken ?? null);
+        const IS_GROUP_CALL = @json($isGroup ?? false);
+        const LIVEKIT_URL = @json($livekitUrl ?? '');
+        const LIVEKIT_TOKEN = @json($livekitToken ?? '');
         if (SERVER_AUTH_TOKEN) {
             try {
                 localStorage.setItem('jugajug_token', SERVER_AUTH_TOKEN);

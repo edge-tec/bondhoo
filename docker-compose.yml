@@ -21,6 +21,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: jugajug-app:latest
     container_name: jugajug-php
     restart: unless-stopped
     volumes:
@@ -102,7 +103,10 @@ services:
 
   # 7. Laravel Reverb Real-Time WebSocket Server
   reverb:
-    image: php:8.4-cli-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jugajug-app:latest
     container_name: jugajug-reverb
     restart: unless-stopped
     working_dir: /var/www/html
@@ -118,7 +122,10 @@ services:
 
   # 8. Laravel Horizon Enterprise Queue Supervisor
   horizon:
-    image: php:8.4-cli-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jugajug-app:latest
     container_name: jugajug-horizon
     restart: unless-stopped
     working_dir: /var/www/html
@@ -133,7 +140,10 @@ services:
 
   # 9. Laravel Cron Task Scheduler
   scheduler:
-    image: php:8.4-cli-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jugajug-app:latest
     container_name: jugajug-scheduler
     restart: unless-stopped
     working_dir: /var/www/html
@@ -215,6 +225,37 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio-data:/data
+    networks:
+      - jugajug-network
+
+  # 15. LiveKit SFU Media Server (Multi-Party Group Video/Audio Calls)
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: jugajug-livekit
+    restart: unless-stopped
+    command: --config /etc/livekit.yaml
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "50000-50100:50000-50100/udp"
+    volumes:
+      - ./docker/livekit/livekit.yaml:/etc/livekit.yaml:ro
+    networks:
+      - jugajug-network
+
+  # 16. COTURN High-Performance STUN/TURN Relay Server
+  coturn:
+    image: coturn/coturn:latest
+    container_name: jugajug-coturn
+    restart: unless-stopped
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+      - "5349:5349"
+      - "5349:5349/udp"
+      - "49152-49252:49152-49252/udp"
+    volumes:
+      - ./docker/coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro
     networks:
       - jugajug-network
 

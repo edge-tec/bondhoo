@@ -153,4 +153,20 @@ class SettingsWebController extends Controller
     {
         return view('legal.cookies');
     }
+
+    /**
+     * Privacy Policy page.
+     */
+    public function privacyPolicy(): View
+    {
+        return view('legal.privacy');
+    }
+
+    /**
+     * Community Guidelines page.
+     */
+    public function guidelines(): View
+    {
+        return view('legal.guidelines');
+    }
 }

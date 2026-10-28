@@ -1599,5 +1599,40 @@
     @stack('scripts')
     @include('partials.mobile-navigation')
     @include('partials.realtime-listener')
+
+    <script>
+        // Progressive Web App Service Worker Registration & Web Push
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('Bondhoo PWA Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.warn('Bondhoo Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // PWA Install Prompt Listener
+        window.deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.deferredPrompt = e;
+            const installBtn = document.getElementById('pwaInstallBtn');
+            if (installBtn) {
+                installBtn.style.display = 'inline-flex';
+            }
+        });
+
+        window.installBondhooPwa = function() {
+            if (window.deferredPrompt) {
+                window.deferredPrompt.prompt();
+                window.deferredPrompt.userChoice.then(function(choiceResult) {
+                    window.deferredPrompt = null;
+                });
+            }
+        };
+    </script>
 </body>
 </html>

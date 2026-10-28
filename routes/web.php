@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\v1\Admin\AdminAuthController;
 use App\Http\Controllers\Api\v1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\v1\VoiceMessageController;
 use App\Http\Controllers\Api\v2\FederationV2Controller;
+use App\Http\Controllers\Web\AdminWebController;
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\CallWebController;
 use App\Http\Controllers\Web\DeviceWebController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Web\MessengerWebController;
 use App\Http\Controllers\Web\NotificationWebController;
 use App\Http\Controllers\Web\PageWebController;
 use App\Http\Controllers\Web\ProfileWebController;
+use App\Http\Controllers\Web\SeoWebController;
 use App\Http\Controllers\Web\SettingsWebController;
 use App\Http\Controllers\Web\SocialWebController;
 use App\Http\Controllers\Web\TwoFactorWebController;
@@ -223,6 +225,9 @@ Route::get('/suspicious-login', function () {
 
 // Admin Authentication & System Management Console (Strict RBAC Protected)
 Route::middleware(['admin.web'])->group(function () {
+    Route::get('/admin', [AdminWebController::class, 'index'])->name('admin.dashboard');
+    Route::get('/admin/dashboard', [AdminWebController::class, 'index']);
+
     Route::get('/admin/auth-management', function (SmtpConfigService $smtpConfigService) {
         $smtpSettings = $smtpConfigService->getSafeSettings();
 
@@ -239,9 +244,7 @@ Route::middleware(['admin.web'])->group(function () {
         return view('admin.auth.dashboard', compact('smtpSettings', 'adminToken'));
     })->name('admin.auth.dashboard');
 
-    Route::get('/admin/system/dashboard', function () {
-        return view('dashboard');
-    });
+    Route::get('/admin/system/dashboard', [AdminWebController::class, 'index']);
 
     // Enterprise SMTP Email Management
     Route::prefix('admin/smtp')->group(function () {
@@ -264,10 +267,6 @@ Route::get('/.well-known/webfinger', [FederationV2Controller::class, 'webfinger'
 // User Profile & Personal Timeline (SocialHub Modern UI & Enterprise Canonical Identity)
 Route::get('/u/{username}', function (Request $request, string $username) use ($resolveWebUser) {
     $resolveWebUser();
-    if ($request->query('blade')) {
-        return app(ProfileWebController::class)->show($request, $username);
-    }
-
     if ($request->header('X-Inertia') || $request->query('inertia')) {
         return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
     }
@@ -277,42 +276,34 @@ Route::get('/u/{username}', function (Request $request, string $username) use ($
 
 Route::get('/profile/@{username}', function (Request $request, string $username) use ($resolveWebUser) {
     $resolveWebUser();
-    if ($request->query('blade')) {
-        return app(ProfileWebController::class)->show($request, '@'.$username);
+    if ($request->header('X-Inertia') || $request->query('inertia')) {
+        return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
     }
 
-    return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
+    return app(ProfileWebController::class)->show($request, $username);
 })->name('profile.at')->where('username', '[A-Za-z0-9_.-]+');
 
 Route::get('/user/{username}', [ProfileWebController::class, 'show'])->name('profile.show');
 
 Route::get('/profile/{username}', function (Request $request, string $username) use ($resolveWebUser) {
     $resolveWebUser();
-    if ($request->query('blade')) {
-        return app(ProfileWebController::class)->show($request, $username);
+    if ($request->header('X-Inertia') || $request->query('inertia')) {
+        return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
     }
 
-    return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
+    return app(ProfileWebController::class)->show($request, $username);
 })->name('profile.alias');
 
 Route::get('/@{username}', function (Request $request, string $username) use ($resolveWebUser) {
     $resolveWebUser();
-    if ($request->query('blade')) {
-        return app(ProfileWebController::class)->show($request, '@'.$username);
+    if ($request->header('X-Inertia') || $request->query('inertia')) {
+        return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
     }
 
-    return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
+    return app(ProfileWebController::class)->show($request, $username);
 })->name('profile.handle')->where('username', '[A-Za-z0-9_.-]+');
 
-Route::get('/profile', function (Request $request) use ($resolveWebUser) {
-    $resolveWebUser();
-    $user = auth('web')->user() ?? $request->user();
-    if (! $user) {
-        return redirect()->route('login');
-    }
-
-    return redirect('/profile/'.$user->username);
-})->name('profile.me');
+Route::get('/profile', [ProfileWebController::class, 'me'])->name('profile.me');
 
 // Dedicated Frontend Pages (Step 1 Modularization)
 Route::get('/messages', function (Request $request) use ($resolveWebUser) {
@@ -927,7 +918,18 @@ Route::middleware(['web'])->group(function () use ($resolveWebUser) {
     Route::get('/settings/privacy', [SettingsWebController::class, 'privacy'])->name('settings.privacy');
     Route::get('/settings/blocking', [SettingsWebController::class, 'blocking'])->name('settings.blocking');
     Route::get('/settings/sounds', [SettingsWebController::class, 'sounds'])->name('settings.sounds');
-
-    Route::get('/terms', [SettingsWebController::class, 'terms'])->name('terms');
-    Route::get('/cookies', [SettingsWebController::class, 'cookies'])->name('cookies');
 });
+
+// Public Legal, Compliance and Policy Pages (Unrestricted Guest Access)
+Route::get('/terms', [SettingsWebController::class, 'terms'])->name('terms');
+Route::get('/privacy', [SettingsWebController::class, 'privacyPolicy'])->name('privacy');
+Route::get('/cookies', [SettingsWebController::class, 'cookies'])->name('cookies');
+Route::get('/community-guidelines', [SettingsWebController::class, 'guidelines'])->name('community.guidelines');
+
+// Search Engine Optimization (SEO) Dynamic XML Sitemap
+Route::get('/sitemap.xml', [SeoWebController::class, 'sitemap'])->name('sitemap');
+
+// PWA Offline Fallback Page
+Route::get('/offline', function () {
+    return view('offline');
+})->name('offline');

@@ -131,11 +131,25 @@ class CallWebController extends Controller
 
         $apiToken = $user->createToken('call_session')->plainTextToken;
 
+        $livekitUrl = (string) config('services.livekit.url', env('LIVEKIT_SERVER_URL', 'wss://livekit.jugajug.com'));
+        $livekitToken = null;
+        if (! empty($call)) {
+            try {
+                $livekitData = $this->callingService->getLiveKitToken($call, $user);
+                $livekitToken = $livekitData['token'] ?? null;
+            } catch (\Throwable) {
+                // Ignore fallback to P2P if token generation is skipped
+            }
+        }
+
         return response()->view('calls.show', [
             'currentUser' => $user,
             'conversation' => $conversation,
             'peerUser' => $peerUser,
             'callType' => $callType,
+            'isGroup' => $conversation->isGroup(),
+            'livekitUrl' => $livekitUrl,
+            'livekitToken' => $livekitToken,
             'iceServers' => $iceServers,
             'answerCallId' => $answerCallId,
             'callerCallId' => $callerCallId,

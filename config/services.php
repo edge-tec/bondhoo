@@ -35,9 +35,21 @@ return [
         ],
     ],
 
+    'fcm' => [
+        'project_id' => env('FCM_PROJECT_ID'),
+        'server_key' => env('FCM_SERVER_KEY'),
+        'credentials_file' => env('FCM_CREDENTIALS_FILE'),
+    ],
+
     'turn' => [
         'url' => env('TURN_SERVER_URL'),
         'secret' => env('TURN_SERVER_SECRET'),
+    ],
+
+    'livekit' => [
+        'url' => env('LIVEKIT_SERVER_URL', 'wss://livekit.jugajug.com'),
+        'api_key' => env('LIVEKIT_API_KEY', 'devkey'),
+        'api_secret' => env('LIVEKIT_API_SECRET', 'secret_livekit_key_for_jugajug_2026'),
     ],
 
     'bkash' => [
@@ -62,6 +74,12 @@ return [
         'store_password' => env('SSLCOMMERZ_STORE_PASSWORD'),
         'sandbox' => env('SSLCOMMERZ_SANDBOX', true),
         'base_url' => env('SSLCOMMERZ_BASE_URL', 'https://sandbox.sslcommerz.com'),
+    ],
+
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
     'marketplace_payments' => [

@@ -20,6 +20,8 @@ class PaymentGatewayManager
         'bkash' => BkashGatewayDriver::class,
         'nagad' => NagadGatewayDriver::class,
         'sslcommerz' => SslCommerzGatewayDriver::class,
+        'stripe' => StripeGatewayDriver::class,
+        'card' => StripeGatewayDriver::class,
         'sandbox' => SandboxGatewayDriver::class,
     ];
 

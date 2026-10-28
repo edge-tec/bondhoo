@@ -101,6 +101,19 @@ class Call extends Model
         return in_array($this->call_type, [self::TYPE_GROUP_AUDIO, self::TYPE_GROUP_VIDEO], true);
     }
 
+    public function hasParticipant(int $userId): bool
+    {
+        if ((int) $this->caller_id === $userId) {
+            return true;
+        }
+
+        if ($this->relationLoaded('participants')) {
+            return $this->participants->contains('user_id', $userId);
+        }
+
+        return $this->participants()->where('user_id', $userId)->exists();
+    }
+
     public function toResponseArray(?User $viewer = null): array
     {
         $hasAnswered = $this->duration_seconds > 0 || $this->participants->contains(

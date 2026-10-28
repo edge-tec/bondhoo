@@ -86,7 +86,7 @@ class MarketplaceV2Controller extends Controller
             'shipping_phone' => 'nullable|string|max:30',
             'delivery_type' => 'nullable|string|in:standard,express,pickup',
             'quantity' => 'nullable|integer|min:1|max:100',
-            'payment_method' => 'nullable|string|in:bkash,nagad,sslcommerz,card,sandbox',
+            'payment_method' => 'nullable|string|in:bkash,nagad,sslcommerz,stripe,card,sandbox',
             'idempotency_key' => 'nullable|string|max:100',
         ]);
 

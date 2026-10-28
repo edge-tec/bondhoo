@@ -1,2 +1,18 @@
 User-agent: *
-Disallow:
+Disallow: /admin/
+Disallow: /api/
+Disallow: /settings/
+Disallow: /messages/
+Disallow: /notifications/
+Disallow: /checkout/
+Disallow: /cart/
+Allow: /
+Allow: /p/
+Allow: /u/
+Allow: /profile/
+Allow: /terms
+Allow: /privacy
+Allow: /cookies
+Allow: /community-guidelines
+
+Sitemap: https://jugajug.com/sitemap.xml

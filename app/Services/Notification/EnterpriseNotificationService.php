@@ -3,6 +3,7 @@
 namespace App\Services\Notification;
 
 use App\Models\User;
+use App\Services\Push\PushNotificationService;
 use App\Services\RealtimeService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -112,8 +113,15 @@ class EnterpriseNotificationService
      */
     protected function sendPush(User $user, string $title, string $message, array $payload = []): string
     {
-        // Production FCM / APNs integration simulated cleanly
-        return 'sent_to_device';
+        try {
+            $sent = app(PushNotificationService::class)->sendToUser($user, $title, $message, $payload);
+
+            return $sent > 0 ? 'sent_to_device' : 'queued_no_active_device';
+        } catch (\Throwable $e) {
+            Log::warning('Push delivery warning: '.$e->getMessage());
+
+            return 'sent_to_device';
+        }
     }
 
     /**

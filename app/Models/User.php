@@ -44,6 +44,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'failed_login_attempts',
         'locked_until',
         'terms_accepted_at',
+        'is_legal_hold',
+        'risk_score',
+        'risk_factors',
     ];
 
     protected $hidden = [
@@ -65,6 +68,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'locked_until' => 'datetime',
             'terms_accepted_at' => 'datetime',
             'failed_login_attempts' => 'integer',
+            'is_legal_hold' => 'boolean',
+            'risk_score' => 'integer',
+            'risk_factors' => 'array',
             'password' => 'hashed',
         ];
     }
@@ -431,7 +437,15 @@ class User extends Authenticatable implements MustVerifyEmail
             array_map(fn ($r) => strtolower(str_replace(' ', '_', trim((string) $r))), $roles)
         )));
 
-        return $this->roles()->whereIn('name', $normalized)->exists();
+        if ($this->roles()->whereIn('name', $normalized)->exists()) {
+            return true;
+        }
+
+        return $this->adminElevations()
+            ->whereIn('elevated_role', $normalized)
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->exists();
     }
 
     /**
@@ -463,11 +477,29 @@ class User extends Authenticatable implements MustVerifyEmail
             $aliases[] = 'manage.'.substr($permission, 0, -7);
         }
 
-        return $this->roles()
+        if ($this->roles()
             ->whereHas('permissions', function ($query) use ($aliases) {
                 $query->whereIn('name', $aliases);
             })
-            ->exists();
+            ->exists()) {
+            return true;
+        }
+
+        $activeElevations = $this->adminElevations()
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->get();
+
+        foreach ($activeElevations as $elevation) {
+            if ($elevation->elevated_role === 'SUPER_ADMIN') {
+                return true;
+            }
+            if (is_array($elevation->permissions) && count(array_intersect($aliases, $elevation->permissions)) > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -665,5 +697,91 @@ class User extends Authenticatable implements MustVerifyEmail
     public function marketplaceSales(): HasMany
     {
         return $this->hasMany(MarketplaceOrder::class, 'seller_id');
+    }
+
+    /**
+     * Relationship: User Restrictions (Module C — Fraud, Abuse & Platform Integrity)
+     */
+    public function restrictions(): HasMany
+    {
+        return $this->hasMany(UserRestriction::class);
+    }
+
+    /**
+     * Active restrictions that have not expired.
+     */
+    public function activeRestrictions(): HasMany
+    {
+        return $this->restrictions()
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            });
+    }
+
+    /**
+     * Determine if user has an active restriction of an optional specific type.
+     */
+    public function isRestricted(?string $type = null): bool
+    {
+        $query = $this->activeRestrictions();
+        if ($type !== null) {
+            $query->where(function ($q) use ($type) {
+                $q->where('restriction_type', $type)
+                    ->orWhere('restriction_type', UserRestriction::TYPE_FULL_BAN);
+            });
+        }
+
+        return $query->exists();
+    }
+
+    /**
+     * Check if user is protected under Legal Hold.
+     */
+    public function isUnderLegalHold(): bool
+    {
+        return (bool) $this->is_legal_hold;
+    }
+
+    /**
+     * Relationship: Privacy Requests (Module L — Data Governance & Privacy)
+     */
+    public function privacyRequests(): HasMany
+    {
+        return $this->hasMany(PrivacyRequest::class);
+    }
+
+    /**
+     * Relationship: Admin Elevations (Module E — RBAC & ABAC Privileged Access)
+     */
+    public function adminElevations(): HasMany
+    {
+        return $this->hasMany(AdminElevation::class);
+    }
+
+    /**
+     * Check if administrator has an active time-limited elevation.
+     */
+    public function hasAdminElevation(string $role): bool
+    {
+        return $this->adminElevations()
+            ->where('elevated_role', $role)
+            ->whereNull('revoked_at')
+            ->where('expires_at', '>', now())
+            ->exists();
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user) {
+            $freshLegalHold = static::withTrashed()
+                ->where('id', $user->id)
+                ->lockForUpdate()
+                ->value('is_legal_hold');
+
+            if ($user->isUnderLegalHold() || (bool) $freshLegalHold) {
+                throw new \InvalidArgumentException('আইনি স্থগিতাদেশ (Legal Hold) বলবৎ থাকায় ব্যবহারকারী বা ডাটা মোছা সম্পূর্ণ নিষিদ্ধ।');
+            }
+        });
     }
 }
