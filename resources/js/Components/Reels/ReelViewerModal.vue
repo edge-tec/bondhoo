@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div
       v-if="isOpen && currentReel"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in select-none"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in select-none touch-none"
       @keydown.esc="closeViewer"
       @keydown.up.prevent="prevReel"
       @keydown.down.prevent="nextReel"
@@ -24,7 +24,7 @@
       <button
         v-if="currentIndex > 0"
         type="button"
-        @click="prevReel"
+        @click.stop="prevReel"
         class="hidden md:flex absolute top-10 left-1/2 -translate-x-1/2 z-40 p-2.5 rounded-full bg-white/15 hover:bg-white/30 text-white backdrop-blur-md transition-all hover:-translate-y-1 cursor-pointer"
         title="Previous Reel (Up Arrow)"
       >
@@ -34,19 +34,48 @@
       </button>
 
       <!-- Main Player Shell (9:16 aspect ratio container) -->
-      <div class="relative w-full max-w-[420px] h-[92vh] max-h-[820px] bg-slate-950 rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between border border-white/10">
+      <div
+        class="relative w-full md:max-w-[420px] h-full md:h-[92vh] md:max-h-[820px] bg-slate-950 rounded-none md:rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between border-0 md:border md:border-white/10 touch-none select-none will-change-transform"
+        :style="cardTransformStyle"
+        @touchstart.passive="handleTouchStart"
+        @touchmove="handleTouchMove"
+        @touchend="handleTouchEnd"
+        @touchcancel="handleTouchCancel"
+        @wheel.passive="handleWheelScroll"
+      >
         <!-- HTML5 Video Element -->
         <video
           ref="videoEl"
           :src="currentReel.video_url"
-          class="absolute inset-0 w-full h-full object-cover cursor-pointer"
+          class="absolute inset-0 w-full h-full object-cover cursor-pointer pointer-events-none"
           playsinline
           loop
           autoplay
           :muted="isMuted"
-          @click="togglePlay"
           @timeupdate="onTimeUpdate"
         ></video>
+
+        <!-- 2X Speed Long-Press Floating Badge -->
+        <div
+          v-if="isLongPressing2x"
+          class="absolute top-14 left-1/2 -translate-x-1/2 z-40 px-3.5 py-1.5 rounded-full bg-black/80 backdrop-blur-md text-amber-300 font-extrabold text-xs flex items-center gap-1.5 border border-amber-400/40 shadow-2xl pointer-events-none animate-pulse"
+        >
+          <span>⚡</span>
+          <span>2X SPEED</span>
+        </div>
+
+        <!-- Coordinate-Aware Heart Burst Animation -->
+        <div
+          v-if="showHeartAnim"
+          class="absolute pointer-events-none z-30 transition-transform -translate-x-1/2 -translate-y-1/2"
+          :style="heartAnimStyle"
+        >
+          <div class="animate-ping duration-500 scale-125">
+            <svg class="w-24 h-24 text-rose-500 fill-current drop-shadow-[0_10px_25px_rgba(244,63,94,0.7)]" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </div>
+        </div>
 
         <!-- Tap-to-play / pause indicator icon -->
         <div
@@ -68,7 +97,12 @@
         <div class="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-10"></div>
 
         <!-- Top Status Bar -->
-        <div class="relative z-20 px-4 py-3 flex items-center justify-between text-white drop-shadow">
+        <div
+          class="relative z-20 px-4 py-3 flex items-center justify-between text-white drop-shadow"
+          @touchstart.stop
+          @touchmove.stop
+          @touchend.stop
+        >
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
             <span class="text-xs font-extrabold tracking-wider uppercase text-purple-300">Bondhoo Reels</span>
@@ -92,7 +126,12 @@
         </div>
 
         <!-- Right Floating Action Rail -->
-        <div class="absolute right-3 bottom-20 z-20 flex flex-col items-center gap-4 text-white">
+        <div
+          class="absolute right-3 bottom-20 z-20 flex flex-col items-center gap-4 text-white"
+          @touchstart.stop
+          @touchmove.stop
+          @touchend.stop
+        >
           <!-- Like / Reaction Button -->
           <div class="flex flex-col items-center gap-1">
             <button
@@ -152,14 +191,14 @@
             <span class="text-[11px] font-bold drop-shadow">{{ formatCount(currentReel.shares_count || 0) }}</span>
           </div>
 
-          <!-- Save Button -->
+          <!-- Save / Bookmark Button -->
           <div class="flex flex-col items-center gap-1">
             <button
               type="button"
               @click.stop="toggleSave"
               class="w-11 h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center transition-transform active:scale-110 cursor-pointer shadow-lg"
               :class="currentReel.has_saved ? 'text-amber-400' : 'text-white'"
-              title="Save to Collection"
+              title="Save Reel"
             >
               <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
                 <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
@@ -168,13 +207,12 @@
             <span class="text-[11px] font-bold drop-shadow">Save</span>
           </div>
 
-          <!-- 3-Dots Options Menu -->
+          <!-- More Options Menu Button -->
           <div class="relative flex flex-col items-center gap-1">
             <button
               type="button"
               @click.stop="toggleOptionsMenu"
               class="w-11 h-11 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center transition-transform active:scale-110 cursor-pointer shadow-lg"
-              title="More Options"
             >
               <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
                 <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
@@ -185,13 +223,13 @@
             <!-- Dropdown Menu Popover -->
             <div
               v-if="isOptionsMenuOpen"
-              class="absolute right-full bottom-0 mr-2 w-48 bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 py-1.5 z-40 text-neutral-800 dark:text-neutral-200 animate-in fade-in duration-150"
+              class="absolute right-full bottom-0 mr-2 w-44 bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 py-1.5 z-40 text-neutral-800 dark:text-neutral-200"
             >
               <button
                 v-if="canDeleteCurrentReel"
                 type="button"
                 @click.stop="openDeleteModal"
-                class="w-full px-4 py-2.5 text-left text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center gap-2.5 cursor-pointer"
+                class="w-full px-4 py-2 text-left text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center gap-2 cursor-pointer"
               >
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -233,7 +271,12 @@
         </div>
 
         <!-- Bottom Metadata: Author, Caption & Audio -->
-        <div class="relative z-20 p-4 pr-16 space-y-2 text-white">
+        <div
+          class="relative z-20 p-4 pr-16 space-y-2 text-white"
+          @touchstart.stop
+          @touchmove.stop
+          @touchend.stop
+        >
           <!-- Author Info -->
           <div class="flex items-center gap-2.5">
             <img
@@ -252,10 +295,20 @@
             </div>
           </div>
 
-          <!-- Caption Text -->
-          <p class="text-xs text-white/95 leading-relaxed drop-shadow line-clamp-2">
-            {{ currentReel.caption }}
-          </p>
+          <!-- Expandable Caption Text -->
+          <div class="text-xs text-white/95 leading-relaxed drop-shadow">
+            <p :class="[!isCaptionExpanded ? 'line-clamp-2' : 'max-h-36 overflow-y-auto pr-1']">
+              {{ currentReel.caption }}
+            </p>
+            <button
+              v-if="(currentReel.caption || '').length > 60"
+              type="button"
+              @click.stop="isCaptionExpanded = !isCaptionExpanded"
+              class="text-[11px] font-bold text-white/70 hover:text-white mt-0.5 cursor-pointer inline-block"
+            >
+              {{ isCaptionExpanded ? 'less' : '...more' }}
+            </button>
+          </div>
 
           <!-- Audio Track Pill -->
           <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md text-[11px] font-medium text-white/90 drop-shadow">
@@ -278,11 +331,14 @@
         <div
           v-if="isCommentsOpen"
           class="absolute inset-x-0 bottom-0 top-1/3 z-30 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 rounded-t-3xl flex flex-col p-4 animate-in slide-in-from-bottom duration-200"
+          @touchstart.stop
+          @touchmove.stop
+          @touchend.stop
         >
           <!-- Drawer Header -->
           <div class="flex items-center justify-between pb-3 border-b border-white/10">
             <span class="text-xs font-bold text-white">Comments ({{ commentsList.length }})</span>
-            <button @click="isCommentsOpen = false" class="text-white/60 hover:text-white p-1">✕</button>
+            <button @click="isCommentsOpen = false" class="text-white/60 hover:text-white p-1 cursor-pointer">✕</button>
           </div>
 
           <!-- Comments List -->
@@ -331,7 +387,7 @@
       <button
         v-if="currentIndex < reels.length - 1"
         type="button"
-        @click="nextReel"
+        @click.stop="nextReel"
         class="hidden md:flex absolute bottom-10 left-1/2 -translate-x-1/2 z-40 p-2.5 rounded-full bg-white/15 hover:bg-white/30 text-white backdrop-blur-md transition-all hover:translate-y-1 cursor-pointer"
         title="Next Reel (Down Arrow)"
       >
@@ -362,7 +418,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onUnmounted } from 'vue';
 import ReelShareModal from './ReelShareModal.vue';
 import ReelDeleteConfirmModal from './ReelDeleteConfirmModal.vue';
 import type { ReelItem, User } from '../../types';
@@ -386,7 +442,10 @@ const videoEl = ref<HTMLVideoElement | null>(null);
 const isPlaying = ref(true);
 const isMuted = ref(false);
 const showPlayPauseIcon = ref(false);
+const showHeartAnim = ref(false);
 const progressPercent = ref(0);
+const isCaptionExpanded = ref(false);
+const heartBurstPos = ref<{ x: number; y: number } | null>(null);
 
 const isCommentsOpen = ref(false);
 const isShareModalOpen = ref(false);
@@ -399,7 +458,47 @@ const isLoadingComments = ref(false);
 const newCommentText = ref('');
 const isPostingComment = ref(false);
 
+// Advanced Gesture & Physics Engine
+const isDragging = ref(false);
+const dragOffset = ref(0);
+const isLongPressing2x = ref(false);
+
+let touchStartY = 0;
+let touchStartX = 0;
+let touchStartTime = 0;
+let isVerticalGesture = false;
+let longPressTimer: any = null;
+let lastTapTime = 0;
+let singleTapTimer: any = null;
+let lastWheelTime = 0;
+
 const currentReel = computed<ReelItem | undefined>(() => props.reels[currentIndex.value]);
+
+const cardTransformStyle = computed(() => {
+  if (isDragging.value) {
+    return {
+      transform: `translateY(${dragOffset.value}px)`,
+      transition: 'none',
+    };
+  }
+  return {
+    transform: 'translateY(0px)',
+    transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+  };
+});
+
+const heartAnimStyle = computed(() => {
+  if (heartBurstPos.value) {
+    return {
+      left: `${heartBurstPos.value.x}px`,
+      top: `${heartBurstPos.value.y}px`,
+    };
+  }
+  return {
+    left: '50%',
+    top: '50%',
+  };
+});
 
 watch(
   () => props.initialIndex,
@@ -430,6 +529,7 @@ watch(
   currentIndex,
   () => {
     isCommentsOpen.value = false;
+    isCaptionExpanded.value = false;
     progressPercent.value = 0;
     recordView();
     if (videoEl.value) {
@@ -449,19 +549,23 @@ const closeViewer = () => {
 const nextReel = () => {
   if (currentIndex.value < props.reels.length - 1) {
     currentIndex.value++;
+  } else if (props.reels.length > 1) {
+    currentIndex.value = 0;
   }
 };
 
 const prevReel = () => {
   if (currentIndex.value > 0) {
     currentIndex.value--;
+  } else if (props.reels.length > 1) {
+    currentIndex.value = props.reels.length - 1;
   }
 };
 
 const togglePlay = () => {
   if (!videoEl.value) return;
   if (videoEl.value.paused) {
-    videoEl.value.play();
+    videoEl.value.play().catch(() => {});
     isPlaying.value = true;
   } else {
     videoEl.value.pause();
@@ -470,7 +574,7 @@ const togglePlay = () => {
   showPlayPauseIcon.value = true;
   setTimeout(() => {
     showPlayPauseIcon.value = false;
-  }, 500);
+  }, 400);
 };
 
 const toggleMute = () => {
@@ -528,7 +632,6 @@ const toggleLike = async () => {
       body: JSON.stringify({ type: 'like', reaction: 'like' }),
     });
   } catch (e) {
-    // Revert if error
     reel.has_liked = !reel.has_liked;
     reel.likes_count = (reel.likes_count || 0) + (reel.has_liked ? 1 : -1);
   }
@@ -641,10 +744,6 @@ const confirmDeleteReel = async () => {
   }
 };
 
-const shareReel = () => {
-  openShareModal('profile');
-};
-
 const toggleCommentsDrawer = async () => {
   isCommentsOpen.value = !isCommentsOpen.value;
   if (isCommentsOpen.value) {
@@ -699,4 +798,171 @@ const postComment = async () => {
     isPostingComment.value = false;
   }
 };
+
+// ================= GESTURE ENGINE (TOUCH & MOUSEWHEEL) =================
+const handleTouchStart = (e: TouchEvent) => {
+  if (e.touches.length !== 1) return;
+  const touch = e.touches[0];
+  touchStartY = touch.clientY;
+  touchStartX = touch.clientX;
+  touchStartTime = Date.now();
+  isVerticalGesture = false;
+  isDragging.value = false;
+  dragOffset.value = 0;
+
+  if (longPressTimer) clearTimeout(longPressTimer);
+  longPressTimer = setTimeout(() => {
+    if (!isDragging.value && videoEl.value) {
+      isLongPressing2x.value = true;
+      videoEl.value.playbackRate = 2;
+    }
+  }, 320);
+};
+
+const handleTouchMove = (e: TouchEvent) => {
+  if (e.touches.length !== 1) return;
+  const touch = e.touches[0];
+  const deltaY = touch.clientY - touchStartY;
+  const deltaX = touch.clientX - touchStartX;
+
+  if (Math.abs(deltaY) > 8 || Math.abs(deltaX) > 8) {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  }
+
+  if (isLongPressing2x.value) {
+    return;
+  }
+
+  if (!isVerticalGesture && (Math.abs(deltaY) > 6 || Math.abs(deltaX) > 6)) {
+    isVerticalGesture = Math.abs(deltaY) >= Math.abs(deltaX);
+  }
+
+  if (isVerticalGesture) {
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+    isDragging.value = true;
+
+    let calculatedOffset = deltaY;
+    if ((currentIndex.value === 0 && deltaY > 0) || (currentIndex.value === props.reels.length - 1 && deltaY < 0)) {
+      calculatedOffset = deltaY * 0.32;
+    }
+    dragOffset.value = calculatedOffset;
+  }
+};
+
+const handleTouchEnd = (e: TouchEvent) => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+
+  if (isLongPressing2x.value) {
+    isLongPressing2x.value = false;
+    if (videoEl.value) {
+      videoEl.value.playbackRate = 1;
+    }
+    isDragging.value = false;
+    dragOffset.value = 0;
+    return;
+  }
+
+  const touch = e.changedTouches[0];
+  const deltaY = touch.clientY - touchStartY;
+  const deltaX = touch.clientX - touchStartX;
+  const duration = Math.max(1, Date.now() - touchStartTime);
+  const velocity = Math.abs(deltaY) / duration;
+
+  if (isDragging.value) {
+    isDragging.value = false;
+    const finalOffset = dragOffset.value;
+    dragOffset.value = 0;
+
+    if (Math.abs(finalOffset) > 45 || (velocity > 0.35 && Math.abs(finalOffset) > 20)) {
+      if (finalOffset < 0) {
+        nextReel();
+      } else {
+        prevReel();
+      }
+    }
+    return;
+  }
+
+  // Tap handling (< 10px move)
+  if (Math.abs(deltaY) < 10 && Math.abs(deltaX) < 10) {
+    const now = Date.now();
+    if (now - lastTapTime < 280) {
+      // Double Tap Like
+      if (singleTapTimer) {
+        clearTimeout(singleTapTimer);
+        singleTapTimer = null;
+      }
+      lastTapTime = 0;
+
+      const rect = (e.currentTarget as HTMLElement)?.getBoundingClientRect();
+      if (rect) {
+        heartBurstPos.value = {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top,
+        };
+      } else {
+        heartBurstPos.value = null;
+      }
+
+      if (currentReel.value && !currentReel.value.has_liked) {
+        toggleLike();
+      }
+      showHeartAnim.value = true;
+      setTimeout(() => {
+        showHeartAnim.value = false;
+      }, 600);
+    } else {
+      // Single Tap Play/Pause
+      lastTapTime = now;
+      singleTapTimer = setTimeout(() => {
+        togglePlay();
+      }, 260);
+    }
+  }
+};
+
+const handleTouchCancel = () => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+  if (singleTapTimer) {
+    clearTimeout(singleTapTimer);
+    singleTapTimer = null;
+  }
+  if (isLongPressing2x.value) {
+    isLongPressing2x.value = false;
+    if (videoEl.value) {
+      videoEl.value.playbackRate = 1;
+    }
+  }
+  isDragging.value = false;
+  dragOffset.value = 0;
+};
+
+const handleWheelScroll = (e: WheelEvent) => {
+  const now = Date.now();
+  if (now - lastWheelTime < 450) return;
+  if (Math.abs(e.deltaY) > 30) {
+    lastWheelTime = now;
+    if (e.deltaY > 0) {
+      nextReel();
+    } else {
+      prevReel();
+    }
+  }
+};
+
+onUnmounted(() => {
+  if (longPressTimer) clearTimeout(longPressTimer);
+  if (singleTapTimer) clearTimeout(singleTapTimer);
+});
 </script>

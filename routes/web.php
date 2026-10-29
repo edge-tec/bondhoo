@@ -267,40 +267,47 @@ Route::get('/.well-known/webfinger', [FederationV2Controller::class, 'webfinger'
 // User Profile & Personal Timeline (SocialHub Modern UI & Enterprise Canonical Identity)
 Route::get('/u/{username}', function (Request $request, string $username) use ($resolveWebUser) {
     $resolveWebUser();
-    if ($request->header('X-Inertia') || $request->query('inertia')) {
-        return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
+    if ($request->query('blade') || $request->has('blade')) {
+        return app(ProfileWebController::class)->show($request, $username);
     }
 
-    return app(ProfileWebController::class)->show($request, $username);
+    return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
 })->name('profile.u')->where('username', '[A-Za-z0-9_.-]+');
 
 Route::get('/profile/@{username}', function (Request $request, string $username) use ($resolveWebUser) {
     $resolveWebUser();
-    if ($request->header('X-Inertia') || $request->query('inertia')) {
-        return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
+    if ($request->query('blade') || $request->has('blade')) {
+        return app(ProfileWebController::class)->show($request, $username);
     }
 
-    return app(ProfileWebController::class)->show($request, $username);
+    return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
 })->name('profile.at')->where('username', '[A-Za-z0-9_.-]+');
 
-Route::get('/user/{username}', [ProfileWebController::class, 'show'])->name('profile.show');
+Route::get('/user/{username}', function (Request $request, string $username) use ($resolveWebUser) {
+    $resolveWebUser();
+    if ($request->query('blade') || $request->has('blade')) {
+        return app(ProfileWebController::class)->show($request, $username);
+    }
+
+    return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
+})->name('profile.show');
 
 Route::get('/profile/{username}', function (Request $request, string $username) use ($resolveWebUser) {
     $resolveWebUser();
-    if ($request->header('X-Inertia') || $request->query('inertia')) {
-        return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
+    if ($request->query('blade') || $request->has('blade')) {
+        return app(ProfileWebController::class)->show($request, $username);
     }
 
-    return app(ProfileWebController::class)->show($request, $username);
+    return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
 })->name('profile.alias');
 
 Route::get('/@{username}', function (Request $request, string $username) use ($resolveWebUser) {
     $resolveWebUser();
-    if ($request->header('X-Inertia') || $request->query('inertia')) {
-        return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
+    if ($request->query('blade') || $request->has('blade')) {
+        return app(ProfileWebController::class)->show($request, $username);
     }
 
-    return app(ProfileWebController::class)->show($request, $username);
+    return app(SocialWebController::class)->profile($request, ltrim($username, '@'));
 })->name('profile.handle')->where('username', '[A-Za-z0-9_.-]+');
 
 Route::get('/profile', [ProfileWebController::class, 'me'])->name('profile.me');

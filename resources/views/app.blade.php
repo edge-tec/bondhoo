@@ -32,6 +32,13 @@
             font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
         }
     </style>
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 
     @vite(['resources/css/app.css', 'resources/js/app.ts'])
     @inertiaHead
@@ -55,6 +62,12 @@
             function updateMobileNavBadges() {}
         </script>
     </div>
+    @if(isset($page['props']['user']) && is_array($page['props']['user']))
+        <div class="sr-only" aria-hidden="true">
+            <h1>{{ $page['props']['user']['name'] ?? '' }}</h1>
+            <p>{{ $page['props']['user']['username'] ?? '' }}</p>
+        </div>
+    @endif
     @if(isset($page['props']['page']) && is_array($page['props']['page']))
         <div class="sr-only" aria-hidden="true">
             <h1>{{ $page['props']['page']['name'] ?? '' }}</h1>

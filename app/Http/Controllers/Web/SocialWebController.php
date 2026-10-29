@@ -25,6 +25,7 @@ use App\Models\Reel;
 use App\Models\Story;
 use App\Models\User;
 use App\Models\UserFollower;
+use App\Models\UsernameHistory;
 use App\Models\UserProfile;
 use App\Services\Contracts\MessengerServiceInterface;
 use App\Services\FeedService;
@@ -62,9 +63,10 @@ class SocialWebController extends Controller
      */
     protected function resolveViewer(Request $request): ?User
     {
-        $viewer = $request->user('web') ?? $request->user();
+        $sessionUser = $request->user('web') ?? $request->user();
+        $tokenUser = null;
 
-        if (! $viewer && ($request->hasCookie('jugajug_token') || $request->hasCookie('bondhoo_token'))) {
+        if ($request->hasCookie('jugajug_token') || $request->hasCookie('bondhoo_token')) {
             $rawToken = (string) ($request->cookie('jugajug_token') ?? $request->cookie('bondhoo_token'));
             $pat = PersonalAccessToken::findToken($rawToken);
             if (! $pat) {
@@ -80,21 +82,38 @@ class SocialWebController extends Controller
                     // Ignore decryption failure
                 }
             }
-            if ($pat && $pat->tokenable instanceof User) {
-                auth('web')->login($pat->tokenable);
-                $viewer = $pat->tokenable;
+            if ($pat && $pat->tokenable instanceof User && (! $pat->expires_at || $pat->expires_at->isFuture())) {
+                $tokenUser = $pat->tokenable;
             }
         }
 
-        if (! $viewer && app()->environment('local')) {
+        if ($tokenUser) {
+            if (! $sessionUser || (int) $sessionUser->id !== (int) $tokenUser->id) {
+                if ($sessionUser) {
+                    auth('web')->logout();
+                    $request->session()->invalidate();
+                }
+                auth('web')->login($tokenUser);
+                $request->session()->regenerate();
+            }
+
+            return $tokenUser;
+        }
+
+        if ($sessionUser) {
+            return $sessionUser;
+        }
+
+        if (app()->environment('local')) {
             $devUser = User::first();
             if ($devUser) {
                 auth('web')->login($devUser);
-                $viewer = $devUser;
+
+                return $devUser;
             }
         }
 
-        return $viewer;
+        return null;
     }
 
     /**
@@ -266,23 +285,39 @@ class SocialWebController extends Controller
     {
         $viewer = $this->resolveViewer($request);
 
-        if (! $viewer) {
-            return redirect()->route('login');
+        $cleanUsername = ltrim(trim($username), '@');
+        $targetUser = User::where('username', strtolower($cleanUsername))
+            ->with(['profile'])
+            ->first();
+
+        if (! $targetUser && is_numeric($cleanUsername)) {
+            $targetUser = User::with(['profile'])->find((int) $cleanUsername);
+            if ($targetUser) {
+                return redirect()->route('profile.u', ['username' => $targetUser->username], 301);
+            }
         }
 
-        $targetUser = User::where('username', $username)
-            ->with(['profile'])
-            ->firstOrFail();
-
-        if ($this->privacyService->isBlocked($targetUser, $viewer)) {
+        if (! $targetUser) {
+            $history = UsernameHistory::where('username', strtolower($cleanUsername))->latest('id')->first();
+            if ($history && $history->user) {
+                return redirect()->route('profile.u', ['username' => $history->user->username], 301);
+            }
             abort(404, 'User profile not found.');
         }
 
-        $relationship = strtolower(
-            $viewer->id === $targetUser->id
-                ? 'self'
-                : $this->friendshipService->getRelationshipState($viewer, $targetUser)
-        );
+        if ($viewer && $this->privacyService->isBlocked($targetUser, $viewer)) {
+            abort(404, 'User profile not found.');
+        }
+
+        $isOwner = (bool) ($viewer && (int) $viewer->id === (int) $targetUser->id);
+
+        $relationship = $viewer
+            ? strtolower(
+                $viewer->id === $targetUser->id
+                    ? 'self'
+                    : $this->friendshipService->getRelationshipState($viewer, $targetUser)
+            )
+            : 'none';
 
         $userPostsPaginator = $this->feedService->getUserPosts($targetUser, $viewer, 15);
 
@@ -300,7 +335,14 @@ class SocialWebController extends Controller
             return $data;
         })->values()->all();
 
-        $sidebarData = $this->getSidebarData($viewer);
+        $sidebarData = $viewer
+            ? $this->getSidebarData($viewer)
+            : [
+                'pendingRequests' => [],
+                'contacts' => [],
+                'unreadCount' => 0,
+                'unreadMessagesCount' => 0,
+            ];
 
         $profile = $targetUser->profile;
         $profileDetails = [
@@ -316,16 +358,24 @@ class SocialWebController extends Controller
             'joined_date' => $targetUser->created_at ? $targetUser->created_at->format('F Y') : null,
         ];
 
-        $mutualCount = ($viewer->id !== $targetUser->id)
+        $mutualCount = ($viewer && $viewer->id !== $targetUser->id)
             ? $this->friendshipService->getMutualCount($viewer, $targetUser)
             : 0;
 
-        $isFollowing = ($viewer->id !== $targetUser->id)
+        $isFollowing = ($viewer && $viewer->id !== $targetUser->id)
             ? $viewer->isFollowing($targetUser)
             : false;
 
         $photos = app(ProfileService::class)->getUserPhotos($targetUser, $viewer, 12);
         $videos = app(ProfileService::class)->getUserVideos($targetUser, $viewer, 12);
+
+        view()->share([
+            'isOwner' => $isOwner,
+            'viewer' => $viewer,
+            'user' => $targetUser,
+            'profile' => $profile,
+            'authToken' => null,
+        ]);
 
         return Inertia::render('Profile', [
             'user' => $this->transformUser($targetUser),
@@ -348,6 +398,7 @@ class SocialWebController extends Controller
             'pendingRequests' => $sidebarData['pendingRequests'],
             'contacts' => $sidebarData['contacts'],
             'unreadCount' => $sidebarData['unreadCount'],
+            'unreadMessagesCount' => $sidebarData['unreadMessagesCount'] ?? 0,
         ]);
     }
 

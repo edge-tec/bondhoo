@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#F5F7FB] dark:bg-slate-950 text-[#172033] dark:text-slate-100 flex flex-col font-sans transition-colors selection:bg-[#1877F2] selection:text-white antialiased">
+  <div class="min-h-screen w-full overflow-x-hidden bg-[#F5F7FB] dark:bg-slate-950 text-[#172033] dark:text-slate-100 flex flex-col font-sans transition-colors selection:bg-[#1877F2] selection:text-white antialiased">
     <!-- Top Navigation Bar & Mobile Bottom Bar -->
     <Navbar
       :user="currentUser"
@@ -9,7 +9,7 @@
     />
 
     <!-- Flash Notifications Banner -->
-    <div v-if="flashSuccess" class="max-w-[1920px] mx-auto w-full px-4 sm:px-6 lg:px-8 mt-4">
+    <div v-if="flashSuccess" class="max-w-[1920px] mx-auto w-full px-3 sm:px-6 lg:px-8 mt-4">
       <div class="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 rounded-2xl flex items-center justify-between text-sm shadow-sm animate-fade-in">
         <div class="flex items-center gap-2.5">
           <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -26,8 +26,8 @@
     </div>
 
     <!-- Main Content Area: Unified Responsive Layout Shell -->
-    <div :class="['flex-1 mx-auto w-full max-w-[1920px]', currentRoute === 'reels' ? 'p-0 pb-14 md:px-6 lg:px-8 md:py-5 md:pb-8' : 'px-4 sm:px-6 lg:px-8 py-5 pb-24 md:pb-8']">
-      <div :class="['flex items-start justify-between', currentRoute === 'reels' ? 'gap-0 md:gap-6' : 'gap-6']">
+    <div :class="['flex-1 mx-auto w-full max-w-[1920px]', currentRoute === 'reels' ? 'p-0 pb-16 md:px-6 lg:px-8 md:py-5 md:pb-8' : 'px-3 sm:px-6 lg:px-8 py-3.5 sm:py-5 pb-24 md:pb-8']">
+      <div :class="['flex items-start justify-between', currentRoute === 'reels' ? 'gap-0 md:gap-6' : 'gap-4 lg:gap-6']">
         <!-- Column 1: Left Navigation Sidebar (Desktop) - Anchored at the exact same position across ALL pages -->
         <SidebarLeft :user="currentUser" :current-route="currentRoute" />
 
