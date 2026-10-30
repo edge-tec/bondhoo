@@ -43,7 +43,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.ts'])
     @inertiaHead
 </head>
-<body class="h-full antialiased text-slate-800 dark:text-slate-100 selection:bg-blue-600 selection:text-white">
+<body class="h-full antialiased text-slate-800 dark:text-slate-100 selection:bg-blue-600 selection:text-white inertia-app">
     @inertia
     <div class="sr-only" aria-hidden="true">
         <span class="tab-feed">ফিড</span>

@@ -379,6 +379,9 @@
             type="button"
             id="mobileNavCreateBtn"
             @click="openCreateSheet"
+            :aria-expanded="isCreateSheetOpen ? 'true' : 'false'"
+            aria-controls="mobileCreateActionSheet"
+            aria-haspopup="dialog"
             class="w-12 h-12 -mt-4 rounded-full bg-gradient-to-tr from-[#1877F2] to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 active:scale-95 transition-all cursor-pointer mobile-nav-btn mobile-nav-create-bubble"
             aria-label="Create Post, Story or Reel"
           >
@@ -414,6 +417,9 @@
           type="button"
           id="mobileMenuToggleBtn"
           @click="openDrawer"
+          :aria-expanded="isDrawerOpen ? 'true' : 'false'"
+          aria-controls="mobileMenuDrawer"
+          aria-haspopup="dialog"
           class="flex flex-col items-center justify-center flex-1 h-full py-1 text-center transition-colors text-slate-600 dark:text-slate-400 hover:text-[#1877F2] cursor-pointer mobile-nav-btn mobile-menu-toggle-btn"
           aria-label="Navigation Menu"
         >
@@ -441,6 +447,7 @@
         class="fixed inset-0 z-50 overflow-hidden"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="mobileDrawerTitle"
       >
         <!-- Backdrop -->
         <div
@@ -460,7 +467,7 @@
                   alt="Profile"
                 />
                 <div class="min-w-0">
-                  <h4 class="font-bold text-sm text-[#172033] dark:text-white truncate">
+                  <h4 id="mobileDrawerTitle" class="font-bold text-sm text-[#172033] dark:text-white truncate">
                     {{ user?.name || 'Guest User' }}
                   </h4>
                   <a
@@ -774,6 +781,7 @@
         class="fixed inset-0 z-50 flex items-end justify-center"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="createActionSheetTitle"
       >
         <!-- Backdrop -->
         <div
@@ -787,7 +795,7 @@
           <div class="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-4"></div>
 
           <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-base text-[#172033] dark:text-white">Create New</h3>
+            <h3 id="createActionSheetTitle" class="font-bold text-base text-[#172033] dark:text-white">Create New</h3>
             <button
               type="button"
               @click="closeCreateSheet"
@@ -967,7 +975,10 @@ const toggleTheme = () => {
   }
 };
 
+let lastFocusedElement: HTMLElement | null = null;
+
 const openDrawer = () => {
+  lastFocusedElement = document.activeElement as HTMLElement;
   isDrawerOpen.value = true;
   document.body.style.overflow = 'hidden';
 };
@@ -977,9 +988,14 @@ const closeDrawer = () => {
   if (!isCreateSheetOpen.value) {
     document.body.style.overflow = '';
   }
+  if (lastFocusedElement) {
+    lastFocusedElement.focus();
+    lastFocusedElement = null;
+  }
 };
 
 const openCreateSheet = () => {
+  lastFocusedElement = document.activeElement as HTMLElement;
   isCreateSheetOpen.value = true;
   document.body.style.overflow = 'hidden';
 };
@@ -988,6 +1004,10 @@ const closeCreateSheet = () => {
   isCreateSheetOpen.value = false;
   if (!isDrawerOpen.value) {
     document.body.style.overflow = '';
+  }
+  if (lastFocusedElement) {
+    lastFocusedElement.focus();
+    lastFocusedElement = null;
   }
 };
 

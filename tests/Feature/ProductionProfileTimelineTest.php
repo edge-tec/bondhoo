@@ -420,7 +420,7 @@ class ProductionProfileTimelineTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->get('/user/shahidul');
+        $response = $this->get('/user/shahidul?blade=1');
 
         $response->assertStatus(200)
             ->assertViewIs('profile.show')
@@ -632,7 +632,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/viewasuser?view_as=public');
+        $response = $this->get('/user/viewasuser?view_as=public&blade=1');
         $response->assertStatus(200);
         $response->assertSee('আপনি এখন পাবলিক দৃষ্টিতে আপনার প্রোফাইল দেখছেন');
         $response->assertSee('ভিউ অ্যাজ বন্ধ করুন');
@@ -649,7 +649,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/lockedviewas?view_as=public');
+        $response = $this->get('/user/lockedviewas?view_as=public&blade=1');
         $response->assertStatus(200);
         $response->assertSee('প্রোফাইল লক করা আছে');
     }
@@ -711,7 +711,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/guardprofile');
+        $response = $this->get('/user/guardprofile?blade=1');
         $response->assertStatus(200);
         $response->assertSee('avatar-shield-badge');
         $response->assertSee('photoTheaterModal');
@@ -760,7 +760,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/coverprofile');
+        $response = $this->get('/user/coverprofile?blade=1');
         $response->assertStatus(200);
         $response->assertSee('cover-menu-dropdown');
         $response->assertSee('coverRepositionBanner');
@@ -779,7 +779,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/videoprofile');
+        $response = $this->get('/user/videoprofile?blade=1');
         $response->assertStatus(200);
         $response->assertSee('video-cards-grid');
         $response->assertSee('videoTheaterModal');
@@ -802,7 +802,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/creatorprofile');
+        $response = $this->get('/user/creatorprofile?blade=1');
         $response->assertStatus(200);
         $response->assertSee('tabContent-professional', false);
         $response->assertSee('creatorCategoryModal');
@@ -846,7 +846,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/saveduser');
+        $response = $this->get('/user/saveduser?blade=1');
         $response->assertStatus(200);
         $response->assertSee('tabContent-saved', false);
         $response->assertSee('savedSearchInput');
@@ -867,7 +867,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/activityuser');
+        $response = $this->get('/user/activityuser?blade=1');
         $response->assertStatus(200);
         $response->assertSee('tabContent-activity', false);
         $response->assertSee('activitySearchInput');
@@ -888,7 +888,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/moreuser');
+        $response = $this->get('/user/moreuser?blade=1');
         $response->assertStatus(200);
         $response->assertSee('tab-more-btn');
         $response->assertSee('profileMoreTabsDropdown');
@@ -910,7 +910,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/sectionsuser');
+        $response = $this->get('/user/sectionsuser?blade=1');
         $response->assertStatus(200);
         $response->assertSee('manageSectionsModal');
         $response->assertSee('sectionToggle-intro');
@@ -938,7 +938,7 @@ class ProductionProfileTimelineTest extends TestCase
             'portfolio' => 'https://example.com/portfolio',
         ]);
 
-        $response = $this->get('/user/socialuser');
+        $response = $this->get('/user/socialuser?blade=1');
         $response->assertStatus(200);
         $response->assertSee('introConnectSection');
         $response->assertSee('introWaLink');
@@ -968,7 +968,7 @@ class ProductionProfileTimelineTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/user/emptysocialuser');
+        $response = $this->get('/user/emptysocialuser?blade=1');
         $response->assertStatus(200);
         $response->assertSee('+ সোশ্যাল ও যোগাযোগ মাধ্যম যোগ করুন');
     }

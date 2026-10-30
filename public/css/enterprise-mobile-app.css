@@ -127,7 +127,7 @@ button, a, input, select, textarea, [role="button"] {
     }
 
     /* Reserve space at page bottom so content is never hidden behind bottom nav (except full-height pages) */
-    body:not(.is-messenger-page):not(.call-room) {
+    body:not(.inertia-app):not(.is-messenger-page):not(.call-room) {
         padding-bottom: calc(var(--mobile-nav-height) + var(--sab) + 12px) !important;
     }
 
@@ -2558,7 +2558,7 @@ button, a, input, select, textarea, [role="button"] {
         --mobile-nav-height: 56px;
     }
 
-    body:not(.is-messenger-page):not(.call-room) {
+    body:not(.inertia-app):not(.is-messenger-page):not(.call-room) {
         padding-bottom: calc(56px + var(--sab) + 8px) !important;
     }
 
