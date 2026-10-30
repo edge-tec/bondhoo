@@ -2,7 +2,7 @@
   <AppLayout
     current-route="messages"
     :unread-count="unreadCount"
-    :unread-messages-count="unreadMessagesCount"
+    :unread-messages-count="totalUnreadCount"
     :pending-requests="pendingRequests"
     :contacts="contacts"
     :suggestions="suggestions"
@@ -11,7 +11,7 @@
     :full-width="true"
   >
     <!-- Messenger Main Card (3-Column Desktop / Responsive Mobile) -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#E4E7EC] dark:border-slate-800 overflow-hidden flex h-[calc(100vh-125px)] min-h-[640px] relative antialiased">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-[#E4E7EC] dark:border-slate-800 overflow-hidden flex h-[calc(100dvh-8.5rem)] md:h-[calc(100vh-125px)] min-h-[420px] md:min-h-[640px] relative antialiased">
       
       <!-- ========================================== -->
       <!-- COLUMN 1: CONVERSATIONS LIST               -->
@@ -1704,6 +1704,13 @@ const selectConversation = async (conv: ConversationItem) => {
   activeConversation.value = conv;
   mobileView.value = 'chat';
   conv.unread_count = 0;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('jugajug:messages-unread-updated', {
+        detail: { count: totalUnreadCount.value },
+      })
+    );
+  }
 
   try {
     // Mark as read on backend

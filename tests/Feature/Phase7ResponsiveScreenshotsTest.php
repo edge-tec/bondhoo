@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\UserProfile;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Vite;
 use Tests\TestCase;
 
 class Phase7ResponsiveScreenshotsTest extends TestCase
@@ -16,6 +17,7 @@ class Phase7ResponsiveScreenshotsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Vite::useHotFile(storage_path('framework/testing/no-hot'));
         $this->seed(RolePermissionSeeder::class);
     }
 
@@ -51,8 +53,18 @@ class Phase7ResponsiveScreenshotsTest extends TestCase
         // Convert asset URLs to absolute file:// URLs so Chrome headless can load CSS locally
         $baseDir = base_path('public');
         $contentWithLocalAssets = str_replace(
-            ['href="/css/', 'src="/build/', 'href="/build/', 'src="/js/', 'href="/'],
             [
+                'http://localhost:8000/build/',
+                'http://localhost/build/',
+                'href="/css/',
+                'src="/build/',
+                'href="/build/',
+                'src="/js/',
+                'href="/',
+            ],
+            [
+                'file://'.$baseDir.'/build/',
+                'file://'.$baseDir.'/build/',
                 'href="file://'.$baseDir.'/css/',
                 'src="file://'.$baseDir.'/build/',
                 'href="file://'.$baseDir.'/build/',
@@ -158,8 +170,18 @@ class Phase7ResponsiveScreenshotsTest extends TestCase
         $this->assertEquals(200, $profileResponse->getStatusCode());
 
         $profileHtml = str_replace(
-            ['href="/css/', 'src="/build/', 'href="/build/', 'src="/js/', 'href="/'],
             [
+                'http://localhost:8000/build/',
+                'http://localhost/build/',
+                'href="/css/',
+                'src="/build/',
+                'href="/build/',
+                'src="/js/',
+                'href="/',
+            ],
+            [
+                'file://'.$baseDir.'/build/',
+                'file://'.$baseDir.'/build/',
                 'href="file://'.$baseDir.'/css/',
                 'src="file://'.$baseDir.'/build/',
                 'href="file://'.$baseDir.'/build/',

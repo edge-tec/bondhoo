@@ -1,5 +1,5 @@
-// Bondhoo Social Network Enterprise Progressive Web App (PWA) Service Worker v3.0 (jugajug-v2-cache)
-const CACHE_NAME = 'bondhoo-pwa-v3.0';
+// Bondhoo Social Network Enterprise Progressive Web App (PWA) Service Worker v7.4 (jugajug-v7.4-cache)
+const CACHE_NAME = 'bondhoo-pwa-v7.4';
 const OFFLINE_URL = '/offline';
 
 const PRECACHE_ASSETS = [
@@ -42,6 +42,18 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    const url = new URL(event.request.url);
+
+    // Never intercept Vite dev server / HMR requests
+    if (
+        url.port === '5173' ||
+        url.pathname.includes('@vite') ||
+        url.pathname.startsWith('/resources/') ||
+        url.pathname.startsWith('/node_modules/')
+    ) {
+        return;
+    }
+
     // A. Navigation Requests (HTML pages) -> Network First with Offline Fallback
     if (event.request.mode === 'navigate') {
         event.respondWith(
@@ -65,25 +77,22 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // B. Static Assets (CSS, JS, Fonts, Images) -> Stale-While-Revalidate
-    const url = new URL(event.request.url);
+    // B. Static Assets (CSS, JS, Fonts, Images) -> Network First with Cache Fallback
     const isStaticAsset = url.pathname.match(/\.(css|js|woff2|woff|ttf|png|jpg|jpeg|svg|webp|ico)$/i)
         || url.hostname.includes('fonts.googleapis.com')
         || url.hostname.includes('fonts.gstatic.com');
 
     if (isStaticAsset) {
         event.respondWith(
-            caches.match(event.request).then((cachedResponse) => {
-                const fetchPromise = fetch(event.request).then((networkResponse) => {
+            fetch(event.request)
+                .then((networkResponse) => {
                     if (networkResponse.status === 200) {
                         const copy = networkResponse.clone();
                         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
                     }
                     return networkResponse;
-                }).catch(() => cachedResponse);
-
-                return cachedResponse || fetchPromise;
-            })
+                })
+                .catch(() => caches.match(event.request))
         );
         return;
     }

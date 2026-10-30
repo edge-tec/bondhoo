@@ -101,7 +101,7 @@ button, a, input, select, textarea, [role="button"] {
 /* ------------------------------------------------------------------------------
    3. MOBILE BOTTOM NAVIGATION BAR (.mobile-bottom-nav)
    ------------------------------------------------------------------------------ */
-.mobile-bottom-nav {
+body:not(.inertia-app) .mobile-bottom-nav {
     display: none; /* Desktop default: hidden */
 }
 
@@ -294,7 +294,7 @@ button, a, input, select, textarea, [role="button"] {
     }
 
     /* Elevated Center Create Action Button */
-    .mobile-nav-create-btn {
+    body:not(.inertia-app) .mobile-nav-create-btn {
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -308,7 +308,7 @@ button, a, input, select, textarea, [role="button"] {
         top: -12px;
     }
 
-    .mobile-nav-create-bubble {
+    body:not(.inertia-app) .mobile-nav-create-bubble {
         width: 48px;
         height: 48px;
         border-radius: 50%;
@@ -321,19 +321,19 @@ button, a, input, select, textarea, [role="button"] {
         transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
-    .mobile-nav-create-btn:active .mobile-nav-create-bubble {
+    body:not(.inertia-app) .mobile-nav-create-btn:active .mobile-nav-create-bubble {
         transform: scale(0.92);
         box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3);
     }
 
-    .mobile-nav-create-bubble svg {
+    body:not(.inertia-app) .mobile-nav-create-bubble svg {
         width: 24px;
         height: 24px;
         stroke: #ffffff;
         stroke-width: 2.8;
     }
 
-    .mobile-nav-create-label {
+    body:not(.inertia-app) .mobile-nav-create-label {
         font-size: 11px;
         font-weight: 700;
         color: var(--mobile-nav-text);
@@ -2228,12 +2228,12 @@ button, a, input, select, textarea, [role="button"] {
 /* ------------------------------------------------------------------------------
    11. MOBILE HEADER BUTTON & VIEW SPECIALIZATIONS
    ------------------------------------------------------------------------------ */
-.mobile-menu-toggle-btn {
+body:not(.inertia-app) .mobile-menu-toggle-btn {
     display: none !important;
 }
 
 @media (max-width: 768px) {
-    .mobile-menu-toggle-btn {
+    body:not(.inertia-app) .mobile-menu-toggle-btn {
         display: inline-flex !important;
         align-items: center;
         justify-content: center;
@@ -2256,14 +2256,14 @@ button, a, input, select, textarea, [role="button"] {
         -webkit-tap-highlight-color: transparent;
     }
 
-    [data-theme="dark"] .mobile-menu-toggle-btn {
+    body:not(.inertia-app)[data-theme="dark"] .mobile-menu-toggle-btn {
         background: rgba(255, 255, 255, 0.08);
         border-color: rgba(255, 255, 255, 0.12);
         color: #f0f2f5;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     }
 
-    .mobile-menu-toggle-btn:hover {
+    body:not(.inertia-app) .mobile-menu-toggle-btn:hover {
         background: rgba(24, 119, 242, 0.1);
         color: var(--mobile-nav-active, #1877f2);
         border-color: rgba(24, 119, 242, 0.3);
@@ -2271,7 +2271,7 @@ button, a, input, select, textarea, [role="button"] {
         box-shadow: 0 3px 8px rgba(24, 119, 242, 0.2);
     }
 
-    .mobile-menu-toggle-btn:active {
+    body:not(.inertia-app) .mobile-menu-toggle-btn:active {
         transform: scale(0.92);
         background: rgba(24, 119, 242, 0.18);
         box-shadow: none;
@@ -2689,4 +2689,26 @@ button, a, input, select, textarea, [role="button"] {
         max-width: 780px !important;
     }
 }
+
+/* ------------------------------------------------------------------------------
+   14. INERTIA VUE 3 UNIFIED STACKING & NAVIGATION ISOLATION GUARD
+   Ensures unlayered rules never conflict with Tailwind v4 @layer utilities
+   ------------------------------------------------------------------------------ */
+body.inertia-app header {
+    z-index: 40 !important;
+}
+
+body.inertia-app nav.mobile-bottom-nav {
+    z-index: 40 !important;
+    width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+}
+
+body.inertia-app #mobileMenuDrawer,
+body.inertia-app #mobileCreateActionSheet {
+    z-index: 99999 !important;
+}
+
 

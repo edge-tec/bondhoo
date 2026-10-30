@@ -5,7 +5,7 @@
       :user="currentUser"
       :current-route="currentRoute"
       :unread-count="unreadNotificationsCount"
-      :unread-messages-count="unreadMessagesCount"
+      :unread-messages-count="liveUnreadMessagesCount"
     />
 
     <!-- Flash Notifications Banner -->
@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import Navbar from '../Components/Navbar.vue';
 import SidebarLeft from '../Components/SidebarLeft.vue';
@@ -89,7 +89,50 @@ const page = usePage<SharedProps>();
 const currentUser = computed<User | null>(() => page.props.auth?.user || null);
 
 const unreadNotificationsCount = ref(props.unreadCount);
+const liveUnreadMessagesCount = ref(props.unreadMessagesCount);
 const internalPendingRequests = ref<any[]>([...props.pendingRequests]);
+
+watch(
+  () => props.unreadCount,
+  (val) => {
+    unreadNotificationsCount.value = val ?? 0;
+  }
+);
+
+watch(
+  () => props.unreadMessagesCount,
+  (val) => {
+    liveUnreadMessagesCount.value = val ?? 0;
+  }
+);
+
+const onUnreadEvent = (e: Event) => {
+  const customEvent = e as CustomEvent<{ count?: number; delta?: number }>;
+  if (typeof customEvent.detail?.count === 'number') {
+    unreadNotificationsCount.value = Math.max(0, customEvent.detail.count);
+  } else if (typeof customEvent.detail?.delta === 'number') {
+    unreadNotificationsCount.value = Math.max(0, unreadNotificationsCount.value + customEvent.detail.delta);
+  }
+};
+
+const onMessagesUnreadEvent = (e: Event) => {
+  const customEvent = e as CustomEvent<{ count?: number; delta?: number }>;
+  if (typeof customEvent.detail?.count === 'number') {
+    liveUnreadMessagesCount.value = Math.max(0, customEvent.detail.count);
+  } else if (typeof customEvent.detail?.delta === 'number') {
+    liveUnreadMessagesCount.value = Math.max(0, liveUnreadMessagesCount.value + customEvent.detail.delta);
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('jugajug:unread-updated', onUnreadEvent);
+  window.addEventListener('jugajug:messages-unread-updated', onMessagesUnreadEvent);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('jugajug:unread-updated', onUnreadEvent);
+  window.removeEventListener('jugajug:messages-unread-updated', onMessagesUnreadEvent);
+});
 
 const flashDismissed = ref(false);
 const flashSuccess = computed(() => {

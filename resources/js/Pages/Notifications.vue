@@ -1,7 +1,7 @@
 <template>
   <AppLayout
     current-route="notifications"
-    :unread-count="unreadCount"
+    :unread-count="liveUnreadCount"
     :pending-requests="pendingRequests"
     :contacts="contacts"
   >
@@ -148,6 +148,20 @@ const hasUnread = computed(() => {
   return list.value.some((n) => !n.read_at);
 });
 
+const liveUnreadCount = computed(() => {
+  return list.value.filter((n) => !n.read_at).length;
+});
+
+const syncUnreadBadge = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('jugajug:unread-updated', {
+        detail: { count: liveUnreadCount.value },
+      })
+    );
+  }
+};
+
 const formatDate = (dateStr: string) => {
   if (!dateStr) return 'Just now';
   const d = new Date(dateStr);
@@ -174,6 +188,7 @@ const formatNotificationText = (item: NotificationItem) => {
 const markAsRead = async (item: NotificationItem) => {
   if (item.read_at) return;
   item.read_at = new Date().toISOString();
+  syncUnreadBadge();
 
   try {
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
@@ -207,6 +222,7 @@ const markAllAsRead = async () => {
       list.value.forEach((n) => {
         n.read_at = new Date().toISOString();
       });
+      syncUnreadBadge();
     }
   } catch (err) {
     console.error(err);

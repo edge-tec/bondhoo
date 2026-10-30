@@ -1,5 +1,8 @@
 <template>
-  <header class="sticky top-0 z-40 w-full bg-white dark:bg-slate-900 border-b border-[#E4E7EC] dark:border-slate-800 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-colors">
+  <header
+    class="sticky top-0 z-40 w-full bg-white dark:bg-slate-900 border-b border-[#E4E7EC] dark:border-slate-800 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-colors"
+    style="z-index: 40;"
+  >
     <div class="max-w-[1920px] mx-auto w-full px-3 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 gap-2 sm:gap-4 lg:gap-8">
         
@@ -181,10 +184,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               <span
-                v-if="unreadCount > 0"
+                v-if="liveUnreadCount > 0"
                 class="absolute -top-1.5 -right-2 px-1.5 py-0.2 min-w-[18px] h-[18px] bg-[#F04438] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900"
               >
-                {{ unreadCount > 9 ? '9+' : unreadCount }}
+                {{ liveUnreadCount > 9 ? '9+' : liveUnreadCount }}
               </span>
             </div>
             <span>Notifications</span>
@@ -206,10 +209,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
               <span
-                v-if="unreadMessagesCount > 0"
+                v-if="liveUnreadMessagesCount > 0"
                 class="absolute -top-1.5 -right-2 px-1.5 py-0.2 min-w-[18px] h-[18px] bg-[#F04438] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900"
               >
-                {{ unreadMessagesCount > 9 ? '9+' : unreadMessagesCount }}
+                {{ liveUnreadMessagesCount > 9 ? '9+' : liveUnreadMessagesCount }}
               </span>
             </div>
             <span>Messages</span>
@@ -345,13 +348,20 @@
     </div>
 
     <!-- Modern Mobile Bottom Navigation Bar (< 768px) with Elevated Create Button -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-2px_12px_rgba(0,0,0,0.05)] transition-colors mobile-bottom-nav">
-      <div class="grid grid-cols-5 items-center h-16 w-full max-w-lg mx-auto px-1">
+    <nav
+      class="md:hidden fixed bottom-0 left-0 right-0 z-40 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-2px_12px_rgba(0,0,0,0.05)] transition-colors mobile-bottom-nav"
+      style="z-index: 40; width: 100%; left: 0; right: 0; bottom: 0;"
+    >
+      <div
+        class="grid grid-cols-5 items-center h-16 w-full max-w-lg mx-auto px-1"
+        style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); width: 100%; max-width: 512px; margin: 0 auto; height: 64px; align-items: center;"
+      >
         <!-- 1. Home -->
         <a
           href="/"
           class="flex flex-col items-center justify-center h-full min-h-[48px] py-1 text-center transition-colors mobile-nav-btn"
           :class="currentRoute === 'feed' ? 'text-[#1877F2] font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-[#1877F2]'"
+          style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;"
           aria-label="Feed"
         >
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -365,6 +375,7 @@
           href="/reels"
           class="flex flex-col items-center justify-center h-full min-h-[48px] py-1 text-center transition-colors mobile-nav-btn"
           :class="currentRoute === 'reels' ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-purple-600'"
+          style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;"
           aria-label="Reels"
         >
           <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
@@ -374,7 +385,10 @@
         </a>
 
         <!-- 3. Elevated Create Button (Center) -->
-        <div class="flex items-center justify-center h-full">
+        <div
+          class="flex items-center justify-center h-full"
+          style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"
+        >
           <button
             type="button"
             id="mobileNavCreateBtn"
@@ -383,6 +397,7 @@
             aria-controls="mobileCreateActionSheet"
             aria-haspopup="dialog"
             class="w-12 h-12 -mt-4 rounded-full bg-gradient-to-tr from-[#1877F2] to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 ring-4 ring-white dark:ring-slate-900 hover:shadow-blue-500/50 hover:scale-105 active:scale-95 transition-all cursor-pointer mobile-nav-btn mobile-nav-create-bubble"
+            style="width: 48px; height: 48px; min-width: 48px; min-height: 48px; max-width: 48px; max-height: 48px; flex: 0 0 48px; margin-top: -16px; border-radius: 9999px;"
             aria-label="Create Post, Story or Reel"
           >
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -396,6 +411,7 @@
           href="/messages"
           class="flex flex-col items-center justify-center h-full min-h-[48px] py-1 text-center transition-colors relative mobile-nav-btn"
           :class="currentRoute === 'messages' ? 'text-[#1877F2] font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-[#1877F2]'"
+          style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;"
           aria-label="Messages"
         >
           <div class="relative">
@@ -403,10 +419,10 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             <span
-              v-if="unreadMessagesCount > 0"
+              v-if="liveUnreadMessagesCount > 0"
               class="absolute -top-1 -right-2 px-1 min-w-[16px] h-4 bg-[#F04438] text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900"
             >
-              {{ unreadMessagesCount > 9 ? '9+' : unreadMessagesCount }}
+              {{ liveUnreadMessagesCount > 9 ? '9+' : liveUnreadMessagesCount }}
             </span>
           </div>
           <span class="text-[10px] font-semibold mt-0.5 truncate max-w-full text-center px-1 mobile-nav-label">Chat</span>
@@ -420,7 +436,8 @@
           :aria-expanded="isDrawerOpen ? 'true' : 'false'"
           aria-controls="mobileMenuDrawer"
           aria-haspopup="dialog"
-          class="flex flex-col items-center justify-center h-full min-h-[48px] py-1 text-center transition-colors text-slate-600 dark:text-slate-400 hover:text-[#1877F2] cursor-pointer mobile-nav-btn mobile-menu-toggle-btn"
+          class="flex flex-col items-center justify-center h-full min-h-[48px] py-1 text-center transition-colors text-slate-600 dark:text-slate-400 hover:text-[#1877F2] cursor-pointer mobile-nav-btn"
+          style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: transparent; border: none;"
           aria-label="Navigation Menu"
         >
           <div class="relative">
@@ -430,7 +447,7 @@
               alt="Menu"
             />
             <span
-              v-if="unreadCount > 0"
+              v-if="liveUnreadCount > 0"
               class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#F04438] ring-2 ring-white dark:ring-slate-900"
             ></span>
           </div>
@@ -444,19 +461,24 @@
       <div
         v-if="isDrawerOpen"
         id="mobileMenuDrawer"
-        class="fixed inset-0 z-[70] overflow-hidden"
+        class="fixed inset-0 z-[99999] overflow-hidden"
+        style="z-index: 99999;"
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobileDrawerTitle"
       >
         <!-- Backdrop -->
         <div
-          class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300 z-[70]"
+          class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300 z-[99998]"
+          style="z-index: 99998;"
           @click="closeDrawer"
         ></div>
 
         <!-- Drawer Content Panel -->
-        <div class="fixed inset-y-0 right-0 max-w-full flex z-[71]">
+        <div
+          class="fixed inset-y-0 right-0 max-w-full flex z-[99999]"
+          style="z-index: 99999;"
+        >
           <div class="w-screen max-w-[340px] xs:max-w-[360px] sm:max-w-md h-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-250 ease-out">
             <!-- 1. Header & User Profile Information -->
             <div class="shrink-0 p-4 border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm flex items-center justify-between gap-3 pt-[calc(env(safe-area-inset-top,0px)+14px)]">
@@ -580,10 +602,10 @@
                   <span class="truncate">Messages</span>
                 </div>
                 <span
-                  v-if="unreadMessagesCount > 0"
+                  v-if="liveUnreadMessagesCount > 0"
                   class="px-2 py-0.5 text-xs font-bold bg-[#F04438] text-white rounded-full shrink-0"
                 >
-                  {{ unreadMessagesCount }}
+                  {{ liveUnreadMessagesCount }}
                 </span>
               </a>
 
@@ -606,10 +628,10 @@
                   <span class="truncate">Notifications</span>
                 </div>
                 <span
-                  v-if="unreadCount > 0"
+                  v-if="liveUnreadCount > 0"
                   class="px-2 py-0.5 text-xs font-bold bg-[#F04438] text-white rounded-full shrink-0"
                 >
-                  {{ unreadCount }}
+                  {{ liveUnreadCount }}
                 </span>
               </a>
 
@@ -780,6 +802,20 @@
                 </span>
                 <span class="truncate">Help & Guidelines</span>
               </a>
+
+              <!-- Admin Dashboard (Visible for Admin Users) -->
+              <a
+                v-if="(user as any)?.is_admin || (user as any)?.role === 'admin'"
+                href="/admin/security"
+                class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-sm font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50/80 dark:hover:bg-indigo-950/50 transition-all group min-h-[48px]"
+              >
+                <span class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0 group-hover:scale-105 transition-transform shadow-2xs">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </span>
+                <span class="truncate">Admin Dashboard</span>
+              </a>
             </div>
 
             <!-- 3. Drawer Footer: Logout / Sign In Action -->
@@ -814,7 +850,8 @@
       <div
         v-if="isCreateSheetOpen"
         id="mobileCreateActionSheet"
-        class="fixed inset-0 z-50 flex items-end justify-center"
+        class="fixed inset-0 z-[99999] flex items-end justify-center"
+        style="z-index: 99999;"
         role="dialog"
         aria-modal="true"
         aria-labelledby="createActionSheetTitle"
@@ -951,7 +988,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import type { User } from '../types';
 
 const props = withDefaults(
@@ -966,6 +1003,42 @@ const props = withDefaults(
     unreadMessagesCount: 0,
   }
 );
+
+// Reactive Live Unread Badges (Syncs with props, custom DOM events, and Echo)
+const liveUnreadCount = ref(props.unreadCount);
+const liveUnreadMessagesCount = ref(props.unreadMessagesCount);
+
+watch(
+  () => props.unreadCount,
+  (val) => {
+    liveUnreadCount.value = val ?? 0;
+  }
+);
+
+watch(
+  () => props.unreadMessagesCount,
+  (val) => {
+    liveUnreadMessagesCount.value = val ?? 0;
+  }
+);
+
+const handleUnreadUpdated = (e: Event) => {
+  const customEvent = e as CustomEvent<{ count?: number; delta?: number }>;
+  if (typeof customEvent.detail?.count === 'number') {
+    liveUnreadCount.value = Math.max(0, customEvent.detail.count);
+  } else if (typeof customEvent.detail?.delta === 'number') {
+    liveUnreadCount.value = Math.max(0, liveUnreadCount.value + customEvent.detail.delta);
+  }
+};
+
+const handleMessagesUnreadUpdated = (e: Event) => {
+  const customEvent = e as CustomEvent<{ count?: number; delta?: number }>;
+  if (typeof customEvent.detail?.count === 'number') {
+    liveUnreadMessagesCount.value = Math.max(0, customEvent.detail.count);
+  } else if (typeof customEvent.detail?.delta === 'number') {
+    liveUnreadMessagesCount.value = Math.max(0, liveUnreadMessagesCount.value + customEvent.detail.delta);
+  }
+};
 
 // Navigation Drawer & Action Sheet State
 const isDrawerOpen = ref(false);
@@ -1127,11 +1200,15 @@ onMounted(() => {
   initTheme();
   document.addEventListener('click', handleClickOutside);
   document.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('jugajug:unread-updated', handleUnreadUpdated);
+  window.addEventListener('jugajug:messages-unread-updated', handleMessagesUnreadUpdated);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
   document.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('jugajug:unread-updated', handleUnreadUpdated);
+  window.removeEventListener('jugajug:messages-unread-updated', handleMessagesUnreadUpdated);
   document.documentElement.style.overflow = '';
   document.body.style.overflow = '';
 });

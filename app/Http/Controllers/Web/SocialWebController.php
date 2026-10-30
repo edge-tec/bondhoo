@@ -127,9 +127,29 @@ class SocialWebController extends Controller
             return redirect()->route('login');
         }
 
+        $activeTab = (string) $request->query('tab', 'feed');
+        $searchQuery = trim((string) ($request->query('q') ?? $request->query('query') ?? ''));
+
         $feedPaginator = $this->feedService->getFeed($viewer, 'smart', 15);
 
-        $postsData = collect($feedPaginator->items())->map(function (Post $post) use ($viewer) {
+        $postsCollection = collect($feedPaginator->items());
+
+        if ($searchQuery !== '') {
+            $needle = mb_strtolower($searchQuery);
+            $postsCollection = $postsCollection->filter(function (Post $post) use ($needle) {
+                $contentMatch = str_contains(mb_strtolower((string) $post->content), $needle);
+                $authorMatch = str_contains(mb_strtolower((string) $post->user?->name), $needle)
+                    || str_contains(mb_strtolower((string) $post->user?->username), $needle);
+
+                return $contentMatch || $authorMatch;
+            });
+        } elseif ($activeTab === 'memories') {
+            $postsCollection = $postsCollection->filter(function (Post $post) use ($viewer) {
+                return (int) $post->user_id === (int) $viewer->id;
+            });
+        }
+
+        $postsData = $postsCollection->map(function (Post $post) use ($viewer) {
             return $post->toResponseArray($viewer);
         })->values()->all();
 
@@ -194,6 +214,8 @@ class SocialWebController extends Controller
             'unreadCount' => $sidebarData['unreadCount'],
             'unreadMessagesCount' => $sidebarData['unreadMessagesCount'],
             'highlightPostId' => $highlightPostId,
+            'activeTab' => $activeTab,
+            'searchQuery' => $searchQuery,
         ]);
     }
 
