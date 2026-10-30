@@ -25,6 +25,10 @@ Broadcast::channel('conversation.{conversationId}', function ($user, $conversati
     return DB::table('conversation_participants')
         ->where('conversation_id', (int) $conversationId)
         ->where('user_id', (int) $user->id)
+        ->where(function ($q) {
+            $q->whereNull('request_status')
+                ->orWhere('request_status', '!=', 'declined');
+        })
         ->exists();
 });
 
@@ -47,6 +51,10 @@ Broadcast::channel('call.{conversationId}', function ($user, $conversationId) {
     return DB::table('conversation_participants')
         ->where('conversation_id', (int) $conversationId)
         ->where('user_id', (int) $user->id)
+        ->where(function ($q) {
+            $q->whereNull('request_status')
+                ->orWhere('request_status', '!=', 'declined');
+        })
         ->exists();
 });
 

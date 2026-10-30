@@ -2582,7 +2582,7 @@ const handleSendMessage = async () => {
       body: text || (mediaIds.length > 0 ? 'Sent an attachment' : ''),
       type: mediaIds.length > 0 ? 'media' : 'text',
       media_ids: mediaIds,
-      client_message_id: 'msg_' + Date.now(),
+      client_message_id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9),
     };
 
     if (replyingTo.value) {
