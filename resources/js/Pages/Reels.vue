@@ -861,7 +861,7 @@
               <span class="text-xs font-bold text-slate-900 dark:text-slate-100">
                 Comments ({{ currentReel?.comments_count || 0 }})
               </span>
-              <button type="button" @click="isCommentsOpen = false" class="text-slate-400 p-1 cursor-pointer">✕</button>
+              <button type="button" @click="isCommentsOpen = false" aria-label="Close comments" class="text-slate-400 p-1 cursor-pointer">✕</button>
             </div>
 
             <div class="flex-1 overflow-y-auto p-4 space-y-3">
