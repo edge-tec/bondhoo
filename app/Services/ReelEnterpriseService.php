@@ -27,6 +27,7 @@ use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -311,15 +312,25 @@ class ReelEnterpriseService
     }
 
     /**
+     * মেয়াদোত্তীর্ণ রিলগুলো ব্যাকগ্রাউন্ডে থ্রোটল্ডভাবে হালনাগাদ করা (প্রতি ৬০ সেকেন্ডে সর্বোচ্চ একবার)
+     * যাতে হাই-কনকারেন্সি রিড অপারেশনে ডাটাবেজ রাইট লক কনটেনশন না ঘটে।
+     */
+    protected function cleanupExpiredReelsThrottled(): void
+    {
+        if (Cache::add('reels_expiration_cleanup_lock', true, 60)) {
+            Reel::where('is_expired', false)
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<=', now())
+                ->update(['is_expired' => true]);
+        }
+    }
+
+    /**
      * পাবলিক রিলস ফিড (ইনফিনিট স্ক্রল পেজিনেশন)
      */
     public function getFeed(?User $viewer = null, int $perPage = 10): LengthAwarePaginator
     {
-        // মেয়াদোত্তীর্ণ রিলগুলো ডাটাবেসে ফ্ল্যাগ আপডেট করা
-        Reel::where('is_expired', false)
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '<=', now())
-            ->update(['is_expired' => true]);
+        $this->cleanupExpiredReelsThrottled();
 
         $query = Reel::query()
             ->publicFeed()
@@ -346,10 +357,7 @@ class ReelEnterpriseService
      */
     public function getFollowingFeed(User $viewer, int $perPage = 10): LengthAwarePaginator
     {
-        Reel::where('is_expired', false)
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '<=', now())
-            ->update(['is_expired' => true]);
+        $this->cleanupExpiredReelsThrottled();
 
         $friendIds = Friendship::where('user_id', $viewer->id)
             ->where('status', Friendship::STATUS_ACCEPTED)
@@ -398,11 +406,7 @@ class ReelEnterpriseService
             return new LengthAwarePaginator([], 0, $perPage);
         }
 
-        Reel::where('user_id', $targetUser->id)
-            ->where('is_expired', false)
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '<=', now())
-            ->update(['is_expired' => true]);
+        $this->cleanupExpiredReelsThrottled();
 
         $query = Reel::where('user_id', $targetUser->id)
             ->active()

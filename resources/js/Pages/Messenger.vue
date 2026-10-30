@@ -18,39 +18,39 @@
       <!-- ========================================== -->
       <section
         :class="[
-          'w-full md:w-[320px] lg:w-[340px] shrink-0 border-r border-[#E4E7EC] dark:border-slate-800 flex flex-col bg-white dark:bg-slate-900 transition-all duration-200 z-10',
+          'w-full md:w-[340px] lg:w-[360px] shrink-0 border-r border-[#E4E7EC] dark:border-slate-800 flex flex-col bg-white dark:bg-slate-900 transition-all duration-200 z-10',
           mobileView !== 'conversations' ? 'hidden md:flex' : 'flex'
         ]"
       >
         <!-- Header: Brand, Saved, Create Group, Settings, New Message -->
-        <div class="p-4 pb-3 flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1877F2] to-violet-500 text-white flex items-center justify-center shadow-sm shrink-0">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.17.16.14.26.35.27.57l.05 1.78c.02.57.6.94 1.12.71l1.98-.87c.17-.08.36-.09.53-.04.91.25 1.88.38 2.91.38 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm6 7.46l-2.94 4.66c-.47.74-1.47.93-2.17.4l-2.34-1.75a.6.6 0 00-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66c.47-.74 1.47-.93 2.17-.4l2.34 1.75a.6.6 0 00.72 0l3.16-2.4c.42-.32.97.18.69.63z"/></svg>
+        <div class="p-3.5 sm:p-4 pb-3 flex items-center justify-between gap-1.5 sm:gap-2">
+          <div class="flex items-center gap-2 min-w-0 shrink-0">
+            <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1877F2] to-violet-500 text-white flex items-center justify-center shadow-sm shrink-0">
+              <svg class="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.17.16.14.26.35.27.57l.05 1.78c.02.57.6.94 1.12.71l1.98-.87c.17-.08.36-.09.53-.04.91.25 1.88.38 2.91.38 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm6 7.46l-2.94 4.66c-.47.74-1.47.93-2.17.4l-2.34-1.75a.6.6 0 00-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66c.47-.74 1.47-.93 2.17-.4l2.34 1.75a.6.6 0 00.72 0l3.16-2.4c.42-.32.97.18.69.63z"/></svg>
             </span>
-            <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight truncate">
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight shrink-0 whitespace-nowrap">
               Messages
             </h2>
-            <span v-if="totalUnreadCount > 0" class="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">{{ totalUnreadCount }}</span>
+            <span v-if="totalUnreadCount > 0" class="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shrink-0">{{ totalUnreadCount }}</span>
           </div>
           <div class="flex items-center gap-0.5 shrink-0">
-            <button @click="openSavedMessages" type="button" title="Saved Messages" aria-label="Saved Messages" class="p-2 text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+            <button @click="openSavedMessages" type="button" title="Saved Messages" aria-label="Saved Messages" class="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer">
+              <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
             </button>
-            <button @click="openCreateGroup" type="button" title="Create Group" aria-label="Create Group" class="p-2 text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <button @click="openCreateGroup" type="button" title="Create Group" aria-label="Create Group" class="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer">
+              <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </button>
-            <button @click="showSettingsModal = true" type="button" title="Messenger Settings" aria-label="Messenger Settings" class="p-2 text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <button @click="showSettingsModal = true" type="button" title="Messenger Settings" aria-label="Messenger Settings" class="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer">
+              <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </button>
             <button
               @click="openNewMessageModal"
               type="button"
               title="New Message"
               aria-label="New Message"
-              class="p-2 text-white bg-[#1877F2] hover:bg-[#1666D8] rounded-xl transition-all cursor-pointer shadow-sm"
+              class="w-8 h-8 flex items-center justify-center text-white bg-[#1877F2] hover:bg-[#1666D8] rounded-lg transition-all cursor-pointer shadow-sm"
             >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
             </button>
