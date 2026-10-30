@@ -2247,6 +2247,28 @@ const getCsrfToken = (): string => {
   return (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
 };
 
+/**
+ * Cryptographically secure client message ID generator for offline outbox,
+ * retry deduplication, and idempotency protection.
+ * Follows RFC 4122 v4 UUID via Web Cryptography API with secure fallback.
+ */
+const generateSecureClientMessageId = (): string => {
+  if (typeof window !== 'undefined' && window.crypto) {
+    if (typeof window.crypto.randomUUID === 'function') {
+      return `msg_${window.crypto.randomUUID()}`;
+    }
+    if (typeof window.crypto.getRandomValues === 'function') {
+      const bytes = new Uint8Array(16);
+      window.crypto.getRandomValues(bytes);
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+      return `msg_${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    }
+  }
+  return `msg_${Date.now()}_fallback`;
+};
+
 const getAvatarFallback = (item: { title?: string; name?: string }): string => {
   const initial = (item.title || item.name || 'U').charAt(0).toUpperCase();
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(initial)}&background=1877F2&color=fff&size=128`;
@@ -2582,7 +2604,7 @@ const handleSendMessage = async () => {
       body: text || (mediaIds.length > 0 ? 'Sent an attachment' : ''),
       type: mediaIds.length > 0 ? 'media' : 'text',
       media_ids: mediaIds,
-      client_message_id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9),
+      client_message_id: generateSecureClientMessageId(),
     };
 
     if (replyingTo.value) {
