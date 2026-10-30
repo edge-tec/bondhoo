@@ -42,7 +42,7 @@ php artisan horizon:terminate || true
 php artisan queue:restart || true
 
 echo ">>> 7. Reloading PHP-FPM and OPcache"
-sudo systemctl reload php8.4-fpm || true
+sudo systemctl reload php8.5-fpm || sudo systemctl reload php8.4-fpm || sudo systemctl reload php-fpm || true
 
 echo ">>> 8. Verifying deployment health"
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/v1/health || echo "500")
