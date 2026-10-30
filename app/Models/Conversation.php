@@ -187,9 +187,27 @@ class Conversation extends Model
             ? $effectiveLastMessage->created_at?->toIso8601String()
             : ($viewer ? null : $this->last_message_at?->toIso8601String());
 
+        $membersList = [];
+        if ($this->relationLoaded('participants')) {
+            foreach ($this->participants as $part) {
+                $memberUser = $part->relationLoaded('user') ? $part->user : ($this->relationLoaded('users') ? $this->users->firstWhere('id', $part->user_id) : null);
+                if ($memberUser) {
+                    $membersList[] = [
+                        'id' => $memberUser->id,
+                        'user_id' => $memberUser->id,
+                        'name' => $memberUser->name,
+                        'username' => $memberUser->username,
+                        'avatar_url' => $memberUser->profile?->avatar_url,
+                        'role' => $part->role ?? 'member',
+                    ];
+                }
+            }
+        }
+
         return [
             'id' => $this->id,
             'type' => $this->type,
+            'creator_id' => $this->creator_id,
             'is_saved' => $this->isSaved(),
             'title' => $displayTitle,
             'avatar_url' => $displayAvatar,
@@ -206,6 +224,7 @@ class Conversation extends Model
                 'avatar_url' => $otherUser->profile?->avatar_url,
                 'bio' => $otherUser->profile?->bio,
             ] : null,
+            'members' => $membersList,
             'last_message' => $lastMessageData,
             'last_message_at' => $effectiveLastMessageAt,
             'unread_count' => $unreadCount,

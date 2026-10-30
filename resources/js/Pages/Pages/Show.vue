@@ -1908,6 +1908,8 @@
         v-if="showReelViewer && currentReel"
         class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-in fade-in"
         @keydown.esc="closeReelViewer"
+        @keydown.up.prevent="prevPageReel"
+        @keydown.down.prevent="nextPageReel"
         tabindex="0"
       >
         <!-- Close Button -->
@@ -1920,16 +1922,23 @@
         </button>
 
         <!-- Vertical 9:16 Container -->
-        <div class="relative w-full max-w-[380px] h-[90vh] rounded-3xl overflow-hidden bg-black shadow-2xl flex flex-col justify-between">
+        <div
+          class="relative w-full max-w-[380px] h-[90vh] rounded-3xl overflow-hidden bg-black shadow-2xl flex flex-col justify-between touch-none select-none"
+          @touchstart.passive="onPageReelTouchStart"
+          @touchend="onPageReelTouchEnd"
+        >
           <!-- Video Player -->
           <video
             ref="reelVideoPlayerRef"
+            :key="currentReel.id"
             :src="currentReel.video_url || currentReel.media?.[0]?.video_url || 'https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-water-1164-large.mp4'"
             autoplay
-            loop
+            :loop="reelsList.length <= 1"
+            :muted="isReelMuted"
             playsinline
             class="absolute inset-0 w-full h-full object-cover cursor-pointer"
             @click="toggleReelPlayback"
+            @ended="nextPageReel"
           ></video>
 
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none"></div>
@@ -3112,6 +3121,36 @@ const openReelViewer = (reel: any) => {
 const closeReelViewer = () => {
   showReelViewer.value = false;
   currentReel.value = null;
+};
+
+const nextPageReel = () => {
+  if (!currentReel.value || reelsList.value.length <= 1) return;
+  const idx = reelsList.value.findIndex((r: any) => r.id === currentReel.value.id);
+  const nextIdx = idx >= 0 ? (idx + 1) % reelsList.value.length : 0;
+  currentReel.value = reelsList.value[nextIdx];
+};
+
+const prevPageReel = () => {
+  if (!currentReel.value || reelsList.value.length <= 1) return;
+  const idx = reelsList.value.findIndex((r: any) => r.id === currentReel.value.id);
+  const prevIdx = idx > 0 ? idx - 1 : reelsList.value.length - 1;
+  currentReel.value = reelsList.value[prevIdx];
+};
+
+let pageReelTouchStartY = 0;
+const onPageReelTouchStart = (e: TouchEvent) => {
+  if (e.touches.length === 1) {
+    pageReelTouchStartY = e.touches[0].clientY;
+  }
+};
+const onPageReelTouchEnd = (e: TouchEvent) => {
+  const touch = e.changedTouches[0];
+  if (!touch) return;
+  const deltaY = touch.clientY - pageReelTouchStartY;
+  if (Math.abs(deltaY) > 35) {
+    if (deltaY < 0) nextPageReel();
+    else prevPageReel();
+  }
 };
 
 const toggleReelPlayback = () => {

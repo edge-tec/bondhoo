@@ -27,11 +27,13 @@ use App\Models\User;
 use App\Models\UserFollower;
 use App\Models\UsernameHistory;
 use App\Models\UserProfile;
+use App\Services\Calling\CallingService;
 use App\Services\Contracts\MessengerServiceInterface;
 use App\Services\FeedService;
 use App\Services\FriendshipService;
 use App\Services\GroupService;
 use App\Services\Marketplace\MarketplaceService;
+use App\Services\Messenger\MessengerSoundService;
 use App\Services\NotificationService;
 use App\Services\ProfilePrivacyService;
 use App\Services\ProfileService;
@@ -231,29 +233,48 @@ class SocialWebController extends Controller
         }
 
         $tab = $request->query('tab', 'for_you'); // 'for_you', 'following', 'saved', 'my_reels'
+        $id = $id ?: ($request->filled('reel') ? (int) $request->query('reel') : ($request->filled('id') ? (int) $request->query('id') : null));
+
+        $blockedUserIds = $this->privacyService->getBlockedUserIds($viewer->id);
+        $friendIds = Friendship::where('user_id', $viewer->id)
+            ->where('status', Friendship::STATUS_ACCEPTED)
+            ->pluck('friend_id')
+            ->all();
 
         $query = Reel::with(['user.profile', 'media', 'reactions', 'musicTrack', 'page', 'saves'])
-            ->where('is_draft', false)
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            });
+            ->active();
+
+        if (! empty($blockedUserIds)) {
+            $query->whereNotIn('user_id', $blockedUserIds);
+        }
 
         if ($tab === 'saved') {
             $query->whereHas('saves', function ($sq) use ($viewer) {
                 $sq->where('user_id', $viewer->id);
+            })->where(function ($q) use ($viewer) {
+                $q->where('privacy', '!=', 'only_me')
+                    ->orWhere('user_id', $viewer->id);
             });
         } elseif ($tab === 'my_reels') {
             $query->where('user_id', $viewer->id);
         } elseif ($tab === 'following') {
-            $friendIds = Friendship::where('user_id', $viewer->id)
-                ->where('status', Friendship::STATUS_ACCEPTED)
-                ->pluck('friend_id')
-                ->all();
             $followingIds = UserFollower::where('follower_id', $viewer->id)
                 ->pluck('user_id')
                 ->all();
             $allFollowedIds = array_unique(array_merge($friendIds, $followingIds, [$viewer->id]));
-            $query->whereIn('user_id', $allFollowedIds);
+            if (! empty($blockedUserIds)) {
+                $allFollowedIds = array_values(array_diff($allFollowedIds, $blockedUserIds));
+            }
+            $query->whereIn('user_id', $allFollowedIds ?: [$viewer->id])
+                ->where(function ($q) use ($viewer, $friendIds) {
+                    $q->where('privacy', 'public')
+                        ->orWhere('user_id', $viewer->id);
+                    if (! empty($friendIds)) {
+                        $q->orWhere(function ($fq) use ($friendIds) {
+                            $fq->where('privacy', 'friends')->whereIn('user_id', $friendIds);
+                        });
+                    }
+                });
         } else {
             // For You / Public Feed
             $query->where('privacy', 'public');
@@ -265,17 +286,23 @@ class SocialWebController extends Controller
             return $reel->toResponseArray($viewer);
         })->values()->all();
 
-        // If a specific reel ID was requested in the URL, ensure it is present at the front of the list
+        // If a specific reel ID was requested in the URL, ensure it is present at the front of the list if active and authorized
         if ($id) {
             $highlightReel = Reel::with(['user.profile', 'media', 'reactions', 'musicTrack', 'page', 'saves'])->find($id);
-            if ($highlightReel) {
-                $highlightArr = $highlightReel->toResponseArray($viewer);
-                $existingIndex = collect($reelsData)->search(fn ($r) => $r['id'] === $highlightReel->id);
-                if ($existingIndex !== false) {
-                    $item = array_splice($reelsData, $existingIndex, 1)[0];
-                    array_unshift($reelsData, $item);
-                } else {
-                    array_unshift($reelsData, $highlightArr);
+            if ($highlightReel && $highlightReel->isActive() && ! in_array($highlightReel->user_id, $blockedUserIds, true)) {
+                $canViewHighlight = (int) $highlightReel->user_id === (int) $viewer->id
+                    || $highlightReel->privacy === 'public'
+                    || ($highlightReel->privacy === 'friends' && in_array($highlightReel->user_id, $friendIds, true));
+
+                if ($canViewHighlight) {
+                    $highlightArr = $highlightReel->toResponseArray($viewer);
+                    $existingIndex = collect($reelsData)->search(fn ($r) => $r['id'] === $highlightReel->id);
+                    if ($existingIndex !== false) {
+                        $item = array_splice($reelsData, $existingIndex, 1)[0];
+                        array_unshift($reelsData, $item);
+                    } else {
+                        array_unshift($reelsData, $highlightArr);
+                    }
                 }
             }
         }
@@ -1821,9 +1848,16 @@ class SocialWebController extends Controller
 
         $sidebarData = $this->getSidebarData($viewer);
 
-        // Retrieve conversations with participants & lastMessage
-        $conversationsPaginator = $this->messengerService->getUserConversations($viewer, 40);
-        $conversations = collect($conversationsPaginator->items())->map(function ($conv) use ($viewer) {
+        // Retrieve conversations across all, archived, and requests so client-side filter tabs work seamlessly
+        $conversationsPaginator = $this->messengerService->getUserConversations($viewer, 40, ['filter' => 'all']);
+        $archivedPaginator = $this->messengerService->getUserConversations($viewer, 20, ['filter' => 'archived']);
+        $requestsPaginator = $this->messengerService->getUserConversations($viewer, 20, ['filter' => 'requests']);
+
+        $allRawConversations = collect($conversationsPaginator->items())
+            ->concat($archivedPaginator->items())
+            ->concat($requestsPaginator->items());
+
+        $conversations = $allRawConversations->map(function ($conv) use ($viewer) {
             if (is_array($conv)) {
                 return $conv;
             }
@@ -1835,7 +1869,7 @@ class SocialWebController extends Controller
             }
 
             return (array) $conv;
-        })->values()->all();
+        })->unique('id')->values()->all();
 
         // Check if a specific conversation or user was requested
         $activeConversation = null;
@@ -1843,28 +1877,38 @@ class SocialWebController extends Controller
         $activeUserId = $request->query('user_id') ?: $request->query('user');
 
         if ($activeConversationId) {
-            $conv = Conversation::with(['participants.user.profile', 'lastMessage'])->find($activeConversationId);
+            $conv = Conversation::with(['users.profile', 'participants.user.profile', 'lastMessage'])->find($activeConversationId);
             if ($conv && $conv->hasParticipant($viewer->id)) {
                 $activeConversation = $conv;
             }
         } elseif ($activeUserId) {
             $targetUser = User::find($activeUserId);
             if ($targetUser && $targetUser->id !== $viewer->id) {
-                $activeConversation = $this->messengerService->getOrCreateDirectConversation($viewer, $targetUser->id);
+                try {
+                    $activeConversation = $this->messengerService->getOrCreateDirectConversation($viewer, $targetUser->id);
+                    $activeConversation->load(['users.profile', 'participants.user.profile', 'lastMessage']);
+                } catch (\Throwable $e) {
+                    // Ignore privacy/block exception on initial page load
+                }
             }
         }
 
-        // Fallback to first available conversation
+        // Fallback to first available non-archived conversation
         if (! $activeConversation && ! empty($conversations)) {
-            $firstConvId = is_array($conversations[0]) ? ($conversations[0]['id'] ?? null) : ($conversations[0]->id ?? null);
+            $firstNonArchived = collect($conversations)->first(fn ($c) => empty($c['is_archived']) && empty($c['is_request']))
+                ?? $conversations[0];
+            $firstConvId = is_array($firstNonArchived) ? ($firstNonArchived['id'] ?? null) : ($firstNonArchived->id ?? null);
             if ($firstConvId) {
-                $activeConversation = Conversation::with(['participants.user.profile', 'lastMessage'])->find($firstConvId);
+                $activeConversation = Conversation::with(['users.profile', 'participants.user.profile', 'lastMessage'])->find($firstConvId);
             }
         }
 
         $messagesData = [];
         $activeConversationData = null;
         $sharedMedia = [];
+        $sharedFiles = [];
+        $sharedLinks = [];
+        $pinnedMessagesData = [];
         $otherUserProfile = null;
 
         if ($activeConversation) {
@@ -1875,18 +1919,25 @@ class SocialWebController extends Controller
                 // Ignore gracefully
             }
 
-            // Load messages
+            // Load messages (chronological order: oldest to newest for chat stream)
             $messagesPaginator = $this->messengerService->getMessages($activeConversation, $viewer, 50);
             $messagesData = collect($messagesPaginator->items())->map(function ($msg) use ($viewer) {
                 return $msg instanceof Message ? $msg->toResponseArray($viewer) : $msg;
-            })->values()->all();
+            })->reverse()->values()->all();
 
             $activeConversationData = $activeConversation->toResponseArray($viewer, 0);
 
-            // Load shared media
+            // Ensure activeConversation is in conversations list
+            if (! collect($conversations)->contains('id', $activeConversationData['id'])) {
+                array_unshift($conversations, $activeConversationData);
+            }
+
+            // Load shared media, files, links, and pins
             try {
-                $mediaItems = $this->messengerService->getConversationMedia($activeConversation, $viewer, 'media', 12);
-                $sharedMedia = $mediaItems;
+                $sharedMedia = $this->messengerService->getConversationMedia($activeConversation, $viewer, 'media', 18);
+                $sharedFiles = $this->messengerService->getConversationMedia($activeConversation, $viewer, 'files', 18);
+                $sharedLinks = $this->messengerService->getConversationMedia($activeConversation, $viewer, 'links', 18);
+                $pinnedMessagesData = $this->messengerService->getPinnedMessages($activeConversation, $viewer);
             } catch (\Throwable $e) {
                 $sharedMedia = [];
             }
@@ -1902,12 +1953,14 @@ class SocialWebController extends Controller
                         'name' => $otherUser->name,
                         'username' => $otherUser->username,
                         'avatar_url' => $otherUser->profile?->avatar_url ? UserProfile::normalizeStorageUrl($otherUser->profile->avatar_url) : $otherUser->avatar_url,
-                        'headline' => $otherUser->profile?->headline ?? 'Member of SocialHub',
-                        'occupation' => $otherUser->profile?->occupation ?? 'Works at Tech Solutions',
-                        'location' => $otherUser->profile?->location ?? 'Lives in Dhaka, Bangladesh',
+                        'cover_image_url' => $otherUser->profile?->cover_url ? UserProfile::normalizeStorageUrl($otherUser->profile->cover_url) : ($otherUser->profile?->cover_image_url ?? $otherUser->cover_image_url),
+                        'bio' => $otherUser->profile?->bio,
+                        'headline' => $otherUser->profile?->headline ?? 'Member of Jugajug',
+                        'occupation' => $otherUser->profile?->occupation ?? 'Member of Jugajug',
+                        'location' => $otherUser->profile?->location ?? 'Dhaka, Bangladesh',
                         'city' => $otherUser->profile?->city,
                         'country' => $otherUser->profile?->country,
-                        'joined' => $otherUser->created_at ? 'Joined '.$otherUser->created_at->format('F Y') : 'Joined March 2021',
+                        'joined' => $otherUser->created_at ? 'Joined '.$otherUser->created_at->format('F Y') : 'Joined Jugajug',
                         'relationship' => $relState,
                         'is_online' => true,
                         'is_blocked' => $this->privacyService->isBlocked($otherUser, $viewer) || $this->privacyService->isBlocked($viewer, $otherUser),
@@ -1916,21 +1969,89 @@ class SocialWebController extends Controller
             }
         }
 
-        // Friends list for New Message compose modal
+        // Friends and platform contacts list for New Message, Create Group & Active Contacts strip
         $friendsPaginator = $this->friendshipService->getFriends($viewer, 50);
-        $friendsData = collect($friendsPaginator->items())->map(function (User $f) {
-            return $this->transformUser($f);
+        $friendItems = collect($friendsPaginator->items());
+        $friendIds = $friendItems->pluck('id')->all();
+
+        $friendsData = $friendItems->map(function (User $f) {
+            $data = $this->transformUser($f);
+            $data['is_friend'] = true;
+            $data['online'] = true;
+
+            return $data;
         })->values()->all();
+
+        // Also include additional platform directory contacts so users can start chats or groups easily
+        $extraUsers = User::where('id', '!=', $viewer->id)
+            ->whereNotIn('id', $friendIds)
+            ->with('profile')
+            ->latest('id')
+            ->take(25)
+            ->get()
+            ->map(function (User $u) {
+                $data = $this->transformUser($u);
+                $data['is_friend'] = false;
+                $data['online'] = false;
+
+                return $data;
+            })->values()->all();
+
+        $allContactsData = array_merge($friendsData, $extraUsers);
+
+        // Saved messages, call history, and sound settings
+        $savedMessagesData = [];
+        try {
+            $savedPaginator = $this->messengerService->getSavedMessages($viewer, 30);
+            $savedMessagesData = $savedPaginator->getCollection()->map(fn ($sm) => [
+                'id' => $sm->id,
+                'message_id' => $sm->message_id,
+                'saved_at' => $sm->saved_at?->toIso8601String(),
+                'message' => $sm->message?->toResponseArray($viewer),
+            ])->filter(fn ($item) => ! empty($item['message']))->values()->all();
+        } catch (\Throwable $e) {
+            $savedMessagesData = [];
+        }
+
+        $callHistoryData = [];
+        try {
+            $callingService = app(CallingService::class);
+            $historyPaginator = $callingService->getCallHistory($viewer, 20);
+            $callHistoryData = $historyPaginator->getCollection()->map(fn ($call) => $call->toResponseArray($viewer))->values()->all();
+        } catch (\Throwable $e) {
+            $callHistoryData = [];
+        }
+
+        $soundSettings = null;
+        try {
+            $soundSettings = app(MessengerSoundService::class)->getUserSoundSettings($viewer);
+        } catch (\Throwable $e) {
+            $soundSettings = null;
+        }
+
+        $apiToken = '';
+        try {
+            $apiToken = $viewer->createToken('jugajug_messenger_spa')->plainTextToken;
+        } catch (\Throwable $e) {
+            $apiToken = '';
+        }
 
         return Inertia::render('Messenger', [
             'conversations' => $conversations,
             'initialActiveConversation' => $activeConversationData,
             'initialMessages' => $messagesData,
             'initialSharedMedia' => $sharedMedia,
+            'initialSharedFiles' => $sharedFiles,
+            'initialSharedLinks' => $sharedLinks,
+            'initialPinnedMessages' => $pinnedMessagesData,
+            'initialSavedMessages' => $savedMessagesData,
+            'initialCallHistory' => $callHistoryData,
+            'soundPreferences' => $soundSettings,
+            'apiToken' => $apiToken,
             'otherUserProfile' => $otherUserProfile,
-            'friends' => $friendsData,
+            'friends' => $allContactsData,
             'pendingRequests' => $sidebarData['pendingRequests'],
-            'contacts' => $sidebarData['contacts'],
+            'contacts' => ! empty($sidebarData['contacts']) ? $sidebarData['contacts'] : array_slice($allContactsData, 0, 10),
             'suggestions' => $sidebarData['suggestions'],
             'upcomingEvents' => $sidebarData['upcomingEvents'],
             'unreadCount' => $sidebarData['unreadCount'],

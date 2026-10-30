@@ -22,17 +22,33 @@
           mobileView !== 'conversations' ? 'hidden md:flex' : 'flex'
         ]"
       >
-        <!-- Header: Title & New Message Button -->
-        <div class="p-4 pb-3 flex items-center justify-between">
-          <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Messages
-          </h2>
-          <div class="flex items-center gap-1">
+        <!-- Header: Brand, Saved, Create Group, Settings, New Message -->
+        <div class="p-4 pb-3 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1877F2] to-violet-500 text-white flex items-center justify-center shadow-sm shrink-0">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.17.16.14.26.35.27.57l.05 1.78c.02.57.6.94 1.12.71l1.98-.87c.17-.08.36-.09.53-.04.91.25 1.88.38 2.91.38 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm6 7.46l-2.94 4.66c-.47.74-1.47.93-2.17.4l-2.34-1.75a.6.6 0 00-.72 0l-3.16 2.4c-.42.32-.97-.18-.69-.63l2.94-4.66c.47-.74 1.47-.93 2.17-.4l2.34 1.75a.6.6 0 00.72 0l3.16-2.4c.42-.32.97.18.69.63z"/></svg>
+            </span>
+            <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight truncate">
+              Messages
+            </h2>
+            <span v-if="totalUnreadCount > 0" class="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">{{ totalUnreadCount }}</span>
+          </div>
+          <div class="flex items-center gap-0.5 shrink-0">
+            <button @click="openSavedMessages" type="button" title="Saved Messages" aria-label="Saved Messages" class="p-2 text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+            </button>
+            <button @click="openCreateGroup" type="button" title="Create Group" aria-label="Create Group" class="p-2 text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </button>
+            <button @click="showSettingsModal = true" type="button" title="Messenger Settings" aria-label="Messenger Settings" class="p-2 text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </button>
             <button
               @click="openNewMessageModal"
               type="button"
               title="New Message"
-              class="p-2 text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+              aria-label="New Message"
+              class="p-2 text-white bg-[#1877F2] hover:bg-[#1666D8] rounded-xl transition-all cursor-pointer shadow-sm"
             >
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -51,91 +67,138 @@
             </span>
             <input
               v-model="conversationSearch"
+              @input="onGlobalSearchInput"
               type="text"
-              placeholder="Search conversations..."
+              placeholder="Search conversations, contacts & messages..."
               class="w-full pl-10 pr-4 py-2 bg-[#F5F7FB] dark:bg-slate-800 text-xs sm:text-sm rounded-full border-none focus:ring-2 focus:ring-[#1877F2] text-slate-900 dark:text-slate-100 placeholder-slate-400 outline-none transition-all"
             />
           </div>
+          <!-- Global Message Search Matches -->
+          <div v-if="conversationSearch.trim().length >= 2 && globalSearchResults.length > 0" class="mt-2 max-h-44 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 divide-y divide-slate-100 dark:divide-slate-700">
+            <p class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Messages matching "{{ conversationSearch.trim() }}"</p>
+            <button
+              v-for="hit in globalSearchResults"
+              :key="'gs-' + hit.id"
+              type="button"
+              @click="openSearchHit(hit)"
+              class="w-full px-3 py-2 text-left hover:bg-white dark:hover:bg-slate-800 flex items-start gap-2"
+            >
+              <span class="text-xs">💬</span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{{ hit.sender?.name || 'Message' }}</span>
+                <span class="block text-[11px] text-slate-500 dark:text-slate-300 truncate">{{ hit.body }}</span>
+              </span>
+            </button>
+          </div>
         </div>
 
-        <!-- Filter Tabs (All, Unread, Groups, Archived) -->
-        <div class="px-4 pb-2.5 flex items-center gap-1.5 border-b border-[#F2F4F7] dark:border-slate-800/80 overflow-x-auto no-scrollbar">
-          <!-- All Tab -->
+        <!-- Online Now / Quick-Start Contacts Strip -->
+        <div v-if="quickContacts.length > 0" class="px-4 pb-3">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active contacts</p>
+            <button type="button" @click="activeFilter = 'contacts'" class="text-[11px] font-semibold text-[#1877F2] hover:underline">See all</button>
+          </div>
+          <div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+            <button
+              v-for="friend in quickContacts"
+              :key="'qc-' + friend.id"
+              type="button"
+              @click="startDirectChat(friend)"
+              :title="'Chat with ' + friend.name"
+              class="flex flex-col items-center gap-1 w-14 shrink-0 group cursor-pointer"
+            >
+              <span class="relative">
+                <img :src="friend.avatar_url || getAvatarFallback({ title: friend.name })" class="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-slate-800 shadow-sm group-hover:ring-2 group-hover:ring-[#1877F2] transition-all" :alt="friend.name" />
+                <span v-if="friend.online" class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></span>
+              </span>
+              <span class="text-[10px] font-medium text-slate-600 dark:text-slate-300 truncate w-full text-center">{{ friend.name.split(' ')[0] }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Tabs (All, Unread, Pinned, Groups, Requests, Archived, Starred, Calls, Contacts) -->
+        <div class="px-4 pb-2.5 flex items-center gap-1.5 border-b border-[#F2F4F7] dark:border-slate-800/80 overflow-x-auto no-scrollbar" role="tablist">
           <button
-            @click="activeFilter = 'all'"
+            v-for="tab in filterTabs"
+            :key="tab.key"
+            @click="activeFilter = tab.key"
             type="button"
+            role="tab"
+            :aria-selected="activeFilter === tab.key"
             :class="[
               'px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0',
-              activeFilter === 'all'
+              activeFilter === tab.key
                 ? 'bg-[#1877F2] text-white shadow-xs'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
             ]"
           >
-            <span>All</span>
+            <span>{{ tab.label }}</span>
             <span
+              v-if="tab.key === 'all' || (tab.key === 'unread' && totalUnreadCount > 0) || (tab.key === 'requests' && pendingRequestsCount > 0)"
               :class="[
                 'text-[10px] px-1.5 py-0.2 rounded-full font-bold',
-                activeFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                activeFilter === tab.key ? 'bg-white/20 text-white' : (tab.key === 'requests' ? 'bg-rose-100 text-rose-600' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300')
               ]"
             >
-              {{ activeConversationsCount }}
+              {{ tab.key === 'all' ? activeConversationsCount : (tab.key === 'unread' ? totalUnreadCount : pendingRequestsCount) }}
             </span>
           </button>
+        </div>
 
-          <!-- Unread Tab -->
-          <button
-            @click="activeFilter = 'unread'"
-            type="button"
-            :class="[
-              'px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shrink-0',
-              activeFilter === 'unread'
-                ? 'bg-[#1877F2] text-white shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-            ]"
-          >
-            <span>Unread</span>
-            <span
-              v-if="totalUnreadCount > 0"
-              :class="[
-                'text-[10px] px-1.5 py-0.2 rounded-full font-bold',
-                activeFilter === 'unread' ? 'bg-white/20 text-white' : 'bg-blue-100 dark:bg-blue-900/60 text-[#1877F2]'
-              ]"
+        <!-- Starred / Calls / Contacts Views -->
+        <div v-if="activeFilter === 'starred' || activeFilter === 'calls' || activeFilter === 'contacts'" class="flex-1 overflow-y-auto divide-y divide-slate-100/60 dark:divide-slate-800/40">
+          <template v-if="activeFilter === 'starred'">
+            <div
+              v-for="item in savedMessages"
+              :key="'sv-' + (item.id || item.message_id)"
+              @click="selectConversation(conversationList.find((c) => c.id === (item.conversation_id || item.message?.conversation_id)) || activeConversation!)"
+              class="p-3.5 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer"
             >
-              {{ totalUnreadCount }}
-            </span>
-          </button>
+              <span class="text-amber-400 text-base">⭐</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{{ item.sender?.name || item.message?.sender?.name || 'Message' }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{{ item.body || item.message?.body || 'Attachment' }}</p>
+              </div>
+            </div>
+            <p v-if="savedMessages.length === 0" class="p-8 text-center text-xs text-slate-400">No starred messages yet. Star a message to find it here.</p>
+          </template>
 
-          <!-- Groups Tab -->
-          <button
-            @click="activeFilter = 'groups'"
-            type="button"
-            :class="[
-              'px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer shrink-0',
-              activeFilter === 'groups'
-                ? 'bg-[#1877F2] text-white shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-            ]"
-          >
-            Groups
-          </button>
+          <template v-else-if="activeFilter === 'calls'">
+            <div v-for="call in callHistory" :key="'call-' + call.id" class="p-3.5 flex items-center gap-3">
+              <span :class="['w-10 h-10 rounded-full flex items-center justify-center text-base', call.outcome === 'missed' ? 'bg-rose-50 text-rose-500' : 'bg-emerald-50 text-emerald-600']">
+                {{ (call.call_type || '').includes('video') ? '📹' : '📞' }}
+              </span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ call.conversation?.title || call.caller?.name || 'Call' }}</p>
+                <p :class="['text-xs', call.outcome === 'missed' ? 'text-rose-500' : 'text-slate-400']">
+                  {{ call.is_mine ? 'Outgoing' : 'Incoming' }} · {{ call.outcome || call.status }} · {{ formatCallTime(call) }}
+                </p>
+              </div>
+              <button type="button" @click="openCallRoom(call)" class="p-2 text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-full" title="Call again">📞</button>
+            </div>
+            <p v-if="callHistory.length === 0" class="p-8 text-center text-xs text-slate-400">No calls yet.</p>
+          </template>
 
-          <!-- Archived Tab -->
-          <button
-            @click="activeFilter = 'archived'"
-            type="button"
-            :class="[
-              'px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer shrink-0',
-              activeFilter === 'archived'
-                ? 'bg-[#1877F2] text-white shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-            ]"
-          >
-            Archived
-          </button>
+          <template v-else>
+            <div
+              v-for="friend in filteredContacts"
+              :key="'ct-' + friend.id"
+              @click="startDirectChat(friend)"
+              class="p-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer"
+            >
+              <img :src="friend.avatar_url || getAvatarFallback({ title: friend.name })" class="w-10 h-10 rounded-full object-cover" :alt="friend.name" />
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ friend.name }}</p>
+                <p class="text-xs text-slate-400 truncate">@{{ friend.username }}</p>
+              </div>
+              <span class="text-xs font-semibold text-[#1877F2]">Message</span>
+            </div>
+            <p v-if="filteredContacts.length === 0" class="p-8 text-center text-xs text-slate-400">No contacts found.</p>
+          </template>
         </div>
 
         <!-- Scrollable Conversation List Items -->
-        <div class="flex-1 overflow-y-auto divide-y divide-slate-100/60 dark:divide-slate-800/40">
+        <div v-else class="flex-1 overflow-y-auto divide-y divide-slate-100/60 dark:divide-slate-800/40">
           <div
             v-for="conv in filteredConversations"
             :key="conv.id"
@@ -188,7 +251,11 @@
                   <span v-if="typingConversations[conv.id]" class="text-[#1877F2] font-medium flex items-center gap-1">
                     <span class="animate-pulse">Typing...</span>
                   </span>
-                  <span v-else>{{ getLastMessageSnippet(conv) }}</span>
+                  <span v-else>
+                    <span v-if="(conv as any).draft" class="text-rose-500 font-semibold">[Draft] </span>
+                    <span v-else-if="(conv as any).is_request && (conv as any).request_status === 'pending'" class="text-amber-600 font-semibold">Message request · </span>
+                    {{ (conv as any).draft || getLastMessageSnippet(conv) }}
+                  </span>
                 </p>
                 <!-- Badges: Mute / Pin / Unread Counter -->
                 <div class="flex items-center gap-1.5 shrink-0">
@@ -221,6 +288,14 @@
               >
                 {{ conv.is_archived ? 'Unarchive' : '📥' }}
               </button>
+              <button
+                @click="markConversationUnread(conv)"
+                type="button"
+                title="Mark as Unread"
+                class="p-1 text-slate-500 hover:text-[#1877F2] hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors text-xs"
+              >
+                ●
+              </button>
             </div>
           </div>
 
@@ -233,13 +308,39 @@
             </div>
             <p class="text-sm font-medium text-slate-600 dark:text-slate-300">No conversations found</p>
             <p class="text-xs text-slate-400 mt-1">Start chatting with your friends</p>
-            <button
-              @click="openNewMessageModal"
-              type="button"
-              class="mt-4 px-4 py-2 bg-[#1877F2] text-white text-xs font-semibold rounded-xl hover:bg-[#1666D8] transition-all cursor-pointer shadow-xs"
-            >
-              Start Conversation
-            </button>
+            <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <button
+                @click="openNewMessageModal"
+                type="button"
+                class="px-4 py-2 bg-[#1877F2] text-white text-xs font-semibold rounded-xl hover:bg-[#1666D8] transition-all cursor-pointer shadow-xs"
+              >
+                Start Conversation
+              </button>
+              <button
+                @click="openCreateGroup"
+                type="button"
+                class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                Create Group
+              </button>
+            </div>
+            <div v-if="activeFilter === 'all' && quickContacts.length > 0" class="mt-6 w-full space-y-1 text-left">
+              <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 text-center">Say hi to</p>
+              <button
+                v-for="friend in quickContacts.slice(0, 5)"
+                :key="'es-' + friend.id"
+                type="button"
+                @click="startDirectChat(friend)"
+                class="w-full p-2.5 flex items-center gap-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <img :src="friend.avatar_url || getAvatarFallback({ title: friend.name })" class="w-9 h-9 rounded-full object-cover" :alt="friend.name" />
+                <span class="flex-1 min-w-0">
+                  <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{{ friend.name }}</span>
+                  <span class="block text-[11px] text-slate-400 truncate">@{{ friend.username }}</span>
+                </span>
+                <span class="text-xs font-semibold text-[#1877F2]">👋 Wave</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -292,7 +393,7 @@
                 <p class="text-xs font-medium flex items-center gap-1">
                   <span v-if="isTyping" class="text-[#1877F2] font-semibold animate-pulse">Typing...</span>
                   <span v-else :class="isOnline(activeConversation) ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'">
-                    {{ isOnline(activeConversation) ? 'Active now' : 'Offline' }}
+                    {{ presenceSubtitle }}
                   </span>
                 </p>
               </div>
@@ -339,6 +440,22 @@
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
+              </button>
+
+              <!-- Multi-Select Toggle Button -->
+              <button
+                @click="toggleSelectionMode"
+                type="button"
+                title="Select Messages"
+                aria-label="Select Messages"
+                :class="[
+                  'hidden sm:inline-flex p-2 sm:p-2.5 rounded-xl transition-all cursor-pointer',
+                  selectionMode
+                    ? 'text-[#1877F2] bg-blue-50 dark:bg-blue-900/30'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-[#1877F2] hover:bg-blue-50 dark:hover:bg-slate-800'
+                ]"
+              >
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </button>
 
               <!-- Details Panel Toggle Button -->
@@ -396,21 +513,34 @@
             </button>
           </div>
 
+          <!-- Message Request Banner -->
+          <div
+            v-if="(activeConversation as any).is_request && (activeConversation as any).request_status === 'pending'"
+            class="px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border-b border-blue-100 dark:border-blue-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+          >
+            <p class="text-slate-700 dark:text-slate-200"><span class="font-bold">{{ activeConversation.title }}</span> wants to send you a message.</p>
+            <div class="flex items-center gap-2">
+              <button type="button" @click="handleMessageRequest('accept')" class="px-3 py-1.5 bg-[#1877F2] text-white font-semibold rounded-lg">Accept</button>
+              <button type="button" @click="handleMessageRequest('delete')" class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold rounded-lg">Decline</button>
+              <button type="button" @click="handleMessageRequest('block')" class="px-3 py-1.5 text-rose-600 font-semibold rounded-lg hover:bg-rose-50">Block</button>
+            </div>
+          </div>
+
           <!-- Pinned Messages Banner (if any) -->
           <div
-            v-if="pinnedMessages.length > 0"
+            v-if="currentPinned"
             class="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200/60 dark:border-amber-800/40 flex items-center justify-between text-xs animate-fade-in"
           >
-            <div class="flex items-center gap-2 min-w-0">
+            <button type="button" class="flex items-center gap-2 min-w-0 text-left" @click="jumpToMessage(currentPinned.id); cyclePinned()">
               <span class="text-amber-500 text-sm shrink-0">📌</span>
               <div class="min-w-0 truncate">
-                <span class="font-bold text-amber-900 dark:text-amber-300">Pinned:</span>
-                <span class="ml-1 text-amber-800 dark:text-amber-200 truncate">{{ pinnedMessages[0].body || 'Attachment' }}</span>
+                <span class="font-bold text-amber-900 dark:text-amber-300">Pinned<span v-if="pinnedMessages.length > 1"> {{ (pinnedIndex % pinnedMessages.length) + 1 }} of {{ pinnedMessages.length }}</span>:</span>
+                <span class="ml-1 text-amber-800 dark:text-amber-200 truncate">{{ currentPinned.body || 'Attachment' }}</span>
               </div>
-            </div>
+            </button>
             <div class="flex items-center gap-2 shrink-0">
               <button
-                @click="unpinMessage(pinnedMessages[0].id)"
+                @click="unpinMessage(currentPinned.id)"
                 type="button"
                 class="text-amber-700 dark:text-amber-400 hover:underline font-semibold text-[11px]"
               >
@@ -419,24 +549,66 @@
             </div>
           </div>
 
+          <!-- Multi-Select Bulk Action Bar -->
+          <div v-if="selectionMode" class="px-4 py-2 bg-slate-900 text-white flex items-center justify-between text-xs">
+            <span class="font-semibold">{{ selectedMessageIds.length }} selected</span>
+            <div class="flex items-center gap-1">
+              <button type="button" @click="forwardSelected" :disabled="!selectedMessageIds.length" class="px-2.5 py-1 rounded-lg hover:bg-white/10 disabled:opacity-40">Forward</button>
+              <button type="button" @click="copySelected" :disabled="!selectedMessageIds.length" class="px-2.5 py-1 rounded-lg hover:bg-white/10 disabled:opacity-40">Copy</button>
+              <button type="button" @click="bulkDeleteSelected" :disabled="!selectedMessageIds.length" class="px-2.5 py-1 rounded-lg text-rose-300 hover:bg-white/10 disabled:opacity-40">Delete</button>
+              <button type="button" @click="toggleSelectionMode" class="px-2.5 py-1 rounded-lg hover:bg-white/10">Cancel</button>
+            </div>
+          </div>
+
           <!-- Message History Stream (Scrollable) -->
           <div
             ref="messagesContainerRef"
-            class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-white dark:bg-slate-900"
+            class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-white dark:bg-slate-900 relative"
+            @dragover.prevent="isDragging = true"
+            @dragleave.prevent="isDragging = false"
+            @drop.prevent="onDropFiles"
           >
-            <!-- Date Separator Badge -->
-            <div class="flex justify-center my-3">
-              <span class="px-3.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-medium rounded-full shadow-2xs">
-                Today
-              </span>
+            <!-- Drag & Drop Overlay -->
+            <div v-if="isDragging" class="absolute inset-2 z-20 rounded-2xl border-2 border-dashed border-[#1877F2] bg-blue-50/80 dark:bg-slate-900/80 flex items-center justify-center text-sm font-semibold text-[#1877F2] pointer-events-none">
+              Drop file to attach
+            </div>
+
+            <!-- Load Older Messages -->
+            <div v-if="currentPage < lastPage" class="flex justify-center">
+              <button type="button" @click="loadOlderMessages" :disabled="isLoadingOlder" class="px-3.5 py-1.5 text-xs font-semibold text-[#1877F2] bg-blue-50 dark:bg-slate-800 rounded-full hover:bg-blue-100 disabled:opacity-50">
+                {{ isLoadingOlder ? 'Loading…' : 'Load older messages' }}
+              </button>
+            </div>
+
+            <!-- Empty conversation hint -->
+            <div v-if="displayedMessages.length === 0" class="flex flex-col items-center justify-center text-center py-12 text-slate-400">
+              <img :src="activeConversation.avatar_url || getAvatarFallback(activeConversation)" class="w-16 h-16 rounded-full object-cover mb-3" :alt="activeConversation.title" />
+              <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ activeConversation.title }}</p>
+              <p class="text-xs mt-1">Say hello to start the conversation 👋</p>
             </div>
 
             <!-- Messages List -->
+            <template v-for="(msg, msgIndex) in displayedMessages" :key="msg.id">
+            <!-- Dynamic Date Separator -->
+            <div v-if="dateLabelFor(msgIndex)" class="flex justify-center my-3">
+              <span class="px-3.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-medium rounded-full shadow-2xs">
+                {{ dateLabelFor(msgIndex) }}
+              </span>
+            </div>
             <div
-              v-for="msg in displayedMessages"
-              :key="msg.id"
-              :class="['flex gap-2.5 max-w-[85%] sm:max-w-[70%]', msg.is_mine ? 'ml-auto justify-end' : 'mr-auto justify-start']"
+              :id="'msg-' + msg.id"
+              @click="selectionMode && toggleMessageSelected(msg.id)"
+              :class="[
+                'flex gap-2.5 max-w-[85%] sm:max-w-[70%] rounded-2xl transition-colors duration-500',
+                msg.is_mine ? 'ml-auto justify-end' : 'mr-auto justify-start',
+                highlightedMessageId === msg.id ? 'bg-amber-100/70 dark:bg-amber-900/30 ring-2 ring-amber-300' : '',
+                selectionMode ? 'cursor-pointer' : ''
+              ]"
             >
+              <!-- Selection Checkbox -->
+              <span v-if="selectionMode" :class="['mt-auto mb-2 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center text-[10px] text-white', selectedMessageIds.includes(msg.id) ? 'bg-[#1877F2] border-[#1877F2]' : 'border-slate-300']">
+                <span v-if="selectedMessageIds.includes(msg.id)">✓</span>
+              </span>
               <!-- Incoming Message Sender Avatar -->
               <img
                 v-if="!msg.is_mine"
@@ -447,10 +619,17 @@
 
               <!-- Bubble & Metadata Container -->
               <div class="flex flex-col group relative" :class="msg.is_mine ? 'items-end' : 'items-start'">
-                <!-- Reply Context Quote if any -->
+                <!-- Group Sender Name -->
+                <span v-if="!msg.is_mine && activeConversation.type === 'group'" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 px-1 mb-0.5">{{ msg.sender?.name }}</span>
+
+                <!-- Forwarded Badge -->
+                <span v-if="msg.metadata?.forwarded || msg.metadata?.forwarded_from || (msg as any).is_forwarded" class="text-[10px] italic text-slate-400 px-1 mb-0.5">↪ Forwarded</span>
+
+                <!-- Reply Context Quote if any (click to jump) -->
                 <div
                   v-if="msg.reply_preview"
-                  class="text-[11px] px-3 py-1 mb-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-l-2 border-[#1877F2] truncate max-w-xs"
+                  @click.stop="jumpToMessage(msg.reply_preview.id || (msg as any).reply_to_id)"
+                  class="text-[11px] px-3 py-1 mb-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-l-2 border-[#1877F2] truncate max-w-xs cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700"
                 >
                   <span class="font-bold">{{ msg.reply_preview.sender_name }}:</span> {{ msg.reply_preview.body }}
                 </div>
@@ -636,7 +815,7 @@
                     <div
                       v-if="msg.reactions && msg.reactions.total > 0"
                       class="absolute -bottom-2.5 right-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-1.5 py-0.5 text-[11px] shadow-sm flex items-center gap-1 cursor-pointer"
-                      @click="reactToMessage(msg.id, '❤️')"
+                      @click.stop="showReactors(msg)"
                     >
                       <span>{{ getTopReactionEmoji(msg) }}</span>
                       <span class="text-slate-700 dark:text-slate-300 font-bold text-[10px]">{{ msg.reactions.total }}</span>
@@ -646,6 +825,8 @@
 
                 <!-- Message Timestamp, Edited Tag & Read Receipt Checkmarks -->
                 <div class="flex items-center gap-1.5 mt-1 px-1">
+                  <span v-if="isMessagePinned(msg.id)" class="text-[10px]" title="Pinned">📌</span>
+                  <span v-if="isMessageSaved(msg)" class="text-[10px]" title="Starred">⭐</span>
                   <span v-if="msg.is_edited" class="text-[10px] text-slate-400 italic">
                     (edited)
                   </span>
@@ -658,13 +839,24 @@
                     <span v-else-if="msg.delivery_status === 'delivered'">✓✓</span>
                     <span v-else>✓</span>
                   </span>
+                  <!-- Mobile: tap to open message actions -->
+                  <button
+                    v-if="!msg.is_deleted && !selectionMode"
+                    type="button"
+                    @click.stop="mobileMessageMenuId = mobileMessageMenuId === msg.id ? null : msg.id"
+                    class="md:hidden ml-1 px-1.5 text-slate-400 hover:text-slate-700 text-xs leading-none"
+                    aria-label="Message actions"
+                  >⋯</button>
                 </div>
 
-                <!-- Quick Action Bar on Hover (React, Reply, Edit, Forward, Pin, Delete) -->
+                <!-- Quick Action Bar on Hover / Tap (React, Reply, Forward, Pin, Star, Copy, Edit, Select, Report, Delete) -->
                 <div
-                  v-if="!msg.is_deleted"
-                  class="hidden group-hover:flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2 py-1 shadow-md absolute -top-4 z-10"
-                  :class="msg.is_mine ? 'right-0' : 'left-0'"
+                  v-if="!msg.is_deleted && !selectionMode"
+                  :class="[
+                    'items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2 py-1 shadow-md absolute -top-4 z-10 flex-wrap max-w-[90vw]',
+                    mobileMessageMenuId === msg.id ? 'flex' : 'hidden md:group-hover:flex',
+                    msg.is_mine ? 'right-0' : 'left-0'
+                  ]"
                 >
                   <!-- Quick Reactions -->
                   <button @click="reactToMessage(msg.id, '❤️')" type="button" title="Love" class="hover:scale-125 transition-transform text-xs p-0.5">❤️</button>
@@ -708,6 +900,23 @@
                     📌
                   </button>
 
+                  <!-- Star / Save -->
+                  <button @click="toggleSaveMessage(msg)" type="button" :title="isMessageSaved(msg) ? 'Unstar' : 'Star'" class="text-slate-500 hover:text-amber-500 p-1 text-xs rounded hover:bg-slate-100 dark:hover:bg-slate-700">
+                    {{ isMessageSaved(msg) ? '★' : '☆' }}
+                  </button>
+
+                  <!-- Copy Text -->
+                  <button v-if="msg.body" @click="copyMessageText(msg)" type="button" title="Copy Text" class="text-slate-500 hover:text-[#1877F2] p-1 text-xs rounded hover:bg-slate-100 dark:hover:bg-slate-700">⧉</button>
+
+                  <!-- Copy Link -->
+                  <button @click="copyMessageLink(msg)" type="button" title="Copy Link" class="text-slate-500 hover:text-[#1877F2] p-1 text-xs rounded hover:bg-slate-100 dark:hover:bg-slate-700">🔗</button>
+
+                  <!-- Select -->
+                  <button @click="selectionMode = true; selectedMessageIds = [msg.id]" type="button" title="Select" class="text-slate-500 hover:text-[#1877F2] p-1 text-xs rounded hover:bg-slate-100 dark:hover:bg-slate-700">☑</button>
+
+                  <!-- Report (others' messages) -->
+                  <button v-if="!msg.is_mine" @click="openReport('message', msg.id)" type="button" title="Report Message" class="text-slate-500 hover:text-rose-500 p-1 text-xs rounded hover:bg-slate-100 dark:hover:bg-slate-700">⚑</button>
+
                   <!-- Edit (if mine) -->
                   <button
                     v-if="msg.is_mine && msg.body"
@@ -735,6 +944,8 @@
                 </div>
               </div>
             </div>
+
+            </template>
 
             <!-- Typing Indicator Dots when active -->
             <div v-if="isTyping" class="flex items-center gap-2 max-w-[70%] mr-auto animate-pulse">
@@ -822,15 +1033,16 @@
 
             <!-- Message Text Input Field -->
             <div class="relative flex-1">
-              <input
+              <textarea
                 v-model="composerMessage"
-                @input="handleComposerTyping"
-                @keyup.enter="handleSendMessage"
-                type="text"
-                placeholder="Type a message..."
+                @input="handleComposerTyping(); saveDraftDebounced()"
+                @keydown="onComposerKeydown"
+                rows="1"
+                :placeholder="(activeConversation as any).is_request && (activeConversation as any).request_status === 'pending' ? 'Accept the request to reply…' : 'Type a message...'"
                 :disabled="isSending"
-                class="w-full pl-4 pr-10 py-2.5 bg-[#F5F7FB] dark:bg-slate-800 text-xs sm:text-sm rounded-full border-none focus:ring-2 focus:ring-[#1877F2] text-slate-900 dark:text-slate-100 placeholder-slate-400 outline-none transition-all disabled:opacity-60"
-              />
+                class="w-full pl-4 pr-10 py-2.5 bg-[#F5F7FB] dark:bg-slate-800 text-xs sm:text-sm rounded-3xl border-none focus:ring-2 focus:ring-[#1877F2] text-slate-900 dark:text-slate-100 placeholder-slate-400 outline-none transition-all disabled:opacity-60 resize-none max-h-32 leading-5 block"
+                style="field-sizing: content;"
+              ></textarea>
 
               <!-- Emoji Toggle Button inside input -->
               <button
@@ -844,20 +1056,43 @@
                 </svg>
               </button>
 
-              <!-- Emoji Popover Tray -->
+              <!-- Emoji / Sticker / GIF Popover Tray -->
               <div
                 v-if="showEmojiPicker"
-                class="absolute bottom-12 right-0 bg-white dark:bg-slate-800 border border-[#E4E7EC] dark:border-slate-700 rounded-2xl shadow-xl p-3 z-30 grid grid-cols-6 gap-2 w-56 animate-fade-in"
+                class="absolute bottom-12 right-0 bg-white dark:bg-slate-800 border border-[#E4E7EC] dark:border-slate-700 rounded-2xl shadow-xl p-3 z-30 w-64 animate-fade-in"
               >
-                <button
-                  v-for="emoji in popularEmojis"
-                  :key="emoji"
-                  type="button"
-                  @click="insertEmoji(emoji)"
-                  class="text-xl p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-transform hover:scale-125"
-                >
-                  {{ emoji }}
-                </button>
+                <div class="flex items-center gap-1 mb-2 border-b border-slate-100 dark:border-slate-700 pb-1.5">
+                  <button v-for="t in [{ k: 'emoji', l: '😊 Emoji' }, { k: 'stickers', l: '✨ Stickers' }, { k: 'gifs', l: 'GIF' }]" :key="t.k" type="button" @click="pickerTab = t.k as any" :class="['flex-1 py-1 rounded-lg text-[11px] font-bold', pickerTab === t.k ? 'bg-[#1877F2] text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700']">{{ t.l }}</button>
+                </div>
+                <div v-if="pickerTab === 'emoji'" class="grid grid-cols-6 gap-1.5">
+                  <button
+                    v-for="emoji in popularEmojis"
+                    :key="emoji"
+                    type="button"
+                    @click="insertEmoji(emoji)"
+                    class="text-xl p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-transform hover:scale-125"
+                  >
+                    {{ emoji }}
+                  </button>
+                </div>
+                <div v-else-if="pickerTab === 'stickers'" class="grid grid-cols-4 gap-2">
+                  <button
+                    v-for="st in popularStickers"
+                    :key="st"
+                    type="button"
+                    @click="sendQuickExpressive(st)"
+                    class="text-3xl p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-transform hover:scale-110"
+                  >{{ st }}</button>
+                </div>
+                <div v-else class="grid grid-cols-2 gap-1.5">
+                  <button
+                    v-for="gif in popularGifs"
+                    :key="gif.label"
+                    type="button"
+                    @click="sendQuickExpressive(gif.text)"
+                    class="p-2 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#1877F2]"
+                  >{{ gif.label }}</button>
+                </div>
               </div>
             </div>
 
@@ -1006,35 +1241,91 @@
           </div>
         </div>
 
-        <!-- Shared Media Grid -->
-        <div class="py-4 border-b border-slate-100 dark:border-slate-800">
+        <!-- Group Management -->
+        <div v-if="activeConversation.type === 'group'" class="py-4 border-b border-slate-100 dark:border-slate-800">
           <div class="flex items-center justify-between mb-3">
-            <h5 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              Shared Media
-            </h5>
+            <h5 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Members ({{ activeMembers.length }})</h5>
+            <div v-if="isGroupAdmin" class="flex items-center gap-2">
+              <button type="button" @click="editGroupInfo" class="text-xs text-slate-500 font-semibold hover:text-[#1877F2]">Edit</button>
+              <button type="button" @click="addMembersSelection = []; showAddMembersModal = true" class="text-xs text-[#1877F2] font-semibold hover:underline">+ Add</button>
+            </div>
+          </div>
+          <p v-if="(activeConversation as any).description" class="text-xs text-slate-500 mb-3">{{ (activeConversation as any).description }}</p>
+          <div class="space-y-1 max-h-64 overflow-y-auto">
+            <div v-for="member in activeMembers" :key="'mem-' + (member.user_id || member.id)" class="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">
+              <img :src="member.avatar_url || getAvatarFallback({ title: member.name })" class="w-8 h-8 rounded-full object-cover" :alt="member.name" />
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{{ member.name }}</p>
+                <p class="text-[10px] text-slate-400 truncate">@{{ member.username }}</p>
+              </div>
+              <span v-if="member.role === 'admin'" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-[#1877F2]">Admin</span>
+              <div v-if="isGroupAdmin && Number(member.user_id || member.id) !== Number(currentUserId)" class="flex items-center gap-1">
+                <button type="button" @click="setMemberRole(member, member.role === 'admin' ? 'member' : 'admin')" class="text-[10px] font-semibold text-slate-500 hover:text-[#1877F2]">
+                  {{ member.role === 'admin' ? 'Demote' : 'Make admin' }}
+                </button>
+                <button type="button" @click="removeMember(member)" class="text-[10px] font-semibold text-rose-500 hover:text-rose-600">Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabbed Shared Content Explorer -->
+        <div class="py-4 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-1 mb-3 overflow-x-auto no-scrollbar">
             <button
-              v-if="sharedMedia.length > 0"
-              @click="showAllMediaModal = true"
+              v-for="tab in [{ k: 'media', l: 'Media' }, { k: 'files', l: 'Files' }, { k: 'links', l: 'Links' }, { k: 'voice', l: 'Voice' }, { k: 'pins', l: 'Pinned' }]"
+              :key="tab.k"
               type="button"
-              class="text-xs text-[#1877F2] font-semibold hover:underline"
-            >
-              See All
-            </button>
+              @click="detailsTab = tab.k as any"
+              :class="['px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0', detailsTab === tab.k ? 'bg-[#1877F2] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300']"
+            >{{ tab.l }}</button>
           </div>
 
-          <div class="grid grid-cols-3 gap-2">
-            <div
-              v-for="(photo, idx) in displayedSharedMedia"
-              :key="idx"
-              @click="openLightbox(photo.url)"
-              class="aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer group relative"
-            >
-              <img
-                :src="photo.url"
-                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
-                alt="Shared Media"
-              />
+          <div v-if="detailsTab === 'media'">
+            <div v-if="sharedMedia.length > 0" class="grid grid-cols-3 gap-2">
+              <div
+                v-for="(photo, idx) in displayedSharedMedia"
+                :key="idx"
+                @click="openLightbox(photo.url)"
+                class="aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer group relative"
+              >
+                <img :src="photo.url" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200" alt="Shared Media" />
+              </div>
             </div>
+            <p v-else class="text-xs text-slate-400 text-center py-4">No shared photos or videos yet.</p>
+          </div>
+
+          <div v-else-if="detailsTab === 'files'" class="space-y-1.5">
+            <button v-for="file in sharedFiles" :key="'f-' + file.id" type="button" @click="downloadAttachment(file)" class="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left">
+              <span class="w-8 h-8 rounded-lg bg-blue-50 text-[#1877F2] flex items-center justify-center">📎</span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{{ file.file_name || file.name || 'Document' }}</span>
+                <span class="block text-[10px] text-slate-400">{{ formatFileSize(file.file_size || file.size) }}</span>
+              </span>
+            </button>
+            <p v-if="sharedFiles.length === 0" class="text-xs text-slate-400 text-center py-4">No shared files yet.</p>
+          </div>
+
+          <div v-else-if="detailsTab === 'links'" class="space-y-1.5">
+            <div v-for="link in sharedLinks" :key="'l-' + link.id" class="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 break-all">
+              {{ link.url || link.body }}
+            </div>
+            <p v-if="sharedLinks.length === 0" class="text-xs text-slate-400 text-center py-4">No shared links yet.</p>
+          </div>
+
+          <div v-else-if="detailsTab === 'voice'" class="space-y-1.5">
+            <button v-for="vm in sharedVoice" :key="'v-' + vm.id" type="button" @click="jumpToMessage(vm.id)" class="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-left text-xs">
+              🎤 <span class="flex-1 text-slate-700 dark:text-slate-200">Voice message · {{ formatAudioDuration(vm.metadata?.duration || 0) }}</span>
+              <span class="text-[10px] text-slate-400">{{ formatTimestamp(vm.sent_at || vm.created_at) }}</span>
+            </button>
+            <p v-if="sharedVoice.length === 0" class="text-xs text-slate-400 text-center py-4">No voice messages yet.</p>
+          </div>
+
+          <div v-else class="space-y-1.5">
+            <button v-for="pin in pinnedMessages" :key="'p-' + pin.id" type="button" @click="jumpToMessage(pin.id)" class="w-full p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-left text-xs text-amber-900 dark:text-amber-200 truncate">
+              📌 {{ pin.body || 'Attachment' }}
+            </button>
+            <p v-if="pinnedMessages.length === 0" class="text-xs text-slate-400 text-center py-4">No pinned messages.</p>
           </div>
         </div>
 
@@ -1088,6 +1379,39 @@
               ></div>
             </button>
           </div>
+
+          <!-- Mute Duration Options -->
+          <div class="pl-8 pb-1">
+            <button type="button" @click="showMuteOptions = !showMuteOptions" class="text-[11px] font-semibold text-[#1877F2] hover:underline">
+              {{ showMuteOptions ? 'Hide mute durations' : 'Mute for…' }}
+            </button>
+            <div v-if="showMuteOptions" class="flex flex-wrap gap-1.5 mt-2">
+              <button v-for="d in ['1h', '8h', '24h', 'forever']" :key="'mute-' + d" type="button" @click="muteConversation(d as any)" class="px-2.5 py-1 text-[11px] font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50">
+                {{ d === 'forever' ? 'Until I unmute' : d }}
+              </button>
+              <button v-if="isMuted" type="button" @click="muteConversation('unmute')" class="px-2.5 py-1 text-[11px] font-semibold rounded-full bg-emerald-50 text-emerald-700">Unmute</button>
+            </div>
+          </div>
+
+          <!-- Mark as Unread -->
+          <button
+            @click="markConversationUnread(activeConversation)"
+            type="button"
+            class="w-full py-2 px-1 flex items-center gap-3 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-[#1877F2] transition-colors cursor-pointer"
+          >
+            <span class="text-sm">●</span>
+            <span>Mark as Unread</span>
+          </button>
+
+          <!-- Report Conversation -->
+          <button
+            @click="openReport('conversation', activeConversation.id)"
+            type="button"
+            class="w-full py-2 px-1 flex items-center gap-3 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-rose-600 transition-colors cursor-pointer"
+          >
+            <span class="text-sm">⚑</span>
+            <span>Report Conversation</span>
+          </button>
 
           <!-- Leave Group (if group conversation) -->
           <button
@@ -1164,26 +1488,30 @@
             "{{ forwardingMessage.body || 'Attachment' }}"
           </p>
 
-          <p class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Select conversation:</p>
+          <input v-model="forwardQuery" type="text" placeholder="Search chats…" class="w-full mb-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 outline-none focus:ring-1 focus:ring-[#1877F2]" />
+          <p class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Select one or more conversations:</p>
           <div class="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
-            <div
-              v-for="conv in conversationList"
+            <label
+              v-for="conv in forwardCandidates"
               :key="conv.id"
-              @click="forwardToConversation(conv.id)"
               class="p-2.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
             >
               <div class="flex items-center gap-2.5 min-w-0">
                 <img :src="conv.avatar_url || getAvatarFallback(conv)" class="w-8 h-8 rounded-full object-cover" />
                 <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{{ conv.title }}</span>
               </div>
-              <button
-                type="button"
-                class="px-3 py-1 bg-[#1877F2] text-white text-xs font-semibold rounded-lg hover:bg-[#1666D8]"
-              >
-                Send
-              </button>
-            </div>
+              <input type="checkbox" :value="conv.id" v-model="forwardTargets" class="w-4 h-4 accent-[#1877F2]" />
+            </label>
+            <p v-if="forwardCandidates.length === 0" class="p-4 text-center text-xs text-slate-400">No conversations to forward to.</p>
           </div>
+          <button
+            type="button"
+            @click="forwardToConversation()"
+            :disabled="forwardTargets.length === 0"
+            class="mt-3 w-full py-2.5 bg-[#1877F2] text-white text-xs font-semibold rounded-xl hover:bg-[#1666D8] disabled:opacity-40"
+          >
+            Send to {{ forwardTargets.length || '' }} chat{{ forwardTargets.length === 1 ? '' : 's' }}
+          </button>
         </div>
       </div>
     </div>
@@ -1307,6 +1635,152 @@
         </button>
       </div>
     </div>
+
+    <!-- ========================================== -->
+    <!-- CREATE GROUP MODAL                         -->
+    <!-- ========================================== -->
+    <div v-if="showCreateGroupModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs" @click="showCreateGroupModal = false">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-5 space-y-3" @click.stop>
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">Create Group Chat</h3>
+          <button type="button" @click="showCreateGroupModal = false" class="text-slate-400 hover:text-slate-600">✕</button>
+        </div>
+        <input v-model="groupForm.title" type="text" placeholder="Group name" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:ring-1 focus:ring-[#1877F2]" />
+        <input v-model="groupForm.description" type="text" placeholder="Group description (optional)" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:ring-1 focus:ring-[#1877F2]" />
+        <input v-model="groupForm.query" type="text" placeholder="Search friends to add…" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:ring-1 focus:ring-[#1877F2]" />
+        <div class="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+          <label v-for="friend in groupCandidates" :key="'gm-' + friend.id" class="p-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl cursor-pointer">
+            <span class="flex items-center gap-2.5 min-w-0">
+              <img :src="friend.avatar_url || getAvatarFallback({ title: friend.name })" class="w-8 h-8 rounded-full object-cover" />
+              <span class="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{{ friend.name }}</span>
+            </span>
+            <input type="checkbox" :checked="groupForm.memberIds.includes(friend.id)" @change="toggleGroupMember(friend.id)" class="w-4 h-4 accent-[#1877F2]" />
+          </label>
+        </div>
+        <button type="button" @click="submitCreateGroup" class="w-full py-2.5 bg-[#1877F2] text-white text-xs font-semibold rounded-xl hover:bg-[#1666D8]">Create Group ({{ groupForm.memberIds.length }})</button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ADD GROUP MEMBERS MODAL                    -->
+    <!-- ========================================== -->
+    <div v-if="showAddMembersModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs" @click="showAddMembersModal = false">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-5 space-y-3" @click.stop>
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">Add Members</h3>
+          <button type="button" @click="showAddMembersModal = false" class="text-slate-400 hover:text-slate-600">✕</button>
+        </div>
+        <div class="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+          <label v-for="friend in friends" :key="'am-' + friend.id" class="p-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl cursor-pointer">
+            <span class="flex items-center gap-2.5 min-w-0">
+              <img :src="friend.avatar_url || getAvatarFallback({ title: friend.name })" class="w-8 h-8 rounded-full object-cover" />
+              <span class="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{{ friend.name }}</span>
+            </span>
+            <input type="checkbox" :value="friend.id" v-model="addMembersSelection" class="w-4 h-4 accent-[#1877F2]" />
+          </label>
+        </div>
+        <button type="button" @click="submitAddMembers" :disabled="addMembersSelection.length === 0" class="w-full py-2.5 bg-[#1877F2] text-white text-xs font-semibold rounded-xl hover:bg-[#1666D8] disabled:opacity-40">Add Selected</button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- REPORT MODAL                               -->
+    <!-- ========================================== -->
+    <div v-if="reportingTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs" @click="reportingTarget = null">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-5 space-y-3" @click.stop>
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">Report {{ reportingTarget.kind }}</h3>
+        <select v-model="reportForm.reason" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+          <option value="spam">Spam</option>
+          <option value="harassment">Harassment</option>
+          <option value="abuse">Abuse</option>
+          <option value="fraud">Scam or fraud</option>
+          <option value="other">Other</option>
+        </select>
+        <textarea v-model="reportForm.details" rows="3" placeholder="Additional details (optional)" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></textarea>
+        <div class="flex gap-2">
+          <button type="button" @click="reportingTarget = null" class="flex-1 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800">Cancel</button>
+          <button type="button" @click="submitReport" class="flex-1 py-2 text-xs font-semibold rounded-xl bg-rose-600 text-white">Submit Report</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- REACTORS MODAL                             -->
+    <!-- ========================================== -->
+    <div v-if="reactorsList" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs" @click="reactorsList = null">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-xs w-full p-4 space-y-2" @click.stop>
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-bold text-slate-900 dark:text-white">Reactions</h4>
+          <button type="button" @click="reactorsList = null" class="text-slate-400">✕</button>
+        </div>
+        <div class="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+          <div v-for="(r, idx) in reactorsList" :key="idx" class="py-2 flex items-center justify-between text-xs">
+            <span class="font-medium text-slate-700 dark:text-slate-200">{{ r.user?.name || r.name || 'User' }}</span>
+            <span class="text-base">{{ r.reaction || r.emoji }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MESSENGER SETTINGS MODAL                   -->
+    <!-- ========================================== -->
+    <div v-if="showSettingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs" @click="showSettingsModal = false">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-sm w-full p-5 space-y-4" @click.stop>
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">Messenger Preferences</h3>
+          <button type="button" @click="showSettingsModal = false" class="text-slate-400">✕</button>
+        </div>
+        <label class="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-200">
+          <span>Press Enter to send message</span>
+          <input type="checkbox" v-model="sendOnEnter" class="w-4 h-4 accent-[#1877F2]" />
+        </label>
+        <label class="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-200">
+          <span>Show when you're active</span>
+          <input type="checkbox" v-model="activeStatusVisible" class="w-4 h-4 accent-[#1877F2]" />
+        </label>
+        <label class="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-200">
+          <span>Notification & call sounds</span>
+          <input type="checkbox" v-model="soundEnabled" class="w-4 h-4 accent-[#1877F2]" />
+        </label>
+        <button type="button" @click="savePreferences" class="w-full py-2.5 bg-[#1877F2] text-white text-xs font-semibold rounded-xl">Save Preferences</button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- OUTGOING / INCOMING CALL OVERLAY           -->
+    <!-- ========================================== -->
+    <div v-if="activeCall || incomingCall" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+      <div class="bg-slate-900 text-white rounded-3xl p-6 max-w-xs w-full text-center space-y-4 shadow-2xl border border-white/10">
+        <template v-if="incomingCall">
+          <img :src="incomingCall.caller?.avatar_url || getAvatarFallback({ title: incomingCall.caller?.name || 'Caller' })" class="w-20 h-20 rounded-full mx-auto object-cover ring-4 ring-emerald-500/40 animate-pulse" />
+          <div>
+            <p class="text-base font-bold">{{ incomingCall.caller?.name || 'Incoming call' }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">{{ (incomingCall.call_type || '').includes('video') ? 'Incoming video call…' : 'Incoming audio call…' }}</p>
+          </div>
+          <div class="flex items-center justify-center gap-4 pt-2">
+            <button type="button" @click="respondIncomingCall('reject')" class="px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-xs font-bold">Decline</button>
+            <button type="button" @click="respondIncomingCall('accept')" class="px-5 py-2.5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-xs font-bold">Accept</button>
+          </div>
+        </template>
+        <template v-else-if="activeCall">
+          <img :src="activeCall.conversation?.avatar_url || getAvatarFallback(activeCall.conversation || { title: 'Call' })" class="w-20 h-20 rounded-full mx-auto object-cover ring-4 ring-[#1877F2]/40 animate-pulse" />
+          <div>
+            <p class="text-base font-bold">{{ activeCall.conversation?.title }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">{{ callStatus === 'calling' ? 'Connecting…' : 'Ringing…' }}</p>
+          </div>
+          <div class="flex items-center justify-center gap-3 pt-2">
+            <button type="button" @click="openCallRoom(activeCall)" class="px-4 py-2 rounded-full bg-[#1877F2] text-xs font-bold">Open Call Room</button>
+            <button type="button" @click="endOutgoingCall" class="px-4 py-2 rounded-full bg-rose-600 text-xs font-bold">Cancel</button>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div v-if="toastMessage" class="fixed bottom-20 md:bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold shadow-xl">
+      {{ toastMessage }}
+    </div>
   </AppLayout>
 </template>
 
@@ -1377,6 +1851,13 @@ const props = withDefaults(
     initialActiveConversation?: ConversationItem | null;
     initialMessages?: MessageItem[];
     initialSharedMedia?: any[];
+    initialSharedFiles?: any[];
+    initialSharedLinks?: any[];
+    initialPinnedMessages?: any[];
+    initialSavedMessages?: any[];
+    initialCallHistory?: any[];
+    soundPreferences?: Record<string, any> | null;
+    apiToken?: string | null;
     otherUserProfile?: any | null;
     friends?: User[];
     unreadCount?: number;
@@ -1391,6 +1872,13 @@ const props = withDefaults(
     initialActiveConversation: null,
     initialMessages: () => [],
     initialSharedMedia: () => [],
+    initialSharedFiles: () => [],
+    initialSharedLinks: () => [],
+    initialPinnedMessages: () => [],
+    initialSavedMessages: () => [],
+    initialCallHistory: () => [],
+    soundPreferences: null,
+    apiToken: null,
     otherUserProfile: null,
     friends: () => [],
     unreadCount: 0,
@@ -1411,7 +1899,76 @@ const activeConversation = ref<ConversationItem | null>(props.initialActiveConve
 const messages = ref<MessageItem[]>([...props.initialMessages]);
 const sharedMedia = ref<any[]>([...props.initialSharedMedia]);
 const otherUserProfile = ref<any>(props.otherUserProfile);
-const pinnedMessages = ref<MessageItem[]>([]);
+const pinnedMessages = ref<MessageItem[]>([...(props.initialPinnedMessages as MessageItem[])]);
+const sharedFiles = ref<any[]>([...props.initialSharedFiles]);
+const sharedLinks = ref<any[]>([...props.initialSharedLinks]);
+const sharedVoice = ref<any[]>([]);
+const savedMessages = ref<any[]>([...props.initialSavedMessages]);
+const callHistory = ref<any[]>([...props.initialCallHistory]);
+const detailsTab = ref<'media' | 'files' | 'links' | 'voice' | 'pins'>('media');
+const pinnedIndex = ref(0);
+const currentPage = ref(1);
+const lastPage = ref(1);
+const isLoadingOlder = ref(false);
+const highlightedMessageId = ref<number | null>(null);
+
+// Multi-select
+const selectionMode = ref(false);
+const selectedMessageIds = ref<number[]>([]);
+
+// Modals (Phase 8)
+const showCreateGroupModal = ref(false);
+const groupForm = ref({ title: '', description: '', memberIds: [] as number[], query: '' });
+const showAddMembersModal = ref(false);
+const addMembersSelection = ref<number[]>([]);
+const showSettingsModal = ref(false);
+const forwardTargets = ref<number[]>([]);
+const forwardQuery = ref('');
+const reportingTarget = ref<{ kind: 'message' | 'conversation'; id: number } | null>(null);
+const reportForm = ref({ reason: 'spam', details: '' });
+const reactorsList = ref<any[] | null>(null);
+const mobileMessageMenuId = ref<number | null>(null);
+const showMuteOptions = ref(false);
+const toastMessage = ref('');
+let toastTimer: any = null;
+
+// Calling (Phase 8)
+const activeCall = ref<any | null>(null);
+const incomingCall = ref<any | null>(null);
+const callStatus = ref<'idle' | 'calling' | 'ringing' | 'connected'>('idle');
+
+// Preferences
+const sendOnEnter = ref(localStorage.getItem('jj_send_on_enter') !== '0');
+const activeStatusVisible = ref(localStorage.getItem('jj_active_status') !== '0');
+const soundEnabled = ref(props.soundPreferences?.sounds_enabled ?? props.soundPreferences?.enabled ?? true);
+
+/**
+ * Resilient API fetch helper: CSRF + session cookies + Bearer token fallback.
+ */
+const apiFetch = (url: string, options: RequestInit & { json?: any } = {}): Promise<Response> => {
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+    ...((options.headers as Record<string, string>) || {}),
+  };
+  const token = props.apiToken || localStorage.getItem('bondhoo_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  let body = options.body;
+  if (options.json !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify(options.json);
+  }
+  return fetch(url, { ...options, headers, body, credentials: 'same-origin' });
+};
+
+const showToast = (msg: string) => {
+  toastMessage.value = msg;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (toastMessage.value = ''), 2600);
+};
 
 // Responsive views
 const mobileView = ref<'conversations' | 'chat' | 'details'>(
@@ -1420,7 +1977,19 @@ const mobileView = ref<'conversations' | 'chat' | 'details'>(
 const showDetailsPanel = ref(true);
 
 // Filters & Search
-const activeFilter = ref<'all' | 'unread' | 'groups' | 'archived'>('all');
+type MessengerFilter = 'all' | 'unread' | 'pinned' | 'groups' | 'requests' | 'archived' | 'starred' | 'calls' | 'contacts';
+const activeFilter = ref<MessengerFilter>('all');
+const filterTabs: { key: MessengerFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'unread', label: 'Unread' },
+  { key: 'pinned', label: 'Pinned' },
+  { key: 'groups', label: 'Groups' },
+  { key: 'requests', label: 'Requests' },
+  { key: 'archived', label: 'Archived' },
+  { key: 'starred', label: 'Starred' },
+  { key: 'calls', label: 'Calls' },
+  { key: 'contacts', label: 'Contacts' },
+];
 const conversationSearch = ref('');
 const isSearchingInChat = ref(false);
 const chatSearchQuery = ref('');
@@ -1459,6 +2028,51 @@ const audioProgress = ref<Record<number, number>>({});
 let activeAudioElement: HTMLAudioElement | null = null;
 
 const popularEmojis = ['😊', '😂', '❤️', '👍', '🔥', '🎉', '👏', '😍', '😮', '😢', '🙏', '🚀', '💯', '🥳', '✨', '🙌', '🤝', '⭐'];
+const pickerTab = ref<'emoji' | 'stickers' | 'gifs'>('emoji');
+const popularStickers = ['🥳🎉', '❤️🔥', '🙌✨', '😂🤣', '👍💯', '🚀🌙', '🤝💼', '☕💻'];
+const popularGifs = [
+  { label: '🎉 Celebrate', text: '🎉🥳 Woohoo!' },
+  { label: '👏 Applause', text: '👏👏 Bravo!' },
+  { label: '🔥 High Five', text: '🙌🔥 High five!' },
+  { label: '💯 Agreed', text: '💯 Spot on!' },
+];
+const globalSearchResults = ref<any[]>([]);
+let globalSearchTimer: any = null;
+
+const onGlobalSearchInput = () => {
+  const q = conversationSearch.value.trim();
+  if (globalSearchTimer) clearTimeout(globalSearchTimer);
+  if (q.length < 2) {
+    globalSearchResults.value = [];
+    return;
+  }
+  globalSearchTimer = setTimeout(async () => {
+    try {
+      const r = await apiFetch(`/api/v1/messenger/search?q=${encodeURIComponent(q)}`);
+      if (r.ok) {
+        const d = await r.json();
+        globalSearchResults.value = d.data?.messages || d.data || [];
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, 280);
+};
+
+const openSearchHit = async (hit: any) => {
+  const convId = Number(hit.conversation_id);
+  const existing = conversationList.value.find((c) => c.id === convId);
+  if (existing) {
+    await selectConversation(existing);
+    setTimeout(() => jumpToMessage(hit.id), 250);
+  }
+};
+
+const sendQuickExpressive = (content: string) => {
+  showEmojiPicker.value = false;
+  composerMessage.value = content;
+  handleSendMessage();
+};
 
 // Default Photos fallback
 const defaultSharedPhotos = [
@@ -1496,14 +2110,18 @@ const filteredConversations = computed(() => {
   let list = [...conversationList.value];
 
   if (activeFilter.value === 'unread') {
-    list = list.filter((c) => (c.unread_count || 0) > 0);
+    list = list.filter((c) => (c.unread_count || 0) > 0 && !(c as any).is_request);
+  } else if (activeFilter.value === 'pinned') {
+    list = list.filter((c) => !!c.is_pinned && !c.is_archived);
   } else if (activeFilter.value === 'groups') {
     list = list.filter((c) => c.type === 'group');
+  } else if (activeFilter.value === 'requests') {
+    list = list.filter((c) => !!(c as any).is_request && (c as any).request_status !== 'accepted');
   } else if (activeFilter.value === 'archived') {
     list = list.filter((c) => !!c.is_archived);
   } else {
-    // 'all' excludes archived
-    list = list.filter((c) => !c.is_archived);
+    // 'all' excludes archived and pending message requests
+    list = list.filter((c) => !c.is_archived && !((c as any).is_request && (c as any).request_status === 'pending'));
   }
 
   if (conversationSearch.value.trim()) {
@@ -1538,6 +2156,82 @@ const displayedMessages = computed(() => {
 });
 
 // Eligible friends for New Message
+const pendingRequestsCount = computed(() =>
+  conversationList.value.filter((c: any) => c.is_request && c.request_status === 'pending').length
+);
+
+// Online / quick-start contacts strip (works even when no conversations exist)
+const quickContacts = computed(() => {
+  const online: Set<number> | undefined = (window as any).jugajugOnlineUsers;
+  return [...props.friends]
+    .map((f: any) => ({ ...f, online: online ? online.has(Number(f.id)) : !!f.is_online }))
+    .sort((a: any, b: any) => Number(b.online) - Number(a.online))
+    .slice(0, 20);
+});
+
+const filteredContacts = computed(() => {
+  const q = conversationSearch.value.toLowerCase().trim();
+  return props.friends.filter(
+    (f) => !q || f.name.toLowerCase().includes(q) || (f.username || '').toLowerCase().includes(q)
+  );
+});
+
+const groupCandidates = computed(() => {
+  const q = groupForm.value.query.toLowerCase().trim();
+  return props.friends.filter(
+    (f) => !q || f.name.toLowerCase().includes(q) || (f.username || '').toLowerCase().includes(q)
+  );
+});
+
+const forwardCandidates = computed(() => {
+  const q = forwardQuery.value.toLowerCase().trim();
+  return conversationList.value.filter((c) => !q || c.title.toLowerCase().includes(q));
+});
+
+const activeMembers = computed<any[]>(() => (activeConversation.value as any)?.members || []);
+const isGroupAdmin = computed(() => {
+  const conv: any = activeConversation.value;
+  if (!conv || conv.type !== 'group') return false;
+  if (Number(conv.creator_id) === Number(currentUserId.value)) return true;
+  return activeMembers.value.some((m) => Number(m.user_id || m.id) === Number(currentUserId.value) && m.role === 'admin');
+});
+
+const currentPinned = computed<MessageItem | null>(() => {
+  if (pinnedMessages.value.length === 0) return null;
+  return pinnedMessages.value[pinnedIndex.value % pinnedMessages.value.length];
+});
+
+/**
+ * Returns a human-friendly date label when a message starts a new day.
+ */
+const dateLabelFor = (index: number): string | null => {
+  const list = displayedMessages.value;
+  const cur = list[index];
+  if (!cur) return null;
+  const curDate = new Date(cur.sent_at || cur.created_at || Date.now());
+  if (index > 0) {
+    const prev = list[index - 1];
+    const prevDate = new Date(prev.sent_at || prev.created_at || Date.now());
+    if (prevDate.toDateString() === curDate.toDateString()) return null;
+  }
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (curDate.toDateString() === today.toDateString()) return 'Today';
+  if (curDate.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return curDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const presenceSubtitle = computed(() => {
+  const conv: any = activeConversation.value;
+  if (!conv) return '';
+  if (conv.type === 'group') return `${conv.participants_count || activeMembers.value.length || 0} members`;
+  if (conv.type === 'saved') return 'Your personal space';
+  if (isOnline(conv)) return 'Active now';
+  const lastSeen = conv.other_user?.last_seen_at;
+  return lastSeen ? `Last seen ${formatTimestamp(lastSeen)}` : 'Offline';
+});
+
 const eligibleFriends = computed(() => {
   if (!friendFilterQuery.value.trim()) {
     return props.friends;
@@ -1559,10 +2253,11 @@ const getAvatarFallback = (item: { title?: string; name?: string }): string => {
 };
 
 const isOnline = (conv: ConversationItem): boolean => {
+  if (conv.type !== 'direct') return false;
   if (conv.other_user?.id && (window as any).jugajugOnlineUsers) {
     return (window as any).jugajugOnlineUsers.has(Number(conv.other_user.id));
   }
-  return conv.type === 'direct';
+  return !!(conv.other_user as any)?.is_online;
 };
 
 const formatTimestamp = (dateStr?: string): string => {
@@ -1703,6 +2398,11 @@ const getProfileUrl = (): string => {
 const selectConversation = async (conv: ConversationItem) => {
   activeConversation.value = conv;
   mobileView.value = 'chat';
+  selectionMode.value = false;
+  selectedMessageIds.value = [];
+  isSearchingInChat.value = false;
+  chatSearchQuery.value = '';
+  composerMessage.value = localStorage.getItem(`jj_draft_${conv.id}`) || (conv as any).draft || '';
   conv.unread_count = 0;
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
@@ -1714,7 +2414,7 @@ const selectConversation = async (conv: ConversationItem) => {
 
   try {
     // Mark as read on backend
-    fetch(`/api/v1/conversations/${conv.id}/read`, {
+    apiFetch(`/api/v1/conversations/${conv.id}/read`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -1724,27 +2424,31 @@ const selectConversation = async (conv: ConversationItem) => {
     }).catch(() => {});
 
     // Fetch conversation messages
-    const res = await fetch(`/api/v1/conversations/${conv.id}/messages?per_page=50`, {
+    const res = await apiFetch(`/api/v1/conversations/${conv.id}/messages?per_page=50`, {
       headers: { 'Accept': 'application/json' },
     });
     if (res.ok) {
       const data = await res.json();
       const loadedMsgs = data.data || [];
       messages.value = Array.isArray(loadedMsgs) ? [...loadedMsgs].reverse() : [];
+      currentPage.value = data.meta?.current_page || 1;
+      lastPage.value = data.meta?.last_page || 1;
       scrollToBottom();
     }
 
     // Fetch pinned messages
     fetchPinnedMessages(conv.id);
+    pinnedIndex.value = 0;
 
     // Fetch conversation media
-    const mediaRes = await fetch(`/api/v1/conversations/${conv.id}/media`, {
+    const mediaRes = await apiFetch(`/api/v1/conversations/${conv.id}/media`, {
       headers: { 'Accept': 'application/json' },
     });
     if (mediaRes.ok) {
       const mediaData = await mediaRes.json();
       sharedMedia.value = mediaData.data || [];
     }
+    loadSharedContent(conv.id);
 
     // Update other user profile
     if (conv.other_user) {
@@ -1761,10 +2465,30 @@ const selectConversation = async (conv: ConversationItem) => {
   }
 };
 
+// Shared files / links / voice for the details explorer
+const loadSharedContent = async (convId: number) => {
+  const load = async (type: string): Promise<any[]> => {
+    try {
+      const r = await apiFetch(`/api/v1/conversations/${convId}/media?type=${type}`);
+      if (r.ok) {
+        const d = await r.json();
+        return d.data || [];
+      }
+    } catch (e) {
+      // ignore
+    }
+    return [];
+  };
+  const [files, links, voice] = await Promise.all([load('files'), load('links'), load('voice')]);
+  sharedFiles.value = files;
+  sharedLinks.value = links;
+  sharedVoice.value = voice;
+};
+
 // Pinned messages management
 const fetchPinnedMessages = async (convId: number) => {
   try {
-    const res = await fetch(`/api/v1/conversations/${convId}/pins`, {
+    const res = await apiFetch(`/api/v1/conversations/${convId}/pins`, {
       headers: { 'Accept': 'application/json' },
     });
     if (res.ok) {
@@ -1787,7 +2511,7 @@ const togglePinMessage = async (msg: MessageItem) => {
 
   try {
     if (isPinned) {
-      await fetch(`/api/v1/conversations/${convId}/messages/${msg.id}/pin`, {
+      await apiFetch(`/api/v1/conversations/${convId}/messages/${msg.id}/pin`, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',
@@ -1796,7 +2520,7 @@ const togglePinMessage = async (msg: MessageItem) => {
       });
       pinnedMessages.value = pinnedMessages.value.filter((p) => p.id !== msg.id);
     } else {
-      await fetch(`/api/v1/conversations/${convId}/messages/${msg.id}/pin`, {
+      await apiFetch(`/api/v1/conversations/${convId}/messages/${msg.id}/pin`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -1836,7 +2560,7 @@ const handleSendMessage = async () => {
       formData.append('file', file);
       formData.append('collection', 'message');
 
-      const uploadRes = await fetch('/api/v1/messages/attachments', {
+      const uploadRes = await apiFetch('/api/v1/messages/attachments', {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -1865,7 +2589,7 @@ const handleSendMessage = async () => {
       payload.reply_to_id = replyingTo.value.id;
     }
 
-    const res = await fetch(`/api/v1/conversations/${convId}/messages`, {
+    const res = await apiFetch(`/api/v1/conversations/${convId}/messages`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -1899,8 +2623,12 @@ const handleSendMessage = async () => {
       }
 
       composerMessage.value = '';
+      localStorage.removeItem(`jj_draft_${convId}`);
       clearComposerDrafts();
       scrollToBottom();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.message || 'Message failed to send. Tap send to retry.');
     }
   } catch (err) {
     console.error('Failed to send message:', err);
@@ -1919,7 +2647,7 @@ const handleComposerTyping = () => {
     typingDebounceTimer = null;
   }, 2000);
 
-  fetch('/api/v1/presence/typing', {
+  apiFetch('/api/v1/presence/typing', {
     method: 'POST',
     headers: {
       'Accept': 'application/json',
@@ -1949,7 +2677,7 @@ const saveEditedMessage = async (msgId: number) => {
   if (!newBody) return;
 
   try {
-    const res = await fetch(`/api/v1/messages/${msgId}`, {
+    const res = await apiFetch(`/api/v1/messages/${msgId}`, {
       method: 'PATCH',
       headers: {
         'Accept': 'application/json',
@@ -1988,7 +2716,7 @@ const executeDeleteMessage = async (forEveryone: boolean) => {
       ? `/api/v1/messages/${msgId}/delete-for-everyone`
       : `/api/v1/messages/${msgId}/delete-for-me`;
 
-    const res = await fetch(endpoint, {
+    const res = await apiFetch(endpoint, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2018,15 +2746,19 @@ const executeDeleteMessage = async (forEveryone: boolean) => {
 
 // Message Forwarding
 const openForwardModal = (msg: MessageItem) => {
+  forwardTargets.value = [];
+  forwardQuery.value = '';
   forwardingMessage.value = msg;
 };
 
-const forwardToConversation = async (targetConvId: number) => {
+const forwardToConversation = async (targetConvId?: number) => {
   if (!forwardingMessage.value) return;
   const msgId = forwardingMessage.value.id;
+  const targets = targetConvId ? [targetConvId] : [...forwardTargets.value];
+  if (targets.length === 0) return;
 
   try {
-    const res = await fetch(`/api/v1/messages/${msgId}/forward`, {
+    const res = await apiFetch(`/api/v1/messages/${msgId}/forward`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2034,13 +2766,15 @@ const forwardToConversation = async (targetConvId: number) => {
         'X-CSRF-TOKEN': getCsrfToken(),
       },
       body: JSON.stringify({
-        target_conversation_ids: [targetConvId],
+        target_conversation_ids: targets,
       }),
     });
 
     if (res.ok) {
       forwardingMessage.value = null;
-      alert('Message forwarded successfully.');
+      forwardTargets.value = [];
+      selectionMode.value = false;
+      showToast(`Forwarded to ${targets.length} chat${targets.length > 1 ? 's' : ''}`);
     }
   } catch (err) {
     console.error('Failed to forward message:', err);
@@ -2050,7 +2784,7 @@ const forwardToConversation = async (targetConvId: number) => {
 // Reactions
 const reactToMessage = async (messageId: number, reaction: string) => {
   try {
-    const res = await fetch(`/api/v1/messages/${messageId}/reactions`, {
+    const res = await apiFetch(`/api/v1/messages/${messageId}/reactions`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2123,7 +2857,7 @@ const stopAndSendVoiceRecording = async () => {
     formData.append('duration', duration.toString());
 
     try {
-      const res = await fetch(`/api/v1/conversations/${convId}/voice`, {
+      const res = await apiFetch(`/api/v1/conversations/${convId}/voice`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -2185,17 +2919,411 @@ const toggleAudioPlay = (msg: MessageItem) => {
 };
 
 // Calling Integration (Audio / Video)
-const startCall = (type: 'audio' | 'video') => {
+// Creates the call record first (POST /api/v1/calls) so the recipient receives
+// the `call.incoming` broadcast and rings, then opens the WebRTC call room.
+const startCall = async (type: 'audio' | 'video') => {
   if (!activeConversation.value) return;
-  const callUrl = `/call/${activeConversation.value.id}?type=${type}`;
-  window.open(callUrl, '_blank', 'width=1024,height=720,menubar=no,toolbar=no');
+  const conv = activeConversation.value;
+  const callType = conv.type === 'group' ? (`group_${type}` as const) : type;
+  callStatus.value = 'calling';
+  activeCall.value = { type, conversation: conv, id: null };
+  try {
+    const res = await apiFetch('/api/v1/calls', {
+      method: 'POST',
+      json: { conversation_id: conv.id, call_type: callType },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      callStatus.value = 'idle';
+      activeCall.value = null;
+      showToast(data.message || 'Unable to start the call.');
+      return;
+    }
+    activeCall.value = { ...data.data, type, conversation: conv };
+    callStatus.value = 'ringing';
+    callHistory.value.unshift(data.data);
+  } catch (err) {
+    callStatus.value = 'idle';
+    activeCall.value = null;
+    showToast('Network error while starting the call.');
+  }
 };
+
+const openCallRoom = (call: any) => {
+  const convId = call?.conversation_id || call?.conversation?.id || activeConversation.value?.id;
+  if (!convId) return;
+  const type = (call?.call_type || call?.type || 'audio').replace('group_', '');
+  const params = new URLSearchParams({ type });
+  if (call?.id) params.set('call_id', String(call.id));
+  window.open(`/call/${convId}?${params.toString()}`, '_blank', 'width=1024,height=720,menubar=no,toolbar=no');
+};
+
+const endOutgoingCall = async () => {
+  const call = activeCall.value;
+  activeCall.value = null;
+  callStatus.value = 'idle';
+  if (call?.id) {
+    apiFetch(`/api/v1/calls/${call.id}/leave`, { method: 'POST' }).catch(() => {});
+  }
+};
+
+const respondIncomingCall = async (action: 'accept' | 'reject') => {
+  const call = incomingCall.value;
+  incomingCall.value = null;
+  if (!call?.id) return;
+  try {
+    await apiFetch(`/api/v1/calls/${call.id}/respond`, { method: 'POST', json: { action } });
+  } catch (e) {
+    // ignore
+  }
+  if (action === 'accept') {
+    openCallRoom(call);
+  }
+};
+
+const onIncomingCall = (e: any) => {
+  const d = e.detail || {};
+  const call = d.call || d.payload?.call || d.payload || d;
+  if (!call || Number(call.caller_id || call.caller?.id) === Number(currentUserId.value)) return;
+  incomingCall.value = call;
+};
+
+// Multi-select
+const toggleSelectionMode = () => {
+  selectionMode.value = !selectionMode.value;
+  selectedMessageIds.value = [];
+};
+
+const toggleMessageSelected = (id: number) => {
+  const idx = selectedMessageIds.value.indexOf(id);
+  if (idx === -1) selectedMessageIds.value.push(id);
+  else selectedMessageIds.value.splice(idx, 1);
+};
+
+const bulkDeleteSelected = async () => {
+  if (selectedMessageIds.value.length === 0) return;
+  if (!confirm(`Delete ${selectedMessageIds.value.length} message(s) for you?`)) return;
+  const ids = [...selectedMessageIds.value];
+  const res = await apiFetch('/api/v1/messages/bulk-delete', { method: 'POST', json: { message_ids: ids } });
+  if (res.ok) {
+    messages.value = messages.value.filter((m) => !ids.includes(m.id));
+    showToast('Messages deleted');
+  }
+  toggleSelectionMode();
+};
+
+const copySelected = async () => {
+  const text = messages.value
+    .filter((m) => selectedMessageIds.value.includes(m.id))
+    .map((m) => m.body)
+    .filter(Boolean)
+    .join('\n');
+  await navigator.clipboard?.writeText(text).catch(() => {});
+  showToast('Copied to clipboard');
+  toggleSelectionMode();
+};
+
+const forwardSelected = () => {
+  const first = messages.value.find((m) => selectedMessageIds.value.includes(m.id));
+  if (first) openForwardModal(first);
+};
+
+// Load older messages (pagination)
+const loadOlderMessages = async () => {
+  if (!activeConversation.value || isLoadingOlder.value || currentPage.value >= lastPage.value) return;
+  isLoadingOlder.value = true;
+  const container = messagesContainerRef.value;
+  const prevHeight = container?.scrollHeight || 0;
+  try {
+    const res = await apiFetch(`/api/v1/conversations/${activeConversation.value.id}/messages?per_page=50&page=${currentPage.value + 1}`);
+    if (res.ok) {
+      const data = await res.json();
+      const older = (data.data || []).slice().reverse();
+      const known = new Set(messages.value.map((m) => m.id));
+      messages.value = [...older.filter((m: any) => !known.has(m.id)), ...messages.value];
+      currentPage.value = data.meta?.current_page || currentPage.value + 1;
+      lastPage.value = data.meta?.last_page || lastPage.value;
+      nextTick(() => {
+        if (container) container.scrollTop = container.scrollHeight - prevHeight;
+      });
+    }
+  } finally {
+    isLoadingOlder.value = false;
+  }
+};
+
+// Jump to and highlight a message (reply quote, pinned banner, search)
+const jumpToMessage = (id?: number | null) => {
+  if (!id) return;
+  const el = document.getElementById(`msg-${id}`);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    highlightedMessageId.value = id;
+    setTimeout(() => (highlightedMessageId.value = null), 1800);
+  } else {
+    showToast('Original message is not loaded yet');
+  }
+};
+
+const cyclePinned = () => {
+  if (pinnedMessages.value.length > 1) {
+    pinnedIndex.value = (pinnedIndex.value + 1) % pinnedMessages.value.length;
+  }
+};
+
+// Star / Save message
+const isMessageSaved = (msg: any): boolean => !!msg.is_saved || savedMessages.value.some((s: any) => (s.message_id || s.id) === msg.id);
+
+const toggleSaveMessage = async (msg: any) => {
+  const saved = isMessageSaved(msg);
+  const res = await apiFetch(`/api/v1/messages/${msg.id}/save`, { method: saved ? 'DELETE' : 'POST' });
+  if (res.ok) {
+    msg.is_saved = !saved;
+    if (saved) {
+      savedMessages.value = savedMessages.value.filter((s: any) => (s.message_id || s.id) !== msg.id);
+    } else {
+      savedMessages.value.unshift({ ...msg, message_id: msg.id });
+    }
+    showToast(saved ? 'Removed from starred' : 'Message starred');
+  }
+};
+
+const copyMessageText = async (msg: MessageItem) => {
+  await navigator.clipboard?.writeText(msg.body || '').catch(() => {});
+  showToast('Copied');
+};
+
+const copyMessageLink = async (msg: MessageItem) => {
+  const url = `${window.location.origin}/messages?conversation_id=${msg.conversation_id}#msg-${msg.id}`;
+  await navigator.clipboard?.writeText(url).catch(() => {});
+  showToast('Link copied');
+};
+
+// Reactions viewer
+const showReactors = async (msg: MessageItem) => {
+  const res = await apiFetch(`/api/v1/messages/${msg.id}/reactions`);
+  if (res.ok) {
+    const data = await res.json();
+    reactorsList.value = Array.isArray(data.data) ? data.data : data.data?.reactions || [];
+  }
+};
+
+// Report
+const openReport = (kind: 'message' | 'conversation', id: number) => {
+  reportForm.value = { reason: 'spam', details: '' };
+  reportingTarget.value = { kind, id };
+};
+
+const submitReport = async () => {
+  const target = reportingTarget.value;
+  if (!target) return;
+  let messageId = target.id;
+  if (target.kind === 'conversation') {
+    const last = [...messages.value].reverse().find((m) => !m.is_mine);
+    if (!last) {
+      showToast('No messages from this contact to report yet.');
+      reportingTarget.value = null;
+      return;
+    }
+    messageId = last.id;
+  }
+  const res = await apiFetch(`/api/v1/messages/${messageId}/report`, { method: 'POST', json: reportForm.value });
+  reportingTarget.value = null;
+  showToast(res.ok ? 'Report submitted. Thank you.' : 'Unable to submit report');
+};
+
+// Message request handling
+const handleMessageRequest = async (action: 'accept' | 'delete' | 'block') => {
+  const conv: any = activeConversation.value;
+  if (!conv) return;
+  const res = await apiFetch(`/api/v1/conversations/${conv.id}/request`, { method: 'POST', json: { action } });
+  if (res.ok) {
+    if (action === 'accept') {
+      conv.is_request = false;
+      conv.request_status = 'accepted';
+      showToast('Request accepted');
+    } else {
+      conversationList.value = conversationList.value.filter((c) => c.id !== conv.id);
+      activeConversation.value = null;
+      messages.value = [];
+      mobileView.value = 'conversations';
+    }
+  }
+};
+
+// Mute with duration
+const muteConversation = async (duration: '1h' | '8h' | '24h' | 'forever' | 'unmute') => {
+  const conv = activeConversation.value;
+  if (!conv) return;
+  showMuteOptions.value = false;
+  const res = await apiFetch(`/api/v1/conversations/${conv.id}/mute`, { method: 'POST', json: { duration } });
+  if (res.ok) {
+    conv.is_muted = duration !== 'unmute';
+    showToast(duration === 'unmute' ? 'Notifications unmuted' : `Muted ${duration === 'forever' ? 'until you unmute' : 'for ' + duration}`);
+  }
+};
+
+const markConversationUnread = async (conv: ConversationItem) => {
+  const res = await apiFetch(`/api/v1/conversations/${conv.id}/unread`, { method: 'POST' });
+  if (res.ok) {
+    conv.unread_count = Math.max(1, conv.unread_count || 0);
+    showToast('Marked as unread');
+  }
+};
+
+// Saved messages (self chat)
+const openSavedMessages = async () => {
+  const res = await apiFetch('/api/v1/conversations', { method: 'POST', json: { type: 'saved' } });
+  if (res.ok) {
+    const data = await res.json();
+    const conv = data.data;
+    if (conv) {
+      if (!conversationList.value.some((c) => c.id === conv.id)) conversationList.value.unshift(conv);
+      selectConversation(conv);
+    }
+  }
+};
+
+// Group creation & management
+const openCreateGroup = () => {
+  groupForm.value = { title: '', description: '', memberIds: [], query: '' };
+  showCreateGroupModal.value = true;
+};
+
+const toggleGroupMember = (id: number) => {
+  const list = groupForm.value.memberIds;
+  const idx = list.indexOf(id);
+  if (idx === -1) list.push(id);
+  else list.splice(idx, 1);
+};
+
+const submitCreateGroup = async () => {
+  const f = groupForm.value;
+  if (!f.title.trim() || f.memberIds.length === 0) {
+    showToast('Add a group name and at least one member');
+    return;
+  }
+  const res = await apiFetch('/api/v1/conversations', {
+    method: 'POST',
+    json: { type: 'group', title: f.title.trim(), description: f.description || null, participant_ids: f.memberIds },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.ok && data.data) {
+    showCreateGroupModal.value = false;
+    conversationList.value.unshift(data.data);
+    selectConversation(data.data);
+    showToast('Group created');
+  } else {
+    showToast(data.message || 'Unable to create group');
+  }
+};
+
+const refreshActiveConversation = async () => {
+  const conv = activeConversation.value;
+  if (!conv) return;
+  const res = await apiFetch(`/api/v1/conversations/${conv.id}`);
+  if (res.ok) {
+    const data = await res.json();
+    if (data.data) Object.assign(conv, data.data);
+  }
+};
+
+const editGroupInfo = async () => {
+  const conv: any = activeConversation.value;
+  if (!conv) return;
+  const title = prompt('Group name', conv.title);
+  if (title === null) return;
+  const description = prompt('Group description', conv.description || '') ?? conv.description;
+  const res = await apiFetch(`/api/v1/conversations/${conv.id}/group-info`, { method: 'PUT', json: { title, description } });
+  if (res.ok) {
+    conv.title = title;
+    conv.description = description;
+    showToast('Group updated');
+  }
+};
+
+const submitAddMembers = async () => {
+  const conv = activeConversation.value;
+  if (!conv || addMembersSelection.value.length === 0) return;
+  const res = await apiFetch(`/api/v1/conversations/${conv.id}/members`, {
+    method: 'POST',
+    json: { user_ids: addMembersSelection.value },
+  });
+  showAddMembersModal.value = false;
+  addMembersSelection.value = [];
+  if (res.ok) {
+    await refreshActiveConversation();
+    showToast('Members added');
+  }
+};
+
+const setMemberRole = async (member: any, role: 'admin' | 'member') => {
+  const conv = activeConversation.value;
+  if (!conv) return;
+  const uid = member.user_id || member.id;
+  const res = await apiFetch(`/api/v1/conversations/${conv.id}/members/${uid}/role`, { method: 'PUT', json: { role } });
+  if (res.ok) {
+    member.role = role;
+    showToast(role === 'admin' ? 'Promoted to admin' : 'Admin removed');
+  }
+};
+
+const removeMember = async (member: any) => {
+  const conv: any = activeConversation.value;
+  if (!conv || !confirm(`Remove ${member.name} from the group?`)) return;
+  const uid = member.user_id || member.id;
+  const res = await apiFetch(`/api/v1/conversations/${conv.id}/members/${uid}`, { method: 'DELETE' });
+  if (res.ok) {
+    conv.members = activeMembers.value.filter((m) => (m.user_id || m.id) !== uid);
+    showToast('Member removed');
+  }
+};
+
+// Preferences
+const savePreferences = async () => {
+  localStorage.setItem('jj_send_on_enter', sendOnEnter.value ? '1' : '0');
+  localStorage.setItem('jj_active_status', activeStatusVisible.value ? '1' : '0');
+  apiFetch('/api/v1/presence/visibility', { method: 'POST', json: { appear_offline: !activeStatusVisible.value } }).catch(() => {});
+  apiFetch('/api/v1/settings/messenger-sounds', { method: 'PUT', json: { sounds_enabled: soundEnabled.value } }).catch(() => {});
+  showSettingsModal.value = false;
+  showToast('Preferences saved');
+};
+
+// Composer keyboard handling (Send-on-Enter preference)
+const onComposerKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Enter' && !e.shiftKey && sendOnEnter.value) {
+    e.preventDefault();
+    handleSendMessage();
+  }
+};
+
+// Draft auto-save
+let draftTimer: any = null;
+const saveDraftDebounced = () => {
+  const conv = activeConversation.value;
+  if (!conv) return;
+  localStorage.setItem(`jj_draft_${conv.id}`, composerMessage.value);
+  if (draftTimer) clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    apiFetch(`/api/v1/conversations/${conv.id}/draft`, { method: 'POST', json: { draft: composerMessage.value } }).catch(() => {});
+  }, 1200);
+};
+
+// Drag & drop
+const isDragging = ref(false);
+const onDropFiles = (e: DragEvent) => {
+  isDragging.value = false;
+  const file = e.dataTransfer?.files?.[0];
+  if (file) selectedAttachmentFile.value = file;
+};
+
+const formatCallTime = (call: any): string => formatTimestamp(call.started_at || call.created_at);
 
 // Start Direct Chat from New Message Modal
 const startDirectChat = async (friend: User) => {
   showNewMessageModal.value = false;
   try {
-    const res = await fetch('/api/v1/conversations', {
+    const res = await apiFetch('/api/v1/conversations', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2226,7 +3354,7 @@ const startDirectChat = async (friend: User) => {
 // Pin conversation
 const togglePinConversation = async (conv: ConversationItem) => {
   try {
-    const res = await fetch(`/api/v1/conversations/${conv.id}/pin`, {
+    const res = await apiFetch(`/api/v1/conversations/${conv.id}/pin`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2247,7 +3375,7 @@ const togglePinConversation = async (conv: ConversationItem) => {
 // Archive conversation
 const toggleArchiveConversation = async (conv: ConversationItem) => {
   try {
-    const res = await fetch(`/api/v1/conversations/${conv.id}/archive`, {
+    const res = await apiFetch(`/api/v1/conversations/${conv.id}/archive`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2269,7 +3397,7 @@ const toggleArchiveConversation = async (conv: ConversationItem) => {
 const handleAddFriend = async () => {
   if (!otherUserProfile.value?.id) return;
   try {
-    const res = await fetch(`/api/v1/friends/${otherUserProfile.value.id}/request`, {
+    const res = await apiFetch(`/api/v1/friends/${otherUserProfile.value.id}/request`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2290,7 +3418,7 @@ const toggleMuteConversation = async () => {
   if (!activeConversation.value) return;
   const convId = activeConversation.value.id;
   try {
-    const res = await fetch(`/api/v1/conversations/${convId}/mute`, {
+    const res = await apiFetch(`/api/v1/conversations/${convId}/mute`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2314,7 +3442,7 @@ const confirmClearHistory = async () => {
   }
   const convId = activeConversation.value.id;
   try {
-    const res = await fetch(`/api/v1/conversations/${convId}/clear`, {
+    const res = await apiFetch(`/api/v1/conversations/${convId}/clear`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2341,7 +3469,7 @@ const confirmDeleteConversation = async () => {
   }
   const convId = activeConversation.value.id;
   try {
-    const res = await fetch(`/api/v1/conversations/${convId}`, {
+    const res = await apiFetch(`/api/v1/conversations/${convId}`, {
       method: 'DELETE',
       headers: {
         'Accept': 'application/json',
@@ -2367,7 +3495,7 @@ const confirmLeaveGroup = async () => {
   }
   const convId = activeConversation.value.id;
   try {
-    const res = await fetch(`/api/v1/conversations/${convId}/leave`, {
+    const res = await apiFetch(`/api/v1/conversations/${convId}/leave`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2392,7 +3520,7 @@ const confirmBlockUser = async () => {
     return;
   }
   try {
-    const res = await fetch(`/api/v1/users/${otherUserProfile.value.id}/block`, {
+    const res = await apiFetch(`/api/v1/users/${otherUserProfile.value.id}/block`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2436,7 +3564,7 @@ const onRealtimeMessageCreated = (e: any) => {
       }
 
       // Mark read
-      fetch(`/api/v1/conversations/${convId}/read`, {
+      apiFetch(`/api/v1/conversations/${convId}/read`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -2549,7 +3677,7 @@ let presenceInterval: any = null;
 const pollActiveMessages = async () => {
   if (!activeConversation.value || document.hidden) return;
   try {
-    const res = await fetch(`/api/v1/conversations/${activeConversation.value.id}/messages?per_page=30`, {
+    const res = await apiFetch(`/api/v1/conversations/${activeConversation.value.id}/messages?per_page=30`, {
       headers: { 'Accept': 'application/json' },
     });
     if (res.ok) {
@@ -2571,7 +3699,7 @@ const pollActiveMessages = async () => {
 
 const sendPresenceHeartbeat = async () => {
   try {
-    await fetch('/api/v1/presence/heartbeat', {
+    await apiFetch('/api/v1/presence/heartbeat', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -2597,10 +3725,50 @@ onMounted(() => {
   window.addEventListener('jugajug:message-reaction', onRealtimeReaction);
   window.addEventListener('jugajug:typing', onRealtimeTyping);
   window.addEventListener('jugajug:message-status', onRealtimeMessageStatus);
+  window.addEventListener('jugajug:incoming-call', onIncomingCall);
+
+  if (activeConversation.value) {
+    loadSharedContent(activeConversation.value.id);
+  }
 
   pollInterval = setInterval(pollActiveMessages, 4000);
   presenceInterval = setInterval(sendPresenceHeartbeat, 30000);
+  callPollInterval = setInterval(pollActiveCall, 5000);
 });
+
+let callPollInterval: any = null;
+const pollActiveCall = async () => {
+  if (document.hidden) return;
+  try {
+    // Outgoing: track ringing call until accepted / rejected / missed
+    if (callStatus.value === 'ringing' && activeCall.value?.id) {
+      const r = await apiFetch(`/api/v1/calls/${activeCall.value.id}`);
+      if (r.ok) {
+        const c = (await r.json()).data;
+        if (c?.status === 'active' || c?.status === 'ongoing' || c?.status === 'connected') {
+          openCallRoom(c);
+          activeCall.value = null;
+          callStatus.value = 'idle';
+        } else if (c && !['ringing', 'initiated', 'pending'].includes(c.status)) {
+          showToast(c.outcome === 'missed' ? 'No answer' : 'Call ended');
+          activeCall.value = null;
+          callStatus.value = 'idle';
+        }
+      }
+    }
+
+    // Incoming: show ringing modal
+    if (incomingCall.value) return;
+    const res = await apiFetch('/api/v1/calls/active');
+    if (!res.ok) return;
+    const call = (await res.json()).data;
+    if (call && !call.is_mine && call.status === 'ringing') {
+      incomingCall.value = call;
+    }
+  } catch (e) {
+    // ignore
+  }
+};
 
 onUnmounted(() => {
   window.removeEventListener('jugajug:message-created', onRealtimeMessageCreated);
@@ -2609,9 +3777,11 @@ onUnmounted(() => {
   window.removeEventListener('jugajug:message-reaction', onRealtimeReaction);
   window.removeEventListener('jugajug:typing', onRealtimeTyping);
   window.removeEventListener('jugajug:message-status', onRealtimeMessageStatus);
+  window.removeEventListener('jugajug:incoming-call', onIncomingCall);
 
   if (pollInterval) clearInterval(pollInterval);
   if (presenceInterval) clearInterval(presenceInterval);
+  if (callPollInterval) clearInterval(callPollInterval);
   if (activeAudioElement) activeAudioElement.pause();
 });
 </script>

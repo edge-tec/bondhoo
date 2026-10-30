@@ -29,9 +29,22 @@ class ReelV2ApiController extends Controller
      */
     public function feed(Request $request): JsonResponse
     {
-        $reels = $this->reelService->getFeed($request->user(), (int) $request->input('per_page', 10));
+        $perPage = (int) $request->input('per_page', 10);
+        $tab = (string) $request->input('tab', 'for_you');
+        $viewer = $request->user();
+
+        if ($tab === 'saved' && $viewer) {
+            $reels = $this->reelService->getUserSavedReels($viewer, $perPage);
+        } elseif ($tab === 'my_reels' && $viewer) {
+            $reels = $this->reelService->getUserReels($viewer, $viewer, $perPage);
+        } elseif ($tab === 'following' && $viewer) {
+            $reels = $this->reelService->getFollowingFeed($viewer, $perPage);
+        } else {
+            $reels = $this->reelService->getFeed($viewer, $perPage);
+        }
 
         return response()->json([
+            'status' => 'success',
             'success' => true,
             'data' => $reels->items(),
             'meta' => [
@@ -212,6 +225,7 @@ class ReelV2ApiController extends Controller
         $reels = $this->reelService->getUserReels($user, $request->user(), (int) $request->input('per_page', 12));
 
         return response()->json([
+            'status' => 'success',
             'success' => true,
             'data' => $reels->items(),
             'meta' => [

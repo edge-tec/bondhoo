@@ -139,4 +139,26 @@ class Phase74EnterpriseMobileExperienceAndRealtimeUxTest extends TestCase
         $this->assertStringContainsString('href="/settings"', $sidebarContent);
         $this->assertStringContainsString('href="/terms"', $sidebarContent);
     }
+
+    public function test_reels_viewer_modal_and_reels_page_support_auto_advance_and_mobile_swipe_gestures(): void
+    {
+        $modalContent = file_get_contents(resource_path('js/Components/Reels/ReelViewerModal.vue'));
+        $reelsPageContent = file_get_contents(resource_path('js/Pages/Reels.vue'));
+
+        // Verify auto-advance on video ended & timeupdate in both ReelViewerModal and Reels page
+        $this->assertStringContainsString('@ended="onVideoEnded"', $modalContent);
+        $this->assertStringContainsString('isAutoAdvanceEnabled', $modalContent);
+        $this->assertStringContainsString('toggleAutoAdvance', $modalContent);
+        $this->assertStringContainsString('playActiveVideo', $modalContent);
+
+        $this->assertStringContainsString('@ended="onVideoEnded"', $reelsPageContent);
+        $this->assertStringContainsString('isAutoAdvanceEnabled', $reelsPageContent);
+        $this->assertStringContainsString('autoAdvancedCurrentReel', $reelsPageContent);
+
+        // Verify touch + mouse/pointer gesture support and interactive target filtering
+        $this->assertStringContainsString('isInteractiveTarget', $modalContent);
+        $this->assertStringContainsString('@mousedown="handleMouseDown"', $modalContent);
+        $this->assertStringContainsString('isInteractiveTarget', $reelsPageContent);
+        $this->assertStringContainsString('@mousedown="handleMouseDown"', $reelsPageContent);
+    }
 }

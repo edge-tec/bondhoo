@@ -186,6 +186,48 @@ class MessageController extends Controller
     }
 
     /**
+     * একসাথে একাধিক নির্বাচিত মেসেজ ডিলিট করা (Multi-Select Bulk Delete)।
+     */
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validate([
+            'message_ids' => ['required', 'array', 'min:1', 'max:100'],
+            'message_ids.*' => ['integer', 'exists:messages,id'],
+            'for_everyone' => ['nullable', 'boolean'],
+        ]);
+
+        $forEveryone = (bool) ($validated['for_everyone'] ?? false);
+        $deletedIds = [];
+
+        foreach ($validated['message_ids'] as $msgId) {
+            try {
+                $this->messengerService->deleteMessage($user, (int) $msgId, $forEveryone);
+                $deletedIds[] = (int) $msgId;
+            } catch (\Throwable $e) {
+                // If forEveryone fails for a non-owned message, fall back to delete-for-me
+                if ($forEveryone) {
+                    try {
+                        $this->messengerService->deleteMessage($user, (int) $msgId, false);
+                        $deletedIds[] = (int) $msgId;
+                    } catch (\Throwable) {
+                    }
+                }
+            }
+        }
+
+        return $this->successResponse(
+            data: [
+                'deleted_message_ids' => $deletedIds,
+                'count' => count($deletedIds),
+                'deleted_count' => count($deletedIds),
+                'for_everyone' => $forEveryone,
+            ],
+            message: count($deletedIds).' messages deleted successfully.'
+        );
+    }
+
+    /**
      * মেসেজে রিঅ্যাকশন যোগ, পরিবর্তন বা প্রত্যাহার।
      */
     public function react(Request $request, int $id): JsonResponse

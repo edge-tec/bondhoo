@@ -342,7 +342,7 @@ class MessengerService implements MessengerServiceInterface
             ->first();
 
         $query = Message::where('conversation_id', $conversation->id)
-            ->with(['sender.profile', 'media', 'reactions.user.profile', 'replyTo.sender.profile']);
+            ->with(['sender.profile', 'media', 'reactions.user.profile', 'replyTo.sender.profile', 'pinnedRecord', 'savedRecords']);
 
         // ব্যবহারকারীর নিজের জন্য ডিলিট করা মেসেজ ফিল্টার আউট
         $query->whereDoesntHave('userDeletions', function ($q) use ($user) {
@@ -1333,19 +1333,47 @@ class MessengerService implements MessengerServiceInterface
             throw new AuthorizationException('You are not a participant in this conversation.');
         }
 
-        if ($type === 'links') {
-            $messages = Message::where('conversation_id', $conversation->id)
-                ->where('type', 'link')
-                ->whereNotNull('metadata->link_preview')
+        if ($type === 'voice') {
+            $voiceMessages = Message::where('conversation_id', $conversation->id)
+                ->where('type', 'voice')
+                ->where('is_deleted_for_everyone', false)
+                ->with(['sender.profile', 'media'])
                 ->latest('id')
                 ->limit($perPage)
                 ->get();
 
-            return $messages->map(fn ($m) => [
-                'id' => $m->id,
-                'link' => $m->metadata['link_preview'] ?? ['url' => $m->body],
-                'sent_at' => $m->sent_at?->toIso8601String(),
-            ])->toArray();
+            return $voiceMessages->map(fn (Message $m) => $m->toResponseArray($user))->toArray();
+        }
+
+        if ($type === 'links') {
+            $messages = Message::where('conversation_id', $conversation->id)
+                ->where('is_deleted_for_everyone', false)
+                ->where(function ($q) {
+                    $q->where('type', 'link')
+                        ->orWhereNotNull('metadata->link_preview')
+                        ->orWhere('body', 'like', '%http://%')
+                        ->orWhere('body', 'like', '%https://%');
+                })
+                ->latest('id')
+                ->limit($perPage)
+                ->get();
+
+            return $messages->map(function ($m) {
+                $linkData = $m->metadata['link_preview'] ?? null;
+                if (! $linkData && preg_match('/https?:\/\/[^\s]+/i', (string) $m->body, $matches)) {
+                    $linkData = [
+                        'url' => $matches[0],
+                        'host' => parse_url($matches[0], PHP_URL_HOST) ?: $matches[0],
+                    ];
+                }
+
+                return [
+                    'id' => $m->id,
+                    'body' => $m->body,
+                    'link' => $linkData ?? ['url' => $m->body],
+                    'sent_at' => $m->sent_at?->toIso8601String() ?? $m->created_at?->toIso8601String(),
+                ];
+            })->toArray();
         }
 
         // মিডিয়া এবং ফাইলসমূহ Media টেবিল থেকে আনা

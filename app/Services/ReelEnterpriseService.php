@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Friendship;
 use App\Models\Group;
 use App\Models\GroupMember;
 use App\Models\Media;
@@ -18,6 +19,7 @@ use App\Models\ReelShare;
 use App\Models\ReelView;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\UserFollower;
 use App\Services\Contracts\MessengerServiceInterface;
 use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\Contracts\RealtimeServiceInterface;
@@ -287,6 +289,10 @@ class ReelEnterpriseService
             throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে।');
         }
 
+        if ($reel->is_draft && (! $viewer || (int) $viewer->id !== (int) $reel->user_id)) {
+            throw new AuthorizationException('This draft reel is private.');
+        }
+
         // ইউজার ব্লক চেক
         if ($viewer && $this->privacyService->isBlocked($reel->user_id, $viewer)) {
             throw new AuthorizationException('You are not authorized to view this reel.');
@@ -325,6 +331,54 @@ class ReelEnterpriseService
                 $query->whereNotIn('user_id', $blockedUserIds);
             }
         }
+
+        $paginator = $query->paginate($perPage);
+
+        $paginator->getCollection()->transform(function (Reel $reel) use ($viewer) {
+            return $reel->toResponseArray($viewer);
+        });
+
+        return $paginator;
+    }
+
+    /**
+     * ফলোয়িং ও ফ্রেন্ডস রিলস ফিড
+     */
+    public function getFollowingFeed(User $viewer, int $perPage = 10): LengthAwarePaginator
+    {
+        Reel::where('is_expired', false)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->update(['is_expired' => true]);
+
+        $friendIds = Friendship::where('user_id', $viewer->id)
+            ->where('status', Friendship::STATUS_ACCEPTED)
+            ->pluck('friend_id')
+            ->all();
+        $followingIds = UserFollower::where('follower_id', $viewer->id)
+            ->pluck('user_id')
+            ->all();
+        $allFollowedIds = array_unique(array_merge($friendIds, $followingIds, [$viewer->id]));
+
+        $blockedUserIds = $this->privacyService->getBlockedUserIds($viewer->id);
+        if (! empty($blockedUserIds)) {
+            $allFollowedIds = array_values(array_diff($allFollowedIds, $blockedUserIds));
+        }
+
+        $query = Reel::query()
+            ->active()
+            ->whereIn('user_id', $allFollowedIds ?: [$viewer->id])
+            ->where(function ($q) use ($viewer, $friendIds) {
+                $q->where('privacy', 'public')
+                    ->orWhere('user_id', $viewer->id);
+                if (! empty($friendIds)) {
+                    $q->orWhere(function ($fq) use ($friendIds) {
+                        $fq->where('privacy', 'friends')->whereIn('user_id', $friendIds);
+                    });
+                }
+            })
+            ->with(['user.profile', 'media', 'reactions', 'musicTrack', 'saves'])
+            ->latest('id');
 
         $paginator = $query->paginate($perPage);
 
@@ -670,9 +724,20 @@ class ReelEnterpriseService
      */
     public function getUserSavedReels(User $user, int $perPage = 12): LengthAwarePaginator
     {
-        $paginator = Reel::whereHas('saves', fn ($q) => $q->where('user_id', $user->id))
+        $blockedUserIds = $this->privacyService->getBlockedUserIds($user->id);
+
+        $query = Reel::whereHas('saves', fn ($q) => $q->where('user_id', $user->id))
             ->active()
-            ->with(['user.profile', 'media', 'musicTrack'])
+            ->where(function ($q) use ($user) {
+                $q->where('privacy', '!=', 'only_me')
+                    ->orWhere('user_id', $user->id);
+            });
+
+        if (! empty($blockedUserIds)) {
+            $query->whereNotIn('user_id', $blockedUserIds);
+        }
+
+        $paginator = $query->with(['user.profile', 'media', 'musicTrack', 'reactions', 'saves'])
             ->latest('id')
             ->paginate($perPage);
 

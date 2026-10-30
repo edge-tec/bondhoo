@@ -499,12 +499,19 @@ const processFile = (file: File) => {
   }
   videoPreviewUrl.value = URL.createObjectURL(file);
 
-  // Probe duration
+  // Probe duration safely without memory leaks
   const tempVideo = document.createElement('video');
-  tempVideo.src = videoPreviewUrl.value;
+  tempVideo.preload = 'metadata';
   tempVideo.onloadedmetadata = () => {
     videoDuration.value = Math.round(tempVideo.duration);
+    tempVideo.removeAttribute('src');
+    tempVideo.load();
   };
+  tempVideo.onerror = () => {
+    tempVideo.removeAttribute('src');
+    tempVideo.load();
+  };
+  tempVideo.src = videoPreviewUrl.value;
 };
 
 const captureFrameBlob = (): Promise<Blob | null> => {
@@ -780,6 +787,14 @@ const publishReel = async (isDraft: boolean = false) => {
 };
 
 onUnmounted(() => {
+  if (activeXhr) {
+    try {
+      activeXhr.abort();
+    } catch {
+      // ignore abort error
+    }
+    activeXhr = null;
+  }
   if (videoPreviewUrl.value) {
     URL.revokeObjectURL(videoPreviewUrl.value);
   }

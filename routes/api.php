@@ -367,6 +367,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/conversations/{id}/read', [MessageController::class, 'read']);
         Route::match(['put', 'patch'], '/messages/{id}', [MessageController::class, 'edit']);
         Route::delete('/messages/{id}', [MessageController::class, 'destroy']);
+        Route::post('/messages/bulk-delete', [MessageController::class, 'bulkDelete']);
         Route::post('/messages/{id}/delete-for-me', [MessageController::class, 'deleteForMe']);
         Route::post('/messages/{id}/delete-for-everyone', [MessageController::class, 'deleteForEveryone']);
         Route::get('/messages/{id}/reactions', [MessageController::class, 'getReactions']);
@@ -1273,6 +1274,7 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         // Dedicated Reels System (Short-form 9:16 Video, Views, Reactions)
         // -------------------------------------------------------------
         Route::prefix('reels')->group(function () {
+            Route::get('/', [ReelV2ApiController::class, 'feed']);
             Route::get('/feed', [ReelV2ApiController::class, 'feed']);
             Route::post('/', [ReelV2ApiController::class, 'store']);
             Route::get('/saved', [ReelV2ApiController::class, 'savedReels']);

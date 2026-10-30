@@ -84,11 +84,20 @@
         @touchmove="handleTouchMove"
         @touchend="handleTouchEnd"
         @touchcancel="handleTouchCancel"
+        @pointerdown="handlePointerDown"
+        @pointermove="handlePointerMove"
+        @pointerup="handlePointerUp"
+        @pointercancel="handlePointerCancel"
+        @mousedown="handleMouseDown"
+        @mousemove="handleMouseMove"
+        @mouseup="handleMouseUp"
+        @mouseleave="handleMouseCancel"
+        @click.capture="handleCaptureClick"
         @wheel.passive="handleWheelScroll"
       >
         <!-- Desktop Previous Reel Navigation Chevron -->
         <button
-          v-if="currentIndex > 0"
+          v-if="reelsList.length > 1"
           type="button"
           @click.stop="prevReel"
           class="hidden lg:flex w-12 h-12 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-xl items-center justify-center hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 hover:scale-110 active:scale-95 transition-all cursor-pointer z-20 group"
@@ -110,14 +119,73 @@
           <!-- HTML5 Video Element -->
           <video
             ref="videoEl"
+            :key="currentReel.id || currentIndex"
             :src="currentReel.video_url"
             class="absolute inset-0 w-full h-full object-cover cursor-pointer pointer-events-none"
             playsinline
+            webkit-playsinline="true"
+            preload="auto"
+            :loop="!isAutoAdvanceEnabled || reelsList.length <= 1"
             autoplay
             :muted="isMuted"
             @timeupdate="onTimeUpdate"
             @ended="onVideoEnded"
+            @error="onVideoError"
+            @waiting="onVideoWaiting"
+            @playing="onVideoPlaying"
+            @canplay="onVideoCanPlay"
           ></video>
+
+          <!-- Hidden Next-Reel Metadata Preloader -->
+          <video
+            v-if="nextReelPreloadUrl"
+            :key="'preload-' + nextReelPreloadUrl"
+            :src="nextReelPreloadUrl"
+            preload="metadata"
+            muted
+            playsinline
+            class="hidden"
+            aria-hidden="true"
+            @error="onPreloadError"
+          ></video>
+
+          <!-- Network Buffering Spinner Overlay -->
+          <div
+            v-if="isBuffering && !videoError"
+            class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+          >
+            <div class="w-11 h-11 rounded-full bg-black/55 backdrop-blur-md border border-white/15 flex items-center justify-center shadow-xl">
+              <svg class="w-5 h-5 text-purple-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                <path class="opacity-85" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Video Playback Error Recovery Overlay -->
+          <div
+            v-if="videoError"
+            class="absolute inset-0 z-25 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md p-6 text-center text-white"
+          >
+            <p class="text-xs font-bold text-slate-300 mb-3">{{ videoErrorMessage }}</p>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click.stop="retryVideo"
+                class="px-3.5 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-xs font-bold cursor-pointer"
+              >
+                Retry
+              </button>
+              <button
+                v-if="reelsList.length > 1"
+                type="button"
+                @click.stop="nextReel"
+                class="px-3.5 py-1.5 rounded-full bg-purple-600 hover:bg-purple-500 text-xs font-bold cursor-pointer"
+              >
+                Next Reel
+              </button>
+            </div>
+          </div>
 
           <!-- 2X Speed Long-Press Floating Badge -->
           <div
@@ -172,9 +240,6 @@
           <!-- Top Gradient & Header Info / Floating Controls -->
           <div
             class="relative z-20 px-3 sm:px-4 pt-3 pb-4 flex items-center justify-between text-white bg-gradient-to-b from-black/85 via-black/40 to-transparent"
-            @touchstart.stop
-            @touchmove.stop
-            @touchend.stop
           >
             <!-- Left Side: Brand Logo (Desktop) + Auto-Advance Toggle Indicator -->
             <div class="flex items-center gap-2">
@@ -203,27 +268,46 @@
             </div>
 
             <!-- Center (Mobile Only): TikTok / Shorts Style Floating Tabs -->
-            <div class="flex md:hidden items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/15">
+            <div class="flex md:hidden items-center gap-0.5 bg-black/45 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-white/15 overflow-x-auto max-w-[185px] xs:max-w-[230px] no-scrollbar">
               <button
                 type="button"
                 @click.stop="switchTab('for_you')"
                 :class="[
-                  'px-2.5 py-0.5 rounded-full text-xs font-bold transition-all cursor-pointer',
-                  currentTab === 'for_you' ? 'text-white font-extrabold drop-shadow' : 'text-white/60 hover:text-white'
+                  'px-2 py-0.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0',
+                  currentTab === 'for_you' ? 'text-white font-extrabold bg-white/15 drop-shadow' : 'text-white/65 hover:text-white'
                 ]"
               >
                 For You
               </button>
-              <span class="text-white/30 text-xs">|</span>
               <button
                 type="button"
                 @click.stop="switchTab('following')"
                 :class="[
-                  'px-2.5 py-0.5 rounded-full text-xs font-bold transition-all cursor-pointer',
-                  currentTab === 'following' ? 'text-white font-extrabold drop-shadow' : 'text-white/60 hover:text-white'
+                  'px-2 py-0.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0',
+                  currentTab === 'following' ? 'text-white font-extrabold bg-white/15 drop-shadow' : 'text-white/65 hover:text-white'
                 ]"
               >
                 Following
+              </button>
+              <button
+                type="button"
+                @click.stop="switchTab('my_reels')"
+                :class="[
+                  'px-2 py-0.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0',
+                  currentTab === 'my_reels' ? 'text-white font-extrabold bg-white/15 drop-shadow' : 'text-white/65 hover:text-white'
+                ]"
+              >
+                Mine
+              </button>
+              <button
+                type="button"
+                @click.stop="switchTab('saved')"
+                :class="[
+                  'px-2 py-0.5 rounded-full text-[11px] font-bold transition-all cursor-pointer shrink-0',
+                  currentTab === 'saved' ? 'text-white font-extrabold bg-white/15 drop-shadow' : 'text-white/65 hover:text-white'
+                ]"
+              >
+                Saved
               </button>
             </div>
 
@@ -286,11 +370,35 @@
 
           <!-- Right Floating Action Rail -->
           <div
-            class="absolute right-3 bottom-14 z-20 flex flex-col items-center gap-3.5 text-white"
-            @touchstart.stop
-            @touchmove.stop
-            @touchend.stop
+            class="absolute right-3 bottom-12 z-20 flex flex-col items-center gap-3 text-white"
           >
+            <!-- Quick Prev/Next Reel Stepper Pill -->
+            <div
+              v-if="reelsList.length > 1"
+              class="flex flex-col items-center gap-1 bg-black/45 backdrop-blur-md rounded-full p-1 border border-white/15 shadow-lg mb-0.5"
+            >
+              <button
+                type="button"
+                @click.stop="prevReel"
+                class="w-8 h-8 rounded-full hover:bg-white/20 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer"
+                title="Previous Reel"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+                </svg>
+              </button>
+              <span class="text-[9px] font-black text-purple-300 leading-none px-1">{{ currentIndex + 1 }}/{{ reelsList.length }}</span>
+              <button
+                type="button"
+                @click.stop="nextReel"
+                class="w-8 h-8 rounded-full hover:bg-white/20 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer"
+                title="Next Reel"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
             <!-- Like Button -->
             <div class="flex flex-col items-center gap-1">
               <button
@@ -453,9 +561,6 @@
           <!-- Bottom Metadata Overlay: Author, Follow, Caption, Music -->
           <div
             class="relative z-20 p-4 pr-16 space-y-2 text-white bg-gradient-to-t from-black/95 via-black/60 to-transparent"
-            @touchstart.stop
-            @touchmove.stop
-            @touchend.stop
           >
             <!-- Author Row -->
             <div class="flex items-center gap-2.5">
@@ -529,9 +634,6 @@
             ref="scrubberBar"
             class="absolute bottom-0 inset-x-0 h-1.5 hover:h-2.5 bg-white/20 z-30 cursor-pointer transition-all group/scrubber"
             @click.stop="seekVideo"
-            @touchstart.stop
-            @touchmove.stop
-            @touchend.stop
           >
             <div
               class="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 relative transition-all duration-75"
@@ -544,7 +646,7 @@
 
         <!-- Desktop Next Reel Navigation Chevron -->
         <button
-          v-if="currentIndex < reelsList.length - 1"
+          v-if="reelsList.length > 1"
           type="button"
           @click.stop="nextReel"
           class="hidden lg:flex w-12 h-12 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-xl items-center justify-center hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 hover:scale-110 active:scale-95 transition-all cursor-pointer z-20 group"
@@ -558,6 +660,7 @@
         <!-- Slide-out Comments Drawer on Desktop -->
         <div
           v-if="isCommentsOpen"
+          data-reel-no-swipe="true"
           class="hidden md:flex flex-col w-[360px] h-[82vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-30 animate-in slide-in-from-right duration-200"
         >
           <!-- Drawer Header -->
@@ -672,8 +775,52 @@
       <!-- 3. Empty State when no Reels in selected tab -->
       <div
         v-else
-        class="w-full max-w-md my-auto flex flex-col items-center justify-center p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 text-center shadow-lg animate-in fade-in"
+        class="w-full max-w-md my-auto flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 text-center shadow-lg animate-in fade-in mx-4"
       >
+        <!-- Mobile Tab Switcher in Empty State -->
+        <div class="flex md:hidden items-center justify-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-5 w-full">
+          <button
+            type="button"
+            @click="switchTab('for_you')"
+            :class="[
+              'flex-1 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer',
+              currentTab === 'for_you' ? 'bg-purple-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'
+            ]"
+          >
+            For You
+          </button>
+          <button
+            type="button"
+            @click="switchTab('following')"
+            :class="[
+              'flex-1 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer',
+              currentTab === 'following' ? 'bg-purple-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'
+            ]"
+          >
+            Following
+          </button>
+          <button
+            type="button"
+            @click="switchTab('my_reels')"
+            :class="[
+              'flex-1 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer',
+              currentTab === 'my_reels' ? 'bg-purple-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'
+            ]"
+          >
+            My Reels
+          </button>
+          <button
+            type="button"
+            @click="switchTab('saved')"
+            :class="[
+              'flex-1 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer',
+              currentTab === 'saved' ? 'bg-purple-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'
+            ]"
+          >
+            Saved
+          </button>
+        </div>
+
         <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-purple-500/20 to-pink-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4 shadow-inner">
           <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24">
             <path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/>
@@ -702,6 +849,7 @@
           @click="isCommentsOpen = false"
         >
           <div
+            data-reel-no-swipe="true"
             class="w-full bg-white dark:bg-slate-900 rounded-t-3xl max-h-[75vh] flex flex-col shadow-2xl border-t border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom duration-200"
             @click.stop
             @touchstart.stop
@@ -760,6 +908,7 @@
       <ReelShareModal
         :is-open="isShareModalOpen"
         :reel="currentReel || null"
+        :current-user="currentUser"
         :initial-tab="shareModalInitialTab"
         @close="isShareModalOpen = false"
         @shared="handleReelShared"
@@ -786,12 +935,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 import AppLayout from '../Layouts/AppLayout.vue';
 import ReelCreatorModal from '../Components/Reels/ReelCreatorModal.vue';
 import ReelShareModal from '../Components/Reels/ReelShareModal.vue';
 import ReelDeleteConfirmModal from '../Components/Reels/ReelDeleteConfirmModal.vue';
+import { useReelPlayerEngine } from '../Composables/useReelPlayerEngine';
 import type { User, SharedProps, ReelItem } from '../types';
 
 const props = withDefaults(
@@ -817,6 +967,9 @@ const currentUser = computed<User | null>(() => page.props.auth?.user || null);
 const currentTab = ref(props.activeTab || 'for_you');
 const reelsList = ref<ReelItem[]>([...(props.reels?.data || [])]);
 const currentIndex = ref(0);
+const currentPage = ref(props.reels?.current_page || 1);
+const lastPage = ref(props.reels?.last_page || 1);
+const isLoadingMoreReels = ref(false);
 
 const isCreateModalOpen = ref(false);
 const isCommentsOpen = ref(false);
@@ -828,14 +981,7 @@ const shareModalInitialTab = ref<'message' | 'profile' | 'group' | 'page'>('mess
 
 const videoEl = ref<HTMLVideoElement | null>(null);
 const scrubberBar = ref<HTMLDivElement | null>(null);
-const isPlaying = ref(true);
-const isMuted = ref(true);
 const volumeLevel = ref(0.8);
-const playbackRate = ref(1);
-const videoProgress = ref(0);
-const showPlayPauseIcon = ref(false);
-const showHeartAnim = ref(false);
-let playPauseTimer: any = null;
 let viewTrackingTimer: any = null;
 
 // Comments state
@@ -844,59 +990,149 @@ const isLoadingComments = ref(false);
 const isPostingComment = ref(false);
 const newCommentText = ref('');
 
-// Auto-advance & transitions
-const isAutoAdvanceEnabled = ref(true);
-const slideDirection = ref<'up' | 'down' | 'none'>('none');
+// Responsive & UI state
 const isMobileViewport = ref(false);
-
-// Advanced Gesture & Physics Engine
-const isDragging = ref(false);
-const dragOffset = ref(0);
-const isLongPressing2x = ref(false);
 const showSwipeHint = ref(true);
 const isCaptionExpanded = ref(false);
-const heartBurstPos = ref<{ x: number; y: number } | null>(null);
-
-let touchStartY = 0;
-let touchStartX = 0;
-let touchStartTime = 0;
-let isVerticalGesture = false;
-let longPressTimer: any = null;
-let lastTapTime = 0;
-let singleTapTimer: any = null;
-let lastWheelTime = 0;
 let swipeHintDismissTimer: any = null;
 
-const currentReel = computed<ReelItem | undefined>(() => reelsList.value[currentIndex.value]);
+const getCsrfToken = () => {
+  return (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+};
 
-const cardTransformStyle = computed(() => {
-  if (isDragging.value) {
-    return {
-      transform: `translateY(${dragOffset.value}px)`,
-      transition: 'none',
-    };
+let paginationErrorCooldownUntil = 0;
+
+const fetchMoreReels = async () => {
+  if (
+    isLoadingMoreReels.value ||
+    currentPage.value >= lastPage.value ||
+    Date.now() < paginationErrorCooldownUntil
+  ) {
+    return;
   }
-  return {
-    transform: 'translateY(0px)',
-    transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-  };
+  isLoadingMoreReels.value = true;
+  try {
+    const nextPage = currentPage.value + 1;
+    const res = await fetch(`/api/v2/reels?page=${nextPage}&tab=${encodeURIComponent(currentTab.value)}`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': getCsrfToken(),
+      },
+    });
+    if (res.ok) {
+      paginationErrorCooldownUntil = 0;
+      const json = await res.json();
+      const incoming: ReelItem[] = Array.isArray(json?.data) ? json.data : [];
+      if (incoming.length > 0) {
+        const existingIds = new Set(reelsList.value.map((r) => r.id));
+        const uniqueIncoming = incoming.filter((r) => !existingIds.has(r.id));
+        if (uniqueIncoming.length > 0) {
+          reelsList.value.push(...uniqueIncoming);
+        }
+      }
+      currentPage.value = json?.meta?.current_page ?? nextPage;
+      lastPage.value = json?.meta?.last_page ?? lastPage.value;
+    } else if (res.status === 429) {
+      paginationErrorCooldownUntil = Date.now() + 10000;
+    } else {
+      paginationErrorCooldownUntil = Date.now() + 5000;
+    }
+  } catch {
+    paginationErrorCooldownUntil = Date.now() + 5000;
+  } finally {
+    isLoadingMoreReels.value = false;
+  }
+};
+
+// Centralized Reel Player Engine (handles autoAdvancedCurrentReel completion lock & isInteractiveTarget gesture filtering)
+const {
+  isPlaying,
+  isMuted,
+  playbackRate,
+  videoProgress,
+  videoError,
+  videoErrorMessage,
+  isBuffering,
+  isAutoAdvanceEnabled,
+  slideDirection,
+  showPlayPauseIcon,
+  showHeartAnim,
+  isDragging,
+  isLongPressing2x,
+  currentReel,
+  nextReelPreloadUrl,
+  cardTransformStyle,
+  heartAnimStyle,
+  toggleAutoAdvance,
+  playActiveVideo,
+  retryVideo,
+  nextReel: engineNextReel,
+  prevReel: enginePrevReel,
+  onTimeUpdate,
+  onVideoEnded,
+  onVideoError,
+  onVideoWaiting,
+  onVideoPlaying,
+  onVideoCanPlay,
+  onPreloadError,
+  togglePlay,
+  toggleMute: engineToggleMute,
+  handleTouchStart,
+  handleTouchMove,
+  handleTouchEnd,
+  handleTouchCancel,
+  handlePointerDown,
+  handlePointerMove,
+  handlePointerUp,
+  handlePointerCancel,
+  handleMouseDown,
+  handleMouseMove,
+  handleMouseUp,
+  handleMouseCancel,
+  handleCaptureClick,
+  handleWheelScroll,
+} = useReelPlayerEngine({
+  reels: reelsList,
+  currentIndex,
+  videoEl,
+  initialMuted: true,
+  onReelChanged: () => {
+    showSwipeHint.value = false;
+    playbackRate.value = 1;
+    isCaptionExpanded.value = false;
+    commentsList.value = [];
+    isCommentsOpen.value = false;
+    isOptionsMenuOpen.value = false;
+    startViewTracking();
+  },
+  onDoubleTapLike: () => {
+    if (currentReel.value && !currentReel.value.has_liked) {
+      toggleLike();
+    }
+  },
+  onNeedMoreReels: () => {
+    fetchMoreReels();
+  },
 });
 
-const heartAnimStyle = computed(() => {
-  if (heartBurstPos.value) {
-    return {
-      left: `${heartBurstPos.value.x}px`,
-      top: `${heartBurstPos.value.y}px`,
-    };
-  }
-  return {
-    left: '50%',
-    top: '50%',
-  };
-});
+const nextReel = () => {
+  showSwipeHint.value = false;
+  engineNextReel();
+};
 
-const toggleAutoAdvance = () => {
-  isAutoAdvanceEnabled.value = !isAutoAdvanceEnabled.value;
+const prevReel = () => {
+  showSwipeHint.value = false;
+  enginePrevReel();
+};
+
+const onReelSwitched = async () => {
+  playbackRate.value = 1;
+  isCaptionExpanded.value = false;
+  commentsList.value = [];
+  isCommentsOpen.value = false;
+  isOptionsMenuOpen.value = false;
+  startViewTracking();
+  await playActiveVideo();
 };
 
 const checkMobile = () => {
@@ -921,10 +1157,6 @@ const formatTimeAgo = (dateStr: string) => {
   return `${Math.floor(hours / 24)}d ago`;
 };
 
-const getCsrfToken = () => {
-  return (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
-};
-
 const parseCaptionParts = (caption: string) => {
   if (!caption) return [];
   const words = caption.split(' ');
@@ -939,29 +1171,10 @@ const switchTab = (tab: string) => {
   router.get('/reels', { tab }, { preserveState: false, preserveScroll: true });
 };
 
-const togglePlay = () => {
-  if (!videoEl.value) return;
-  if (videoEl.value.paused) {
-    videoEl.value.play().catch(() => {});
-    isPlaying.value = true;
-  } else {
-    videoEl.value.pause();
-    isPlaying.value = false;
-  }
-  showPlayPauseIcon.value = true;
-  if (playPauseTimer) clearTimeout(playPauseTimer);
-  playPauseTimer = setTimeout(() => {
-    showPlayPauseIcon.value = false;
-  }, 400);
-};
-
 const toggleMute = () => {
-  isMuted.value = !isMuted.value;
-  if (videoEl.value) {
-    videoEl.value.muted = isMuted.value;
-    if (!isMuted.value && videoEl.value.volume === 0) {
-      videoEl.value.volume = volumeLevel.value;
-    }
+  engineToggleMute();
+  if (videoEl.value && !isMuted.value && videoEl.value.volume === 0) {
+    videoEl.value.volume = volumeLevel.value;
   }
 };
 
@@ -993,22 +1206,6 @@ const seekVideo = (e: MouseEvent) => {
   videoProgress.value = percentage * 100;
 };
 
-const onTimeUpdate = () => {
-  if (!videoEl.value || !videoEl.value.duration) return;
-  videoProgress.value = (videoEl.value.currentTime / videoEl.value.duration) * 100;
-};
-
-const onVideoEnded = () => {
-  if (isAutoAdvanceEnabled.value) {
-    nextReel();
-  } else {
-    if (videoEl.value) {
-      videoEl.value.currentTime = 0;
-      videoEl.value.play().catch(() => {});
-    }
-  }
-};
-
 const startViewTracking = () => {
   if (viewTrackingTimer) clearTimeout(viewTrackingTimer);
   viewTrackingTimer = setTimeout(async () => {
@@ -1028,61 +1225,6 @@ const startViewTracking = () => {
       }
     } catch (e) {}
   }, 3000);
-};
-
-const nextReel = () => {
-  if (reelsList.value.length === 0) return;
-  slideDirection.value = 'up';
-  setTimeout(() => {
-    slideDirection.value = 'none';
-  }, 320);
-
-  if (currentIndex.value < reelsList.value.length - 1) {
-    currentIndex.value++;
-    onReelSwitched();
-  } else if (reelsList.value.length > 1) {
-    currentIndex.value = 0;
-    onReelSwitched();
-  }
-};
-
-const prevReel = () => {
-  if (reelsList.value.length === 0) return;
-  slideDirection.value = 'down';
-  setTimeout(() => {
-    slideDirection.value = 'none';
-  }, 320);
-
-  if (currentIndex.value > 0) {
-    currentIndex.value--;
-    onReelSwitched();
-  } else if (reelsList.value.length > 1) {
-    currentIndex.value = reelsList.value.length - 1;
-    onReelSwitched();
-  }
-};
-
-const onReelSwitched = () => {
-  videoProgress.value = 0;
-  isPlaying.value = true;
-  playbackRate.value = 1;
-  isCaptionExpanded.value = false;
-  commentsList.value = [];
-  isCommentsOpen.value = false;
-  isOptionsMenuOpen.value = false;
-  startViewTracking();
-
-  if (videoEl.value) {
-    videoEl.value.currentTime = 0;
-    videoEl.value.playbackRate = 1;
-    videoEl.value.play().catch(() => {
-      isMuted.value = true;
-      if (videoEl.value) {
-        videoEl.value.muted = true;
-        videoEl.value.play().catch(() => {});
-      }
-    });
-  }
 };
 
 const toggleLike = async () => {
@@ -1265,9 +1407,11 @@ const openDeleteModal = () => {
   isDeleteModalOpen.value = true;
 };
 
-const handleReelShared = (payload: { count?: number; platform?: string }) => {
+const handleReelShared = (payload: { count?: number; shares_count?: number; platform?: string; type?: string }) => {
   if (currentReel.value) {
-    if (typeof payload?.count === 'number') {
+    if (typeof payload?.shares_count === 'number') {
+      currentReel.value.shares_count = payload.shares_count;
+    } else if (typeof payload?.count === 'number') {
       currentReel.value.shares_count = payload.count;
     } else {
       currentReel.value.shares_count = (currentReel.value.shares_count || 0) + 1;
@@ -1365,177 +1509,59 @@ const handleKeyDown = (e: KeyboardEvent) => {
   }
 };
 
-// ================= GESTURE ENGINE (TOUCH & MOUSEWHEEL) =================
-const handleTouchStart = (e: TouchEvent) => {
-  if (e.touches.length !== 1) return;
-  const touch = e.touches[0];
-  touchStartY = touch.clientY;
-  touchStartX = touch.clientX;
-  touchStartTime = Date.now();
-  isVerticalGesture = false;
-  isDragging.value = false;
-  dragOffset.value = 0;
-
-  if (longPressTimer) clearTimeout(longPressTimer);
-  longPressTimer = setTimeout(() => {
-    if (!isDragging.value && videoEl.value) {
-      isLongPressing2x.value = true;
-      videoEl.value.playbackRate = 2;
-    }
-  }, 320);
-};
-
-const handleTouchMove = (e: TouchEvent) => {
-  if (e.touches.length !== 1) return;
-  const touch = e.touches[0];
-  const deltaY = touch.clientY - touchStartY;
-  const deltaX = touch.clientX - touchStartX;
-
-  if (Math.abs(deltaY) > 8 || Math.abs(deltaX) > 8) {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
+const resolveInitialReelIndex = () => {
+  if (props.initialReelId) {
+    const foundIdx = reelsList.value.findIndex((r) => Number(r.id) === Number(props.initialReelId));
+    if (foundIdx >= 0) {
+      currentIndex.value = foundIdx;
+      return;
     }
   }
-
-  if (isLongPressing2x.value) {
-    return;
-  }
-
-  if (!isVerticalGesture && (Math.abs(deltaY) > 6 || Math.abs(deltaX) > 6)) {
-    isVerticalGesture = Math.abs(deltaY) >= Math.abs(deltaX);
-  }
-
-  if (isVerticalGesture) {
-    if (e.cancelable) {
-      e.preventDefault();
-    }
-    isDragging.value = true;
-
-    // Rubber-band resistance at limits
-    let calculatedOffset = deltaY;
-    if ((currentIndex.value === 0 && deltaY > 0) || (currentIndex.value === reelsList.value.length - 1 && deltaY < 0)) {
-      calculatedOffset = deltaY * 0.32;
-    }
-    dragOffset.value = calculatedOffset;
-  }
-};
-
-const handleTouchEnd = (e: TouchEvent) => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-
-  if (isLongPressing2x.value) {
-    isLongPressing2x.value = false;
-    if (videoEl.value) {
-      videoEl.value.playbackRate = playbackRate.value;
-    }
-    isDragging.value = false;
-    dragOffset.value = 0;
-    return;
-  }
-
-  const touch = e.changedTouches[0];
-  const deltaY = touch.clientY - touchStartY;
-  const deltaX = touch.clientX - touchStartX;
-  const duration = Math.max(1, Date.now() - touchStartTime);
-  const velocity = Math.abs(deltaY) / duration;
-
-  if (isDragging.value) {
-    isDragging.value = false;
-    const finalOffset = dragOffset.value;
-    dragOffset.value = 0;
-
-    // Threshold: moved > 45px OR flicked fast (velocity > 0.35 with > 20px move)
-    if (Math.abs(finalOffset) > 45 || (velocity > 0.35 && Math.abs(finalOffset) > 20)) {
-      showSwipeHint.value = false;
-      if (finalOffset < 0) {
-        nextReel();
-      } else {
-        prevReel();
+  if (typeof window !== 'undefined') {
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryReelId = urlParams.get('reel') || urlParams.get('id');
+    if (queryReelId) {
+      const qIdx = reelsList.value.findIndex((r) => Number(r.id) === Number(queryReelId));
+      if (qIdx >= 0) {
+        currentIndex.value = qIdx;
+        return;
       }
-    }
-    return;
-  }
-
-  // Tap handling (< 10px move)
-  if (Math.abs(deltaY) < 10 && Math.abs(deltaX) < 10) {
-    const now = Date.now();
-    if (now - lastTapTime < 280) {
-      // Double Tap Like
-      if (singleTapTimer) {
-        clearTimeout(singleTapTimer);
-        singleTapTimer = null;
-      }
-      lastTapTime = 0;
-
-      const rect = (e.currentTarget as HTMLElement)?.getBoundingClientRect();
-      if (rect) {
-        heartBurstPos.value = {
-          x: touch.clientX - rect.left,
-          y: touch.clientY - rect.top,
-        };
-      } else {
-        heartBurstPos.value = null;
-      }
-
-      if (currentReel.value && !currentReel.value.has_liked) {
-        toggleLike();
-      }
-      showHeartAnim.value = true;
-      setTimeout(() => {
-        showHeartAnim.value = false;
-      }, 600);
-    } else {
-      // Single Tap Play/Pause
-      lastTapTime = now;
-      singleTapTimer = setTimeout(() => {
-        togglePlay();
-      }, 260);
     }
   }
 };
 
-const handleTouchCancel = () => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-  if (singleTapTimer) {
-    clearTimeout(singleTapTimer);
-    singleTapTimer = null;
-  }
-  if (isLongPressing2x.value) {
-    isLongPressing2x.value = false;
-    if (videoEl.value) {
-      videoEl.value.playbackRate = playbackRate.value;
-    }
-  }
-  isDragging.value = false;
-  dragOffset.value = 0;
+const handlePopState = () => {
+  resolveInitialReelIndex();
 };
 
-const handleWheelScroll = (e: WheelEvent) => {
-  const now = Date.now();
-  if (now - lastWheelTime < 450) return;
-  if (Math.abs(e.deltaY) > 30) {
-    lastWheelTime = now;
-    showSwipeHint.value = false;
-    if (e.deltaY > 0) {
-      nextReel();
-    } else {
-      prevReel();
-    }
+watch(
+  () => [props.reels, props.activeTab, props.initialReelId],
+  () => {
+    currentTab.value = props.activeTab || 'for_you';
+    reelsList.value = [...(props.reels?.data || [])];
+    currentPage.value = props.reels?.current_page || 1;
+    lastPage.value = props.reels?.last_page || 1;
+    currentIndex.value = 0;
+    resolveInitialReelIndex();
+    playActiveVideo();
   }
+);
+
+const clearPaginationCooldown = () => {
+  paginationErrorCooldownUntil = 0;
 };
 
 onMounted(() => {
   checkMobile();
   window.addEventListener('resize', checkMobile);
   window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('popstate', handlePopState);
+  window.addEventListener('online', clearPaginationCooldown);
+
+  resolveInitialReelIndex();
+
   startViewTracking();
+  playActiveVideo();
 
   swipeHintDismissTimer = setTimeout(() => {
     showSwipeHint.value = false;
@@ -1545,10 +1571,9 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile);
   window.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('popstate', handlePopState);
+  window.removeEventListener('online', clearPaginationCooldown);
   if (viewTrackingTimer) clearTimeout(viewTrackingTimer);
-  if (playPauseTimer) clearTimeout(playPauseTimer);
-  if (longPressTimer) clearTimeout(longPressTimer);
-  if (singleTapTimer) clearTimeout(singleTapTimer);
   if (swipeHintDismissTimer) clearTimeout(swipeHintDismissTimer);
 });
 </script>
