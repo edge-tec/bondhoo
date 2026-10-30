@@ -106,7 +106,7 @@ button, a, input, select, textarea, [role="button"] {
 }
 
 @media (max-width: 768px) {
-    .mobile-bottom-nav {
+    body:not(.inertia-app) .mobile-bottom-nav {
         position: fixed;
         bottom: 0;
         left: 0;
@@ -143,7 +143,7 @@ button, a, input, select, textarea, [role="button"] {
         padding-bottom: calc(var(--mobile-nav-height) + var(--sab) + 16px) !important;
     }
 
-    .mobile-nav-btn {
+    body:not(.inertia-app) .mobile-nav-btn {
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -349,13 +349,13 @@ button, a, input, select, textarea, [role="button"] {
 }
 
 @media (max-width: 768px) {
-    header.desktop-header,
-    .desktop-only {
+    body:not(.inertia-app) header.desktop-header,
+    body:not(.inertia-app) .desktop-only {
         display: none !important;
     }
 
-    header:not(.desktop-header),
-    header.app-header {
+    body:not(.inertia-app) header:not(.desktop-header),
+    body:not(.inertia-app) header.app-header {
         height: calc(var(--mobile-header-height) + var(--sat)) !important;
         padding: var(--sat) 12px 0 !important;
         gap: 8px !important;
@@ -2562,7 +2562,7 @@ button, a, input, select, textarea, [role="button"] {
         padding-bottom: calc(56px + var(--sab) + 8px) !important;
     }
 
-    .mobile-nav-btn {
+    body:not(.inertia-app) .mobile-nav-btn {
         min-width: 0 !important;
         padding: 2px 0 !important;
     }

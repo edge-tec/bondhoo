@@ -77,12 +77,25 @@ class Phase7ResponsiveScreenshotsTest extends TestCase
             return;
         }
 
-        $breakpoints = [320, 360, 375, 390, 430, 600, 767, 768, 820, 1023, 1024, 1280, 1440, 1920];
+        // Phase 7.3: Mandatory Viewports from Section 10
+        $mandatoryViewports = [
+            '320x568' => [320, 568],
+            '360x640' => [360, 640],
+            '375x667' => [375, 667],
+            '390x844' => [390, 844],
+            '393x852' => [393, 852],
+            '414x896' => [414, 896],
+            '430x932' => [430, 932],
+            '768x1024' => [768, 1024],
+            '1024x768' => [1024, 768],
+            '1366x768' => [1366, 768],
+            '1920x1080' => [1920, 1080],
+        ];
+
         $captured = [];
 
-        foreach ($breakpoints as $width) {
-            $height = 900;
-            $screenshotPath = "{$scratchDir}/feed_{$width}px.png";
+        foreach ($mandatoryViewports as $name => [$width, $height]) {
+            $screenshotPath = "{$scratchDir}/viewport_{$name}.png";
 
             $cmd = sprintf(
                 '"%s" --headless=new --disable-gpu --no-sandbox --user-data-dir=/tmp/chrome-test-profile --crash-dumps-dir=/tmp/chrome-crash --hide-scrollbars --window-size=%d,%d --screenshot="%s" "file://%s" 2>/dev/null',
@@ -95,16 +108,49 @@ class Phase7ResponsiveScreenshotsTest extends TestCase
 
             exec($cmd, $out, $returnCode);
 
-            $this->assertEquals(0, $returnCode, "Chrome failed to capture screenshot at {$width}px: ".implode("\n", $out));
-            $this->assertFileExists($screenshotPath, "Screenshot missing at {$width}px");
-            $this->assertGreaterThan(5000, filesize($screenshotPath), "Screenshot at {$width}px is suspiciously empty");
+            $this->assertEquals(0, $returnCode, "Chrome failed to capture screenshot at {$name}: ".implode("\n", $out));
+            $this->assertFileExists($screenshotPath, "Screenshot missing at {$name}");
+            $this->assertGreaterThan(5000, filesize($screenshotPath), "Screenshot at {$name} is suspiciously empty");
 
-            $captured[$width] = [
+            $captured[$name] = [
+                'viewport' => $name,
                 'width' => $width,
                 'height' => $height,
                 'size_bytes' => filesize($screenshotPath),
                 'path' => $screenshotPath,
             ];
+        }
+
+        // Also capture drawer open scenario on mobile (375x667, 390x844, 430x932)
+        $drawerHtml = str_replace(
+            '</body>',
+            '<script>
+                window.addEventListener("DOMContentLoaded", () => {
+                    setTimeout(() => {
+                        const btn = document.getElementById("mobileMenuToggleBtn");
+                        if (btn) btn.click();
+                    }, 300);
+                });
+            </script></body>',
+            $contentWithLocalAssets
+        );
+        $drawerHtmlPath = $scratchDir.'/drawer_open.html';
+        file_put_contents($drawerHtmlPath, $drawerHtml);
+
+        foreach (['375x667' => [375, 667], '390x844' => [390, 844], '430x932' => [430, 932]] as $name => [$width, $height]) {
+            $drawerShotPath = "{$scratchDir}/drawer_{$name}.png";
+            $cmd = sprintf(
+                '"%s" --headless=new --disable-gpu --no-sandbox --user-data-dir=/tmp/chrome-test-profile --crash-dumps-dir=/tmp/chrome-crash --hide-scrollbars --window-size=%d,%d --virtual-time-budget=2000 --screenshot="%s" "file://%s" 2>/dev/null',
+                $chromePath,
+                $width,
+                $height,
+                $drawerShotPath,
+                $drawerHtmlPath
+            );
+            exec($cmd, $out, $returnCode);
+            $this->assertEquals(0, $returnCode, "Drawer screenshot failed at {$name}");
+            $this->assertFileExists($drawerShotPath);
+            $this->assertGreaterThan(5000, filesize($drawerShotPath));
         }
 
         // Also capture Profile at 375, 768, 1440
@@ -142,6 +188,6 @@ class Phase7ResponsiveScreenshotsTest extends TestCase
             $this->assertGreaterThan(5000, filesize($profileShotPath));
         }
 
-        $this->assertCount(14, $captured);
+        $this->assertCount(11, $captured);
     }
 }

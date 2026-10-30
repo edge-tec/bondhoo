@@ -223,3 +223,4 @@ In the event that production deployment requires rollback:
 2. Run `npm run build` to restore previous frontend assets.
 3. Run `php artisan optimize:clear && php artisan config:cache && php artisan route:cache`.
 4. Restart queue workers: `php artisan queue:restart`.
+
