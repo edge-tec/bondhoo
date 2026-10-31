@@ -45,3 +45,4 @@ class PrivacySettingsViewModel @Inject constructor(
         }
     }
 }
+

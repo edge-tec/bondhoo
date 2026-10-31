@@ -16,3 +16,4 @@ sealed interface ProfileIntent {
     object ToggleFollow : ProfileIntent
     object SendFriendRequest : ProfileIntent
 }
+

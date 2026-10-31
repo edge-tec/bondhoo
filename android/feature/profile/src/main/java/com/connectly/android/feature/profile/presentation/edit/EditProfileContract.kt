@@ -22,3 +22,4 @@ sealed interface EditProfileIntent {
     data class CoverSelected(val file: File) : EditProfileIntent
     object SaveProfile : EditProfileIntent
 }
+

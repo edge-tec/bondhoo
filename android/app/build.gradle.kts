@@ -54,6 +54,8 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:profile"))
+    implementation(project(":feature:feed"))
+    implementation(project(":feature:stories"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

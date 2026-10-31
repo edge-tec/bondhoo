@@ -90,3 +90,4 @@ class UpdatePrivacySettingsUseCase @Inject constructor(
     operator fun invoke(visibility: String): Flow<Result<Unit>> =
         repository.updatePrivacySettings(visibility)
 }
+

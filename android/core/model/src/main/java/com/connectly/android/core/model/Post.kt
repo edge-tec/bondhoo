@@ -13,17 +13,18 @@ data class Post(
     val commentsCount: Int = 0,
     val sharesCount: Int = 0,
     val userReaction: String? = null,
+    val isSaved: Boolean = false,
     val privacy: String = "public",
     val feedTab: String = "for_you",
     val createdAt: Long = System.currentTimeMillis()
 )
 
-enum class ReactionType(val value: String, val emoji: String) {
-    LIKE("like", "👍"),
-    LOVE("love", "❤️"),
-    HAHA("haha", "😂"),
-    WOW("wow", "😮"),
-    SAD("sad", "😢"),
-    ANGRY("angry", "😡")
+enum class ReactionType(val value: String, val emoji: String, val label: String) {
+    LIKE("like", "👍", "Like"),
+    LOVE("love", "❤️", "Love"),
+    CARE("care", "🥰", "Care"),
+    HAHA("haha", "😂", "Haha"),
+    WOW("wow", "😮", "Wow"),
+    SAD("sad", "😢", "Sad"),
+    ANGRY("angry", "😡", "Angry")
 }
-

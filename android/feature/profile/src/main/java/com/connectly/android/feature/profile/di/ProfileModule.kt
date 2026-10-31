@@ -18,3 +18,4 @@ abstract class ProfileModule {
         profileRepositoryImpl: ProfileRepositoryImpl
     ): ProfileRepository
 }
+

@@ -15,3 +15,4 @@ sealed interface PrivacySettingsIntent {
     data class AllowTaggingChanged(val allowed: Boolean) : PrivacySettingsIntent
     object SaveSettings : PrivacySettingsIntent
 }
+

@@ -84,26 +84,100 @@ interface ConnectlyApi {
     @GET("v1/feed")
     suspend fun getFeed(
         @Query("tab") tab: String = "for_you",
-        @Query("page") page: Int = 1
+        @Query("cursor") cursor: String? = null,
+        @Query("per_page") perPage: Int = 15
     ): Response<ApiResponse<List<PostDto>>>
 
-    @GET("v1/stories")
-    suspend fun getStories(): Response<ApiResponse<List<StoryUserDto>>>
+    @POST("v1/posts")
+    suspend fun createPost(@Body body: CreatePostPayload): Response<ApiResponse<PostDto>>
 
-    @POST("v1/stories/{id}/view")
-    suspend fun viewStory(@Path("id") storyId: Long): Response<Unit>
+    @GET("v1/posts/{id}")
+    suspend fun getPost(@Path("id") id: Long): Response<ApiResponse<PostDto>>
 
-    @POST("v1/stories/{id}/react")
-    suspend fun reactToStory(
-        @Path("id") storyId: Long,
-        @Body body: ReactionRequest
-    ): Response<Unit>
+    @PUT("v1/posts/{id}")
+    suspend fun updatePost(
+        @Path("id") id: Long,
+        @Body body: UpdatePostPayload
+    ): Response<ApiResponse<PostDto>>
+
+    @DELETE("v1/posts/{id}")
+    suspend fun deletePost(@Path("id") id: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/profile/saved-items/toggle")
+    suspend fun toggleSavePost(@Body body: ToggleSaveItemPayload): Response<ApiResponse<Unit>>
+
+    @POST("v1/posts/{id}/share")
+    suspend fun sharePost(
+        @Path("id") id: Long,
+        @Body body: SharePostPayload
+    ): Response<ApiResponse<Unit>>
 
     @POST("v1/posts/{id}/react")
     suspend fun reactToPost(
         @Path("id") postId: Long,
         @Body body: ReactionRequest
     ): Response<ApiResponse<ReactionResponse>>
+
+    // -------------------------------------------------------------
+    // Comments System
+    // -------------------------------------------------------------
+    @GET("v1/posts/{id}/comments")
+    suspend fun getComments(
+        @Path("id") postId: Long,
+        @Query("page") page: Int = 1,
+        @Query("parent_id") parentId: Long? = null
+    ): Response<ApiResponse<List<CommentDto>>>
+
+    @POST("v1/posts/{id}/comments")
+    suspend fun createComment(
+        @Path("id") postId: Long,
+        @Body body: CreateCommentPayload
+    ): Response<ApiResponse<CommentDto>>
+
+    @PUT("v1/comments/{id}")
+    suspend fun updateComment(
+        @Path("id") id: Long,
+        @Body body: CreateCommentPayload
+    ): Response<ApiResponse<CommentDto>>
+
+    @DELETE("v1/comments/{id}")
+    suspend fun deleteComment(@Path("id") id: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/comments/{id}/react")
+    suspend fun reactToComment(
+        @Path("id") commentId: Long,
+        @Body body: ReactionRequest
+    ): Response<ApiResponse<ReactionResponse>>
+
+    // -------------------------------------------------------------
+    // Stories System
+    // -------------------------------------------------------------
+    @GET("v1/stories")
+    suspend fun getStories(): Response<ApiResponse<List<StoryUserDto>>>
+
+    @POST("v1/stories")
+    suspend fun createStory(@Body body: CreateStoryPayload): Response<ApiResponse<StoryDto>>
+
+    @DELETE("v1/stories/{id}")
+    suspend fun deleteStory(@Path("id") storyId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/stories/{id}/view")
+    suspend fun viewStory(@Path("id") storyId: Long): Response<Unit>
+
+    @GET("v1/stories/{id}/views")
+    suspend fun getStoryViewers(@Path("id") storyId: Long): Response<ApiResponse<List<UserDto>>>
+
+    @POST("v2/stories/{id}/react")
+    suspend fun reactToStory(
+        @Path("id") storyId: Long,
+        @Body body: ReactionRequest
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v2/stories/{id}/reply")
+    suspend fun replyToStory(
+        @Path("id") storyId: Long,
+        @Body body: StoryReplyPayload
+    ): Response<ApiResponse<Unit>>
 
     // -------------------------------------------------------------
     // Reels (Screen 3)
@@ -389,5 +463,66 @@ data class UpdatePrivacySettingsRequest(
     val profile_visibility: String? = null,
     val avatar_privacy: String? = null,
     val bio_privacy: String? = null
+)
+
+@Serializable
+data class CreatePostPayload(
+    val content: String? = null,
+    val audience: String = "public",
+    val type: String = "text",
+    val media_ids: List<Long> = emptyList(),
+    val tagged_user_ids: List<Long> = emptyList()
+)
+
+@Serializable
+data class UpdatePostPayload(
+    val content: String,
+    val audience: String = "public"
+)
+
+@Serializable
+data class ToggleSaveItemPayload(
+    val item_type: String = "post",
+    val item_id: Long
+)
+
+@Serializable
+data class SharePostPayload(
+    val caption: String? = null
+)
+
+@Serializable
+data class CreateCommentPayload(
+    val body: String,
+    val parent_id: Long? = null
+)
+
+@Serializable
+data class CommentDto(
+    val id: Long,
+    val post_id: Long,
+    val parent_id: Long? = null,
+    val user: UserDto,
+    val content: String? = null,
+    val body: String? = null,
+    val reactions_count: Int = 0,
+    val user_reaction: String? = null,
+    val replies_count: Int = 0,
+    val replies: List<CommentDto> = emptyList(),
+    val created_at: String = "Just now"
+)
+
+@Serializable
+data class CreateStoryPayload(
+    val type: String = "media",
+    val content: String? = null,
+    val privacy: String = "public",
+    val media_ids: List<Long> = emptyList(),
+    val background_color: String? = null
+)
+
+@Serializable
+data class StoryReplyPayload(
+    val message: String
 )
 

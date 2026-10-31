@@ -19,3 +19,4 @@ interface ProfileRepository {
     fun unblockUser(userId: Long): Flow<Result<Unit>>
     fun updatePrivacySettings(visibility: String): Flow<Result<Unit>>
 }
+

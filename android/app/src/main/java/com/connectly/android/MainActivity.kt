@@ -19,8 +19,14 @@ import com.connectly.android.core.designsystem.theme.ConnectlyTheme
 import com.connectly.android.feature.auth.navigation.LOGIN_ROUTE
 import com.connectly.android.feature.auth.navigation.authGraph
 import com.connectly.android.feature.auth.navigation.navigateToLogin
+import com.connectly.android.feature.feed.navigation.feedGraph
+import com.connectly.android.feature.feed.navigation.navigateToCreatePost
+import com.connectly.android.feature.feed.presentation.feed.FeedScreen
 import com.connectly.android.feature.profile.navigation.navigateToProfile
 import com.connectly.android.feature.profile.navigation.profileGraph
+import com.connectly.android.feature.stories.navigation.navigateToCreateStory
+import com.connectly.android.feature.stories.navigation.navigateToStoryViewer
+import com.connectly.android.feature.stories.navigation.storiesGraph
 import dagger.hilt.android.AndroidEntryPoint
 
 const val MAIN_HOME_ROUTE = "main_home"
@@ -57,21 +63,27 @@ class MainActivity : ComponentActivity() {
                         }
                     )
 
+                    feedGraph(
+                        navController = rootNavController,
+                        onNavigateToStoryViewer = { storyId ->
+                            rootNavController.navigateToStoryViewer(storyId)
+                        },
+                        onNavigateToCreateStory = {
+                            rootNavController.navigateToCreateStory()
+                        },
+                        onNavigateToProfile = {
+                            rootNavController.navigateToProfile()
+                        }
+                    )
+
+                    storiesGraph(
+                        navController = rootNavController
+                    )
+
                     composable(MAIN_HOME_ROUTE) {
                         var selectedTab by remember { mutableStateOf(BottomBarDestination.HOME) }
 
                         Scaffold(
-                            topBar = {
-                                ConnectlyTopBar(
-                                    title = "Connectly",
-                                    unreadNotificationsCount = 3,
-                                    onSearchClick = { /* Navigate to Search */ },
-                                    onNotificationsClick = { /* Navigate to Notifications */ },
-                                    onProfileClick = {
-                                        rootNavController.navigateToProfile()
-                                    }
-                                )
-                            },
                             bottomBar = {
                                 ConnectlyBottomBar(
                                     selectedDestination = selectedTab,
@@ -81,18 +93,28 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         ) { innerPadding ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(innerPadding)
-                                    .background(MaterialTheme.colorScheme.background),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Connectly — ${selectedTab.title} Screen",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onBackground
+                            if (selectedTab == BottomBarDestination.HOME) {
+                                FeedScreen(
+                                    onNavigateToCreatePost = { rootNavController.navigateToCreatePost() },
+                                    onNavigateToStoryViewer = { storyId -> rootNavController.navigateToStoryViewer(storyId) },
+                                    onNavigateToCreateStory = { rootNavController.navigateToCreateStory() },
+                                    onNavigateToProfile = { rootNavController.navigateToProfile() },
+                                    modifier = Modifier.padding(innerPadding)
                                 )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding)
+                                        .background(MaterialTheme.colorScheme.background),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "Connectly — ${selectedTab.title} Screen",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onBackground
+                                    )
+                                }
                             }
                         }
                     }
