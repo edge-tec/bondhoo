@@ -24,6 +24,8 @@ import com.connectly.android.feature.feed.navigation.navigateToCreatePost
 import com.connectly.android.feature.feed.presentation.feed.FeedScreen
 import com.connectly.android.feature.profile.navigation.navigateToProfile
 import com.connectly.android.feature.profile.navigation.profileGraph
+import com.connectly.android.feature.reels.navigation.reelsGraph
+import com.connectly.android.feature.reels.presentation.player.ReelsScreen
 import com.connectly.android.feature.stories.navigation.navigateToCreateStory
 import com.connectly.android.feature.stories.navigation.navigateToStoryViewer
 import com.connectly.android.feature.stories.navigation.storiesGraph
@@ -80,6 +82,11 @@ class MainActivity : ComponentActivity() {
                         navController = rootNavController
                     )
 
+                    reelsGraph(
+                        navController = rootNavController,
+                        onNavigateToCreateReel = { rootNavController.navigateToCreateStory() }
+                    )
+
                     composable(MAIN_HOME_ROUTE) {
                         var selectedTab by remember { mutableStateOf(BottomBarDestination.HOME) }
 
@@ -93,27 +100,36 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         ) { innerPadding ->
-                            if (selectedTab == BottomBarDestination.HOME) {
-                                FeedScreen(
-                                    onNavigateToCreatePost = { rootNavController.navigateToCreatePost() },
-                                    onNavigateToStoryViewer = { storyId -> rootNavController.navigateToStoryViewer(storyId) },
-                                    onNavigateToCreateStory = { rootNavController.navigateToCreateStory() },
-                                    onNavigateToProfile = { rootNavController.navigateToProfile() },
-                                    modifier = Modifier.padding(innerPadding)
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(innerPadding)
-                                        .background(MaterialTheme.colorScheme.background),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "Connectly — ${selectedTab.title} Screen",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onBackground
+                            when (selectedTab) {
+                                BottomBarDestination.HOME -> {
+                                    FeedScreen(
+                                        onNavigateToCreatePost = { rootNavController.navigateToCreatePost() },
+                                        onNavigateToStoryViewer = { storyId -> rootNavController.navigateToStoryViewer(storyId) },
+                                        onNavigateToCreateStory = { rootNavController.navigateToCreateStory() },
+                                        onNavigateToProfile = { rootNavController.navigateToProfile() },
+                                        modifier = Modifier.padding(innerPadding)
                                     )
+                                }
+                                BottomBarDestination.REELS -> {
+                                    ReelsScreen(
+                                        onNavigateToCreateReel = { rootNavController.navigateToCreateStory() },
+                                        modifier = Modifier.padding(innerPadding)
+                                    )
+                                }
+                                else -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(innerPadding)
+                                            .background(MaterialTheme.colorScheme.background),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "Connectly — ${selectedTab.title} Screen",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                    }
                                 }
                             }
                         }

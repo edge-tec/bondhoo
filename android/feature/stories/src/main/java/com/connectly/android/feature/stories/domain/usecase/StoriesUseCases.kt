@@ -57,3 +57,4 @@ class DeleteStoryUseCase @Inject constructor(
     operator fun invoke(storyId: Long): Flow<Result<Unit>> =
         repository.deleteStory(storyId)
 }
+

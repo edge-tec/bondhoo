@@ -18,3 +18,4 @@ sealed interface CreatePostIntent {
     data class MediaRemoved(val file: File) : CreatePostIntent
     object SubmitPost : CreatePostIntent
 }
+

@@ -20,3 +20,4 @@ sealed interface StoryViewerIntent {
     object ToggleViewersDrawer : StoryViewerIntent
     object DeleteStory : StoryViewerIntent
 }
+

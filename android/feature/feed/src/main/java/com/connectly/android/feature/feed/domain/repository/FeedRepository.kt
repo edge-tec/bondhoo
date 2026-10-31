@@ -23,3 +23,4 @@ interface FeedRepository {
     fun deleteComment(commentId: Long): Flow<Result<Unit>>
     fun reactToComment(commentId: Long, reactionType: String): Flow<Result<ReactionResponse>>
 }
+

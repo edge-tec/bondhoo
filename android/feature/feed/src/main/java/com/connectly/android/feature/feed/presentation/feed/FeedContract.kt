@@ -28,3 +28,4 @@ sealed interface FeedIntent {
     data class AddComment(val postId: Long, val body: String, val parentId: Long? = null) : FeedIntent
     data class ReactToComment(val commentId: Long, val reaction: String) : FeedIntent
 }
+

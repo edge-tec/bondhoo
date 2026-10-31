@@ -18,3 +18,4 @@ abstract class FeedModule {
         feedRepositoryImpl: FeedRepositoryImpl
     ): FeedRepository
 }
+

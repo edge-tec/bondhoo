@@ -200,6 +200,30 @@ interface ConnectlyApi {
         @Body body: ReelViewRequest
     ): Response<Unit>
 
+    @POST("v2/reels/{id}/save")
+    suspend fun saveReel(@Path("id") reelId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v2/reels/{id}/share")
+    suspend fun shareReel(@Path("id") reelId: Long): Response<ApiResponse<Unit>>
+
+    @GET("v2/reels/{id}/comments")
+    suspend fun getReelComments(
+        @Path("id") reelId: Long,
+        @Query("page") page: Int = 1
+    ): Response<ApiResponse<List<CommentDto>>>
+
+    @POST("v2/reels/{id}/comments")
+    suspend fun createReelComment(
+        @Path("id") reelId: Long,
+        @Body body: CreateCommentPayload
+    ): Response<ApiResponse<CommentDto>>
+
+    @Multipart
+    @POST("v2/uploads/direct/complete")
+    suspend fun uploadVideo(
+        @Part file: MultipartBody.Part
+    ): Response<ApiResponse<MediaUploadResponse>>
+
     // -------------------------------------------------------------
     // Groups Hub (Screen 4)
     // -------------------------------------------------------------

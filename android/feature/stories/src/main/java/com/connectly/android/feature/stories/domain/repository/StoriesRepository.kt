@@ -16,3 +16,4 @@ interface StoriesRepository {
     fun replyToStory(storyId: Long, message: String): Flow<Result<Unit>>
     fun deleteStory(storyId: Long): Flow<Result<Unit>>
 }
+
