@@ -21,3 +21,4 @@ data class StoryUserTray(
     val hasUnseenStories: Boolean,
     val stories: List<Story>
 )
+

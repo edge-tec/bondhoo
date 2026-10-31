@@ -28,3 +28,4 @@ class ConnectlyTypeConverters {
         return date?.time
     }
 }
+

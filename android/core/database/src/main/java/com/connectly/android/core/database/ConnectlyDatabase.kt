@@ -34,3 +34,4 @@ abstract class ConnectlyDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
     abstract fun syncPendingActionDao(): SyncPendingActionDao
 }
+

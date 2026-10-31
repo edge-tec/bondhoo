@@ -117,3 +117,4 @@ interface SyncPendingActionDao {
     @Query("DELETE FROM sync_pending_actions WHERE id = :id")
     suspend fun deleteAction(id: Long)
 }
+

@@ -26,3 +26,4 @@ enum class ReactionType(val value: String, val emoji: String) {
     SAD("sad", "😢"),
     ANGRY("angry", "😡")
 }
+

@@ -275,3 +275,4 @@ data class ReelViewRequest(val duration_seconds: Int, val completed: Boolean)
 
 @Serializable
 data class RsvpRequest(val status: String)
+

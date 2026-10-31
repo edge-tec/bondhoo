@@ -24,3 +24,4 @@ object DispatchersModule {
     @Dispatcher(ConnectlyDispatchers.Main)
     fun providesMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
 }
+

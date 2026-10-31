@@ -28,3 +28,4 @@ data class MusicTrack(
     val audioUrl: String? = null,
     val coverUrl: String? = null
 )
+

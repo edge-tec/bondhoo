@@ -45,3 +45,4 @@ include(":feature:events")
 include(":feature:live")
 include(":feature:notifications")
 include(":feature:settings")
+

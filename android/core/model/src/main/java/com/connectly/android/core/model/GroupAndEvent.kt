@@ -37,3 +37,4 @@ enum class RsvpStatus(val value: String) {
     GOING("going"),
     NOT_GOING("not_going")
 }
+

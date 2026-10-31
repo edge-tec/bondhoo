@@ -54,3 +54,4 @@ object DatabaseModule {
     @Provides
     fun providesSyncPendingActionDao(db: ConnectlyDatabase): SyncPendingActionDao = db.syncPendingActionDao()
 }
+

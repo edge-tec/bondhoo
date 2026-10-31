@@ -29,3 +29,4 @@ enum class FriendshipStatus {
     FRIENDS,
     BLOCKED
 }
+

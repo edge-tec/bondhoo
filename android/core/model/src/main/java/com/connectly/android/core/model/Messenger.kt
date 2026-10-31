@@ -47,3 +47,4 @@ enum class DeliveryStatus(val rawValue: String) {
     READ("read"),             // Viewed by recipient (✓✓ blue)
     FAILED("failed")          // Network drop / transmission error (⚠️ retry)
 }
+
