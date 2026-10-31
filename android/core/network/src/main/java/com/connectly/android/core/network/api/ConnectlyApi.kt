@@ -287,6 +287,48 @@ interface ConnectlyApi {
     ): Response<ApiResponse<MediaUploadResponse>>
 
     // -------------------------------------------------------------
+    // Real-Time Audio & Video Calling (WebRTC)
+    // -------------------------------------------------------------
+    @POST("v1/calls")
+    suspend fun initiateCall(@Body body: InitiateCallRequest): Response<ApiResponse<CallSessionDto>>
+
+    @POST("v1/calls/{id}/respond")
+    suspend fun respondToCall(
+        @Path("id") callId: Long,
+        @Body body: RespondCallRequest
+    ): Response<ApiResponse<CallSessionDto>>
+
+    @POST("v1/calls/{id}/leave")
+    suspend fun leaveCall(@Path("id") callId: Long): Response<ApiResponse<CallSessionDto>>
+
+    @POST("v1/calls/{id}/signal")
+    suspend fun sendSignal(
+        @Path("id") callId: Long,
+        @Body body: CallSignalRequest
+    ): Response<ApiResponse<Map<String, String>>>
+
+    @GET("v1/calls/{id}/signals")
+    suspend fun getSignals(@Path("id") callId: Long): Response<ApiResponse<List<Map<String, String>>>>
+
+    @GET("v1/calls/ice-servers")
+    suspend fun getIceServers(): Response<ApiResponse<IceServersResponse>>
+
+    @GET("v1/calls/active")
+    suspend fun getActiveCall(): Response<ApiResponse<CallSessionDto?>>
+
+    @GET("v1/calls/history")
+    suspend fun getCallHistory(
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 20
+    ): Response<ApiResponse<List<CallSessionDto>>>
+
+    @POST("v1/calls/{id}/state")
+    suspend fun updateCallState(
+        @Path("id") callId: Long,
+        @Body body: UpdateCallStateRequest
+    ): Response<ApiResponse<Unit>>
+
+    // -------------------------------------------------------------
     // Events & RSVP (Screen 7)
     // -------------------------------------------------------------
     @GET("v1/events")
@@ -584,6 +626,67 @@ data class CreateConversationRequest(
 @Serializable
 data class MessageReactionRequest(
     val reaction: String
+)
+
+@Serializable
+data class InitiateCallRequest(
+    val conversation_id: Long? = null,
+    val receiver_id: Long? = null,
+    val call_type: String
+)
+
+@Serializable
+data class RespondCallRequest(
+    val action: String // "accept", "reject", "busy"
+)
+
+@Serializable
+data class CallSignalRequest(
+    val signal_type: String, // "offer", "answer", "candidate", "screen_share", "renegotiate"
+    val payload: Map<String, String>,
+    val target_user_id: Long? = null
+)
+
+@Serializable
+data class IceServersResponse(
+    val ice_servers: List<IceServerDto> = emptyList()
+)
+
+@Serializable
+data class IceServerDto(
+    val urls: List<String> = emptyList(),
+    val username: String? = null,
+    val credential: String? = null
+)
+
+@Serializable
+data class UpdateCallStateRequest(
+    val is_muted: Boolean? = null,
+    val is_camera_off: Boolean? = null,
+    val is_screen_sharing: Boolean? = null
+)
+
+@Serializable
+data class CallSessionDto(
+    val id: Long,
+    val channel_name: String? = null,
+    val call_type: String = "audio",
+    val status: String = "ringing",
+    val caller: UserDto? = null,
+    val receiver: UserDto? = null,
+    val participants: List<CallParticipantDto> = emptyList(),
+    val started_at: String? = null,
+    val ended_at: String? = null,
+    val duration_seconds: Int = 0
+)
+
+@Serializable
+data class CallParticipantDto(
+    val id: Long,
+    val user: UserDto,
+    val status: String = "joined",
+    val is_muted: Boolean = false,
+    val is_camera_off: Boolean = false
 )
 
 

@@ -76,3 +76,4 @@ class ObserveIncomingMessagesUseCase @Inject constructor(
     operator fun invoke(conversationId: Long): Flow<Message> =
         repository.observeIncomingMessages(conversationId)
 }
+

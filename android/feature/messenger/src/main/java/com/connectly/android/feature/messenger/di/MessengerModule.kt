@@ -18,3 +18,4 @@ abstract class MessengerModule {
         messengerRepositoryImpl: MessengerRepositoryImpl
     ): MessengerRepository
 }
+

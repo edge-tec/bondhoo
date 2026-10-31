@@ -21,7 +21,9 @@ fun NavController.navigateToChat(conversationId: Long, navOptions: NavOptions? =
 }
 
 fun NavGraphBuilder.messengerGraph(
-    navController: NavController
+    navController: NavController,
+    onStartAudioCall: (Long) -> Unit = {},
+    onStartVideoCall: (Long) -> Unit = {}
 ) {
     composable(CONVERSATIONS_ROUTE) {
         ConversationListScreen(
@@ -39,7 +41,10 @@ fun NavGraphBuilder.messengerGraph(
         val conversationId = backStackEntry.arguments?.getLong("conversationId") ?: 501L
         ChatScreen(
             conversationId = conversationId,
-            onNavigateBack = { navController.popBackStack() }
+            onNavigateBack = { navController.popBackStack() },
+            onStartAudioCall = onStartAudioCall,
+            onStartVideoCall = onStartVideoCall
         )
     }
 }
+

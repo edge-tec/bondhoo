@@ -36,6 +36,8 @@ import com.connectly.android.core.model.Message
 fun ChatScreen(
     conversationId: Long,
     onNavigateBack: () -> Unit,
+    onStartAudioCall: (Long) -> Unit = {},
+    onStartVideoCall: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ChatViewModel = hiltViewModel()
 ) {
@@ -95,10 +97,10 @@ fun ChatScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Audio Call */ }) {
+                    IconButton(onClick = { onStartAudioCall(conversationId) }) {
                         Icon(Icons.Default.Call, contentDescription = "Call", tint = ConnectlyBlue)
                     }
-                    IconButton(onClick = { /* Video Call */ }) {
+                    IconButton(onClick = { onStartVideoCall(conversationId) }) {
                         Icon(Icons.Default.Videocam, contentDescription = "Video Call", tint = ConnectlyBlue)
                     }
                 },
@@ -270,3 +272,4 @@ private fun ChatMessageBubble(
         }
     }
 }
+

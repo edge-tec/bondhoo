@@ -15,3 +15,4 @@ sealed interface ConversationsIntent {
     data class SearchQueryChanged(val query: String) : ConversationsIntent
     object Refresh : ConversationsIntent
 }
+

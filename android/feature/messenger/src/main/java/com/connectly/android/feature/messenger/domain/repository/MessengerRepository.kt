@@ -24,3 +24,4 @@ interface MessengerRepository {
     fun deleteMessageForEveryone(messageId: Long): Flow<Result<Unit>>
     fun observeIncomingMessages(conversationId: Long): Flow<Message>
 }
+

@@ -23,3 +23,4 @@ sealed interface ChatIntent {
     data class DeleteMessage(val messageId: Long, val forEveryone: Boolean) : ChatIntent
     data class TypingChanged(val isTyping: Boolean) : ChatIntent
 }
+

@@ -125,3 +125,4 @@ class MessengerWebSocketClient @Inject constructor(
         isConnected = false
     }
 }
+

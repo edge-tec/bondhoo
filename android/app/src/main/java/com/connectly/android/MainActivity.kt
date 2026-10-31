@@ -19,6 +19,9 @@ import com.connectly.android.core.designsystem.theme.ConnectlyTheme
 import com.connectly.android.feature.auth.navigation.LOGIN_ROUTE
 import com.connectly.android.feature.auth.navigation.authGraph
 import com.connectly.android.feature.auth.navigation.navigateToLogin
+import com.connectly.android.core.model.CallType
+import com.connectly.android.feature.calling.navigation.callingGraph
+import com.connectly.android.feature.calling.navigation.navigateToCall
 import com.connectly.android.feature.feed.navigation.feedGraph
 import com.connectly.android.feature.feed.navigation.navigateToCreatePost
 import com.connectly.android.feature.feed.presentation.feed.FeedScreen
@@ -91,6 +94,16 @@ class MainActivity : ComponentActivity() {
                     )
 
                     messengerGraph(
+                        navController = rootNavController,
+                        onStartAudioCall = { receiverId ->
+                            rootNavController.navigateToCall(receiverId, isIncoming = false, callType = CallType.AUDIO)
+                        },
+                        onStartVideoCall = { receiverId ->
+                            rootNavController.navigateToCall(receiverId, isIncoming = false, callType = CallType.VIDEO)
+                        }
+                    )
+
+                    callingGraph(
                         navController = rootNavController
                     )
 
