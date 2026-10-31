@@ -18,3 +18,4 @@ abstract class CallingModule {
         impl: CallingRepositoryImpl
     ): CallingRepository
 }
+

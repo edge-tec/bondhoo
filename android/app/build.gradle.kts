@@ -59,6 +59,9 @@ dependencies {
     implementation(project(":feature:reels"))
     implementation(project(":feature:messenger"))
     implementation(project(":feature:calling"))
+    implementation(project(":feature:groups"))
+    implementation(project(":feature:events"))
+    implementation(project(":feature:live"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

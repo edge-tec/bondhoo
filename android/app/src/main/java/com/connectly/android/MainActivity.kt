@@ -28,6 +28,11 @@ import com.connectly.android.feature.feed.presentation.feed.FeedScreen
 import com.connectly.android.feature.messenger.navigation.messengerGraph
 import com.connectly.android.feature.messenger.navigation.navigateToChat
 import com.connectly.android.feature.messenger.presentation.conversations.ConversationListScreen
+import com.connectly.android.feature.events.navigation.eventsGraph
+import com.connectly.android.feature.groups.navigation.groupsGraph
+import com.connectly.android.feature.groups.presentation.groups.GroupsScreen
+import com.connectly.android.feature.live.navigation.liveGraph
+import com.connectly.android.feature.live.navigation.navigateToLive
 import com.connectly.android.feature.profile.navigation.navigateToProfile
 import com.connectly.android.feature.profile.navigation.profileGraph
 import com.connectly.android.feature.reels.navigation.reelsGraph
@@ -107,6 +112,18 @@ class MainActivity : ComponentActivity() {
                         navController = rootNavController
                     )
 
+                    groupsGraph(
+                        navController = rootNavController
+                    )
+
+                    eventsGraph(
+                        navController = rootNavController
+                    )
+
+                    liveGraph(
+                        navController = rootNavController
+                    )
+
                     composable(MAIN_HOME_ROUTE) {
                         var selectedTab by remember { mutableStateOf(BottomBarDestination.HOME) }
 
@@ -127,6 +144,11 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToStoryViewer = { storyId -> rootNavController.navigateToStoryViewer(storyId) },
                                         onNavigateToCreateStory = { rootNavController.navigateToCreateStory() },
                                         onNavigateToProfile = { rootNavController.navigateToProfile() },
+                                        modifier = Modifier.padding(innerPadding)
+                                    )
+                                }
+                                BottomBarDestination.FRIENDS -> {
+                                    GroupsScreen(
                                         modifier = Modifier.padding(innerPadding)
                                     )
                                 }

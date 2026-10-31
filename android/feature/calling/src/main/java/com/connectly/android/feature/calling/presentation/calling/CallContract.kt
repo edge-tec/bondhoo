@@ -39,3 +39,4 @@ sealed interface CallIntent {
     data object ToggleSpeaker : CallIntent
     data object TickTimer : CallIntent
 }
+

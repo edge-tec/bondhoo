@@ -11,3 +11,4 @@ data class CallHistoryState(
 sealed interface CallHistoryIntent {
     data object LoadHistory : CallHistoryIntent
 }
+

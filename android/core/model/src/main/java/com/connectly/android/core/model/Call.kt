@@ -78,3 +78,4 @@ data class CallHistoryItem(
     val durationSeconds: Int,
     val formattedTime: String
 )
+

@@ -19,3 +19,4 @@ interface CallingRepository {
     fun getCallHistory(): Flow<Result<List<CallHistoryItem>>>
     fun updateCallState(callId: Long, isMuted: Boolean?, isCameraOff: Boolean?): Flow<Result<Unit>>
 }
+

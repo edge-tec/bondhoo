@@ -42,3 +42,4 @@ class CallHistoryViewModel @Inject constructor(
         }
     }
 }
+

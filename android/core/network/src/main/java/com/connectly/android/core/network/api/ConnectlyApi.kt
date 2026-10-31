@@ -329,6 +329,38 @@ interface ConnectlyApi {
     ): Response<ApiResponse<Unit>>
 
     // -------------------------------------------------------------
+    // Groups & Community (Screen 4)
+    // -------------------------------------------------------------
+    @GET("v1/groups")
+    suspend fun getGroups(
+        @Query("filter") filter: String = "discover",
+        @Query("page") page: Int = 1
+    ): Response<ApiResponse<List<GroupDto>>>
+
+    @POST("v1/groups")
+    suspend fun createGroup(@Body body: CreateGroupRequest): Response<ApiResponse<GroupDto>>
+
+    @POST("v1/groups/{id}/join")
+    suspend fun joinGroup(@Path("id") groupId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/groups/{id}/leave")
+    suspend fun leaveGroup(@Path("id") groupId: Long): Response<ApiResponse<Unit>>
+
+    // -------------------------------------------------------------
+    // Pages (Screen 6)
+    // -------------------------------------------------------------
+    @GET("v1/pages")
+    suspend fun getPages(
+        @Query("page") page: Int = 1
+    ): Response<ApiResponse<List<PageDto>>>
+
+    @POST("v1/pages")
+    suspend fun createPage(@Body body: CreatePageRequest): Response<ApiResponse<PageDto>>
+
+    @POST("v1/pages/{id}/follow")
+    suspend fun followPage(@Path("id") pageId: Long): Response<ApiResponse<Unit>>
+
+    // -------------------------------------------------------------
     // Events & RSVP (Screen 7)
     // -------------------------------------------------------------
     @GET("v1/events")
@@ -337,10 +369,46 @@ interface ConnectlyApi {
         @Query("page") page: Int = 1
     ): Response<ApiResponse<List<EventDto>>>
 
+    @POST("v1/events")
+    suspend fun createEvent(@Body body: CreateEventRequest): Response<ApiResponse<EventDto>>
+
     @POST("v1/events/{id}/rsvp")
     suspend fun rsvpEvent(
         @Path("id") eventId: Long,
         @Body body: RsvpRequest
+    ): Response<ApiResponse<Unit>>
+
+    // -------------------------------------------------------------
+    // Live Streaming (Screen 8)
+    // -------------------------------------------------------------
+    @GET("v1/live/streams")
+    suspend fun getLiveStreams(
+        @Query("status") status: String = "live",
+        @Query("page") page: Int = 1
+    ): Response<ApiResponse<List<LiveStreamDto>>>
+
+    @POST("v1/live/streams")
+    suspend fun startLiveStream(@Body body: CreateLiveStreamRequest): Response<ApiResponse<LiveStreamDto>>
+
+    @POST("v1/live/streams/{id}/end")
+    suspend fun endLiveStream(@Path("id") streamId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/live/streams/{id}/join")
+    suspend fun joinLiveStream(@Path("id") streamId: Long): Response<ApiResponse<LiveStreamDto>>
+
+    @POST("v1/live/streams/{id}/leave")
+    suspend fun leaveLiveStream(@Path("id") streamId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/live/streams/{id}/comments")
+    suspend fun sendLiveComment(
+        @Path("id") streamId: Long,
+        @Body body: CreateLiveCommentRequest
+    ): Response<ApiResponse<LiveCommentDto>>
+
+    @POST("v1/live/streams/{id}/reactions")
+    suspend fun sendLiveReaction(
+        @Path("id") streamId: Long,
+        @Body body: LiveReactionRequest
     ): Response<ApiResponse<Unit>>
 }
 
@@ -687,6 +755,79 @@ data class CallParticipantDto(
     val status: String = "joined",
     val is_muted: Boolean = false,
     val is_camera_off: Boolean = false
+)
+
+@Serializable
+data class CreateGroupRequest(
+    val name: String,
+    val description: String? = null,
+    val privacy: String = "public"
+)
+
+@Serializable
+data class PageDto(
+    val id: Long,
+    val name: String,
+    val username: String? = null,
+    val category: String = "Business",
+    val bio: String? = null,
+    val avatar: String? = null,
+    val cover: String? = null,
+    val followers_count: Int = 0,
+    val is_following: Boolean = false,
+    val is_verified: Boolean = false
+)
+
+@Serializable
+data class CreatePageRequest(
+    val name: String,
+    val category: String = "Business",
+    val bio: String? = null
+)
+
+@Serializable
+data class CreateEventRequest(
+    val title: String,
+    val description: String? = null,
+    val location: String,
+    val start_time: String,
+    val end_time: String? = null
+)
+
+@Serializable
+data class LiveStreamDto(
+    val id: Long,
+    val title: String,
+    val streamer: UserDto,
+    val playback_url: String? = null,
+    val viewer_count: Int = 0,
+    val is_live: Boolean = true,
+    val started_at: String? = null
+)
+
+@Serializable
+data class CreateLiveStreamRequest(
+    val title: String,
+    val description: String? = null
+)
+
+@Serializable
+data class LiveCommentDto(
+    val id: Long,
+    val stream_id: Long,
+    val user: UserDto,
+    val comment: String,
+    val created_at: String = "Just now"
+)
+
+@Serializable
+data class CreateLiveCommentRequest(
+    val comment: String
+)
+
+@Serializable
+data class LiveReactionRequest(
+    val reaction: String // "heart", "like", "star", "fire"
 )
 
 
