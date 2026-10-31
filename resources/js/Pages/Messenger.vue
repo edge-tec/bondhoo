@@ -833,11 +833,18 @@
                   <span class="text-[10px] text-slate-400">
                     {{ formatMessageTime(msg.sent_at || msg.created_at) }}
                   </span>
-                  <!-- Checkmark status for Sent/Delivered/Read Outgoing Messages -->
-                  <span v-if="msg.is_mine" class="text-[10px] font-bold" :class="msg.delivery_status === 'read' ? 'text-[#1877F2]' : 'text-slate-400'">
-                    <span v-if="msg.delivery_status === 'read'">✓✓</span>
-                    <span v-else-if="msg.delivery_status === 'delivered'">✓✓</span>
-                    <span v-else>✓</span>
+                  <!-- Message Status: Sending, Sent, Delivered, Read, Failed -->
+                  <span v-if="msg.is_mine" class="text-[10px] font-bold flex items-center gap-1" :class="msg.delivery_status === 'read' ? 'text-[#1877F2]' : (msg.delivery_status === 'failed' ? 'text-rose-500' : 'text-slate-400')">
+                    <button v-if="msg.delivery_status === 'failed'" type="button" @click.stop="retryFailedMessage(msg)" class="inline-flex items-center gap-1 text-rose-500 hover:text-rose-600 cursor-pointer font-bold" title="Failed to send. Tap to retry.">
+                      <span>⚠️</span>
+                      <span class="underline text-[10px]">Retry</span>
+                    </button>
+                    <span v-else-if="msg.delivery_status === 'sending'" class="inline-flex items-center text-slate-400" title="Sending...">
+                      <span class="inline-block animate-spin text-[10px]">⌛</span>
+                    </span>
+                    <span v-else-if="msg.delivery_status === 'read'" title="Read">✓✓</span>
+                    <span v-else-if="msg.delivery_status === 'delivered'" title="Delivered">✓✓</span>
+                    <span v-else title="Sent">✓</span>
                   </span>
                   <!-- Mobile: tap to open message actions -->
                   <button
@@ -1228,7 +1235,7 @@
           <div class="space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
             <div class="flex items-center gap-2.5">
               <span class="text-slate-400 text-sm">💼</span>
-              <span>{{ otherUserProfile?.occupation || 'Member of SocialHub' }}</span>
+              <span>{{ otherUserProfile?.occupation || 'Member of JUGAJUG' }}</span>
             </div>
             <div class="flex items-center gap-2.5">
               <span class="text-slate-400 text-sm">🏠</span>
@@ -1236,7 +1243,7 @@
             </div>
             <div class="flex items-center gap-2.5">
               <span class="text-slate-400 text-sm">🕒</span>
-              <span>{{ otherUserProfile?.joined || 'Joined SocialHub' }}</span>
+              <span>{{ otherUserProfile?.joined || 'Joined JUGAJUG' }}</span>
             </div>
           </div>
         </div>
@@ -1817,6 +1824,8 @@ interface MessageItem {
     counts?: Record<string, number>;
     my_reaction?: string | null;
   };
+  client_message_id?: string;
+  _failedPayload?: any;
 }
 
 interface ConversationItem {
@@ -2476,9 +2485,9 @@ const selectConversation = async (conv: ConversationItem) => {
     if (conv.other_user) {
       otherUserProfile.value = {
         ...conv.other_user,
-        occupation: 'Member of SocialHub',
+        occupation: 'Member of JUGAJUG',
         location: 'Dhaka, Bangladesh',
-        joined: 'Joined SocialHub',
+        joined: 'Joined JUGAJUG',
         is_online: true,
       };
     }
@@ -2572,6 +2581,46 @@ const handleSendMessage = async () => {
 
   isSending.value = true;
   const convId = activeConversation.value.id;
+  const clientMsgId = generateSecureClientMessageId();
+  const tempId = -Date.now();
+  const optimisticText = text || (file ? 'Sent an attachment' : '');
+
+  // Optimistic message insertion for instant feedback
+  const optimisticMsg: MessageItem = {
+    id: tempId,
+    conversation_id: convId,
+    sender_id: currentUserId.value,
+    body: optimisticText,
+    type: file ? 'media' : 'text',
+    delivery_status: 'sending',
+    created_at: new Date().toISOString(),
+    sent_at: new Date().toISOString(),
+    is_mine: true,
+    client_message_id: clientMsgId,
+    sender: {
+      id: currentUserId.value,
+      name: (page.props.auth as any)?.user?.name || 'You',
+      username: (page.props.auth as any)?.user?.username || 'you',
+    },
+    reply_to: replyingTo.value ? { ...replyingTo.value } : undefined,
+  };
+
+  messages.value.push(optimisticMsg);
+  composerMessage.value = '';
+  localStorage.removeItem(`jj_draft_${convId}`);
+  clearComposerDrafts();
+  scrollToBottom();
+
+  let payload: Record<string, any> = {
+    body: optimisticText,
+    type: file ? 'media' : 'text',
+    media_ids: [] as number[],
+    client_message_id: clientMsgId,
+  };
+
+  if (replyingTo.value) {
+    payload.reply_to_id = replyingTo.value.id;
+  }
 
   try {
     let mediaIds: number[] = [];
@@ -2597,18 +2646,7 @@ const handleSendMessage = async () => {
           mediaIds.push(uploadJson.data.id);
         }
       }
-    }
-
-    // Send the message
-    const payload: Record<string, any> = {
-      body: text || (mediaIds.length > 0 ? 'Sent an attachment' : ''),
-      type: mediaIds.length > 0 ? 'media' : 'text',
-      media_ids: mediaIds,
-      client_message_id: generateSecureClientMessageId(),
-    };
-
-    if (replyingTo.value) {
-      payload.reply_to_id = replyingTo.value.id;
+      payload.media_ids = mediaIds;
     }
 
     const res = await apiFetch(`/api/v1/conversations/${convId}/messages`, {
@@ -2626,8 +2664,10 @@ const handleSendMessage = async () => {
       const newMsg = data.data;
       if (newMsg) {
         newMsg.is_mine = true;
-        // Check for duplicates
-        if (!messages.value.some((m) => m.id === newMsg.id)) {
+        const targetIndex = messages.value.findIndex((m) => m.id === tempId || (m.client_message_id && m.client_message_id === clientMsgId));
+        if (targetIndex !== -1) {
+          messages.value[targetIndex] = { ...newMsg, is_mine: true, delivery_status: newMsg.delivery_status || 'sent' };
+        } else if (!messages.value.some((m) => m.id === newMsg.id)) {
           messages.value.push(newMsg);
         }
 
@@ -2643,19 +2683,67 @@ const handleSendMessage = async () => {
           conversationList.value.unshift(moved);
         }
       }
-
-      composerMessage.value = '';
-      localStorage.removeItem(`jj_draft_${convId}`);
-      clearComposerDrafts();
       scrollToBottom();
     } else {
       const err = await res.json().catch(() => ({}));
-      showToast(err.message || 'Message failed to send. Tap send to retry.');
+      const targetIndex = messages.value.findIndex((m) => m.id === tempId || (m.client_message_id && m.client_message_id === clientMsgId));
+      if (targetIndex !== -1) {
+        messages.value[targetIndex].delivery_status = 'failed';
+        messages.value[targetIndex]._failedPayload = { convId, payload };
+      }
+      showToast(err.message || 'Message failed to send. Tap retry.');
     }
   } catch (err) {
     console.error('Failed to send message:', err);
+    const targetIndex = messages.value.findIndex((m) => m.id === tempId || (m.client_message_id && m.client_message_id === clientMsgId));
+    if (targetIndex !== -1) {
+      messages.value[targetIndex].delivery_status = 'failed';
+      messages.value[targetIndex]._failedPayload = { convId, payload };
+    }
+    showToast('Message failed to send. Tap retry.');
   } finally {
     isSending.value = false;
+  }
+};
+
+/**
+ * Retry sending an optimistically failed message.
+ */
+const retryFailedMessage = async (msg: MessageItem) => {
+  if (!msg._failedPayload || isSending.value) return;
+  const { convId, payload } = msg._failedPayload;
+  msg.delivery_status = 'sending';
+
+  try {
+    const res = await apiFetch(`/api/v1/conversations/${convId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': getCsrfToken(),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const serverMsg = data.data;
+      if (serverMsg) {
+        const targetIndex = messages.value.findIndex((m) => m.id === msg.id || (m.client_message_id && m.client_message_id === msg.client_message_id));
+        if (targetIndex !== -1) {
+          messages.value[targetIndex] = { ...serverMsg, is_mine: true, delivery_status: serverMsg.delivery_status || 'sent' };
+        }
+        delete msg._failedPayload;
+      }
+      showToast('Message sent successfully');
+      scrollToBottom();
+    } else {
+      msg.delivery_status = 'failed';
+      showToast('Retry failed. Please check your network connection.');
+    }
+  } catch (err) {
+    msg.delivery_status = 'failed';
+    showToast('Retry failed. Please check your network connection.');
   }
 };
 
