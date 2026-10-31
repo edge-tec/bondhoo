@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.connectly.android.${project.name.replace(':', '.')}"
+    namespace = "com.connectly.android.feature.messenger"
     compileSdk = 35
     defaultConfig { minSdk = 26 }
     compileOptions {
@@ -28,7 +28,25 @@ dependencies {
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
+
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.coil.compose)
+
+    // Audio recording & playback for voice messages
+    implementation(libs.androidx.media3.exoplayer)
+
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

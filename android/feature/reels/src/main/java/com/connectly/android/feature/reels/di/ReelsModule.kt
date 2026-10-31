@@ -18,3 +18,4 @@ abstract class ReelsModule {
         reelsRepositoryImpl: ReelsRepositoryImpl
     ): ReelsRepository
 }
+

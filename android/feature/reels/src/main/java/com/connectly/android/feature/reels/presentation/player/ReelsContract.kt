@@ -24,3 +24,4 @@ sealed interface ReelsIntent {
     object CloseComments : ReelsIntent
     data class AddComment(val reelId: Long, val body: String) : ReelsIntent
 }
+

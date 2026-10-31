@@ -22,6 +22,9 @@ import com.connectly.android.feature.auth.navigation.navigateToLogin
 import com.connectly.android.feature.feed.navigation.feedGraph
 import com.connectly.android.feature.feed.navigation.navigateToCreatePost
 import com.connectly.android.feature.feed.presentation.feed.FeedScreen
+import com.connectly.android.feature.messenger.navigation.messengerGraph
+import com.connectly.android.feature.messenger.navigation.navigateToChat
+import com.connectly.android.feature.messenger.presentation.conversations.ConversationListScreen
 import com.connectly.android.feature.profile.navigation.navigateToProfile
 import com.connectly.android.feature.profile.navigation.profileGraph
 import com.connectly.android.feature.reels.navigation.reelsGraph
@@ -87,6 +90,10 @@ class MainActivity : ComponentActivity() {
                         onNavigateToCreateReel = { rootNavController.navigateToCreateStory() }
                     )
 
+                    messengerGraph(
+                        navController = rootNavController
+                    )
+
                     composable(MAIN_HOME_ROUTE) {
                         var selectedTab by remember { mutableStateOf(BottomBarDestination.HOME) }
 
@@ -113,6 +120,15 @@ class MainActivity : ComponentActivity() {
                                 BottomBarDestination.REELS -> {
                                     ReelsScreen(
                                         onNavigateToCreateReel = { rootNavController.navigateToCreateStory() },
+                                        modifier = Modifier.padding(innerPadding)
+                                    )
+                                }
+                                BottomBarDestination.MESSENGER -> {
+                                    ConversationListScreen(
+                                        onNavigateToChat = { conversationId ->
+                                            rootNavController.navigateToChat(conversationId)
+                                        },
+                                        onNavigateBack = { selectedTab = BottomBarDestination.HOME },
                                         modifier = Modifier.padding(innerPadding)
                                     )
                                 }

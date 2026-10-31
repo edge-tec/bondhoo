@@ -57,6 +57,7 @@ dependencies {
     implementation(project(":feature:feed"))
     implementation(project(":feature:stories"))
     implementation(project(":feature:reels"))
+    implementation(project(":feature:messenger"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

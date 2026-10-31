@@ -244,6 +244,11 @@ interface ConnectlyApi {
         @Query("filter") filter: String = "all"
     ): Response<ApiResponse<List<ConversationDto>>>
 
+    @POST("v1/conversations")
+    suspend fun createConversation(
+        @Body body: CreateConversationRequest
+    ): Response<ApiResponse<ConversationDto>>
+
     @GET("v1/conversations/{id}/messages")
     suspend fun getMessages(
         @Path("id") conversationId: Long,
@@ -262,6 +267,24 @@ interface ConnectlyApi {
 
     @POST("v1/conversations/{id}/read")
     suspend fun markRead(@Path("id") conversationId: Long): Response<Unit>
+
+    @POST("v1/messages/{id}/reactions")
+    suspend fun reactToChatMessage(
+        @Path("id") messageId: Long,
+        @Body body: MessageReactionRequest
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v1/messages/{id}/delete-for-me")
+    suspend fun deleteMessageForMe(@Path("id") messageId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/messages/{id}/delete-for-everyone")
+    suspend fun deleteMessageForEveryone(@Path("id") messageId: Long): Response<ApiResponse<Unit>>
+
+    @Multipart
+    @POST("v1/messages/attachments")
+    suspend fun uploadMessageAttachment(
+        @Part file: MultipartBody.Part
+    ): Response<ApiResponse<MediaUploadResponse>>
 
     // -------------------------------------------------------------
     // Events & RSVP (Screen 7)
@@ -549,4 +572,18 @@ data class CreateStoryPayload(
 data class StoryReplyPayload(
     val message: String
 )
+
+@Serializable
+data class CreateConversationRequest(
+    val recipient_id: Long? = null,
+    val type: String = "direct",
+    val title: String? = null,
+    val participant_ids: List<Long> = emptyList()
+)
+
+@Serializable
+data class MessageReactionRequest(
+    val reaction: String
+)
+
 
