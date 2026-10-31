@@ -18,3 +18,4 @@ sealed interface TwoFactorUiEffect {
     data object NavigateToHome : TwoFactorUiEffect
     data class ShowToast(val message: String) : TwoFactorUiEffect
 }
+

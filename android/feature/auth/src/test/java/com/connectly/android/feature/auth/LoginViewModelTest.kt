@@ -72,3 +72,4 @@ class LoginViewModelTest {
         assert(viewModel.uiState.value is LoginUiState.Error)
     }
 }
+

@@ -24,3 +24,4 @@ sealed interface RegisterUiEffect {
     data object NavigateToHome : RegisterUiEffect
     data object NavigateToLogin : RegisterUiEffect
 }
+

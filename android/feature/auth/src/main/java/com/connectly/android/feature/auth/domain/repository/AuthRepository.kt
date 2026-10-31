@@ -14,3 +14,4 @@ interface AuthRepository {
     fun isUserLoggedIn(): Boolean
     fun getSavedUserId(): Long
 }
+

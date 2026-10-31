@@ -29,7 +29,7 @@ class AuthRepositoryImpl @Inject constructor(
     override fun login(login: String, password: String): Flow<Result<User>> = flow {
         emit(Result.Loading)
         try {
-            val response = api.login(LoginRequest(login = login, password = password))
+            val response = api.login(LoginRequest(identifier = login, password = password))
             if (response.isSuccessful && response.body() != null) {
                 val authResponse = response.body()!!
                 tokenStorageManager.saveAccessToken(authResponse.token)
@@ -81,12 +81,13 @@ class AuthRepositoryImpl @Inject constructor(
     ): Flow<Result<User>> = flow {
         emit(Result.Loading)
         try {
+            val generatedUsername = email.substringBefore("@").replace(".", "_") + "_" + System.currentTimeMillis().toString().takeLast(4)
             val response = api.register(
                 RegisterRequest(
                     name = name,
+                    username = generatedUsername,
                     email = email,
-                    password = password,
-                    password_confirmation = passwordConfirmation
+                    password = password
                 )
             )
             if (response.isSuccessful && response.body() != null) {
@@ -157,3 +158,4 @@ class AuthRepositoryImpl @Inject constructor(
         return tokenStorageManager.getUserId()
     }
 }
+

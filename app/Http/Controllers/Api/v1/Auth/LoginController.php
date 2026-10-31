@@ -82,8 +82,9 @@ class LoginController extends Controller
 
         $user = $request->user() ?? Auth::guard('web')->user();
         if ($user) {
-            if (method_exists($user, 'currentAccessToken') && $user->currentAccessToken()) {
-                $user->currentAccessToken()->delete();
+            $token = method_exists($user, 'currentAccessToken') ? $user->currentAccessToken() : null;
+            if ($token instanceof PersonalAccessToken || ($token && method_exists($token, 'delete'))) {
+                $token->delete();
             }
 
             /** @var DeviceSessionService $deviceService */

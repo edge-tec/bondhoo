@@ -20,3 +20,4 @@ sealed interface PhoneOtpUiEffect {
     data object NavigateToHome : PhoneOtpUiEffect
     data class ShowToast(val message: String) : PhoneOtpUiEffect
 }
+

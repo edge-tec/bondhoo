@@ -1,13 +1,14 @@
 package com.connectly.android.core.network.api
 
 import kotlinx.serialization.Serializable
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
 interface ConnectlyApi {
 
     // -------------------------------------------------------------
-    // Authentication
+    // Authentication & Account Recovery
     // -------------------------------------------------------------
     @POST("v1/auth/login")
     suspend fun login(@Body body: LoginRequest): Response<AuthResponse>
@@ -15,11 +16,67 @@ interface ConnectlyApi {
     @POST("v1/auth/register")
     suspend fun register(@Body body: RegisterRequest): Response<AuthResponse>
 
+    @POST("v1/auth/send-phone-otp")
+    suspend fun sendPhoneOtp(@Body body: SendPhoneOtpRequest): Response<ApiResponse<OtpResponse>>
+
+    @POST("v1/auth/verify-phone-otp")
+    suspend fun verifyPhoneOtp(@Body body: VerifyPhoneOtpRequest): Response<ApiResponse<VerifyPhoneOtpResponse>>
+
+    @POST("v1/auth/forgot-password")
+    suspend fun forgotPassword(@Body body: ForgotPasswordRequest): Response<ApiResponse<Unit>>
+
     @POST("v1/auth/logout")
     suspend fun logout(): Response<Unit>
 
     @GET("v1/auth/me")
     suspend fun getMe(): Response<ApiResponse<UserDto>>
+
+    @PUT("v1/auth/profile")
+    suspend fun updateProfile(@Body body: UpdateProfileRequest): Response<ApiResponse<UserDto>>
+
+    // -------------------------------------------------------------
+    // Profile & Media Upload
+    // -------------------------------------------------------------
+    @Multipart
+    @POST("v1/profile/avatar")
+    suspend fun uploadAvatar(@Part file: MultipartBody.Part): Response<ApiResponse<MediaUploadResponse>>
+
+    @Multipart
+    @POST("v1/profile/cover")
+    suspend fun uploadCover(@Part file: MultipartBody.Part): Response<ApiResponse<MediaUploadResponse>>
+
+    // -------------------------------------------------------------
+    // Friends, Following & Moderation
+    // -------------------------------------------------------------
+    @POST("v1/friends/{id}/request")
+    suspend fun sendFriendRequest(@Path("id") userId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/friends/{id}/accept")
+    suspend fun acceptFriendRequest(@Path("id") userId: Long): Response<ApiResponse<Unit>>
+
+    @DELETE("v1/friends/{id}/reject")
+    suspend fun rejectFriendRequest(@Path("id") userId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/friends/{id}/follow")
+    suspend fun followUser(@Path("id") userId: Long): Response<ApiResponse<Unit>>
+
+    @DELETE("v1/friends/{id}/follow")
+    suspend fun unfollowUser(@Path("id") userId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/friends/{id}/block")
+    suspend fun blockUser(@Path("id") userId: Long): Response<ApiResponse<Unit>>
+
+    @DELETE("v1/friends/{id}/block")
+    suspend fun unblockUser(@Path("id") userId: Long): Response<ApiResponse<Unit>>
+
+    // -------------------------------------------------------------
+    // Profile Privacy Settings
+    // -------------------------------------------------------------
+    @GET("v2/profile/privacy/settings")
+    suspend fun getPrivacySettings(): Response<ApiResponse<PrivacySettingsDto>>
+
+    @PUT("v2/profile/privacy/settings")
+    suspend fun updatePrivacySettings(@Body body: UpdatePrivacySettingsRequest): Response<ApiResponse<Unit>>
 
     // -------------------------------------------------------------
     // Home Feed & Stories (Screen 1 & 2)
@@ -246,7 +303,7 @@ data class ReactionResponse(
 
 @Serializable
 data class LoginRequest(
-    val login: String,
+    val identifier: String,
     val password: String,
     val device_name: String = "Android Device"
 )
@@ -254,9 +311,11 @@ data class LoginRequest(
 @Serializable
 data class RegisterRequest(
     val name: String,
-    val email: String,
+    val username: String,
+    val email: String? = null,
+    val phone: String? = null,
     val password: String,
-    val password_confirmation: String
+    val device_name: String = "Android Device"
 )
 
 @Serializable
@@ -275,4 +334,60 @@ data class ReelViewRequest(val duration_seconds: Int, val completed: Boolean)
 
 @Serializable
 data class RsvpRequest(val status: String)
+
+@Serializable
+data class UpdateProfileRequest(
+    val bio: String? = null,
+    val occupation: String? = null,
+    val location: String? = null
+)
+
+@Serializable
+data class MediaUploadResponse(
+    val url: String,
+    val id: Long? = null
+)
+
+@Serializable
+data class SendPhoneOtpRequest(
+    val phone: String
+)
+
+@Serializable
+data class OtpResponse(
+    val message: String? = null,
+    val expires_in: Int = 300
+)
+
+@Serializable
+data class VerifyPhoneOtpRequest(
+    val phone: String,
+    val otp: String,
+    val purpose: String = "phone_verification"
+)
+
+@Serializable
+data class VerifyPhoneOtpResponse(
+    val verified: Boolean = false,
+    val token: String? = null
+)
+
+@Serializable
+data class ForgotPasswordRequest(
+    val email: String
+)
+
+@Serializable
+data class PrivacySettingsDto(
+    val profile_visibility: String = "public",
+    val avatar_privacy: String = "public",
+    val bio_privacy: String = "public"
+)
+
+@Serializable
+data class UpdatePrivacySettingsRequest(
+    val profile_visibility: String? = null,
+    val avatar_privacy: String? = null,
+    val bio_privacy: String? = null
+)
 

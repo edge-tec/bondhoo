@@ -19,6 +19,8 @@ import com.connectly.android.core.designsystem.theme.ConnectlyTheme
 import com.connectly.android.feature.auth.navigation.LOGIN_ROUTE
 import com.connectly.android.feature.auth.navigation.authGraph
 import com.connectly.android.feature.auth.navigation.navigateToLogin
+import com.connectly.android.feature.profile.navigation.navigateToProfile
+import com.connectly.android.feature.profile.navigation.profileGraph
 import dagger.hilt.android.AndroidEntryPoint
 
 const val MAIN_HOME_ROUTE = "main_home"
@@ -46,6 +48,15 @@ class MainActivity : ComponentActivity() {
                         navController = rootNavController
                     )
 
+                    profileGraph(
+                        navController = rootNavController,
+                        onLogout = {
+                            rootNavController.navigate(LOGIN_ROUTE) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    )
+
                     composable(MAIN_HOME_ROUTE) {
                         var selectedTab by remember { mutableStateOf(BottomBarDestination.HOME) }
 
@@ -57,7 +68,7 @@ class MainActivity : ComponentActivity() {
                                     onSearchClick = { /* Navigate to Search */ },
                                     onNotificationsClick = { /* Navigate to Notifications */ },
                                     onProfileClick = {
-                                        rootNavController.navigateToLogin()
+                                        rootNavController.navigateToProfile()
                                     }
                                 )
                             },

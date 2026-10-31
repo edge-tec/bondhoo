@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
+import com.connectly.android.feature.auth.presentation.forgot.ForgotPasswordRoute
 import com.connectly.android.feature.auth.presentation.login.LoginRoute
 import com.connectly.android.feature.auth.presentation.otp.PhoneOtpRoute
 import com.connectly.android.feature.auth.presentation.register.RegisterRoute
@@ -11,6 +12,7 @@ import com.connectly.android.feature.auth.presentation.twofactor.TwoFactorRoute
 
 const val LOGIN_ROUTE = "auth_login"
 const val REGISTER_ROUTE = "auth_register"
+const val FORGOT_PASSWORD_ROUTE = "auth_forgot_password"
 const val TWO_FACTOR_ROUTE = "auth_two_factor/{sessionToken}"
 const val PHONE_OTP_ROUTE = "auth_phone_otp"
 
@@ -26,6 +28,10 @@ fun NavController.navigateToPhoneOtp(navOptions: NavOptions? = null) {
     navigate(PHONE_OTP_ROUTE, navOptions)
 }
 
+fun NavController.navigateToForgotPassword(navOptions: NavOptions? = null) {
+    navigate(FORGOT_PASSWORD_ROUTE, navOptions)
+}
+
 fun NavGraphBuilder.authGraph(
     onNavigateToHome: () -> Unit,
     navController: NavController
@@ -35,7 +41,13 @@ fun NavGraphBuilder.authGraph(
             onNavigateToHome = onNavigateToHome,
             onNavigateToRegister = { navController.navigateToRegister() },
             onNavigateToPhoneOtp = { navController.navigateToPhoneOtp() },
-            onNavigateToForgotPassword = { /* Open web forgot password or deep link */ }
+            onNavigateToForgotPassword = { navController.navigateToForgotPassword() }
+        )
+    }
+
+    composable(FORGOT_PASSWORD_ROUTE) {
+        ForgotPasswordRoute(
+            onNavigateToLogin = { navController.popBackStack() }
         )
     }
 
@@ -62,3 +74,4 @@ fun NavGraphBuilder.authGraph(
         )
     }
 }
+

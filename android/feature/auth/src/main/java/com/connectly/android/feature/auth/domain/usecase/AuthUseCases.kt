@@ -66,3 +66,4 @@ class CheckAuthStatusUseCase @Inject constructor(
         return repository.isUserLoggedIn()
     }
 }
+

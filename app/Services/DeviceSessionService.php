@@ -324,7 +324,10 @@ class DeviceSessionService
 
         // Revoke current Sanctum token if present
         if (method_exists($user, 'currentAccessToken') && $user->currentAccessToken()) {
-            $user->currentAccessToken()->delete();
+            $token = $user->currentAccessToken();
+            if ($token instanceof PersonalAccessToken || method_exists($token, 'delete')) {
+                $token->delete();
+            }
         }
 
         // Revoke bearer token if present

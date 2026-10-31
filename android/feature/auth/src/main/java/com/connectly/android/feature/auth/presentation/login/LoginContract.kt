@@ -23,3 +23,4 @@ sealed interface LoginUiEffect {
     data object NavigateToPhoneOtp : LoginUiEffect
     data class NavigateTo2Fa(val sessionToken: String) : LoginUiEffect
 }
+

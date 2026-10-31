@@ -18,3 +18,4 @@ abstract class AuthModule {
         authRepositoryImpl: AuthRepositoryImpl
     ): AuthRepository
 }
+

@@ -50,3 +50,4 @@ class BiometricPromptHelper(
         prompt.authenticate(promptInfo)
     }
 }
+
