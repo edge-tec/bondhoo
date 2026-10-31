@@ -33,6 +33,9 @@ import com.connectly.android.feature.groups.navigation.groupsGraph
 import com.connectly.android.feature.groups.presentation.groups.GroupsScreen
 import com.connectly.android.feature.live.navigation.liveGraph
 import com.connectly.android.feature.live.navigation.navigateToLive
+import com.connectly.android.feature.notifications.navigation.navigateToNotifications
+import com.connectly.android.feature.notifications.navigation.navigateToSearch
+import com.connectly.android.feature.notifications.navigation.notificationsGraph
 import com.connectly.android.feature.profile.navigation.navigateToProfile
 import com.connectly.android.feature.profile.navigation.profileGraph
 import com.connectly.android.feature.reels.navigation.reelsGraph
@@ -121,6 +124,10 @@ class MainActivity : ComponentActivity() {
                     )
 
                     liveGraph(
+                        navController = rootNavController
+                    )
+
+                    notificationsGraph(
                         navController = rootNavController
                     )
 

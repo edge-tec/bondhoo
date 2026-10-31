@@ -410,6 +410,35 @@ interface ConnectlyApi {
         @Path("id") streamId: Long,
         @Body body: LiveReactionRequest
     ): Response<ApiResponse<Unit>>
+
+    // -------------------------------------------------------------
+    // Notifications (Screen 9)
+    // -------------------------------------------------------------
+    @GET("v1/notifications")
+    suspend fun getNotifications(
+        @Query("filter") filter: String = "all",
+        @Query("category") category: String = "all",
+        @Query("page") page: Int = 1
+    ): Response<ApiResponse<List<NotificationDto>>>
+
+    @GET("v1/notifications/unread-count")
+    suspend fun getUnreadNotificationCount(): Response<ApiResponse<Map<String, Int>>>
+
+    @PATCH("v1/notifications/{id}/read")
+    suspend fun markNotificationAsRead(@Path("id") id: String): Response<ApiResponse<Unit>>
+
+    @POST("v1/notifications/read-all")
+    suspend fun markAllNotificationsAsRead(): Response<ApiResponse<Unit>>
+
+    // -------------------------------------------------------------
+    // Global Search & Discovery
+    // -------------------------------------------------------------
+    @GET("v1/search")
+    suspend fun search(
+        @Query("q") query: String,
+        @Query("type") type: String = "all",
+        @Query("limit") limit: Int = 15
+    ): Response<ApiResponse<Map<String, List<UserDto>>>>
 }
 
 // -------------------------------------------------------------
@@ -828,6 +857,25 @@ data class CreateLiveCommentRequest(
 @Serializable
 data class LiveReactionRequest(
     val reaction: String // "heart", "like", "star", "fire"
+)
+
+@Serializable
+data class NotificationDto(
+    val id: String,
+    val type: String,
+    val data: NotificationDataDto? = null,
+    val read_at: String? = null,
+    val created_at: String = "Just now"
+)
+
+@Serializable
+data class NotificationDataDto(
+    val title: String? = null,
+    val message: String? = null,
+    val actor_id: Long? = null,
+    val actor_name: String? = null,
+    val actor_avatar: String? = null,
+    val action_url: String? = null
 )
 
 

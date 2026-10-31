@@ -10,3 +10,4 @@ interface EventsRepository {
     fun rsvpEvent(eventId: Long, status: RsvpStatus): Flow<Result<RsvpStatus>>
     fun createEvent(title: String, location: String, startTime: String): Flow<Result<Event>>
 }
+

@@ -15,3 +15,4 @@ sealed interface EventsIntent {
     data class ToggleRsvp(val eventId: Long, val targetStatus: RsvpStatus) : EventsIntent
     data object Refresh : EventsIntent
 }
+

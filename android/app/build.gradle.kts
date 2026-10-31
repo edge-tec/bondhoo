@@ -62,6 +62,7 @@ dependencies {
     implementation(project(":feature:groups"))
     implementation(project(":feature:events"))
     implementation(project(":feature:live"))
+    implementation(project(":feature:notifications"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

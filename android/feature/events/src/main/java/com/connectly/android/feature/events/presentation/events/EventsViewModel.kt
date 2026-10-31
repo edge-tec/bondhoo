@@ -68,3 +68,4 @@ class EventsViewModel @Inject constructor(
         }
     }
 }
+

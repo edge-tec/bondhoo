@@ -15,3 +15,4 @@ sealed interface GroupsIntent {
     data class ToggleJoin(val group: Group) : GroupsIntent
     data object Refresh : GroupsIntent
 }
+

@@ -18,3 +18,4 @@ abstract class GroupsModule {
         impl: GroupsRepositoryImpl
     ): GroupsRepository
 }
+

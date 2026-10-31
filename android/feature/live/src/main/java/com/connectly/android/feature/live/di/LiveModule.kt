@@ -18,3 +18,4 @@ abstract class LiveModule {
         impl: LiveRepositoryImpl
     ): LiveRepository
 }
+

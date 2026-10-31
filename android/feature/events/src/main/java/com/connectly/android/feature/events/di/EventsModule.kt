@@ -18,3 +18,4 @@ abstract class EventsModule {
         impl: EventsRepositoryImpl
     ): EventsRepository
 }
+

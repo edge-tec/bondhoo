@@ -19,3 +19,4 @@ sealed interface LivePlayerIntent {
     data object ToggleGiftSheet : LivePlayerIntent
     data object ShareStream : LivePlayerIntent
 }
+

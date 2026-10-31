@@ -10,3 +10,4 @@ interface GroupsRepository {
     fun createGroup(name: String, description: String?, privacy: String): Flow<Result<Group>>
     fun toggleJoinGroup(groupId: Long, currentJoined: Boolean): Flow<Result<Boolean>>
 }
+

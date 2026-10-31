@@ -269,3 +269,4 @@ private fun EventCardItem(
         }
     }
 }
+

@@ -37,3 +37,4 @@ class CreateGroupUseCase @Inject constructor(
         return repository.createGroup(name, description, privacy)
     }
 }
+

@@ -1,0 +1,15 @@
+package com.connectly.android.feature.notifications.domain.repository
+
+import com.connectly.android.core.common.result.Result
+import com.connectly.android.core.model.NotificationItem
+import com.connectly.android.core.model.SearchResult
+import kotlinx.coroutines.flow.Flow
+
+interface NotificationsRepository {
+    fun getNotifications(filter: String = "all", category: String = "all", page: Int = 1): Flow<Result<List<NotificationItem>>>
+    fun getUnreadCount(): Flow<Int>
+    fun markAsRead(notificationId: String): Flow<Result<Unit>>
+    fun markAllAsRead(): Flow<Result<Unit>>
+    fun respondToFriendRequest(userId: Long, accept: Boolean): Flow<Result<Unit>>
+    fun search(query: String, type: String = "all"): Flow<Result<SearchResult>>
+}

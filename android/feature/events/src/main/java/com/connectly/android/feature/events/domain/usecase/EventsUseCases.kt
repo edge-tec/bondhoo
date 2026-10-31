@@ -30,3 +30,4 @@ class CreateEventUseCase @Inject constructor(
         return repository.createEvent(title, location, startTime)
     }
 }
+
