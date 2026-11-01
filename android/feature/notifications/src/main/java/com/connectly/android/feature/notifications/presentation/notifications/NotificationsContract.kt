@@ -17,3 +17,4 @@ sealed interface NotificationsIntent {
     data object MarkAllRead : NotificationsIntent
     data object Refresh : NotificationsIntent
 }
+

@@ -18,3 +18,4 @@ abstract class NotificationsModule {
         impl: NotificationsRepositoryImpl
     ): NotificationsRepository
 }
+

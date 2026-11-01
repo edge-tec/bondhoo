@@ -41,3 +41,12 @@ data class SearchResult(
     val events: List<Event> = emptyList(),
     val hashtags: List<String> = emptyList()
 )
+
+@Serializable
+data class DiscoveryData(
+    val suggestedFriends: List<User> = emptyList(),
+    val recommendedGroups: List<Group> = emptyList(),
+    val trendingTopics: List<String> = emptyList(),
+    val recommendedPosts: List<Post> = emptyList()
+)
+

@@ -1,8 +1,10 @@
 package com.connectly.android.feature.notifications.domain.repository
 
 import com.connectly.android.core.common.result.Result
+import com.connectly.android.core.model.DiscoveryData
 import com.connectly.android.core.model.NotificationItem
 import com.connectly.android.core.model.SearchResult
+import com.connectly.android.core.model.User
 import kotlinx.coroutines.flow.Flow
 
 interface NotificationsRepository {
@@ -12,4 +14,7 @@ interface NotificationsRepository {
     fun markAllAsRead(): Flow<Result<Unit>>
     fun respondToFriendRequest(userId: Long, accept: Boolean): Flow<Result<Unit>>
     fun search(query: String, type: String = "all"): Flow<Result<SearchResult>>
+    fun getDiscoveryData(): Flow<Result<DiscoveryData>>
+    fun getSuggestedFriends(): Flow<Result<List<User>>>
+    fun registerDeviceToken(pushToken: String): Flow<Result<Unit>>
 }

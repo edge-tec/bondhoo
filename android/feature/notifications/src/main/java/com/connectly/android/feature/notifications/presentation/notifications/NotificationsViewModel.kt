@@ -100,3 +100,4 @@ class NotificationsViewModel @Inject constructor(
         }
     }
 }
+

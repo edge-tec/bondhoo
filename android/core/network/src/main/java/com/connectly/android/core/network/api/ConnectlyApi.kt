@@ -437,8 +437,22 @@ interface ConnectlyApi {
     suspend fun search(
         @Query("q") query: String,
         @Query("type") type: String = "all",
-        @Query("limit") limit: Int = 15
-    ): Response<ApiResponse<Map<String, List<UserDto>>>>
+        @Query("limit") limit: Int = 15,
+        @Query("suggest") suggest: Boolean = false
+    ): Response<ApiResponse<SearchResponseDto>>
+
+    @GET("v1/friends/suggestions")
+    suspend fun getSuggestedFriends(
+        @Query("limit") limit: Int = 10
+    ): Response<ApiResponse<List<UserDto>>>
+
+    // -------------------------------------------------------------
+    // Device & FCM Push Token Registration
+    // -------------------------------------------------------------
+    @POST("v1/devices/register")
+    suspend fun registerDevice(
+        @Body body: RegisterDeviceRequest
+    ): Response<ApiResponse<DeviceSessionDto>>
 }
 
 // -------------------------------------------------------------
@@ -876,6 +890,40 @@ data class NotificationDataDto(
     val actor_name: String? = null,
     val actor_avatar: String? = null,
     val action_url: String? = null
+)
+
+@Serializable
+data class RegisterDeviceRequest(
+    val device_id: String,
+    val device_name: String? = "Android Device",
+    val platform: String = "android",
+    val app_version: String? = "1.0.0",
+    val push_token: String? = null
+)
+
+@Serializable
+data class DeviceSessionDto(
+    val id: Long? = null,
+    val device_id: String,
+    val platform: String,
+    val push_token: String? = null,
+    val last_active_at: String? = null
+)
+
+@Serializable
+data class SearchResponseDto(
+    val query: String = "",
+    val type: String = "all",
+    val is_suggestion: Boolean = false,
+    val results: SearchResultsMapDto? = null
+)
+
+@Serializable
+data class SearchResultsMapDto(
+    val users: List<UserDto> = emptyList(),
+    val posts: List<PostDto> = emptyList(),
+    val groups: List<GroupDto> = emptyList(),
+    val pages: List<PageDto> = emptyList()
 )
 
 

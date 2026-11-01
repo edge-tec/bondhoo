@@ -53,6 +53,7 @@ class DeviceSessionService
     {
         $session = DeviceSession::where('user_id', $user->id)
             ->where('id', $sessionId)
+            ->where('is_revoked', false)
             ->first();
 
         if (! $session) {
