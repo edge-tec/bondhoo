@@ -3,8 +3,10 @@ package com.connectly.android.feature.feed.domain.usecase
 import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.Comment
 import com.connectly.android.core.model.Post
+import com.connectly.android.core.model.User
 import com.connectly.android.core.network.api.ReactionResponse
 import com.connectly.android.feature.feed.domain.repository.FeedRepository
+import com.connectly.android.feature.feed.domain.repository.PaginatedFeed
 import kotlinx.coroutines.flow.Flow
 import java.io.File
 import javax.inject.Inject
@@ -12,7 +14,7 @@ import javax.inject.Inject
 class GetFeedUseCase @Inject constructor(
     private val repository: FeedRepository
 ) {
-    operator fun invoke(tab: String, cursor: String? = null, perPage: Int = 15): Flow<Result<List<Post>>> =
+    operator fun invoke(tab: String, cursor: String? = null, perPage: Int = 15): Flow<Result<PaginatedFeed>> =
         repository.getFeed(tab, cursor, perPage)
 }
 
@@ -63,6 +65,13 @@ class ReactToPostUseCase @Inject constructor(
         repository.reactToPost(postId, reactionType)
 }
 
+class ReportPostUseCase @Inject constructor(
+    private val repository: FeedRepository
+) {
+    operator fun invoke(postId: Long, reason: String, details: String? = null): Flow<Result<Unit>> =
+        repository.reportPost(postId, reason, details)
+}
+
 class GetCommentsUseCase @Inject constructor(
     private val repository: FeedRepository
 ) {
@@ -91,3 +100,9 @@ class ReactToCommentUseCase @Inject constructor(
         repository.reactToComment(commentId, reactionType)
 }
 
+class GetSuggestedFriendsUseCase @Inject constructor(
+    private val repository: FeedRepository
+) {
+    operator fun invoke(): Flow<Result<List<User>>> =
+        repository.getSuggestedFriends()
+}

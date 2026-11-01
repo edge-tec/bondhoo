@@ -16,7 +16,7 @@ class FeedService
     /**
      * Get feed with cursor pagination, audience filtering, and selectable ranking algorithm ('smart' or 'chronological').
      */
-    public function getFeed(?User $viewer = null, string $algorithm = 'smart', int $perPage = 15): CursorPaginator
+    public function getFeed(?User $viewer = null, string $algorithm = 'smart', int $perPage = 15, ?string $tab = null): CursorPaginator
     {
         $query = Post::with([
             'user.profile',
@@ -38,6 +38,10 @@ class FeedService
             $friendIds = $viewer->getFriendIds();
             $followingIds = $viewer->getFollowingIds();
             $followerOrFriendIds = array_values(array_unique(array_merge($friendIds, $followingIds)));
+
+            if ($tab === 'following') {
+                $query->whereIn('user_id', array_merge([$viewer->id], $followerOrFriendIds));
+            }
 
             $query->where(function ($q) use ($viewer, $friendIds, $followerOrFriendIds) {
                 // Author always sees their own posts

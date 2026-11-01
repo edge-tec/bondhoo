@@ -1,6 +1,11 @@
 package com.connectly.android.core.network.api
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
@@ -461,6 +466,14 @@ interface ConnectlyApi {
     suspend fun registerDevice(
         @Body body: RegisterDeviceRequest
     ): Response<ApiResponse<DeviceSessionDto>>
+
+    // -------------------------------------------------------------
+    // Content Moderation & Reports
+    // -------------------------------------------------------------
+    @POST("v1/reports")
+    suspend fun reportContent(
+        @Body body: ReportContentRequest
+    ): Response<ApiResponse<Unit>>
 }
 
 // -------------------------------------------------------------
@@ -469,7 +482,19 @@ interface ConnectlyApi {
 @Serializable
 data class ApiResponse<T>(
     val data: T,
-    val message: String? = null
+    val message: String? = null,
+    val meta: MetaDto? = null
+)
+
+@Serializable
+data class MetaDto(
+    val per_page: Int? = null,
+    val has_more: Boolean? = null,
+    val next_cursor: String? = null,
+    val prev_cursor: String? = null,
+    val current_page: Int? = null,
+    val last_page: Int? = null,
+    val total: Int? = null
 )
 
 @Serializable
@@ -499,24 +524,57 @@ data class UserDto(
     val username: String,
     val email: String? = null,
     val avatar: String? = null,
+    val avatar_url: String? = null,
     val bio: String? = null,
     val is_verified: Boolean = false,
     val friends_count: Int = 0,
     val followers_count: Int = 0,
     val following_count: Int = 0
+) {
+    val resolvedAvatar: String? get() = avatar_url ?: avatar
+}
+
+@Serializable
+data class PostCountersDto(
+    val likes: Int = 0,
+    val comments: Int = 0,
+    val shares: Int = 0
 )
 
 @Serializable
 data class PostDto(
     val id: Long,
-    val content: String,
-    val author: UserDto,
-    val media: List<String> = emptyList(),
+    val content: String? = null,
+    val author: UserDto? = null,
+    val user: UserDto? = null,
+    val media: List<JsonElement> = emptyList(),
+    val counters: PostCountersDto? = null,
     val reactions_count: Int = 0,
     val comments_count: Int = 0,
+    val shares_count: Int = 0,
+    val audience: String? = "public",
+    val viewer_reaction: String? = null,
     val user_reaction: String? = null,
-    val created_at: String
-)
+    val is_pinned: Boolean = false,
+    val is_saved: Boolean = false,
+    val created_at: String? = null,
+    val updated_at: String? = null
+) {
+    val resolvedAuthor: UserDto get() = author ?: user ?: UserDto(id = 0L, name = "Connectly User", username = "user")
+    val resolvedReactionsCount: Int get() = if (reactions_count > 0) reactions_count else (counters?.likes ?: 0)
+    val resolvedCommentsCount: Int get() = if (comments_count > 0) comments_count else (counters?.comments ?: 0)
+    val resolvedSharesCount: Int get() = if (shares_count > 0) shares_count else (counters?.shares ?: 0)
+    val resolvedUserReaction: String? get() = viewer_reaction ?: user_reaction
+    val resolvedMediaUrls: List<String> get() = media.mapNotNull { element ->
+        when (element) {
+            is JsonPrimitive -> if (element.isString) element.content else null
+            is JsonObject -> element["url"]?.jsonPrimitive?.contentOrNull
+                ?: element["original_url"]?.jsonPrimitive?.contentOrNull
+                ?: element["preview_url"]?.jsonPrimitive?.contentOrNull
+            else -> null
+        }
+    }
+}
 
 @Serializable
 data class StoryUserDto(
@@ -593,9 +651,17 @@ data class EventDto(
 
 @Serializable
 data class ReactionResponse(
-    val user_reaction: String?,
-    val reactions_count: Int
-)
+    val reacted: Boolean? = null,
+    val type: String? = null,
+    val user_reaction: String? = null,
+    val reactions_count: Int = 0,
+    val total_reactions: Int? = null,
+    val likes_count: Int? = null,
+    val breakdown: Map<String, Int> = emptyMap()
+) {
+    val resolvedReaction: String? get() = type ?: user_reaction
+    val resolvedCount: Int get() = if (reactions_count > 0) reactions_count else (total_reactions ?: likes_count ?: 0)
+}
 
 @Serializable
 data class LoginRequest(
@@ -623,7 +689,12 @@ data class SendMessageRequest(
 )
 
 @Serializable
-data class ReactionRequest(val reaction: String)
+data class ReactionRequest(
+    val type: String? = null,
+    val reaction: String? = null
+) {
+    constructor(actionType: String) : this(type = actionType, reaction = actionType)
+}
 
 @Serializable
 data class ReelViewRequest(val duration_seconds: Int, val completed: Boolean)
@@ -722,18 +793,41 @@ data class CreateCommentPayload(
 )
 
 @Serializable
+data class CommentCountersDto(
+    val likes: Int = 0,
+    val replies: Int = 0
+)
+
+@Serializable
 data class CommentDto(
     val id: Long,
     val post_id: Long,
     val parent_id: Long? = null,
-    val user: UserDto,
+    val user: UserDto? = null,
+    val author: UserDto? = null,
     val content: String? = null,
     val body: String? = null,
+    val counters: CommentCountersDto? = null,
     val reactions_count: Int = 0,
+    val viewer_reaction: String? = null,
     val user_reaction: String? = null,
     val replies_count: Int = 0,
     val replies: List<CommentDto> = emptyList(),
     val created_at: String = "Just now"
+) {
+    val resolvedAuthor: UserDto get() = author ?: user ?: UserDto(id = 0L, name = "Connectly User", username = "user")
+    val resolvedBody: String get() = body ?: content ?: ""
+    val resolvedReactionsCount: Int get() = if (reactions_count > 0) reactions_count else (counters?.likes ?: 0)
+    val resolvedRepliesCount: Int get() = if (replies_count > 0) replies_count else (counters?.replies ?: 0)
+    val resolvedUserReaction: String? get() = viewer_reaction ?: user_reaction
+}
+
+@Serializable
+data class ReportContentRequest(
+    val reportable_type: String, // "post", "comment", "user", "group"
+    val reportable_id: Long,
+    val reason: String, // "spam", "harassment", "hate_speech", "false_information", "violence", "other"
+    val details: String? = null
 )
 
 @Serializable

@@ -1,8 +1,6 @@
 package com.connectly.android.feature.feed.presentation.feed
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,14 +21,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.connectly.android.core.designsystem.theme.*
+import com.connectly.android.core.model.Comment
 import com.connectly.android.core.model.Post
 import com.connectly.android.core.model.ReactionType
+import com.connectly.android.core.model.User
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,15 +48,42 @@ fun FeedScreen(
     viewModel: FeedViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val listState = rememberLazyListState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Pagination auto-load when reaching near end
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastIndex ->
+                if (lastIndex != null && lastIndex >= state.posts.size - 2 && state.hasMore && !state.isPaginating) {
+                    viewModel.handleIntent(FeedIntent.LoadMorePosts)
+                }
+            }
+    }
+
+    // Snackbar notifications
+    LaunchedEffect(state.reportSuccessMessage) {
+        state.reportSuccessMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.handleIntent(FeedIntent.DismissMessages)
+        }
+    }
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.handleIntent(FeedIntent.DismissMessages)
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(34.dp)
                                 .clip(CircleShape)
                                 .background(ConnectlyBlue),
                             contentAlignment = Alignment.Center
@@ -89,7 +120,7 @@ fun FeedScreen(
                     IconButton(onClick = onNavigateToProfile) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(34.dp)
                                 .clip(CircleShape)
                                 .background(Color.LightGray)
                         ) {
@@ -108,6 +139,7 @@ fun FeedScreen(
         modifier = modifier
     ) { paddingValues ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -115,12 +147,17 @@ fun FeedScreen(
         ) {
             // Tab row: For You, Following, Groups, Pages
             item {
-                val tabs = listOf("for_you" to "For You", "following" to "Following", "groups" to "Groups", "pages" to "Pages")
+                val tabs = listOf(
+                    "for_you" to "For You",
+                    "following" to "Following",
+                    "groups" to "Groups",
+                    "pages" to "Pages"
+                )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.surface)
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     tabs.forEach { (key, label) ->
@@ -159,6 +196,16 @@ fun FeedScreen(
                 )
             }
 
+            // Suggested Friends Section
+            if (state.suggestedFriends.isNotEmpty()) {
+                item {
+                    SuggestedFriendsCarousel(
+                        users = state.suggestedFriends,
+                        onAddFriend = { /* Handled via FriendRepository */ }
+                    )
+                }
+            }
+
             // Feed Posts List
             items(state.posts, key = { it.id }) { post ->
                 PostItemCard(
@@ -167,9 +214,28 @@ fun FeedScreen(
                     onCommentsClick = { viewModel.handleIntent(FeedIntent.OpenComments(post.id)) },
                     onShareClick = { viewModel.handleIntent(FeedIntent.SharePost(post.id)) },
                     onSaveClick = { viewModel.handleIntent(FeedIntent.SavePost(post.id)) },
-                    onDeleteClick = { viewModel.handleIntent(FeedIntent.DeletePost(post.id)) }
+                    onDeleteClick = { viewModel.handleIntent(FeedIntent.DeletePost(post.id)) },
+                    onReportClick = { viewModel.handleIntent(FeedIntent.OpenReportDialog(post.id)) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // Pagination loading indicator
+            if (state.isPaginating) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(28.dp),
+                            color = ConnectlyBlue,
+                            strokeWidth = 2.5.dp
+                        )
+                    }
+                }
             }
         }
     }
@@ -182,14 +248,33 @@ fun FeedScreen(
             CommentsDrawerContent(
                 postId = state.activeCommentsPostId!!,
                 comments = state.activeComments,
-                onAddComment = { body ->
-                    viewModel.handleIntent(FeedIntent.AddComment(state.activeCommentsPostId!!, body))
+                activeParentId = state.activeParentCommentId,
+                replyingToUser = state.replyingToUser,
+                onStartReply = { parentId, username ->
+                    viewModel.handleIntent(FeedIntent.StartReply(parentId, username))
+                },
+                onCancelReply = {
+                    viewModel.handleIntent(FeedIntent.CancelReply)
+                },
+                onAddComment = { body, parentId ->
+                    viewModel.handleIntent(FeedIntent.AddComment(state.activeCommentsPostId!!, body, parentId))
                 },
                 onReactComment = { commentId, reaction ->
                     viewModel.handleIntent(FeedIntent.ReactToComment(commentId, reaction))
                 }
             )
         }
+    }
+
+    // Report Post Dialog
+    if (state.reportingPostId != null) {
+        ReportPostDialog(
+            postId = state.reportingPostId!!,
+            onDismiss = { viewModel.handleIntent(FeedIntent.CloseReportDialog) },
+            onSubmit = { reason, details ->
+                viewModel.handleIntent(FeedIntent.SubmitReport(state.reportingPostId!!, reason, details))
+            }
+        )
     }
 }
 
@@ -250,7 +335,7 @@ private fun StoriesTraySection(
                     }
                 }
 
-                // Sample stories: Sadia, Rahat, Tania
+                // Sample stories
                 val mockStories = listOf(
                     Triple(301L, "Sadia", "https://images.unsplash.com/photo-1517841905240-472988babdf9"),
                     Triple(302L, "Rahat", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"),
@@ -369,15 +454,87 @@ private fun CreatePostCard(
 }
 
 @Composable
+private fun SuggestedFriendsCarousel(
+    users: List<User>,
+    onAddFriend: (Long) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(0.dp)
+    ) {
+        Column(modifier = Modifier.padding(vertical = 12.dp)) {
+            Text(
+                text = "People you may know",
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(users, key = { it.id }) { user ->
+                    Card(
+                        modifier = Modifier
+                            .width(140.dp)
+                            .border(1.dp, BorderLight, RoundedCornerShape(12.dp)),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.LightGray)
+                            ) {
+                                AsyncImage(
+                                    model = user.avatar,
+                                    contentDescription = user.name,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(user.name, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1)
+                            Text("${user.friendsCount} mutual friends", fontSize = 11.sp, color = TextSecondaryLight, maxLines = 1)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = { onAddFriend(user.id) },
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.fillMaxWidth().height(30.dp)
+                            ) {
+                                Text("Add Friend", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun PostItemCard(
     post: Post,
     onReact: (String) -> Unit,
     onCommentsClick: () -> Unit,
     onShareClick: () -> Unit,
     onSaveClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onReportClick: () -> Unit
 ) {
     var showReactionMenu by remember { mutableStateOf(false) }
+    var showOptionsMenu by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -385,7 +542,7 @@ private fun PostItemCard(
         shape = RoundedCornerShape(0.dp)
     ) {
         Column(modifier = Modifier.padding(vertical = 12.dp)) {
-            // Header: Author Avatar, Name, Verified, Time & Menu
+            // Header Row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -416,32 +573,82 @@ private fun PostItemCard(
                             Icon(Icons.Default.CheckCircle, contentDescription = "Verified", tint = ConnectlyBlue, modifier = Modifier.size(15.dp))
                         }
                     }
-                    Text("2h • Public 🌐", fontSize = 12.sp, color = TextSecondaryLight)
+                    Text("2h • ${post.privacy.replaceFirstChar { it.uppercase() }} 🌐", fontSize = 12.sp, color = TextSecondaryLight)
                 }
 
-                IconButton(onClick = onSaveClick) {
-                    Icon(
-                        imageVector = if (post.isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                        contentDescription = "Save",
-                        tint = if (post.isSaved) ConnectlyBlue else Color.Gray
-                    )
+                Box {
+                    IconButton(onClick = { showOptionsMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = TextSecondaryLight)
+                    }
+
+                    DropdownMenu(
+                        expanded = showOptionsMenu,
+                        onDismissRequest = { showOptionsMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(if (post.isSaved) "Unsave Post" else "Save Post") },
+                            leadingIcon = { Icon(if (post.isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, contentDescription = null) },
+                            onClick = {
+                                showOptionsMenu = false
+                                onSaveClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Report Post", color = ConnectlyRose) },
+                            leadingIcon = { Icon(Icons.Default.Flag, contentDescription = null, tint = ConnectlyRose) },
+                            onClick = {
+                                showOptionsMenu = false
+                                onReportClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete Post") },
+                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                            onClick = {
+                                showOptionsMenu = false
+                                onDeleteClick()
+                            }
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Post Content
+            // Post Content with highlighted hashtags & mentions
             if (post.content.isNotBlank()) {
+                val annotatedContent = remember(post.content) {
+                    buildAnnotatedString {
+                        val words = post.content.split(" ")
+                        words.forEachIndexed { index, word ->
+                            when {
+                                word.startsWith("#") -> {
+                                    withStyle(SpanStyle(color = ConnectlyBlue, fontWeight = FontWeight.SemiBold)) {
+                                        append(word)
+                                    }
+                                }
+                                word.startsWith("@") -> {
+                                    withStyle(SpanStyle(color = ConnectlyIndigo, fontWeight = FontWeight.SemiBold)) {
+                                        append(word)
+                                    }
+                                }
+                                else -> append(word)
+                            }
+                            if (index < words.size - 1) append(" ")
+                        }
+                    }
+                }
+
                 Text(
-                    text = post.content,
+                    text = annotatedContent,
                     fontSize = 15.sp,
-                    lineHeight = 20.sp,
+                    lineHeight = 21.sp,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            // Attached Media Image
+            // Attached Media Image(s)
             if (post.mediaUrls.isNotEmpty()) {
                 AsyncImage(
                     model = post.mediaUrls.first(),
@@ -536,8 +743,12 @@ private fun PostItemCard(
 @Composable
 private fun CommentsDrawerContent(
     postId: Long,
-    comments: List<com.connectly.android.core.model.Comment>,
-    onAddComment: (String) -> Unit,
+    comments: List<Comment>,
+    activeParentId: Long?,
+    replyingToUser: String?,
+    onStartReply: (Long, String) -> Unit,
+    onCancelReply: () -> Unit,
+    onAddComment: (String, Long?) -> Unit,
     onReactComment: (Long, String) -> Unit
 ) {
     var newCommentText by remember { mutableStateOf("") }
@@ -545,7 +756,7 @@ private fun CommentsDrawerContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(480.dp)
+            .height(500.dp)
             .padding(16.dp)
     ) {
         Text("Comments", fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -556,7 +767,11 @@ private fun CommentsDrawerContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(comments, key = { it.id }) { comment ->
-                Row(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = if (comment.parentId != null) 36.dp else 0.dp)
+                ) {
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -593,20 +808,54 @@ private fun CommentsDrawerContent(
                         ) {
                             Text(comment.createdAt, fontSize = 11.sp, color = TextSecondaryLight)
                             Text(
-                                "Like",
+                                "Like (${comment.reactionsCount})",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (comment.userReaction != null) ConnectlyBlue else TextSecondaryLight,
                                 modifier = Modifier.clickable { onReactComment(comment.id, "like") }
                             )
-                            Text("Reply", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondaryLight)
+                            Text(
+                                "Reply",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ConnectlyBlue,
+                                modifier = Modifier.clickable {
+                                    onStartReply(comment.id, comment.author.username)
+                                }
+                            )
                         }
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        // Active Reply Banner
+        if (replyingToUser != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFE0E7FF), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Replying to @$replyingToUser",
+                    color = ConnectlyBlue,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Cancel Reply",
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clickable { onCancelReply() },
+                    tint = ConnectlyBlue
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+        }
 
         // Comment Input
         Row(
@@ -616,7 +865,9 @@ private fun CommentsDrawerContent(
             OutlinedTextField(
                 value = newCommentText,
                 onValueChange = { newCommentText = it },
-                placeholder = { Text("Write a comment...") },
+                placeholder = {
+                    Text(if (replyingToUser != null) "Write a reply..." else "Write a comment...")
+                },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(20.dp),
                 maxLines = 3
@@ -627,7 +878,7 @@ private fun CommentsDrawerContent(
             IconButton(
                 onClick = {
                     if (newCommentText.isNotBlank()) {
-                        onAddComment(newCommentText)
+                        onAddComment(newCommentText, activeParentId)
                         newCommentText = ""
                     }
                 },
@@ -639,3 +890,70 @@ private fun CommentsDrawerContent(
     }
 }
 
+@Composable
+private fun ReportPostDialog(
+    postId: Long,
+    onDismiss: () -> Unit,
+    onSubmit: (String, String?) -> Unit
+) {
+    val reasons = listOf(
+        "spam" to "স্প্যাম (Spam)",
+        "harassment" to "হয়রানি বা অপমানজনক আচরণ (Harassment)",
+        "hate_speech" to "বিদ্বেষমূলক বক্তব্য (Hate speech)",
+        "false_information" to "ভুয়া বা বিভ্রান্তিকর তথ্য (False information)",
+        "violence" to "সহিংসতা বা হুমকি (Violence)",
+        "other" to "অন্যান্য সমস্যা (Other)"
+    )
+    var selectedReason by remember { mutableStateOf(reasons.first().first) }
+    var detailsText by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("পোস্ট রিপোর্ট করুন", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                Text("এই পোস্টে কী সমস্যা হচ্ছে তা নির্বাচন করুন:", fontSize = 13.sp, color = TextSecondaryLight)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                reasons.forEach { (key, label) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedReason = key }
+                            .padding(vertical = 4.dp)
+                    ) {
+                        RadioButton(
+                            selected = selectedReason == key,
+                            onClick = { selectedReason = key }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(label, fontSize = 13.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = detailsText,
+                    onValueChange = { detailsText = it },
+                    placeholder = { Text("অতিরিক্ত বিবরণ দিন (ঐচ্ছিক)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSubmit(selectedReason, detailsText.ifBlank { null }) },
+                colors = ButtonDefaults.buttonColors(containerColor = ConnectlyRose)
+            ) {
+                Text("রিপোর্ট জমা দিন")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("বাতিল")
+            }
+        }
+    )
+}

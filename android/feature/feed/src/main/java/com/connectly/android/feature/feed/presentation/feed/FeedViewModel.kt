@@ -22,9 +22,11 @@ class FeedViewModel @Inject constructor(
     private val toggleSavePostUseCase: ToggleSavePostUseCase,
     private val sharePostUseCase: SharePostUseCase,
     private val deletePostUseCase: DeletePostUseCase,
+    private val reportPostUseCase: ReportPostUseCase,
     private val getCommentsUseCase: GetCommentsUseCase,
     private val addCommentUseCase: AddCommentUseCase,
-    private val reactToCommentUseCase: ReactToCommentUseCase
+    private val reactToCommentUseCase: ReactToCommentUseCase,
+    private val getSuggestedFriendsUseCase: GetSuggestedFriendsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FeedState())
@@ -32,40 +34,105 @@ class FeedViewModel @Inject constructor(
 
     init {
         loadFeed("for_you")
+        loadSuggestedFriends()
     }
 
     fun handleIntent(intent: FeedIntent) {
         when (intent) {
             is FeedIntent.SelectTab -> {
-                _uiState.update { it.copy(selectedTab = intent.tab) }
+                _uiState.update { it.copy(selectedTab = intent.tab, nextCursor = null, hasMore = false) }
                 loadFeed(intent.tab)
             }
             FeedIntent.RefreshFeed -> loadFeed(_uiState.value.selectedTab, isRefresh = true)
+            FeedIntent.LoadMorePosts -> loadMorePosts()
             is FeedIntent.ReactToPost -> reactToPost(intent.postId, intent.reaction)
             is FeedIntent.SavePost -> savePost(intent.postId)
             is FeedIntent.SharePost -> sharePost(intent.postId, intent.caption)
             is FeedIntent.DeletePost -> deletePost(intent.postId)
             is FeedIntent.OpenComments -> openComments(intent.postId)
-            FeedIntent.CloseComments -> _uiState.update { it.copy(activeCommentsPostId = null, activeComments = emptyList()) }
+            FeedIntent.CloseComments -> _uiState.update {
+                it.copy(activeCommentsPostId = null, activeComments = emptyList(), activeParentCommentId = null, replyingToUser = null)
+            }
+            is FeedIntent.StartReply -> _uiState.update {
+                it.copy(activeParentCommentId = intent.parentCommentId, replyingToUser = intent.authorUsername)
+            }
+            FeedIntent.CancelReply -> _uiState.update {
+                it.copy(activeParentCommentId = null, replyingToUser = null)
+            }
             is FeedIntent.AddComment -> addComment(intent.postId, intent.body, intent.parentId)
             is FeedIntent.ReactToComment -> reactToComment(intent.commentId, intent.reaction)
+            is FeedIntent.OpenReportDialog -> _uiState.update { it.copy(reportingPostId = intent.postId) }
+            FeedIntent.CloseReportDialog -> _uiState.update { it.copy(reportingPostId = null) }
+            is FeedIntent.SubmitReport -> submitReport(intent.postId, intent.reason, intent.details)
+            FeedIntent.DismissMessages -> _uiState.update { it.copy(errorMessage = null, reportSuccessMessage = null) }
         }
     }
 
     private fun loadFeed(tab: String, isRefresh: Boolean = false) {
         viewModelScope.launch {
-            getFeedUseCase(tab).collect { result ->
+            getFeedUseCase(tab = tab, cursor = null).collect { result ->
                 when (result) {
                     is Result.Loading -> _uiState.update { it.copy(isLoading = !isRefresh, isRefreshing = isRefresh) }
-                    is Result.Success -> _uiState.update { it.copy(isLoading = false, isRefreshing = false, posts = result.data) }
-                    is Result.Error -> _uiState.update { it.copy(isLoading = false, isRefreshing = false, errorMessage = result.exception.message) }
+                    is Result.Success -> _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isRefreshing = false,
+                            posts = result.data.posts,
+                            nextCursor = result.data.nextCursor,
+                            hasMore = result.data.hasMore
+                        )
+                    }
+                    is Result.Error -> _uiState.update {
+                        it.copy(isLoading = false, isRefreshing = false, errorMessage = result.exception.message)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadMorePosts() {
+        val state = _uiState.value
+        if (state.isPaginating || !state.hasMore || state.nextCursor == null) return
+
+        _uiState.update { it.copy(isPaginating = true) }
+        viewModelScope.launch {
+            getFeedUseCase(tab = state.selectedTab, cursor = state.nextCursor).collect { result ->
+                when (result) {
+                    is Result.Loading -> {}
+                    is Result.Success -> {
+                        val existingIds = state.posts.map { it.id }.toSet()
+                        val newPosts = result.data.posts.filter { it.id !in existingIds }
+                        _uiState.update {
+                            it.copy(
+                                isPaginating = false,
+                                posts = it.posts + newPosts,
+                                nextCursor = result.data.nextCursor,
+                                hasMore = result.data.hasMore
+                            )
+                        }
+                    }
+                    is Result.Error -> {
+                        _uiState.update { it.copy(isPaginating = false, errorMessage = result.exception.message) }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadSuggestedFriends() {
+        viewModelScope.launch {
+            getSuggestedFriendsUseCase().collect { result ->
+                if (result is Result.Success) {
+                    _uiState.update { it.copy(suggestedFriends = result.data) }
                 }
             }
         }
     }
 
     private fun reactToPost(postId: Long, reaction: String) {
-        // Optimistic UI update
+        val originalPost = _uiState.value.posts.find { it.id == postId } ?: return
+
+        // 1. Optimistic update
         _uiState.update { state ->
             val updated = state.posts.map { post ->
                 if (post.id == postId) {
@@ -81,20 +148,57 @@ class FeedViewModel @Inject constructor(
             state.copy(posts = updated)
         }
 
+        // 2. Network call with rollback on error
         viewModelScope.launch {
-            reactToPostUseCase(postId, reaction).collect()
+            reactToPostUseCase(postId, reaction).collect { result ->
+                when (result) {
+                    is Result.Loading -> {}
+                    is Result.Success -> {
+                        // Confirm with server response
+                        _uiState.update { state ->
+                            val updated = state.posts.map { post ->
+                                if (post.id == postId) {
+                                    post.copy(
+                                        userReaction = result.data.resolvedReaction,
+                                        reactionsCount = result.data.resolvedCount
+                                    )
+                                } else post
+                            }
+                            state.copy(posts = updated)
+                        }
+                    }
+                    is Result.Error -> {
+                        // Rollback to original state
+                        _uiState.update { state ->
+                            val reverted = state.posts.map { if (it.id == postId) originalPost else it }
+                            state.copy(posts = reverted, errorMessage = "প্রতিক্রিয়া দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।")
+                        }
+                    }
+                }
+            }
         }
     }
 
     private fun savePost(postId: Long) {
+        val originalPost = _uiState.value.posts.find { it.id == postId } ?: return
+
         _uiState.update { state ->
             val updated = state.posts.map { post ->
                 if (post.id == postId) post.copy(isSaved = !post.isSaved) else post
             }
             state.copy(posts = updated)
         }
+
         viewModelScope.launch {
-            toggleSavePostUseCase(postId).collect()
+            toggleSavePostUseCase(postId).collect { result ->
+                if (result is Result.Error) {
+                    // Rollback
+                    _uiState.update { state ->
+                        val reverted = state.posts.map { if (it.id == postId) originalPost else it }
+                        state.copy(posts = reverted, errorMessage = "পোস্ট সংরক্ষণ করতে সমস্যা হয়েছে।")
+                    }
+                }
+            }
         }
     }
 
@@ -111,16 +215,26 @@ class FeedViewModel @Inject constructor(
     }
 
     private fun deletePost(postId: Long) {
+        val previousPosts = _uiState.value.posts
+        // 1. Optimistic removal
         _uiState.update { state ->
             state.copy(posts = state.posts.filter { it.id != postId })
         }
+
+        // 2. Network call with rollback
         viewModelScope.launch {
-            deletePostUseCase(postId).collect()
+            deletePostUseCase(postId).collect { result ->
+                if (result is Result.Error) {
+                    _uiState.update { state ->
+                        state.copy(posts = previousPosts, errorMessage = "পোস্ট মুছতে ব্যর্থ হয়েছে।")
+                    }
+                }
+            }
         }
     }
 
     private fun openComments(postId: Long) {
-        _uiState.update { it.copy(activeCommentsPostId = postId, isCommentsLoading = true) }
+        _uiState.update { it.copy(activeCommentsPostId = postId, isCommentsLoading = true, activeParentCommentId = null, replyingToUser = null) }
         viewModelScope.launch {
             getCommentsUseCase(postId).collect { result ->
                 if (result is Result.Success) {
@@ -133,28 +247,61 @@ class FeedViewModel @Inject constructor(
     }
 
     private fun addComment(postId: Long, body: String, parentId: Long?) {
+        val tempId = System.currentTimeMillis()
         val optimisticComment = Comment(
-            id = System.currentTimeMillis(),
+            id = tempId,
             postId = postId,
             parentId = parentId,
             author = User(id = 1L, name = "You", username = "you"),
             body = body,
-            createdAt = "Just now"
+            createdAt = "এখন মাত্র"
         )
+
+        val previousComments = _uiState.value.activeComments
+        val previousPosts = _uiState.value.posts
+
+        // 1. Optimistic addition
         _uiState.update { state ->
             val updatedComments = listOf(optimisticComment) + state.activeComments
             val updatedPosts = state.posts.map { post ->
                 if (post.id == postId) post.copy(commentsCount = post.commentsCount + 1) else post
             }
-            state.copy(activeComments = updatedComments, posts = updatedPosts)
+            state.copy(activeComments = updatedComments, posts = updatedPosts, activeParentCommentId = null, replyingToUser = null)
         }
 
+        // 2. Network call with rollback
         viewModelScope.launch {
-            addCommentUseCase(postId, body, parentId).collect()
+            addCommentUseCase(postId, body, parentId).collect { result ->
+                when (result) {
+                    is Result.Loading -> {}
+                    is Result.Success -> {
+                        // Replace temp comment with confirmed server comment
+                        _uiState.update { state ->
+                            val finalizedComments = state.activeComments.map { comment ->
+                                if (comment.id == tempId) result.data else comment
+                            }
+                            state.copy(activeComments = finalizedComments)
+                        }
+                    }
+                    is Result.Error -> {
+                        // Rollback
+                        _uiState.update { state ->
+                            state.copy(
+                                activeComments = previousComments,
+                                posts = previousPosts,
+                                errorMessage = "মন্তব্য যোগ করা সম্ভব হয়নি।"
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 
     private fun reactToComment(commentId: Long, reaction: String) {
+        val originalComment = _uiState.value.activeComments.find { it.id == commentId } ?: return
+
+        // 1. Optimistic update
         _uiState.update { state ->
             val updated = state.activeComments.map { comment ->
                 if (comment.id == commentId) {
@@ -167,9 +314,43 @@ class FeedViewModel @Inject constructor(
             }
             state.copy(activeComments = updated)
         }
+
+        // 2. Network call with rollback
         viewModelScope.launch {
-            reactToCommentUseCase(commentId, reaction).collect()
+            reactToCommentUseCase(commentId, reaction).collect { result ->
+                if (result is Result.Error) {
+                    _uiState.update { state ->
+                        val reverted = state.activeComments.map { if (it.id == commentId) originalComment else it }
+                        state.copy(activeComments = reverted, errorMessage = "মন্তব্যে প্রতিক্রিয়া দিতে সমস্যা হয়েছে।")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun submitReport(postId: Long, reason: String, details: String?) {
+        viewModelScope.launch {
+            reportPostUseCase(postId, reason, details).collect { result ->
+                when (result) {
+                    is Result.Loading -> {}
+                    is Result.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                reportingPostId = null,
+                                reportSuccessMessage = "রিপোর্টটি সফলভাবে জমা দেওয়া হয়েছে। আমাদের টিম পর্যালোচনা করবে।"
+                            )
+                        }
+                    }
+                    is Result.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                reportingPostId = null,
+                                errorMessage = "রিপোর্ট জমা দেওয়া যায়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন।"
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
-

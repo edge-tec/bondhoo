@@ -33,9 +33,10 @@ class PostController extends Controller
     {
         $viewer = $request->user('sanctum');
         $perPage = (int) $request->query('per_page', 15);
-        $algorithm = (string) $request->query('algorithm', 'smart');
+        $tab = (string) $request->query('tab', 'for_you');
+        $algorithm = (string) $request->query('algorithm', $tab === 'following' ? 'chronological' : 'smart');
 
-        $feed = $this->feedService->getFeed($viewer, $algorithm, $perPage);
+        $feed = $this->feedService->getFeed($viewer, $algorithm, $perPage, $tab);
 
         return $this->successResponse(
             data: collect($feed->items())->map(fn (Post $p) => $p->toResponseArray($viewer))->values(),
