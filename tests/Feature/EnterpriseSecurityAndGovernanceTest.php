@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Group;
 use App\Models\Post;
 use App\Models\Report;
 use App\Models\User;
@@ -131,6 +132,25 @@ class EnterpriseSecurityAndGovernanceTest extends TestCase
             'status' => 'pending',
             'reason' => 'spam',
         ]);
+
+        // Report a group
+        $group = Group::factory()->create(['name' => 'Spam Group']);
+        $groupReportRes = $this->actingAs($reporter, 'sanctum')->postJson('/api/v1/reports', [
+            'reportable_type' => 'group',
+            'reportable_id' => $group->id,
+            'reason' => 'spam',
+            'details' => 'Fraudulent group activity.',
+        ]);
+        $groupReportRes->assertStatus(201);
+
+        // Report a user
+        $userReportRes = $this->actingAs($reporter, 'sanctum')->postJson('/api/v1/reports', [
+            'reportable_type' => 'user',
+            'reportable_id' => $author->id,
+            'reason' => 'harassment',
+            'details' => 'Continuous unsolicited harassment.',
+        ]);
+        $userReportRes->assertStatus(201);
     }
 
     /**

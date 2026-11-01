@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
+use App\Models\Group;
 use App\Models\Post;
 use App\Models\Report;
 use App\Models\User;
@@ -19,7 +20,7 @@ class ReportController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'reportable_type' => ['required', 'string', 'in:post,comment,user'],
+            'reportable_type' => ['required', 'string', 'in:post,comment,user,group'],
             'reportable_id' => ['required', 'integer'],
             'reason' => ['required', 'string', 'in:spam,harassment,hate_speech,false_information,violence,other'],
             'details' => ['nullable', 'string', 'max:1000'],
@@ -29,6 +30,7 @@ class ReportController extends Controller
             'post' => Post::class,
             'comment' => Comment::class,
             'user' => User::class,
+            'group' => Group::class,
             default => throw new InvalidArgumentException('Invalid target type.'),
         };
 
