@@ -20,10 +20,30 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("keystore/connectly-release.jks")
+            storePassword = System.getenv("CONNECTLY_KEYSTORE_PASSWORD") ?: "connectly2026"
+            keyAlias = System.getenv("CONNECTLY_KEY_ALIAS") ?: "connectly"
+            keyPassword = System.getenv("CONNECTLY_KEY_PASSWORD") ?: "connectly2026"
+        }
+    }
+
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            isDebuggable = true
+        }
+        create("staging") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".staging"
+            matchingFallbacks += listOf("release")
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
