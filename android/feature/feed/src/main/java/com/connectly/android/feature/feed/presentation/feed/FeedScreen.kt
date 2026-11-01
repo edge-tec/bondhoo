@@ -38,6 +38,8 @@ fun FeedScreen(
     onNavigateToStoryViewer: (Long) -> Unit,
     onNavigateToCreateStory: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToSearch: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: FeedViewModel = hiltViewModel()
 ) {
@@ -72,7 +74,7 @@ fun FeedScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Search */ }) {
+                    IconButton(onClick = onNavigateToSearch) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
                     BadgedBox(
@@ -80,7 +82,7 @@ fun FeedScreen(
                             Badge(containerColor = ConnectlyRose) { Text("3") }
                         }
                     ) {
-                        IconButton(onClick = { /* Notifications */ }) {
+                        IconButton(onClick = onNavigateToNotifications) {
                             Icon(Icons.Default.Notifications, contentDescription = "Notifications")
                         }
                     }

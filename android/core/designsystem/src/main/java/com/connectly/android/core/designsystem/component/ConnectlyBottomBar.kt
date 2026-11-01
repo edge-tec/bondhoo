@@ -28,11 +28,18 @@ enum class BottomBarDestination(
 }
 
 @Composable
-fun ConnectlyBottomBar(
+fun ConnectlyBottomNavigation(
     selectedDestination: BottomBarDestination,
     onDestinationClick: (BottomBarDestination) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    ConnectlyBottomBar(
+        selectedDestination = selectedDestination,
+        onDestinationClick = onDestinationClick,
+        modifier = modifier
+    )
+}
+
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 8.dp,

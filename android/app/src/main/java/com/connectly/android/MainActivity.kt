@@ -17,6 +17,7 @@ import com.connectly.android.core.designsystem.component.ConnectlyBottomBar
 import com.connectly.android.core.designsystem.component.ConnectlyTopBar
 import com.connectly.android.core.designsystem.theme.ConnectlyTheme
 import com.connectly.android.feature.auth.navigation.LOGIN_ROUTE
+import com.connectly.android.feature.auth.navigation.SPLASH_ROUTE
 import com.connectly.android.feature.auth.navigation.authGraph
 import com.connectly.android.feature.auth.navigation.navigateToLogin
 import com.connectly.android.core.model.CallType
@@ -36,8 +37,11 @@ import com.connectly.android.feature.live.navigation.navigateToLive
 import com.connectly.android.feature.notifications.navigation.navigateToNotifications
 import com.connectly.android.feature.notifications.navigation.navigateToSearch
 import com.connectly.android.feature.notifications.navigation.notificationsGraph
+import com.connectly.android.feature.profile.navigation.navigateToPrivacySettings
 import com.connectly.android.feature.profile.navigation.navigateToProfile
 import com.connectly.android.feature.profile.navigation.profileGraph
+import com.connectly.android.feature.profile.presentation.friends.FriendsScreen
+import com.connectly.android.feature.profile.presentation.settings.SettingsScreen
 import com.connectly.android.feature.reels.navigation.reelsGraph
 import com.connectly.android.feature.reels.presentation.player.ReelsScreen
 import com.connectly.android.feature.stories.navigation.navigateToCreateStory
@@ -59,12 +63,12 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(
                     navController = rootNavController,
-                    startDestination = LOGIN_ROUTE
+                    startDestination = SPLASH_ROUTE
                 ) {
                     authGraph(
                         onNavigateToHome = {
                             rootNavController.navigate(MAIN_HOME_ROUTE) {
-                                popUpTo(LOGIN_ROUTE) { inclusive = true }
+                                popUpTo(0) { inclusive = true }
                             }
                         },
                         navController = rootNavController
@@ -139,7 +143,11 @@ class MainActivity : ComponentActivity() {
                                 ConnectlyBottomBar(
                                     selectedDestination = selectedTab,
                                     onDestinationClick = { destination ->
-                                        selectedTab = destination
+                                        if (destination == BottomBarDestination.CREATE) {
+                                            rootNavController.navigateToCreatePost()
+                                        } else {
+                                            selectedTab = destination
+                                        }
                                     }
                                 )
                             }
@@ -151,11 +159,15 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToStoryViewer = { storyId -> rootNavController.navigateToStoryViewer(storyId) },
                                         onNavigateToCreateStory = { rootNavController.navigateToCreateStory() },
                                         onNavigateToProfile = { rootNavController.navigateToProfile() },
+                                        onNavigateToSearch = { rootNavController.navigateToSearch() },
+                                        onNavigateToNotifications = { rootNavController.navigateToNotifications() },
                                         modifier = Modifier.padding(innerPadding)
                                     )
                                 }
                                 BottomBarDestination.FRIENDS -> {
-                                    GroupsScreen(
+                                    FriendsScreen(
+                                        onNavigateToUserProfile = { rootNavController.navigateToProfile() },
+                                        onNavigateToChat = { conversationId -> rootNavController.navigateToChat(conversationId) },
                                         modifier = Modifier.padding(innerPadding)
                                     )
                                 }
@@ -174,20 +186,27 @@ class MainActivity : ComponentActivity() {
                                         modifier = Modifier.padding(innerPadding)
                                     )
                                 }
+                                BottomBarDestination.MENU -> {
+                                    SettingsScreen(
+                                        onNavigateBack = { selectedTab = BottomBarDestination.HOME },
+                                        onNavigateToProfile = { rootNavController.navigateToProfile() },
+                                        onNavigateToPrivacy = { rootNavController.navigateToPrivacySettings() },
+                                        onLogoutSuccess = {
+                                            rootNavController.navigate(LOGIN_ROUTE) {
+                                                popUpTo(0) { inclusive = true }
+                                            }
+                                        },
+                                        modifier = Modifier.padding(innerPadding)
+                                    )
+                                }
                                 else -> {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(innerPadding)
-                                            .background(MaterialTheme.colorScheme.background),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "Connectly — ${selectedTab.title} Screen",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = MaterialTheme.colorScheme.onBackground
-                                        )
-                                    }
+                                    FeedScreen(
+                                        onNavigateToCreatePost = { rootNavController.navigateToCreatePost() },
+                                        onNavigateToStoryViewer = { storyId -> rootNavController.navigateToStoryViewer(storyId) },
+                                        onNavigateToCreateStory = { rootNavController.navigateToCreateStory() },
+                                        onNavigateToProfile = { rootNavController.navigateToProfile() },
+                                        modifier = Modifier.padding(innerPadding)
+                                    )
                                 }
                             }
                         }

@@ -54,3 +54,4 @@ jobs:
           CONNECTLY_KEY_PASSWORD: ${{ secrets.CONNECTLY_KEY_PASSWORD || 'connectly2026' }}
         run: |
           ./gradlew assembleRelease bundleRelease || echo "Build artifact pipeline validated"
+
