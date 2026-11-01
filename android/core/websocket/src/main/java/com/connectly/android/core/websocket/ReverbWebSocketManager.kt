@@ -54,6 +54,24 @@ class ReverbWebSocketManager @Inject constructor(
     private val _conversationClearedFlow = MutableSharedFlow<ConversationClearedEvent>(extraBufferCapacity = 16)
     val conversationClearedFlow: SharedFlow<ConversationClearedEvent> = _conversationClearedFlow.asSharedFlow()
 
+    private val _callIncomingFlow = MutableSharedFlow<CallIncomingEvent>(extraBufferCapacity = 16)
+    val callIncomingFlow: SharedFlow<CallIncomingEvent> = _callIncomingFlow.asSharedFlow()
+
+    private val _callAcceptedFlow = MutableSharedFlow<CallAcceptedEvent>(extraBufferCapacity = 16)
+    val callAcceptedFlow: SharedFlow<CallAcceptedEvent> = _callAcceptedFlow.asSharedFlow()
+
+    private val _callRejectedFlow = MutableSharedFlow<CallRejectedEvent>(extraBufferCapacity = 16)
+    val callRejectedFlow: SharedFlow<CallRejectedEvent> = _callRejectedFlow.asSharedFlow()
+
+    private val _callEndedFlow = MutableSharedFlow<CallEndedEvent>(extraBufferCapacity = 16)
+    val callEndedFlow: SharedFlow<CallEndedEvent> = _callEndedFlow.asSharedFlow()
+
+    private val _callSignalFlow = MutableSharedFlow<CallSignalEvent>(extraBufferCapacity = 64)
+    val callSignalFlow: SharedFlow<CallSignalEvent> = _callSignalFlow.asSharedFlow()
+
+    private val _callParticipantStateFlow = MutableSharedFlow<CallParticipantStateEvent>(extraBufferCapacity = 32)
+    val callParticipantStateFlow: SharedFlow<CallParticipantStateEvent> = _callParticipantStateFlow.asSharedFlow()
+
     // Subscribed Channels Set for Auto-Recovery on Reconnect
     private val subscribedChannels = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
 
@@ -292,6 +310,127 @@ class ReverbWebSocketManager @Inject constructor(
                         }
                     }
                 }
+
+                "call.incoming" -> {
+                    if (dataStr.isNotBlank()) {
+                        val data = JSONObject(dataStr)
+                        val callId = data.optLong("call_id")
+                        val callObj = data.optJSONObject("call")
+                        val convId = data.optLong("conversation_id", callObj?.optLong("conversation_id") ?: 0L)
+                        val callType = data.optString("call_type", callObj?.optString("call_type") ?: "audio")
+                        val callerObj = data.optJSONObject("caller") ?: callObj?.optJSONObject("caller")
+                        val callerId = callerObj?.optLong("id") ?: data.optLong("caller_id")
+                        val callerName = callerObj?.optString("name") ?: "Caller"
+                        val callerAvatar = callerObj?.optString("avatar", null)
+
+                        scope.launch {
+                            _callIncomingFlow.emit(
+                                CallIncomingEvent(
+                                    callId = callId,
+                                    conversationId = convId,
+                                    callType = callType,
+                                    callerId = callerId,
+                                    callerName = callerName,
+                                    callerAvatar = callerAvatar
+                                )
+                            )
+                        }
+                    }
+                }
+
+                "call.accepted" -> {
+                    if (dataStr.isNotBlank()) {
+                        val data = JSONObject(dataStr)
+                        val callId = data.optLong("call_id")
+                        val userId = data.optLong("user_id")
+                        val status = data.optString("status", "accepted")
+
+                        scope.launch {
+                            _callAcceptedFlow.emit(CallAcceptedEvent(callId, userId, status))
+                        }
+                    }
+                }
+
+                "call.rejected" -> {
+                    if (dataStr.isNotBlank()) {
+                        val data = JSONObject(dataStr)
+                        val callId = data.optLong("call_id")
+                        val userId = data.optLong("user_id")
+                        val status = data.optString("status", "rejected")
+
+                        scope.launch {
+                            _callRejectedFlow.emit(CallRejectedEvent(callId, userId, status))
+                        }
+                    }
+                }
+
+                "call.ended" -> {
+                    if (dataStr.isNotBlank()) {
+                        val data = JSONObject(dataStr)
+                        val callId = data.optLong("call_id")
+                        val status = data.optString("status", "ended")
+                        val duration = data.optInt("duration", 0)
+
+                        scope.launch {
+                            _callEndedFlow.emit(CallEndedEvent(callId, status, duration))
+                        }
+                    }
+                }
+
+                "call.signal" -> {
+                    if (dataStr.isNotBlank()) {
+                        val data = JSONObject(dataStr)
+                        val callId = data.optLong("call_id")
+                        val signalType = data.optString("signal_type")
+                        val senderId = data.optLong("sender_id")
+                        val senderName = data.optString("sender_name", null)
+                        val targetUserId = if (data.has("target_user_id") && !data.isNull("target_user_id")) {
+                            data.optLong("target_user_id")
+                        } else null
+
+                        val payloadObj = data.optJSONObject("payload")
+                        val payloadMap = mutableMapOf<String, String>()
+                        payloadObj?.keys()?.forEach { key ->
+                            payloadMap[key] = payloadObj.optString(key, "")
+                        }
+
+                        scope.launch {
+                            _callSignalFlow.emit(
+                                CallSignalEvent(
+                                    callId = callId,
+                                    signalType = signalType,
+                                    senderId = senderId,
+                                    senderName = senderName,
+                                    targetUserId = targetUserId,
+                                    payload = payloadMap
+                                )
+                            )
+                        }
+                    }
+                }
+
+                "call.participant_state" -> {
+                    if (dataStr.isNotBlank()) {
+                        val data = JSONObject(dataStr)
+                        val callId = data.optLong("call_id")
+                        val userId = data.optLong("user_id")
+                        val isMuted = if (data.has("is_muted")) data.optBoolean("is_muted") else null
+                        val isCameraOff = if (data.has("is_camera_off")) data.optBoolean("is_camera_off") else null
+                        val isScreenSharing = if (data.has("is_screen_sharing")) data.optBoolean("is_screen_sharing") else null
+
+                        scope.launch {
+                            _callParticipantStateFlow.emit(
+                                CallParticipantStateEvent(
+                                    callId = callId,
+                                    userId = userId,
+                                    isMuted = isMuted,
+                                    isCameraOff = isCameraOff,
+                                    isScreenSharing = isScreenSharing
+                                )
+                            )
+                        }
+                    }
+                }
             }
         } catch (_: Exception) {
             // Malformed frame ignored
@@ -411,3 +550,4 @@ class ReverbWebSocketManager @Inject constructor(
         currentSocketId = null
     }
 }
+

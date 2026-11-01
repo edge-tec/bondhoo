@@ -60,3 +60,48 @@ data class UserPresenceEvent(
 data class ConversationClearedEvent(
     val conversationId: Long
 )
+
+data class CallIncomingEvent(
+    val callId: Long,
+    val conversationId: Long,
+    val callType: String,
+    val callerId: Long,
+    val callerName: String,
+    val callerAvatar: String? = null
+)
+
+data class CallAcceptedEvent(
+    val callId: Long,
+    val userId: Long,
+    val status: String
+)
+
+data class CallRejectedEvent(
+    val callId: Long,
+    val userId: Long,
+    val status: String
+)
+
+data class CallEndedEvent(
+    val callId: Long,
+    val status: String,
+    val duration: Int = 0
+)
+
+data class CallSignalEvent(
+    val callId: Long,
+    val signalType: String,
+    val senderId: Long,
+    val senderName: String? = null,
+    val targetUserId: Long? = null,
+    val payload: Map<String, String>
+)
+
+data class CallParticipantStateEvent(
+    val callId: Long,
+    val userId: Long,
+    val isMuted: Boolean? = null,
+    val isCameraOff: Boolean? = null,
+    val isScreenSharing: Boolean? = null
+)
+

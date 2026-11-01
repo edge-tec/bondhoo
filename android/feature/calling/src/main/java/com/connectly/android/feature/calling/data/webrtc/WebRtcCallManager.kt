@@ -6,6 +6,9 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import com.connectly.android.core.model.NetworkQuality
+import com.connectly.android.core.webrtc.audio.CallAudioManager
+import com.connectly.android.core.webrtc.engine.WebRtcEngine
+import com.connectly.android.core.webrtc.signaling.WebRtcSignalingCoordinator
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +18,10 @@ import javax.inject.Singleton
 
 @Singleton
 class WebRtcCallManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    val callAudioManager: CallAudioManager? = null,
+    val webRtcEngine: WebRtcEngine? = null,
+    val signalingCoordinator: WebRtcSignalingCoordinator? = null
 ) {
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
@@ -43,6 +49,14 @@ class WebRtcCallManager @Inject constructor(
      * Acquire audio focus and configure audio routing for communication.
      */
     fun startAudioSession(enableSpeaker: Boolean = false) {
+        if (callAudioManager != null) {
+            callAudioManager.start(enableSpeaker)
+            _isSpeakerOn.value = callAudioManager.isSpeakerOn.value
+            _isMuted.value = callAudioManager.isMuted.value
+            _isConnected.value = true
+            return
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val playbackAttributes = AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
@@ -83,6 +97,15 @@ class WebRtcCallManager @Inject constructor(
      * Release audio focus and reset hardware state.
      */
     fun endAudioSession() {
+        if (callAudioManager != null) {
+            callAudioManager.stop()
+            _isConnected.value = false
+            _isMuted.value = false
+            _isSpeakerOn.value = false
+            webRtcEngine?.endCall(notifySignaling = false)
+            return
+        }
+
         _isConnected.value = false
         audioManager.isMicrophoneMute = false
         setSpeakerphoneOn(false)
@@ -98,6 +121,12 @@ class WebRtcCallManager @Inject constructor(
     }
 
     fun toggleMute(): Boolean {
+        if (callAudioManager != null) {
+            val newMute = callAudioManager.toggleMute()
+            _isMuted.value = newMute
+            webRtcEngine?.toggleMute()
+            return newMute
+        }
         val newMute = !_isMuted.value
         _isMuted.value = newMute
         audioManager.isMicrophoneMute = newMute
@@ -105,18 +134,33 @@ class WebRtcCallManager @Inject constructor(
     }
 
     fun toggleCamera(): Boolean {
+        if (webRtcEngine != null) {
+            val newCamState = !webRtcEngine.toggleCamera()
+            _isCameraOff.value = newCamState
+            return newCamState
+        }
         val newCamState = !_isCameraOff.value
         _isCameraOff.value = newCamState
         return newCamState
     }
 
     fun switchCamera(): Boolean {
+        if (webRtcEngine != null) {
+            val isFront = webRtcEngine.switchCamera()
+            _isFrontCamera.value = isFront
+            return isFront
+        }
         val newFrontState = !_isFrontCamera.value
         _isFrontCamera.value = newFrontState
         return newFrontState
     }
 
     fun toggleSpeaker(): Boolean {
+        if (callAudioManager != null) {
+            val newSpeaker = callAudioManager.toggleSpeaker()
+            _isSpeakerOn.value = newSpeaker
+            return newSpeaker
+        }
         val newSpeaker = !_isSpeakerOn.value
         setSpeakerphoneOn(newSpeaker)
         return newSpeaker
@@ -131,4 +175,3 @@ class WebRtcCallManager @Inject constructor(
         _networkQuality.value = quality
     }
 }
-
