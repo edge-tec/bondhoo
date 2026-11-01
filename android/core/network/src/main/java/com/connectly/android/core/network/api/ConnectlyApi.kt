@@ -430,6 +430,14 @@ interface ConnectlyApi {
     @POST("v1/notifications/read-all")
     suspend fun markAllNotificationsAsRead(): Response<ApiResponse<Unit>>
 
+    @GET("v1/notifications/preferences")
+    suspend fun getNotificationPreferences(): Response<ApiResponse<NotificationPreferencesDto>>
+
+    @PUT("v1/notifications/preferences")
+    suspend fun updateNotificationPreferences(
+        @Body body: NotificationPreferencesRequest
+    ): Response<ApiResponse<NotificationPreferencesDto>>
+
     // -------------------------------------------------------------
     // Global Search & Discovery
     // -------------------------------------------------------------
@@ -924,6 +932,42 @@ data class SearchResultsMapDto(
     val posts: List<PostDto> = emptyList(),
     val groups: List<GroupDto> = emptyList(),
     val pages: List<PageDto> = emptyList()
+)
+
+@Serializable
+data class NotificationPreferencesDto(
+    val email_notifications: Boolean = true,
+    val sms_notifications: Boolean = false,
+    val push_notifications: Boolean = true,
+    val friend_request_alerts: Boolean = true,
+    val friend_accepted_alerts: Boolean = true,
+    val comment_alerts: Boolean = true,
+    val mention_alerts: Boolean = true,
+    val message_alerts: Boolean = true,
+    val like_alerts: Boolean = true,
+    val share_alerts: Boolean = true,
+    val follower_alerts: Boolean = true,
+    val page_alerts: Boolean = true,
+    val group_alerts: Boolean = true,
+    val security_alerts: Boolean = true
+)
+
+@Serializable
+data class NotificationPreferencesRequest(
+    val email_notifications: Boolean? = null,
+    val sms_notifications: Boolean? = null,
+    val push_notifications: Boolean? = null,
+    val friend_request_alerts: Boolean? = null,
+    val friend_accepted_alerts: Boolean? = null,
+    val comment_alerts: Boolean? = null,
+    val mention_alerts: Boolean? = null,
+    val message_alerts: Boolean? = null,
+    val like_alerts: Boolean? = null,
+    val share_alerts: Boolean? = null,
+    val follower_alerts: Boolean? = null,
+    val page_alerts: Boolean? = null,
+    val group_alerts: Boolean? = null,
+    val security_alerts: Boolean? = null
 )
 
 

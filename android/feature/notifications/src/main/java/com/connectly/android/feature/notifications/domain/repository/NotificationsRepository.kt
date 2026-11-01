@@ -3,6 +3,7 @@ package com.connectly.android.feature.notifications.domain.repository
 import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.DiscoveryData
 import com.connectly.android.core.model.NotificationItem
+import com.connectly.android.core.model.NotificationPreferences
 import com.connectly.android.core.model.SearchResult
 import com.connectly.android.core.model.User
 import kotlinx.coroutines.flow.Flow
@@ -17,4 +18,6 @@ interface NotificationsRepository {
     fun getDiscoveryData(): Flow<Result<DiscoveryData>>
     fun getSuggestedFriends(): Flow<Result<List<User>>>
     fun registerDeviceToken(pushToken: String): Flow<Result<Unit>>
+    fun getPreferences(): Flow<Result<NotificationPreferences>>
+    fun updatePreferences(preferences: NotificationPreferences): Flow<Result<NotificationPreferences>>
 }

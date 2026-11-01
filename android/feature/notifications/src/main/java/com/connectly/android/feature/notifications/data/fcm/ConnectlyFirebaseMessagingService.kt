@@ -54,3 +54,4 @@ class ConnectlyFirebaseMessagingService : Service() {
         deviceTokenManager.onNewToken(token)
     }
 }
+

@@ -18,7 +18,9 @@ class NotificationsViewModel @Inject constructor(
     private val getUnreadNotificationCountUseCase: GetUnreadNotificationCountUseCase,
     private val markNotificationAsReadUseCase: MarkNotificationAsReadUseCase,
     private val markAllNotificationsAsReadUseCase: MarkAllNotificationsAsReadUseCase,
-    private val respondToFriendRequestUseCase: RespondToFriendRequestUseCase
+    private val respondToFriendRequestUseCase: RespondToFriendRequestUseCase,
+    private val getNotificationPreferencesUseCase: GetNotificationPreferencesUseCase? = null,
+    private val updateNotificationPreferencesUseCase: UpdateNotificationPreferencesUseCase? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NotificationsState())
@@ -39,6 +41,8 @@ class NotificationsViewModel @Inject constructor(
                 respondFriendRequest(intent.notificationId, intent.userId, intent.accept)
             }
             NotificationsIntent.MarkAllRead -> markAllRead()
+            NotificationsIntent.LoadPreferences -> loadPreferences()
+            is NotificationsIntent.UpdatePreferences -> updatePreferences(intent.preferences)
             NotificationsIntent.Refresh -> loadData()
         }
     }
@@ -97,6 +101,23 @@ class NotificationsViewModel @Inject constructor(
         }
         viewModelScope.launch {
             respondToFriendRequestUseCase(userId, accept).collect()
+        }
+    }
+
+    private fun loadPreferences() {
+        viewModelScope.launch {
+            getNotificationPreferencesUseCase?.invoke()?.collect { result ->
+                if (result is Result.Success) {
+                    _uiState.update { it.copy(preferences = result.data) }
+                }
+            }
+        }
+    }
+
+    private fun updatePreferences(prefs: com.connectly.android.core.model.NotificationPreferences) {
+        _uiState.update { it.copy(preferences = prefs) }
+        viewModelScope.launch {
+            updateNotificationPreferencesUseCase?.invoke(prefs)?.collect()
         }
     }
 }

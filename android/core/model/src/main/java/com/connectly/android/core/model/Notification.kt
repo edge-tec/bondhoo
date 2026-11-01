@@ -8,9 +8,13 @@ enum class NotificationType(val value: String) {
     REACTION("reaction"),
     COMMENT("comment"),
     FRIEND_REQUEST("friend_request"),
+    FOLLOWER("follower"),
     GROUP_INVITE("group_invite"),
     LIVE_ALERT("live_alert"),
     EVENT_REMINDER("event_reminder"),
+    MESSENGER("messenger"),
+    CALL("call"),
+    SECURITY("security"),
     SYSTEM("system");
 
     companion object {
@@ -48,5 +52,23 @@ data class DiscoveryData(
     val recommendedGroups: List<Group> = emptyList(),
     val trendingTopics: List<String> = emptyList(),
     val recommendedPosts: List<Post> = emptyList()
+)
+
+@Serializable
+data class NotificationPreferences(
+    val emailNotifications: Boolean = true,
+    val smsNotifications: Boolean = false,
+    val pushNotifications: Boolean = true,
+    val friendRequestAlerts: Boolean = true,
+    val friendAcceptedAlerts: Boolean = true,
+    val commentAlerts: Boolean = true,
+    val mentionAlerts: Boolean = true,
+    val messageAlerts: Boolean = true,
+    val likeAlerts: Boolean = true,
+    val shareAlerts: Boolean = true,
+    val followerAlerts: Boolean = true,
+    val pageAlerts: Boolean = true,
+    val groupAlerts: Boolean = true,
+    val securityAlerts: Boolean = true
 )
 

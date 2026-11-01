@@ -128,4 +128,28 @@ class EnterpriseNotificationAndDiscoveryIntegrationTest extends TestCase
         $groups = $groupRes->json('data.results.groups') ?? $groupRes->json('data.groups');
         $this->assertNotEmpty($groups);
     }
+
+    /**
+     * 5. Test Notification Preferences Retrieval and Real-time Update.
+     */
+    public function test_notification_preferences_get_and_update(): void
+    {
+        $user = User::factory()->create(['name' => 'Prefs User']);
+
+        // Get initial preferences
+        $getRes = $this->actingAs($user)->getJson('/api/v1/notifications/preferences');
+        $getRes->assertStatus(200);
+        $this->assertTrue($getRes->json('success'));
+
+        // Update preferences
+        $updateRes = $this->actingAs($user)->putJson('/api/v1/notifications/preferences', [
+            'push_notifications' => true,
+            'message_alerts' => true,
+            'like_alerts' => true,
+            'security_alerts' => true,
+        ]);
+        $updateRes->assertStatus(200);
+        $this->assertTrue($updateRes->json('success'));
+        $this->assertTrue((bool) $updateRes->json('data.push_notifications'));
+    }
 }

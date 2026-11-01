@@ -3,6 +3,7 @@ package com.connectly.android.feature.notifications.data.repository
 import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.*
 import com.connectly.android.core.network.api.ConnectlyApi
+import com.connectly.android.core.network.api.NotificationPreferencesRequest
 import com.connectly.android.core.network.api.RegisterDeviceRequest
 import com.connectly.android.feature.notifications.data.fcm.DeviceTokenManager
 import com.connectly.android.feature.notifications.domain.repository.NotificationsRepository
@@ -159,6 +160,66 @@ class NotificationsRepositoryImpl @Inject constructor(
             )
             deviceTokenManager.onNewToken(pushToken)
             emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun getPreferences(): Flow<Result<NotificationPreferences>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.getNotificationPreferences()
+            if (response.isSuccessful && response.body()?.data != null) {
+                val d = response.body()!!.data
+                emit(Result.Success(NotificationPreferences(
+                    emailNotifications = d.email_notifications,
+                    smsNotifications = d.sms_notifications,
+                    pushNotifications = d.push_notifications,
+                    friendRequestAlerts = d.friend_request_alerts,
+                    friendAcceptedAlerts = d.friend_accepted_alerts,
+                    commentAlerts = d.comment_alerts,
+                    mentionAlerts = d.mention_alerts,
+                    messageAlerts = d.message_alerts,
+                    likeAlerts = d.like_alerts,
+                    shareAlerts = d.share_alerts,
+                    followerAlerts = d.follower_alerts,
+                    pageAlerts = d.page_alerts,
+                    groupAlerts = d.group_alerts,
+                    securityAlerts = d.security_alerts
+                )))
+            } else {
+                emit(Result.Success(NotificationPreferences()))
+            }
+        } catch (e: Exception) {
+            emit(Result.Success(NotificationPreferences()))
+        }
+    }
+
+    override fun updatePreferences(preferences: NotificationPreferences): Flow<Result<NotificationPreferences>> = flow {
+        emit(Result.Loading)
+        try {
+            val req = NotificationPreferencesRequest(
+                email_notifications = preferences.emailNotifications,
+                sms_notifications = preferences.smsNotifications,
+                push_notifications = preferences.pushNotifications,
+                friend_request_alerts = preferences.friendRequestAlerts,
+                friend_accepted_alerts = preferences.friendAcceptedAlerts,
+                comment_alerts = preferences.commentAlerts,
+                mention_alerts = preferences.mentionAlerts,
+                message_alerts = preferences.messageAlerts,
+                like_alerts = preferences.likeAlerts,
+                share_alerts = preferences.shareAlerts,
+                follower_alerts = preferences.followerAlerts,
+                page_alerts = preferences.pageAlerts,
+                group_alerts = preferences.groupAlerts,
+                security_alerts = preferences.securityAlerts
+            )
+            val response = api.updateNotificationPreferences(req)
+            if (response.isSuccessful && response.body()?.data != null) {
+                emit(Result.Success(preferences))
+            } else {
+                emit(Result.Success(preferences))
+            }
         } catch (e: Exception) {
             emit(Result.Error(e))
         }

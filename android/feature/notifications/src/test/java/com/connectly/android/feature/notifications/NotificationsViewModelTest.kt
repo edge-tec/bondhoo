@@ -122,5 +122,35 @@ class NotificationsViewModelTest {
             assertTrue(state.notifications.first().isRead)
         }
     }
+
+    @Test
+    fun `when loadPreferences or updatePreferences dispatched, updates state`() = runTest {
+        val getPrefsUseCase: GetNotificationPreferencesUseCase = mockk()
+        val updatePrefsUseCase: UpdateNotificationPreferencesUseCase = mockk()
+        val prefs = com.connectly.android.core.model.NotificationPreferences(pushNotifications = true, messageAlerts = true)
+
+        every { getPrefsUseCase() } returns flowOf(Result.Success(prefs))
+        every { updatePrefsUseCase(any()) } returns flowOf(Result.Success(prefs))
+
+        viewModel = NotificationsViewModel(
+            getNotificationsUseCase,
+            getUnreadNotificationCountUseCase,
+            markNotificationAsReadUseCase,
+            markAllNotificationsAsReadUseCase,
+            respondToFriendRequestUseCase,
+            getPrefsUseCase,
+            updatePrefsUseCase
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.handleIntent(NotificationsIntent.LoadPreferences)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertTrue(state.preferences.pushNotifications)
+            assertTrue(state.preferences.messageAlerts)
+        }
+    }
 }
 
