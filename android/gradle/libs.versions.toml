@@ -82,8 +82,9 @@ androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplaye
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
 androidx-media3-exoplayer-hls = { group = "androidx.media3", name = "media3-exoplayer-hls", version.ref = "media3" }
 
-# Real-Time (Pusher Java Client)
+# Real-Time (Pusher Java Client & WebRTC)
 pusher-java-client = { group = "com.pusher", name = "pusher-java-client", version.ref = "pusher" }
+stream-webrtc = { group = "io.getstream", name = "stream-webrtc-android", version = "1.3.10" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }

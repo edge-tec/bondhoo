@@ -28,10 +28,16 @@ dependencies {
     implementation(project(":core:websocket"))
 
     implementation(libs.kotlinx.serialization.json)
+    api(libs.stream.webrtc)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

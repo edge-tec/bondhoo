@@ -48,10 +48,12 @@ object WebRtcModule {
     @Provides
     @Singleton
     fun provideWebRtcEngine(
+        @ApplicationContext context: Context,
         signalingCoordinator: WebRtcSignalingCoordinator,
         audioManager: CallAudioManager,
-        notificationManager: CallNotificationManager
+        notificationManager: CallNotificationManager,
+        api: ConnectlyApi
     ): WebRtcEngine {
-        return WebRtcEngine(signalingCoordinator, audioManager, notificationManager)
+        return WebRtcEngine(context, signalingCoordinator, audioManager, notificationManager, api)
     }
 }

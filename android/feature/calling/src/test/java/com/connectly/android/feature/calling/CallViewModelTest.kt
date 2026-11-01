@@ -54,6 +54,9 @@ class CallViewModelTest {
         every { webRtcManager.isCameraOff } returns MutableStateFlow(false)
         every { webRtcManager.isSpeakerOn } returns MutableStateFlow(false)
         every { webRtcManager.networkQuality } returns MutableStateFlow(com.connectly.android.core.model.NetworkQuality.EXCELLENT)
+        every { webRtcManager.localVideoTrack } returns MutableStateFlow(null)
+        every { webRtcManager.remoteVideoTrack } returns MutableStateFlow(null)
+        every { webRtcManager.eglBaseContext } returns null
         every { leaveCallUseCase(any()) } returns flowOf(Result.Success(testSession.copy(status = CallStatus.ENDED)))
 
         viewModel = CallViewModel(

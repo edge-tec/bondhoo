@@ -28,6 +28,7 @@ import com.connectly.android.core.designsystem.theme.ConnectlyGreen
 import com.connectly.android.core.model.CallStatus
 import com.connectly.android.core.model.CallType
 import com.connectly.android.core.model.NetworkQuality
+import com.connectly.android.core.webrtc.ui.WebRtcVideoRenderer
 
 @Composable
 fun CallScreen(
@@ -363,13 +364,41 @@ private fun ActiveVideoCallContent(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        // Fullscreen Remote Video Stream Simulation Canvas
-        AsyncImage(
-            model = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1080&q=80",
-            contentDescription = "Remote Video Stream",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+        // Fullscreen Remote Video Stream or Avatar fallback
+        if (state.remoteVideoTrack != null && state.eglBaseContext != null) {
+            WebRtcVideoRenderer(
+                videoTrack = state.remoteVideoTrack,
+                eglBaseContext = state.eglBaseContext,
+                modifier = Modifier.fillMaxSize(),
+                isMirror = false
+            )
+        } else {
+            // Waiting for remote video / audio fallback
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0F172A)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    AsyncImage(
+                        model = state.callSession?.receiver?.avatar ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+                        contentDescription = "Remote User Avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Connecting video stream...",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
 
         // Gradient overlay for readability
         Box(
@@ -440,12 +469,25 @@ private fun ActiveVideoCallContent(
             color = Color.DarkGray
         ) {
             if (!state.isCameraOff) {
-                AsyncImage(
-                    model = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
-                    contentDescription = "Local Camera Preview",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
+                if (state.localVideoTrack != null && state.eglBaseContext != null) {
+                    WebRtcVideoRenderer(
+                        videoTrack = state.localVideoTrack,
+                        eglBaseContext = state.eglBaseContext,
+                        modifier = Modifier.fillMaxSize(),
+                        isMirror = state.isFrontCamera
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = ConnectlyBlue,
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
             } else {
                 Box(
                     modifier = Modifier.fillMaxSize(),

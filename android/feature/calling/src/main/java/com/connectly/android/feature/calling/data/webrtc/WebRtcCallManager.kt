@@ -43,6 +43,10 @@ class WebRtcCallManager @Inject constructor(
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
+    val localVideoTrack = webRtcEngine?.localVideoTrack
+    val remoteVideoTrack = webRtcEngine?.remoteVideoTrack
+    val eglBaseContext get() = webRtcEngine?.eglBaseContext
+
     private var audioFocusRequest: AudioFocusRequest? = null
 
     /**

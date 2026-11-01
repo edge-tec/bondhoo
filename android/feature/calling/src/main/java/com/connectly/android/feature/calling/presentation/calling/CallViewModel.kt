@@ -59,6 +59,16 @@ class CallViewModel @Inject constructor(
                     _uiState.update { it.copy(networkQuality = quality) }
                 }
             }
+            launch {
+                webRtcManager.localVideoTrack?.collect { track ->
+                    _uiState.update { it.copy(localVideoTrack = track, eglBaseContext = webRtcManager.eglBaseContext) }
+                }
+            }
+            launch {
+                webRtcManager.remoteVideoTrack?.collect { track ->
+                    _uiState.update { it.copy(remoteVideoTrack = track, eglBaseContext = webRtcManager.eglBaseContext) }
+                }
+            }
         }
     }
 

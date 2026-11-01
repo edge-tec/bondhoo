@@ -9,6 +9,10 @@ sealed interface ConnectionState {
     data class Reconnecting(val attempt: Int) : ConnectionState
 }
 
+// -----------------------------------------------------------------------------
+// ENGINE 1 — MESSAGING EVENTS
+// -----------------------------------------------------------------------------
+
 data class MessageNewEvent(
     val conversationId: Long,
     val message: Message
@@ -61,6 +65,16 @@ data class ConversationClearedEvent(
     val conversationId: Long
 )
 
+data class ConversationUpdatedEvent(
+    val conversationId: Long,
+    val action: String,
+    val payload: Map<String, String> = emptyMap()
+)
+
+// -----------------------------------------------------------------------------
+// ENGINE 2 — CALLING EVENTS
+// -----------------------------------------------------------------------------
+
 data class CallIncomingEvent(
     val callId: Long,
     val conversationId: Long,
@@ -105,3 +119,91 @@ data class CallParticipantStateEvent(
     val isScreenSharing: Boolean? = null
 )
 
+// -----------------------------------------------------------------------------
+// ENGINE 3 — PUSH & IN-APP NOTIFICATIONS
+// -----------------------------------------------------------------------------
+
+data class SocialNotificationEvent(
+    val userId: Long,
+    val notificationId: String,
+    val title: String,
+    val message: String,
+    val type: String,
+    val actionUrl: String? = null,
+    val createdAt: String? = null
+)
+
+data class NotificationReadEvent(
+    val userId: Long,
+    val notificationId: String?,
+    val unreadCount: Int = 0
+)
+
+data class NotificationReadAllEvent(
+    val userId: Long
+)
+
+data class NotificationDeletedEvent(
+    val userId: Long,
+    val notificationId: String,
+    val unreadCount: Int = 0
+)
+
+// -----------------------------------------------------------------------------
+// ENGINE 4 — SOCIAL REAL-TIME SYNCHRONIZATION
+// -----------------------------------------------------------------------------
+
+data class PostReactionUpdatedEvent(
+    val postId: Long,
+    val totalReactions: Int,
+    val breakdown: Map<String, Int> = emptyMap()
+)
+
+data class PostCommentUpdatedEvent(
+    val postId: Long,
+    val pageId: Long? = null,
+    val commentId: Long,
+    val action: String, // "created", "updated", "deleted"
+    val commentsCount: Int = 0,
+    val commentBody: String? = null,
+    val authorName: String? = null
+)
+
+data class PagePostPublishedEvent(
+    val pageId: Long,
+    val postId: Long,
+    val content: String? = null,
+    val authorName: String? = null
+)
+
+data class FriendshipEvent(
+    val userId: Long,
+    val targetId: Long,
+    val action: String, // "request.sent", "request.received", "request.accepted", "request.rejected", "removed", "followed", "unfollowed"
+    val counters: Map<String, Int> = emptyMap()
+)
+
+data class StoryEvent(
+    val storyId: Long,
+    val action: String // "created", "deleted", "expired"
+)
+
+data class ReelEvent(
+    val reelId: Long,
+    val action: String, // "created", "reaction.updated", "comment.created", "deleted", "expired"
+    val likesCount: Int = 0,
+    val commentsCount: Int = 0
+)
+
+data class LiveStreamEvent(
+    val channelId: String,
+    val action: String, // "started", "ended", "comment.received", "reaction.created", "gift.received"
+    val senderName: String? = null,
+    val message: String? = null
+)
+
+data class GroupEvent(
+    val groupId: Long,
+    val action: String, // "post.created", "announcement.published", "poll.voted", "member.joined"
+    val title: String? = null
+)

@@ -16,6 +16,9 @@ data class CallState(
     val isSpeakerOn: Boolean = false,
     val durationSeconds: Int = 0,
     val networkQuality: NetworkQuality = NetworkQuality.EXCELLENT,
+    val localVideoTrack: org.webrtc.VideoTrack? = null,
+    val remoteVideoTrack: org.webrtc.VideoTrack? = null,
+    val eglBaseContext: org.webrtc.EglBase.Context? = null,
     val errorMessage: String? = null,
     val isCallEnded: Boolean = false
 ) {
