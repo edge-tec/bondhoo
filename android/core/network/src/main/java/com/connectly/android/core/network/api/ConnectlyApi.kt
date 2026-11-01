@@ -155,21 +155,24 @@ interface ConnectlyApi {
     ): Response<ApiResponse<ReactionResponse>>
 
     // -------------------------------------------------------------
-    // Stories System
+    // Stories System (Screen 1 & 2)
     // -------------------------------------------------------------
+    @GET("v2/stories/feed")
+    suspend fun getStoriesFeed(): Response<ApiResponse<List<StoryUserDto>>>
+
     @GET("v1/stories")
     suspend fun getStories(): Response<ApiResponse<List<StoryUserDto>>>
 
-    @POST("v1/stories")
+    @POST("v2/stories")
     suspend fun createStory(@Body body: CreateStoryPayload): Response<ApiResponse<StoryDto>>
 
-    @DELETE("v1/stories/{id}")
+    @DELETE("v2/stories/{id}")
     suspend fun deleteStory(@Path("id") storyId: Long): Response<ApiResponse<Unit>>
 
-    @POST("v1/stories/{id}/view")
+    @POST("v2/stories/{id}/view")
     suspend fun viewStory(@Path("id") storyId: Long): Response<Unit>
 
-    @GET("v1/stories/{id}/views")
+    @GET("v2/stories/{id}/viewers")
     suspend fun getStoryViewers(@Path("id") storyId: Long): Response<ApiResponse<List<UserDto>>>
 
     @POST("v2/stories/{id}/react")
@@ -190,8 +193,15 @@ interface ConnectlyApi {
     @GET("v2/reels/feed")
     suspend fun getReelsFeed(
         @Query("page") page: Int = 1,
-        @Query("per_page") perPage: Int = 10
+        @Query("per_page") perPage: Int = 10,
+        @Query("tab") tab: String = "for_you"
     ): Response<ApiResponse<List<ReelDto>>>
+
+    @POST("v2/reels")
+    suspend fun createReel(@Body body: CreateReelPayload): Response<ApiResponse<ReelDto>>
+
+    @GET("v2/reels/{id}")
+    suspend fun getReel(@Path("id") reelId: Long): Response<ApiResponse<ReelDto>>
 
     @POST("v2/reels/{id}/react")
     suspend fun reactToReel(
@@ -222,6 +232,41 @@ interface ConnectlyApi {
         @Path("id") reelId: Long,
         @Body body: CreateCommentPayload
     ): Response<ApiResponse<CommentDto>>
+
+    @DELETE("v2/reels/{id}")
+    suspend fun deleteReel(@Path("id") reelId: Long): Response<ApiResponse<Unit>>
+
+    // -------------------------------------------------------------
+    // Enterprise Chunked & Resumable Media Uploads
+    // -------------------------------------------------------------
+    @POST("v2/uploads/init")
+    suspend fun initChunkedUpload(
+        @Body body: InitUploadRequest
+    ): Response<ApiResponse<UploadSessionDto>>
+
+    @Multipart
+    @POST("v2/uploads/chunks")
+    suspend fun uploadChunk(
+        @Part chunk: MultipartBody.Part,
+        @Part("session_id") sessionId: okhttp3.RequestBody,
+        @Part("chunk_number") chunkNumber: okhttp3.RequestBody,
+        @Part("checksum") checksum: okhttp3.RequestBody? = null
+    ): Response<ApiResponse<UploadChunkResponseDto>>
+
+    @POST("v2/uploads/sessions/{sessionId}/complete")
+    suspend fun completeChunkedUpload(
+        @Path("sessionId") sessionId: String
+    ): Response<ApiResponse<CompleteUploadResponseDto>>
+
+    @GET("v2/uploads/{sessionId}/resume")
+    suspend fun resumeUpload(
+        @Path("sessionId") sessionId: String
+    ): Response<ApiResponse<ResumeUploadDto>>
+
+    @DELETE("v2/uploads/sessions/{sessionId}")
+    suspend fun cancelUpload(
+        @Path("sessionId") sessionId: String
+    ): Response<ApiResponse<Unit>>
 
     @Multipart
     @POST("v2/uploads/direct/complete")
@@ -577,33 +622,84 @@ data class PostDto(
 }
 
 @Serializable
+data class StoryDto(
+    val id: Long,
+    val media_url: String? = null,
+    val media_type: String? = null,
+    val media: List<JsonElement> = emptyList(),
+    val type: String = "media",
+    val content: String? = null,
+    val background_color: String? = null,
+    val duration_seconds: Int = 5,
+    val is_seen: Boolean = false,
+    val has_viewed: Boolean = false,
+    val user_reaction: String? = null,
+    val my_reaction: String? = null,
+    val views_count: Int = 0,
+    val reactions_count: Int = 0,
+    val replies_count: Int = 0,
+    val privacy: String = "public",
+    val expires_at: String? = null
+) {
+    val resolvedSeen: Boolean get() = is_seen || has_viewed
+    val resolvedReaction: String? get() = my_reaction ?: user_reaction
+    val resolvedMediaUrl: String get() {
+        if (!media_url.isNullOrBlank()) return media_url
+        val firstMedia = media.firstOrNull()
+        return when (firstMedia) {
+            is JsonPrimitive -> if (firstMedia.isString) firstMedia.content else ""
+            is JsonObject -> firstMedia["url"]?.jsonPrimitive?.contentOrNull
+                ?: firstMedia["original_url"]?.jsonPrimitive?.contentOrNull
+                ?: firstMedia["preview_url"]?.jsonPrimitive?.contentOrNull
+                ?: ""
+            else -> ""
+        }
+    }
+    val resolvedMediaType: String get() = media_type ?: if (type == "video" || resolvedMediaUrl.contains(".mp4")) "video" else "image"
+}
+
+@Serializable
 data class StoryUserDto(
     val user: UserDto,
     val has_unseen: Boolean = false,
+    val all_viewed: Boolean = false,
+    val stories_count: Int = 0,
     val stories: List<StoryDto> = emptyList()
-)
-
-@Serializable
-data class StoryDto(
-    val id: Long,
-    val media_url: String,
-    val media_type: String = "image",
-    val duration_seconds: Int = 5,
-    val is_seen: Boolean = false,
-    val expires_at: String
-)
+) {
+    val resolvedHasUnseen: Boolean get() = has_unseen || (!all_viewed && stories.any { !it.resolvedSeen })
+}
 
 @Serializable
 data class ReelDto(
     val id: Long,
-    val creator: UserDto,
-    val caption: String,
-    val video_url: String,
+    val creator: UserDto? = null,
+    val user: UserDto? = null,
+    val caption: String? = null,
+    val audio_title: String? = "Original Audio",
+    val audio_artist: String? = null,
+    val video_url: String? = null,
     val thumbnail_url: String? = null,
+    val cover_url: String? = null,
+    val duration: Double? = null,
+    val duration_ms: Long? = null,
+    val views_count: Int = 0,
     val likes_count: Int = 0,
     val comments_count: Int = 0,
-    val is_liked: Boolean = false
-)
+    val shares_count: Int = 0,
+    val saves_count: Int = 0,
+    val has_liked: Boolean = false,
+    val is_liked: Boolean = false,
+    val has_saved: Boolean = false,
+    val is_saved: Boolean = false,
+    val my_reaction: String? = null
+) {
+    val resolvedCreator: UserDto get() = creator ?: user ?: UserDto(id = 0L, name = "Creator", username = "creator")
+    val resolvedCaption: String get() = caption ?: ""
+    val resolvedVideoUrl: String get() = video_url ?: ""
+    val resolvedThumbnailUrl: String? get() = thumbnail_url ?: cover_url
+    val resolvedLiked: Boolean get() = is_liked || has_liked
+    val resolvedSaved: Boolean get() = is_saved || has_saved
+}
 
 @Serializable
 data class ConversationDto(
@@ -711,8 +807,71 @@ data class UpdateProfileRequest(
 
 @Serializable
 data class MediaUploadResponse(
-    val url: String,
-    val id: Long? = null
+    val id: Long? = null,
+    val url: String? = null,
+    val path: String? = null,
+    val preview_url: String? = null,
+    val original_url: String? = null,
+    val thumbnail_url: String? = null,
+    val mime_type: String? = null,
+    val size: Long? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    val duration: Double? = null
+) {
+    val resolvedUrl: String get() = preview_url ?: original_url ?: url ?: ""
+}
+
+@Serializable
+data class InitUploadRequest(
+    val filename: String,
+    val file_size: Long,
+    val mime_type: String,
+    val collection: String = "general",
+    val chunk_size: Int? = null,
+    val checksum: String? = null
+)
+
+@Serializable
+data class UploadSessionDto(
+    val session_id: String,
+    val chunk_size: Int,
+    val total_chunks: Int,
+    val filename: String,
+    val expires_at: String
+)
+
+@Serializable
+data class UploadChunkResponseDto(
+    val session_id: String,
+    val chunk_number: Int,
+    val total_chunks: Int,
+    val is_completed: Boolean = false,
+    val progress: Double = 0.0
+)
+
+@Serializable
+data class CompleteUploadResponseDto(
+    val session_id: String,
+    val media: MediaUploadResponse
+)
+
+@Serializable
+data class ResumeUploadDto(
+    val session_id: String,
+    val total_chunks: Int,
+    val uploaded_chunks: List<Int> = emptyList(),
+    val missing_chunks: List<Int> = emptyList()
+)
+
+@Serializable
+data class CreateReelPayload(
+    val media_id: Long,
+    val caption: String? = null,
+    val privacy: String = "public",
+    val audio_title: String? = null,
+    val audio_artist: String? = null,
+    val allow_comments: Boolean = true
 )
 
 @Serializable

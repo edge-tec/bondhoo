@@ -4,9 +4,11 @@ import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.Comment
 import com.connectly.android.core.model.Reel
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 interface ReelsRepository {
     fun getReelsFeed(page: Int = 1, perPage: Int = 10): Flow<Result<List<Reel>>>
+    fun createReel(videoFile: File, caption: String?, audioTitle: String?): Flow<Result<Reel>>
     fun reactToReel(reelId: Long, reaction: String): Flow<Result<Unit>>
     fun recordReelView(reelId: Long, durationSeconds: Int, completed: Boolean): Flow<Result<Unit>>
     fun saveReel(reelId: Long): Flow<Result<Boolean>>
@@ -14,5 +16,5 @@ interface ReelsRepository {
     fun followCreator(creatorId: Long): Flow<Result<Boolean>>
     fun getReelComments(reelId: Long): Flow<Result<List<Comment>>>
     fun createReelComment(reelId: Long, body: String): Flow<Result<Comment>>
+    fun deleteReel(reelId: Long): Flow<Result<Unit>>
 }
-

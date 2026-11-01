@@ -6,6 +6,8 @@ import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.database.dao.StoryDao
 import com.connectly.android.core.database.entity.StoryEntity
 import com.connectly.android.core.datastore.TokenStorageManager
+import com.connectly.android.core.media.model.UploadStatus
+import com.connectly.android.core.media.uploader.MediaUploadManager
 import com.connectly.android.core.model.Story
 import com.connectly.android.core.model.StoryUserTray
 import com.connectly.android.core.model.User
@@ -16,6 +18,7 @@ import com.connectly.android.core.network.api.StoryReplyPayload
 import com.connectly.android.feature.stories.domain.repository.StoriesRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.File
@@ -27,13 +30,20 @@ class StoriesRepositoryImpl @Inject constructor(
     private val api: ConnectlyApi,
     private val storyDao: StoryDao,
     private val tokenStorageManager: TokenStorageManager,
+    private val mediaUploadManager: MediaUploadManager,
     @Dispatcher(ConnectlyDispatchers.IO) private val ioDispatcher: CoroutineDispatcher
 ) : StoriesRepository {
 
     override fun getStoriesTray(): Flow<Result<List<StoryUserTray>>> = flow {
         emit(Result.Loading)
         try {
-            val response = api.getStories()
+            // First attempt v2 stories feed, then fallback to v1
+            val response = try {
+                api.getStoriesFeed()
+            } catch (_: Exception) {
+                api.getStories()
+            }
+
             if (response.isSuccessful && response.body() != null) {
                 val dtos = response.body()!!.data
                 val trays = dtos.map { dto ->
@@ -42,10 +52,10 @@ class StoriesRepositoryImpl @Inject constructor(
                             id = dto.user.id,
                             name = dto.user.name,
                             username = dto.user.username,
-                            avatar = dto.user.avatar,
+                            avatar = dto.user.resolvedAvatar,
                             isVerified = dto.user.is_verified
                         ),
-                        hasUnseenStories = dto.has_unseen,
+                        hasUnseenStories = dto.resolvedHasUnseen,
                         stories = dto.stories.map { s ->
                             Story(
                                 id = s.id,
@@ -54,19 +64,22 @@ class StoriesRepositoryImpl @Inject constructor(
                                     id = dto.user.id,
                                     name = dto.user.name,
                                     username = dto.user.username,
-                                    avatar = dto.user.avatar
+                                    avatar = dto.user.resolvedAvatar
                                 ),
-                                mediaUrl = s.media_url,
-                                mediaType = s.media_type,
+                                mediaUrl = s.resolvedMediaUrl,
+                                mediaType = s.resolvedMediaType,
                                 durationSeconds = s.duration_seconds,
-                                isSeen = s.is_seen,
+                                isSeen = s.resolvedSeen,
+                                userReaction = s.resolvedReaction,
+                                viewsCount = s.views_count,
+                                privacy = s.privacy,
                                 expiresAt = System.currentTimeMillis() + 86400000L
                             )
                         }
                     )
                 }
 
-                // Cache active stories into Room
+                // Cache active stories in Room DB for offline mode
                 val entities = trays.flatMap { tray ->
                     tray.stories.map { s ->
                         StoryEntity(
@@ -100,13 +113,34 @@ class StoriesRepositoryImpl @Inject constructor(
     ): Flow<Result<Story>> = flow {
         emit(Result.Loading)
         try {
-            val response = api.createStory(
-                CreateStoryPayload(
-                    type = type,
-                    content = content,
-                    privacy = privacy
-                )
+            var mediaId: Long? = null
+            var mediaUrl: String? = null
+
+            // If media file is provided (Photo or Video), upload via chunked resumable uploader
+            if (mediaFile != null && mediaFile.exists()) {
+                val collection = if (mediaFile.name.endsWith(".mp4", ignoreCase = true)) "story_video" else "story_photo"
+                val uploadResult = mediaUploadManager.uploadMedia(
+                    file = mediaFile,
+                    collection = collection
+                ).firstOrNull { it is UploadStatus.Success || it is UploadStatus.Error }
+
+                if (uploadResult is UploadStatus.Success) {
+                    mediaId = uploadResult.media.id
+                    mediaUrl = uploadResult.media.resolvedUrl
+                } else if (uploadResult is UploadStatus.Error) {
+                    emit(Result.Error(Exception(uploadResult.message)))
+                    return@flow
+                }
+            }
+
+            val payload = CreateStoryPayload(
+                type = type,
+                content = content,
+                privacy = privacy,
+                media_ids = listOfNotNull(mediaId)
             )
+
+            val response = api.createStory(payload)
             if (response.isSuccessful && response.body() != null) {
                 val dto = response.body()!!.data
                 val story = Story(
@@ -117,14 +151,15 @@ class StoriesRepositoryImpl @Inject constructor(
                         name = "Connectly User",
                         username = "user"
                     ),
-                    mediaUrl = dto.media_url,
-                    mediaType = dto.media_type,
+                    mediaUrl = dto.resolvedMediaUrl.ifBlank { mediaUrl ?: "" },
+                    mediaType = dto.resolvedMediaType,
                     durationSeconds = dto.duration_seconds,
                     privacy = privacy,
                     expiresAt = System.currentTimeMillis() + 86400000L
                 )
                 emit(Result.Success(story))
             } else {
+                // Fallback optimistic story creation
                 val story = Story(
                     id = System.currentTimeMillis(),
                     userId = tokenStorageManager.getUserId(),
@@ -134,7 +169,7 @@ class StoriesRepositoryImpl @Inject constructor(
                         username = "user",
                         avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb"
                     ),
-                    mediaUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                    mediaUrl = mediaUrl ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
                     privacy = privacy
                 )
                 emit(Result.Success(story))
@@ -165,7 +200,8 @@ class StoriesRepositoryImpl @Inject constructor(
                         id = dto.id,
                         name = dto.name,
                         username = dto.username,
-                        avatar = dto.avatar
+                        avatar = dto.resolvedAvatar,
+                        isVerified = dto.is_verified
                     )
                 }
                 emit(Result.Success(users))
@@ -180,7 +216,7 @@ class StoriesRepositoryImpl @Inject constructor(
     override fun reactToStory(storyId: Long, reactionType: String): Flow<Result<Unit>> = flow {
         emit(Result.Loading)
         try {
-            val response = api.reactToStory(storyId, ReactionRequest(reaction = reactionType))
+            val response = api.reactToStory(storyId, ReactionRequest(type = reactionType, reaction = reactionType))
             if (response.isSuccessful) {
                 emit(Result.Success(Unit))
             } else {
@@ -200,16 +236,20 @@ class StoriesRepositoryImpl @Inject constructor(
             } else {
                 emit(Result.Success(Unit))
             }
-        } catch (_: Exception) {
-            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
     override fun deleteStory(storyId: Long): Flow<Result<Unit>> = flow {
         emit(Result.Loading)
         try {
-            api.deleteStory(storyId)
-            emit(Result.Success(Unit))
+            val response = api.deleteStory(storyId)
+            if (response.isSuccessful) {
+                emit(Result.Success(Unit))
+            } else {
+                emit(Result.Error(Exception("স্টোরি মুছতে ব্যর্থ হয়েছে।")))
+            }
         } catch (e: Exception) {
             emit(Result.Error(e))
         }
@@ -225,17 +265,11 @@ class StoriesRepositoryImpl @Inject constructor(
         )
         val rahat = User(
             id = 22L,
-            name = "Rahat",
-            username = "rahat_khan",
-            avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
+            name = "Rahat Chowdhury",
+            username = "rahat_c",
+            avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
+            isVerified = false
         )
-        val tania = User(
-            id = 23L,
-            name = "Tania",
-            username = "tania_akter",
-            avatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330"
-        )
-
         return listOf(
             StoryUserTray(
                 user = sadia,
@@ -247,14 +281,13 @@ class StoriesRepositoryImpl @Inject constructor(
                         author = sadia,
                         mediaUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
                         mediaType = "image",
-                        durationSeconds = 6,
                         viewsCount = 142
                     )
                 )
             ),
             StoryUserTray(
                 user = rahat,
-                hasUnseenStories = true,
+                hasUnseenStories = false,
                 stories = listOf(
                     Story(
                         id = 302L,
@@ -262,27 +295,10 @@ class StoriesRepositoryImpl @Inject constructor(
                         author = rahat,
                         mediaUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
                         mediaType = "image",
-                        durationSeconds = 5,
-                        viewsCount = 88
-                    )
-                )
-            ),
-            StoryUserTray(
-                user = tania,
-                hasUnseenStories = false,
-                stories = listOf(
-                    Story(
-                        id = 303L,
-                        userId = tania.id,
-                        author = tania,
-                        mediaUrl = "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-                        mediaType = "image",
-                        durationSeconds = 5,
-                        viewsCount = 54
+                        viewsCount = 89
                     )
                 )
             )
         )
     }
 }
-

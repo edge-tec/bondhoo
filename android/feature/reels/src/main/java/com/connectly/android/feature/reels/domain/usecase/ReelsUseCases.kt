@@ -5,6 +5,7 @@ import com.connectly.android.core.model.Comment
 import com.connectly.android.core.model.Reel
 import com.connectly.android.feature.reels.domain.repository.ReelsRepository
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 import javax.inject.Inject
 
 class GetReelsFeedUseCase @Inject constructor(
@@ -12,6 +13,13 @@ class GetReelsFeedUseCase @Inject constructor(
 ) {
     operator fun invoke(page: Int = 1, perPage: Int = 10): Flow<Result<List<Reel>>> =
         repository.getReelsFeed(page, perPage)
+}
+
+class CreateReelUseCase @Inject constructor(
+    private val repository: ReelsRepository
+) {
+    operator fun invoke(videoFile: File, caption: String?, audioTitle: String? = null): Flow<Result<Reel>> =
+        repository.createReel(videoFile, caption, audioTitle)
 }
 
 class ReactToReelUseCase @Inject constructor(
@@ -63,3 +71,9 @@ class CreateReelCommentUseCase @Inject constructor(
         repository.createReelComment(reelId, body)
 }
 
+class DeleteReelUseCase @Inject constructor(
+    private val repository: ReelsRepository
+) {
+    operator fun invoke(reelId: Long): Flow<Result<Unit>> =
+        repository.deleteReel(reelId)
+}
