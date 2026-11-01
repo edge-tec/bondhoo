@@ -1,6 +1,10 @@
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.media3.common.util.UnstableApi::class
+)
+
 package com.connectly.android.feature.reels.presentation.player
 
-import androidx.annotation.OptIn
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.MediaItem
@@ -40,6 +45,7 @@ import com.connectly.android.core.designsystem.theme.ConnectlyRose
 import com.connectly.android.core.model.Comment
 import com.connectly.android.core.model.Reel
 
+@OptIn(ExperimentalMaterial3Api::class, UnstableApi::class)
 @Composable
 fun ReelsScreen(
     onNavigateToCreateReel: () -> Unit,

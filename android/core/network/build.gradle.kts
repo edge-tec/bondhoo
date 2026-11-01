@@ -33,9 +33,9 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:datastore"))
 
-    implementation(libs.retrofit.core)
-    implementation(libs.retrofit.kotlinx.serialization)
-    implementation(libs.okhttp.core)
+    api(libs.retrofit.core)
+    api(libs.retrofit.kotlinx.serialization)
+    api(libs.okhttp.core)
     implementation(libs.okhttp.logging)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)

@@ -32,9 +32,9 @@ class ConversationsViewModelTest {
 
     private val testConversation = Conversation(
         id = 501L,
+        type = "direct",
         title = "Sadia Islam",
-        isGroup = false,
-        participant = User(id = 51L, name = "Sadia Islam", isOnline = true),
+        otherUser = User(id = 51L, name = "Sadia Islam", username = "sadia_islam", isOnline = true),
         lastMessage = Message(
             id = 5001L,
             conversationId = 501L,
@@ -42,7 +42,7 @@ class ConversationsViewModelTest {
             senderName = "Sadia Islam",
             body = "Typing...",
             type = "text",
-            timeAgo = "1m"
+            clientMessageId = "msg_5001"
         ),
         unreadCount = 2
     )

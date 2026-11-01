@@ -44,6 +44,7 @@ class ChatViewModelTest {
         senderName = "Sadia Islam",
         body = "Hello! Are we still meeting?",
         type = "text",
+        clientMessageId = "client_msg_901",
         deliveryStatus = DeliveryStatus.READ,
         isMine = false
     )

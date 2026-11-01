@@ -36,7 +36,7 @@ class SearchViewModelTest {
     private lateinit var viewModel: SearchViewModel
 
     private val sampleUser = User(id = 101L, name = "Sadia Islam", username = "sadia_islam")
-    private val sampleGroup = Group(id = "group_1", name = "Dhaka Tech Network")
+    private val sampleGroup = Group(id = 1L, name = "Dhaka Tech Network")
     private val sampleDiscovery = DiscoveryData(
         suggestedFriends = listOf(sampleUser),
         recommendedGroups = listOf(sampleGroup),

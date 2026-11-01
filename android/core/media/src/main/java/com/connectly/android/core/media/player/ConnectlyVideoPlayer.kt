@@ -80,9 +80,9 @@ fun ConnectlyVideoPlayer(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                LifecycleEvent.ON_PAUSE -> exoPlayer.pause()
-                LifecycleEvent.ON_RESUME -> if (autoPlay) exoPlayer.play()
-                LifecycleEvent.ON_DESTROY -> playerManager.releasePlayer(playerTag)
+                Lifecycle.Event.ON_PAUSE -> exoPlayer.pause()
+                Lifecycle.Event.ON_RESUME -> if (autoPlay) exoPlayer.play()
+                Lifecycle.Event.ON_DESTROY -> playerManager.releasePlayer(playerTag)
                 else -> {}
             }
         }

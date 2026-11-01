@@ -216,7 +216,7 @@ class WebRtcSignalingCoordinator @Inject constructor(
         return try {
             val response = api.sendSignal(
                 callId = callId,
-                request = CallSignalRequest(
+                body = CallSignalRequest(
                     signal_type = "offer",
                     payload = mapOf("type" to "offer", "sdp" to sdp),
                     target_user_id = targetUserId
@@ -232,7 +232,7 @@ class WebRtcSignalingCoordinator @Inject constructor(
         return try {
             val response = api.sendSignal(
                 callId = callId,
-                request = CallSignalRequest(
+                body = CallSignalRequest(
                     signal_type = "answer",
                     payload = mapOf("type" to "answer", "sdp" to sdp),
                     target_user_id = targetUserId
@@ -262,7 +262,7 @@ class WebRtcSignalingCoordinator @Inject constructor(
 
             val response = api.sendSignal(
                 callId = callId,
-                request = CallSignalRequest(
+                body = CallSignalRequest(
                     signal_type = "candidate",
                     payload = payload,
                     target_user_id = targetUserId
@@ -278,7 +278,7 @@ class WebRtcSignalingCoordinator @Inject constructor(
         return try {
             val response = api.sendSignal(
                 callId = callId,
-                request = CallSignalRequest(
+                body = CallSignalRequest(
                     signal_type = "renegotiate",
                     payload = mapOf("type" to "renegotiate"),
                     target_user_id = targetUserId

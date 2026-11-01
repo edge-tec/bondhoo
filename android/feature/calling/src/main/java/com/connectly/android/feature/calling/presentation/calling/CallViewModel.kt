@@ -15,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -33,27 +34,30 @@ class CallViewModel @Inject constructor(
     val uiState: StateFlow<CallState> = _uiState.asStateFlow()
 
     private var timerJob: Job? = null
+    private var webRtcJob: Job? = null
 
-    init {
-        // Observe WebRTC manager states
-        viewModelScope.launch {
-            webRtcManager.isMuted.collect { muted ->
-                _uiState.update { it.copy(isMuted = muted) }
+    private fun observeWebRtcStates() {
+        webRtcJob?.cancel()
+        webRtcJob = viewModelScope.launch {
+            launch {
+                webRtcManager.isMuted.collect { muted ->
+                    _uiState.update { it.copy(isMuted = muted) }
+                }
             }
-        }
-        viewModelScope.launch {
-            webRtcManager.isCameraOff.collect { camOff ->
-                _uiState.update { it.copy(isCameraOff = camOff) }
+            launch {
+                webRtcManager.isCameraOff.collect { camOff ->
+                    _uiState.update { it.copy(isCameraOff = camOff) }
+                }
             }
-        }
-        viewModelScope.launch {
-            webRtcManager.isSpeakerOn.collect { speaker ->
-                _uiState.update { it.copy(isSpeakerOn = speaker) }
+            launch {
+                webRtcManager.isSpeakerOn.collect { speaker ->
+                    _uiState.update { it.copy(isSpeakerOn = speaker) }
+                }
             }
-        }
-        viewModelScope.launch {
-            webRtcManager.networkQuality.collect { quality ->
-                _uiState.update { it.copy(networkQuality = quality) }
+            launch {
+                webRtcManager.networkQuality.collect { quality ->
+                    _uiState.update { it.copy(networkQuality = quality) }
+                }
             }
         }
     }
@@ -74,6 +78,7 @@ class CallViewModel @Inject constructor(
     }
 
     private fun startOutgoingCall(receiverId: Long, callType: CallType) {
+        observeWebRtcStates()
         _uiState.update {
             it.copy(
                 callType = callType,
@@ -94,9 +99,6 @@ class CallViewModel @Inject constructor(
                                 callStatus = CallStatus.RINGING
                             )
                         }
-                        // Simulate call pickup after 2.5s for demonstration
-                        delay(2500)
-                        transitionToConnected()
                     }
                     is Result.Error -> {
                         _uiState.update { it.copy(errorMessage = result.exception.message) }
@@ -107,6 +109,7 @@ class CallViewModel @Inject constructor(
     }
 
     private fun setupIncomingCall(callId: Long, callType: CallType) {
+        observeWebRtcStates()
         val caller = User(id = 51L, name = "Sadia Islam", username = "sadia_islam")
         val session = CallSession(
             id = callId,
@@ -141,6 +144,8 @@ class CallViewModel @Inject constructor(
     private fun rejectCall() {
         val callId = _uiState.value.callSession?.id ?: 1L
         stopTimer()
+        webRtcJob?.cancel()
+        webRtcJob = null
         viewModelScope.launch {
             respondCallUseCase(callId, "reject").collect()
             _uiState.update { it.copy(callStatus = CallStatus.REJECTED, isCallEnded = true) }
@@ -150,6 +155,8 @@ class CallViewModel @Inject constructor(
     private fun endCall() {
         val callId = _uiState.value.callSession?.id ?: 1L
         stopTimer()
+        webRtcJob?.cancel()
+        webRtcJob = null
         viewModelScope.launch {
             leaveCallUseCase(callId).collect()
             _uiState.update { it.copy(callStatus = CallStatus.ENDED, isCallEnded = true) }
@@ -210,6 +217,8 @@ class CallViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         stopTimer()
+        webRtcJob?.cancel()
+        webRtcJob = null
         webRtcManager.endAudioSession()
     }
 }

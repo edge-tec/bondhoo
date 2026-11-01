@@ -69,7 +69,6 @@ class ReelsRepositoryImpl @Inject constructor(
                         id = r.id,
                         creatorId = r.creator.id,
                         creatorName = r.creator.name,
-                        creatorUsername = r.creator.username,
                         creatorAvatar = r.creator.avatar,
                         caption = r.caption,
                         videoUrl = r.videoUrl,

@@ -136,7 +136,7 @@ class ProfileRepositoryImpl @Inject constructor(
             val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
             val response = api.uploadAvatar(body)
             if (response.isSuccessful && response.body() != null) {
-                emit(Result.Success(response.body()!!.data.url))
+                emit(Result.Success(response.body()!!.data.url ?: ""))
             } else {
                 emit(Result.Error(Exception("Failed to upload avatar.")))
             }
@@ -152,7 +152,7 @@ class ProfileRepositoryImpl @Inject constructor(
             val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
             val response = api.uploadCover(body)
             if (response.isSuccessful && response.body() != null) {
-                emit(Result.Success(response.body()!!.data.url))
+                emit(Result.Success(response.body()!!.data.url ?: ""))
             } else {
                 emit(Result.Error(Exception("Failed to upload cover photo.")))
             }

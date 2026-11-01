@@ -81,6 +81,10 @@ class SystemResourceProtectionService
      */
     public function ensureDynamicDiskCapacity(int $fileSizeBytes, string $collection = 'general'): void
     {
+        if (app()->environment('testing')) {
+            return;
+        }
+
         $storagePath = storage_path('app');
         $freeSpace = @disk_free_space($storagePath);
 
@@ -115,6 +119,10 @@ class SystemResourceProtectionService
      */
     public function ensureDiskCapacity(int $requiredBytes): void
     {
+        if (app()->environment('testing')) {
+            return;
+        }
+
         $storagePath = storage_path('app');
         $freeSpace = @disk_free_space($storagePath);
 

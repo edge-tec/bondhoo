@@ -1,6 +1,5 @@
 package com.connectly.android.feature.calling
 
-import app.cash.turbine.test
 import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.CallSession
 import com.connectly.android.core.model.CallStatus
@@ -55,6 +54,7 @@ class CallViewModelTest {
         every { webRtcManager.isCameraOff } returns MutableStateFlow(false)
         every { webRtcManager.isSpeakerOn } returns MutableStateFlow(false)
         every { webRtcManager.networkQuality } returns MutableStateFlow(com.connectly.android.core.model.NetworkQuality.EXCELLENT)
+        every { leaveCallUseCase(any()) } returns flowOf(Result.Success(testSession.copy(status = CallStatus.ENDED)))
 
         viewModel = CallViewModel(
             initiateCallUseCase,
@@ -67,6 +67,8 @@ class CallViewModelTest {
 
     @After
     fun tearDown() {
+        viewModel.handleIntent(CallIntent.EndCall)
+        testDispatcher.scheduler.runCurrent()
         Dispatchers.resetMain()
     }
 
@@ -78,13 +80,14 @@ class CallViewModelTest {
         )
 
         viewModel.handleIntent(CallIntent.StartOutgoingCall(51L, CallType.AUDIO))
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
-        viewModel.uiState.test {
-            val state = awaitItem()
-            assertEquals(CallType.AUDIO, state.callType)
-            assertEquals("Sadia Islam", state.callSession?.receiver?.name)
-        }
+        val state = viewModel.uiState.value
+        assertEquals(CallType.AUDIO, state.callType)
+        assertEquals("Sadia Islam", state.callSession?.receiver?.name)
+
+        viewModel.handleIntent(CallIntent.EndCall)
+        testDispatcher.scheduler.runCurrent()
     }
 
     @Test
@@ -95,15 +98,15 @@ class CallViewModelTest {
         )
 
         viewModel.handleIntent(CallIntent.StartOutgoingCall(51L, CallType.AUDIO))
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         viewModel.handleIntent(CallIntent.AcceptCall)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
-        viewModel.uiState.test {
-            val state = awaitItem()
-            assertEquals(CallStatus.CONNECTED, state.callStatus)
-        }
+        assertEquals(CallStatus.CONNECTED, viewModel.uiState.value.callStatus)
+
+        viewModel.handleIntent(CallIntent.EndCall)
+        testDispatcher.scheduler.runCurrent()
     }
 
     @Test
@@ -114,16 +117,14 @@ class CallViewModelTest {
         )
 
         viewModel.handleIntent(CallIntent.StartOutgoingCall(51L, CallType.AUDIO))
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         viewModel.handleIntent(CallIntent.EndCall)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
-        viewModel.uiState.test {
-            val state = awaitItem()
-            assertTrue(state.isCallEnded)
-            assertEquals(CallStatus.ENDED, state.callStatus)
-        }
+        val state = viewModel.uiState.value
+        assertTrue(state.isCallEnded)
+        assertEquals(CallStatus.ENDED, state.callStatus)
     }
 
     @Test
@@ -133,10 +134,12 @@ class CallViewModelTest {
 
         every { initiateCallUseCase(51L, CallType.AUDIO) } returns flowOf(Result.Success(testSession))
         viewModel.handleIntent(CallIntent.StartOutgoingCall(51L, CallType.AUDIO))
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
 
         viewModel.handleIntent(CallIntent.ToggleMute)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.runCurrent()
+
+        viewModel.handleIntent(CallIntent.EndCall)
+        testDispatcher.scheduler.runCurrent()
     }
 }
-

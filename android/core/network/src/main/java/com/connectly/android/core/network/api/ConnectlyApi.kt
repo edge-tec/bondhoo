@@ -275,18 +275,6 @@ interface ConnectlyApi {
     ): Response<ApiResponse<MediaUploadResponse>>
 
     // -------------------------------------------------------------
-    // Groups Hub (Screen 4)
-    // -------------------------------------------------------------
-    @GET("v1/groups")
-    suspend fun getGroups(
-        @Query("filter") filter: String = "popular",
-        @Query("page") page: Int = 1
-    ): Response<ApiResponse<List<GroupDto>>>
-
-    @POST("v1/groups/{id}/join")
-    suspend fun joinGroup(@Path("id") groupId: Long): Response<ApiResponse<Unit>>
-
-    // -------------------------------------------------------------
     // Messenger & Conversations (Screen 5)
     // -------------------------------------------------------------
     @GET("v1/conversations")
@@ -381,7 +369,7 @@ interface ConnectlyApi {
     suspend fun clearConversation(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
 
     @POST("v1/conversations/{id}/leave")
-    suspend fun leaveGroup(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+    suspend fun leaveConversationGroup(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
 
     @PUT("v1/conversations/{id}/group-info")
     suspend fun updateGroupInfo(
@@ -396,7 +384,7 @@ interface ConnectlyApi {
     ): Response<ApiResponse<Map<String, Any>>>
 
     @DELETE("v1/conversations/{id}/members/{userId}")
-    suspend fun removeGroupMember(
+    suspend fun removeConversationGroupMember(
         @Path("id") conversationId: Long,
         @Path("userId") userId: Long
     ): Response<ApiResponse<Map<String, Any>>>

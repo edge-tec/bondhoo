@@ -40,6 +40,12 @@ fun ConnectlyBottomNavigation(
     )
 }
 
+@Composable
+fun ConnectlyBottomBar(
+    selectedDestination: BottomBarDestination,
+    onDestinationClick: (BottomBarDestination) -> Unit,
+    modifier: Modifier = Modifier
+) {
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 8.dp,

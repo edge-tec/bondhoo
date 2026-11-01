@@ -125,7 +125,7 @@ fun FriendsScreen(
                     if (state.friendRequests.isEmpty()) {
                         ConnectlyEmptyState(
                             title = "No Pending Requests",
-                            description = "When someone sends you a friend request, you'll see it here."
+                            message = "When someone sends you a friend request, you'll see it here."
                         )
                     } else {
                         LazyColumn(
@@ -155,7 +155,7 @@ fun FriendsScreen(
                     if (filteredFriends.isEmpty()) {
                         ConnectlyEmptyState(
                             title = "No Friends Found",
-                            description = if (state.searchQuery.isBlank()) "You haven't connected with any friends yet." else "No friends matching \"${state.searchQuery}\""
+                            message = if (state.searchQuery.isBlank()) "You haven't connected with any friends yet." else "No friends matching \"${state.searchQuery}\""
                         )
                     } else {
                         LazyColumn(
@@ -179,7 +179,7 @@ fun FriendsScreen(
                     if (state.suggestions.isEmpty()) {
                         ConnectlyEmptyState(
                             title = "No Suggestions Right Now",
-                            description = "Check back later for new friend suggestions."
+                            message = "Check back later for new friend suggestions."
                         )
                     } else {
                         LazyColumn(

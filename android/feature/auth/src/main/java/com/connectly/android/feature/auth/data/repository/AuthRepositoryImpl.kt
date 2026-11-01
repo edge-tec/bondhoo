@@ -140,7 +140,7 @@ class AuthRepositoryImpl @Inject constructor(
     override fun sendPhoneOtp(phone: String): Flow<Result<String>> = flow {
         emit(Result.Loading)
         try {
-            val response = api.sendPhoneOtp(SendPhoneOtpRequest(phone = phone, purpose = "phone_verification"))
+            val response = api.sendPhoneOtp(SendPhoneOtpRequest(phone = phone))
             if (response.isSuccessful && response.body() != null) {
                 emit(Result.Success(response.body()!!.message ?: "OTP sent successfully to $phone"))
             } else {
@@ -157,8 +157,9 @@ class AuthRepositoryImpl @Inject constructor(
             val response = api.verifyPhoneOtp(VerifyPhoneOtpRequest(phone = phone, otp = otp, purpose = "phone_verification"))
             if (response.isSuccessful && response.body() != null) {
                 val data = response.body()!!.data
-                if (!data.token.isNullOrBlank()) {
-                    tokenStorageManager.saveAccessToken(data.token)
+                val token = data.token
+                if (!token.isNullOrBlank()) {
+                    tokenStorageManager.saveAccessToken(token)
                 }
                 val user = User(
                     id = data.user_id ?: tokenStorageManager.getUserId().takeIf { it > 0 } ?: 1L,

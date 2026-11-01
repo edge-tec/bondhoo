@@ -439,7 +439,7 @@ class MessengerRepositoryImpl @Inject constructor(
 
     override fun leaveGroup(conversationId: Long): Flow<Result<Boolean>> = flow {
         try {
-            val response = api.leaveGroup(conversationId)
+            val response = api.leaveConversationGroup(conversationId)
             val left = response.body()?.data?.get("left") ?: true
             emit(Result.Success(left))
         } catch (e: Exception) {
@@ -488,7 +488,7 @@ class MessengerRepositoryImpl @Inject constructor(
 
     override fun removeGroupMember(conversationId: Long, userId: Long): Flow<Result<Unit>> = flow {
         try {
-            api.removeGroupMember(conversationId, userId)
+            api.removeConversationGroupMember(conversationId, userId)
             emit(Result.Success(Unit))
         } catch (e: Exception) {
             emit(Result.Error(e))
