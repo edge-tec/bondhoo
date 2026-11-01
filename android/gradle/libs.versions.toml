@@ -18,6 +18,7 @@ media3 = "1.5.0"
 securityCrypto = "1.1.0-alpha06"
 datastore = "1.1.1"
 paging = "3.3.4"
+work = "2.10.0"
 pusher = "2.4.4"
 junit = "4.13.2"
 junit5 = "5.11.3"
@@ -37,6 +38,7 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version = "1.1.0" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 
 # Compose BOM & UI
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
