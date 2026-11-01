@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Event;
 use App\Models\Group;
 use App\Models\Page;
 use App\Models\Post;
+use App\Models\Reel;
 use App\Models\User;
 use App\Services\Contracts\CacheServiceInterface;
 
@@ -73,6 +75,16 @@ class SearchService
                             ->get()
                             ->map(fn (Page $p) => $p->toResponseArray($viewer))
                             ->values(),
+                        'events' => Event::latest('start_time')
+                            ->limit(min($limit, 4))
+                            ->get()
+                            ->map(fn (Event $e) => [
+                                'id' => $e->id,
+                                'title' => $e->title,
+                                'location' => $e->address ?: $e->location_type,
+                            ])
+                            ->values(),
+                        'trending' => ['#Connectly', '#Dhaka', '#Bangladesh', '#TechSummit2026'],
                     ],
                 ];
             }
@@ -84,6 +96,9 @@ class SearchService
                     'posts' => [],
                     'groups' => [],
                     'pages' => [],
+                    'events' => [],
+                    'reels' => [],
+                    'hashtags' => [],
                 ],
             ];
         }
@@ -183,6 +198,71 @@ class SearchService
                 ->get()
                 ->map(fn (Page $p) => $p->toResponseArray($viewer))
                 ->values();
+        }
+
+        // ৫. রিলস সার্চ
+        if ($type === 'all' || $type === 'reels') {
+            $reelQuery = Reel::where('status', 'active')
+                ->where(function ($q) use ($term) {
+                    $q->where('caption', 'like', "%{$term}%")
+                        ->orWhere('audio_title', 'like', "%{$term}%")
+                        ->orWhere('audio_artist', 'like', "%{$term}%");
+                });
+
+            if (! empty($blockedUserIds)) {
+                $reelQuery->whereNotIn('user_id', $blockedUserIds);
+            }
+
+            $results['reels'] = $reelQuery
+                ->limit($limit)
+                ->get()
+                ->map(fn (Reel $r) => $r->toResponseArray($viewer))
+                ->values();
+        }
+
+        // ৬. ইভেন্ট সার্চ
+        if ($type === 'all' || $type === 'events') {
+            $results['events'] = Event::where(function ($q) use ($term) {
+                $q->where('title', 'like', "%{$term}%")
+                    ->orWhere('description', 'like', "%{$term}%")
+                    ->orWhere('address', 'like', "%{$term}%");
+            })
+                ->limit($limit)
+                ->get()
+                ->map(fn (Event $e) => [
+                    'id' => $e->id,
+                    'title' => $e->title,
+                    'description' => $e->description,
+                    'start_time' => $e->start_time?->toIso8601String(),
+                    'location' => $e->address ?: $e->location_type,
+                    'banner' => $e->cover_image,
+                    'going_count' => (int) ($e->going_count ?? 0),
+                    'interested_count' => (int) ($e->interested_count ?? 0),
+                ])
+                ->values();
+        }
+
+        // ৭. হ্যাশট্যাগ সার্চ
+        if ($type === 'all' || $type === 'hashtags') {
+            $cleanTerm = ltrim($term, '#');
+            $postsWithTags = Post::where('audience', 'public')
+                ->where('content', 'like', "%#{$cleanTerm}%")
+                ->limit(20)
+                ->pluck('content');
+
+            $matchedTags = [];
+            foreach ($postsWithTags as $text) {
+                preg_match_all('/#[a-zA-Z0-9_\x{0980}-\x{09FF}]+/u', (string) $text, $matches);
+                foreach ($matches[0] ?? [] as $tag) {
+                    if (stripos($tag, $cleanTerm) !== false) {
+                        $matchedTags[$tag] = ($matchedTags[$tag] ?? 0) + 1;
+                    }
+                }
+            }
+            $results['hashtags'] = collect($matchedTags)->map(fn ($count, $tag) => [
+                'tag' => $tag,
+                'count' => $count,
+            ])->values();
         }
 
         return [
