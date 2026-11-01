@@ -83,9 +83,12 @@ use App\Http\Middleware\ApiV2Middleware;
 use App\Services\GraphQL\GraphQLGatewayService;
 use App\Services\Offline\OfflineSyncService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    // WebSocket / Reverb Channel Authorization for Mobile Sanctum Tokens
+    Broadcast::routes(['middleware' => ['auth:sanctum']]);
     // System Health, Observability & Monitoring
     Route::get('/health', [SystemController::class, 'health']);
     Route::get('/metrics', [InfrastructureController::class, 'metrics']);

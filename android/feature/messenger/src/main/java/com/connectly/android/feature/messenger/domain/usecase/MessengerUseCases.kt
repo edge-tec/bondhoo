@@ -5,6 +5,7 @@ import com.connectly.android.core.model.Conversation
 import com.connectly.android.core.model.Message
 import com.connectly.android.feature.messenger.domain.repository.MessengerRepository
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 import javax.inject.Inject
 
 class GetConversationsUseCase @Inject constructor(
@@ -42,6 +43,35 @@ class SendMessageUseCase @Inject constructor(
         repository.sendMessage(conversationId, body, type, clientMessageId, replyToId, mediaIds)
 }
 
+class EditMessageUseCase @Inject constructor(
+    private val repository: MessengerRepository
+) {
+    operator fun invoke(messageId: Long, newBody: String): Flow<Result<Message>> =
+        repository.editMessage(messageId, newBody)
+}
+
+class ForwardMessageUseCase @Inject constructor(
+    private val repository: MessengerRepository
+) {
+    operator fun invoke(messageId: Long, targetConversationIds: List<Long>): Flow<Result<List<Message>>> =
+        repository.forwardMessage(messageId, targetConversationIds)
+}
+
+class SaveMessageUseCase @Inject constructor(
+    private val repository: MessengerRepository
+) {
+    fun save(messageId: Long): Flow<Result<Unit>> = repository.saveMessage(messageId)
+    fun unsave(messageId: Long): Flow<Result<Unit>> = repository.unsaveMessage(messageId)
+    fun getSaved(): Flow<Result<List<Message>>> = repository.getSavedMessages()
+}
+
+class SendVoiceMessageUseCase @Inject constructor(
+    private val repository: MessengerRepository
+) {
+    operator fun invoke(conversationId: Long, audioFile: File, durationSeconds: Int, waveform: List<Float>? = null): Flow<Result<Message>> =
+        repository.sendVoiceMessage(conversationId, audioFile, durationSeconds, waveform)
+}
+
 class MarkDeliveredUseCase @Inject constructor(
     private val repository: MessengerRepository
 ) {
@@ -77,3 +107,49 @@ class ObserveIncomingMessagesUseCase @Inject constructor(
         repository.observeIncomingMessages(conversationId)
 }
 
+class ManageConversationUseCase @Inject constructor(
+    private val repository: MessengerRepository
+) {
+    fun togglePin(conversationId: Long): Flow<Result<Boolean>> = repository.togglePinConversation(conversationId)
+    fun toggleArchive(conversationId: Long): Flow<Result<Boolean>> = repository.toggleArchiveConversation(conversationId)
+    fun mute(conversationId: Long, duration: String = "forever"): Flow<Result<Boolean>> = repository.muteConversation(conversationId, duration)
+    fun clear(conversationId: Long): Flow<Result<Boolean>> = repository.clearConversation(conversationId)
+    fun leave(conversationId: Long): Flow<Result<Boolean>> = repository.leaveGroup(conversationId)
+    fun saveDraft(conversationId: Long, draftText: String): Flow<Result<Unit>> = repository.saveDraft(conversationId, draftText)
+    fun markUnread(conversationId: Long): Flow<Result<Unit>> = repository.markConversationUnread(conversationId)
+}
+
+class SearchMessagesUseCase @Inject constructor(
+    private val repository: MessengerRepository
+) {
+    operator fun invoke(query: String, conversationId: Long? = null): Flow<Result<List<Message>>> =
+        repository.searchMessages(query, conversationId)
+}
+
+class SyncOfflineMessagesUseCase @Inject constructor(
+    private val repository: MessengerRepository
+) {
+    operator fun invoke(sinceId: Long): Flow<Result<Long>> =
+        repository.syncOfflineEvents(sinceId)
+}
+
+class SendTypingUseCase @Inject constructor(
+    private val repository: MessengerRepository
+) {
+    operator fun invoke(conversationId: Long, isTyping: Boolean) =
+        repository.sendTyping(conversationId, isTyping)
+}
+
+class ObserveTypingUseCase @Inject constructor(
+    private val repository: MessengerRepository
+) {
+    operator fun invoke(conversationId: Long): Flow<Pair<Long, Boolean>> =
+        repository.observeTyping(conversationId)
+}
+
+class ObservePresenceUseCase @Inject constructor(
+    private val repository: MessengerRepository
+) {
+    operator fun invoke(): Flow<Pair<Long, Boolean>> =
+        repository.observePresence()
+}

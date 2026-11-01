@@ -16,3 +16,4 @@ sealed interface UploadStatus {
     data class Error(val message: String, val canRetry: Boolean = true) : UploadStatus
     object Cancelled : UploadStatus
 }
+

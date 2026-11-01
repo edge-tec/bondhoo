@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 // ১. ইউজারের নিজস্ব প্রাইভেট চ্যানেল (নোটিফিকেশন ও পার্সোনাল মেসেজ)
 Broadcast::channel('user.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
-});
+}, ['guards' => ['web', 'sanctum']]);
 
 // ২. প্রাইভেট চ্যাট/কনভার্সন চ্যানেল (শুধুমাত্র কনভার্সনের সদস্যরা যুক্ত হতে পারবেন)
 Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
@@ -30,7 +30,7 @@ Broadcast::channel('conversation.{conversationId}', function ($user, $conversati
                 ->orWhere('request_status', '!=', 'declined');
         })
         ->exists();
-});
+}, ['guards' => ['web', 'sanctum']]);
 
 // ৩. লাইভ প্রেজেন্স চ্যানেল (অনলাইন ব্যবহারকারীদের তালিকা শেয়ারিং)
 Broadcast::channel('presence-users', function ($user) {
@@ -40,7 +40,16 @@ Broadcast::channel('presence-users', function ($user) {
         'name' => $user->name,
         'avatar_url' => $user->profile?->avatar_url,
     ];
-});
+}, ['guards' => ['web', 'sanctum']]);
+
+Broadcast::channel('users', function ($user) {
+    return [
+        'id' => $user->id,
+        'username' => $user->username,
+        'name' => $user->name,
+        'avatar_url' => $user->profile?->avatar_url,
+    ];
+}, ['guards' => ['web', 'sanctum']]);
 
 // ৪. WebRTC কলিং চ্যানেল (শুধুমাত্র কনভার্সনের সদস্যরা যুক্ত হতে পারবেন)
 Broadcast::channel('call.{conversationId}', function ($user, $conversationId) {
@@ -56,7 +65,7 @@ Broadcast::channel('call.{conversationId}', function ($user, $conversationId) {
                 ->orWhere('request_status', '!=', 'declined');
         })
         ->exists();
-});
+}, ['guards' => ['web', 'sanctum']]);
 
 // ৫. লাইভ স্ট্রিমিং চ্যানেল (পাবলিক চ্যানেল — দর্শক ও ক্রিয়েটর সকলেই যুক্ত হতে পারেন)
 Broadcast::channel('live.{channelId}', function () {

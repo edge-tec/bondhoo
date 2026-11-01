@@ -26,6 +26,9 @@ dependencies {
     implementation(project(":core:database"))
     implementation(project(":core:datastore"))
 
+    implementation(libs.okhttp.core)
+    implementation(libs.kotlinx.serialization.json)
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)

@@ -336,6 +336,121 @@ interface ConnectlyApi {
         @Part file: MultipartBody.Part
     ): Response<ApiResponse<MediaUploadResponse>>
 
+    @POST("v1/broadcasting/auth")
+    suspend fun broadcastingAuth(
+        @Body body: Map<String, String>
+    ): Response<BroadcastAuthResponse>
+
+    @GET("v1/messages/unread-count")
+    suspend fun getUnreadMessagesCount(): Response<ApiResponse<UnreadCountDto>>
+
+    @PUT("v1/messages/{id}")
+    suspend fun editMessage(
+        @Path("id") messageId: Long,
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<MessageDto>>
+
+    @POST("v1/messages/{id}/forward")
+    suspend fun forwardMessage(
+        @Path("id") messageId: Long,
+        @Body body: Map<String, List<Long>>
+    ): Response<ApiResponse<List<MessageDto>>>
+
+    @POST("v1/messages/{id}/save")
+    suspend fun saveMessage(@Path("id") messageId: Long): Response<ApiResponse<Unit>>
+
+    @DELETE("v1/messages/{id}/save")
+    suspend fun unsaveMessage(@Path("id") messageId: Long): Response<ApiResponse<Unit>>
+
+    @GET("v1/saved-messages")
+    suspend fun getSavedMessages(): Response<ApiResponse<List<MessageDto>>>
+
+    @POST("v1/conversations/{id}/pin")
+    suspend fun togglePinConversation(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+
+    @POST("v1/conversations/{id}/archive")
+    suspend fun toggleArchiveConversation(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+
+    @POST("v1/conversations/{id}/mute")
+    suspend fun muteConversation(
+        @Path("id") conversationId: Long,
+        @Body body: Map<String, String> = emptyMap()
+    ): Response<ApiResponse<Map<String, Any>>>
+
+    @POST("v1/conversations/{id}/clear")
+    suspend fun clearConversation(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+
+    @POST("v1/conversations/{id}/leave")
+    suspend fun leaveGroup(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+
+    @PUT("v1/conversations/{id}/group-info")
+    suspend fun updateGroupInfo(
+        @Path("id") conversationId: Long,
+        @Body body: UpdateGroupInfoRequest
+    ): Response<ApiResponse<ConversationDto>>
+
+    @POST("v1/conversations/{id}/members")
+    suspend fun addGroupMembers(
+        @Path("id") conversationId: Long,
+        @Body body: Map<String, List<Long>>
+    ): Response<ApiResponse<Map<String, Any>>>
+
+    @DELETE("v1/conversations/{id}/members/{userId}")
+    suspend fun removeGroupMember(
+        @Path("id") conversationId: Long,
+        @Path("userId") userId: Long
+    ): Response<ApiResponse<Map<String, Any>>>
+
+    @POST("v1/conversations/{id}/draft")
+    suspend fun saveDraft(
+        @Path("id") conversationId: Long,
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<Map<String, Any>>>
+
+    @POST("v1/conversations/{id}/unread")
+    suspend fun markConversationUnread(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+
+    @Multipart
+    @POST("v1/conversations/{id}/voice")
+    suspend fun sendVoiceMessage(
+        @Path("id") conversationId: Long,
+        @Part audio: MultipartBody.Part,
+        @Part("duration") duration: okhttp3.RequestBody,
+        @Part("waveform") waveform: okhttp3.RequestBody? = null
+    ): Response<ApiResponse<MessageDto>>
+
+    @GET("v1/messenger/sync")
+    suspend fun syncMessengerEvents(
+        @Query("since_id") sinceId: Long,
+        @Query("limit") limit: Int = 100
+    ): Response<ApiResponse<SyncEventsResponseDto>>
+
+    @GET("v1/messenger/search")
+    suspend fun searchMessenger(
+        @Query("q") query: String,
+        @Query("conversation_id") conversationId: Long? = null,
+        @Query("type") type: String = "all",
+        @Query("per_page") perPage: Int = 20
+    ): Response<ApiResponse<List<MessageDto>>>
+
+    @POST("v1/presence/heartbeat")
+    suspend fun presenceHeartbeat(
+        @Body body: Map<String, String> = emptyMap()
+    ): Response<ApiResponse<Map<String, Any>>>
+
+    @POST("v1/presence/offline")
+    suspend fun presenceOffline(
+        @Body body: Map<String, String> = emptyMap()
+    ): Response<ApiResponse<Map<String, Any>>>
+
+    @POST("v1/presence/typing")
+    suspend fun presenceTyping(
+        @Body body: Map<String, Any>
+    ): Response<ApiResponse<Map<String, Any>>>
+
+    @GET("v1/presence/friends/active")
+    suspend fun getActiveFriends(): Response<ApiResponse<List<ActivePresenceFriendDto>>>
+
     // -------------------------------------------------------------
     // Real-Time Audio & Video Calling (WebRTC)
     // -------------------------------------------------------------
@@ -705,23 +820,104 @@ data class ReelDto(
 data class ConversationDto(
     val id: Long,
     val type: String = "direct",
+    val title: String? = null,
+    val avatar_url: String? = null,
     val other_user: UserDto? = null,
     val last_message: MessageDto? = null,
     val unread_count: Int = 0,
-    val is_online: Boolean = false
+    val is_pinned: Boolean = false,
+    val is_archived: Boolean = false,
+    val is_muted: Boolean = false,
+    val is_online: Boolean = false,
+    val draft_message: String? = null,
+    val my_role: String = "member",
+    val members: List<UserDto> = emptyList()
 )
 
 @Serializable
 data class MessageDto(
     val id: Long,
     val conversation_id: Long,
-    val sender_id: Long,
-    val body: String,
+    val sender_id: Long = 0,
+    val body: String = "",
     val type: String = "text",
     val client_message_id: String? = null,
     val delivery_status: String = "sent",
     val is_mine: Boolean = false,
-    val created_at: String
+    val is_edited: Boolean = false,
+    val is_pinned: Boolean = false,
+    val is_saved: Boolean = false,
+    val is_deleted: Boolean = false,
+    val is_forwarded: Boolean = false,
+    val reply_to_message_id: Long? = null,
+    val reply_preview: MessagePreviewDto? = null,
+    val reactions: MessageReactionsSummaryDto? = null,
+    val metadata: Map<String, kotlinx.serialization.json.JsonElement>? = null,
+    val created_at: String = ""
+)
+
+@Serializable
+data class MessagePreviewDto(
+    val id: Long,
+    val sender_name: String? = null,
+    val body: String? = null,
+    val type: String = "text"
+)
+
+@Serializable
+data class MessageReactionsSummaryDto(
+    val counts: Map<String, Int> = emptyMap(),
+    val total: Int = 0,
+    val my_reaction: String? = null
+)
+
+@Serializable
+data class BroadcastAuthResponse(
+    val auth: String,
+    val channel_data: String? = null
+)
+
+@Serializable
+data class SyncEventsResponseDto(
+    val events: List<SyncEventDto> = emptyList(),
+    val latest_event_id: Long = 0,
+    val has_more: Boolean = false
+)
+
+@Serializable
+data class SyncEventDto(
+    val id: Long,
+    val event_uuid: String? = null,
+    val event_type: String,
+    val conversation_id: Long? = null,
+    val user_id: Long? = null,
+    val payload: kotlinx.serialization.json.JsonObject? = null,
+    val timestamp: String? = null
+)
+
+@Serializable
+data class ActivePresenceFriendDto(
+    val id: Long,
+    val name: String,
+    val username: String,
+    val avatar_url: String? = null,
+    val online: Boolean = false,
+    val last_seen: String? = null,
+    val last_seen_display: String? = null,
+    val conversation_id: Long? = null,
+    val can_call: Boolean = true
+)
+
+@Serializable
+data class UpdateGroupInfoRequest(
+    val title: String? = null,
+    val description: String? = null,
+    val avatar_url: String? = null
+)
+
+@Serializable
+data class UnreadCountDto(
+    val unread_count: Int = 0
 )
 
 @Serializable
@@ -781,7 +977,10 @@ data class SendMessageRequest(
     val body: String,
     val client_message_id: String,
     val media_ids: List<Long> = emptyList(),
-    val type: String = "text"
+    val type: String = "text",
+    val reply_to_id: Long? = null,
+    val reply_to_message_id: Long? = null,
+    val metadata: Map<String, kotlinx.serialization.json.JsonElement>? = null
 )
 
 @Serializable

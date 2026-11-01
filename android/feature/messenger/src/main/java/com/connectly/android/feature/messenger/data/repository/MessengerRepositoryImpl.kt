@@ -11,18 +11,27 @@ import com.connectly.android.core.datastore.TokenStorageManager
 import com.connectly.android.core.model.Conversation
 import com.connectly.android.core.model.DeliveryStatus
 import com.connectly.android.core.model.Message
+import com.connectly.android.core.model.MessagePreview
 import com.connectly.android.core.model.User
 import com.connectly.android.core.network.api.ConnectlyApi
 import com.connectly.android.core.network.api.CreateConversationRequest
+import com.connectly.android.core.network.api.MessageDto
 import com.connectly.android.core.network.api.MessageReactionRequest
 import com.connectly.android.core.network.api.SendMessageRequest
-import com.connectly.android.feature.messenger.data.websocket.MessengerWebSocketClient
+import com.connectly.android.core.network.api.UpdateGroupInfoRequest
+import com.connectly.android.core.websocket.ReverbWebSocketManager
 import com.connectly.android.feature.messenger.domain.repository.MessengerRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,12 +41,17 @@ class MessengerRepositoryImpl @Inject constructor(
     private val conversationDao: ConversationDao,
     private val messageDao: MessageDao,
     private val tokenStorageManager: TokenStorageManager,
-    private val webSocketClient: MessengerWebSocketClient,
+    private val reverbManager: ReverbWebSocketManager,
     @Dispatcher(ConnectlyDispatchers.IO) private val ioDispatcher: CoroutineDispatcher
 ) : MessengerRepository {
 
     init {
-        webSocketClient.connect()
+        reverbManager.connect()
+        val currentUserId = tokenStorageManager.getUserId()
+        if (currentUserId > 0) {
+            reverbManager.subscribeUserChannel(currentUserId)
+            reverbManager.subscribePresenceChannel()
+        }
     }
 
     override fun getConversations(filter: String): Flow<Result<List<Conversation>>> = flow {
@@ -50,25 +64,19 @@ class MessengerRepositoryImpl @Inject constructor(
                     Conversation(
                         id = dto.id,
                         type = dto.type,
-                        title = dto.other_user?.name ?: "Conversation",
-                        avatar = dto.other_user?.avatar,
+                        title = dto.title ?: dto.other_user?.name ?: "Conversation",
+                        avatar = dto.avatar_url ?: dto.other_user?.avatar,
                         otherUser = dto.other_user?.let {
                             User(id = it.id, name = it.name, username = it.username, avatar = it.avatar)
                         },
-                        lastMessage = dto.last_message?.let {
-                            Message(
-                                id = it.id,
-                                conversationId = it.conversation_id,
-                                senderId = it.sender_id,
-                                senderName = "",
-                                body = it.body,
-                                type = it.type,
-                                clientMessageId = it.client_message_id ?: "",
-                                createdAt = System.currentTimeMillis()
-                            )
-                        },
+                        lastMessage = dto.last_message?.let { mapDtoToMessage(it) },
                         unreadCount = dto.unread_count,
-                        isOnline = dto.is_online
+                        isPinned = dto.is_pinned,
+                        isArchived = dto.is_archived,
+                        isMuted = dto.is_muted,
+                        isOnline = dto.is_online,
+                        draftMessage = dto.draft_message,
+                        myRole = dto.my_role
                     )
                 }
 
@@ -77,9 +85,10 @@ class MessengerRepositoryImpl @Inject constructor(
                     ConversationEntity(
                         id = c.id,
                         type = c.type,
-                        title = c.title,
-                        avatar = c.avatar,
-                        lastMessage = c.lastMessage?.body,
+                        otherUserId = c.otherUser?.id,
+                        otherUserName = c.otherUser?.name,
+                        otherUserAvatar = c.otherUser?.avatar,
+                        lastMessageBody = c.lastMessage?.body,
                         lastMessageAt = c.lastMessage?.createdAt ?: System.currentTimeMillis(),
                         unreadCount = c.unreadCount,
                         isOnline = c.isOnline
@@ -88,10 +97,10 @@ class MessengerRepositoryImpl @Inject constructor(
 
                 emit(Result.Success(conversations))
             } else {
-                emit(Result.Success(getDefaultMockConversations(filter)))
+                emit(Result.Success(emptyList()))
             }
-        } catch (_: Exception) {
-            emit(Result.Success(getDefaultMockConversations(filter)))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
@@ -115,19 +124,16 @@ class MessengerRepositoryImpl @Inject constructor(
                 val conv = Conversation(
                     id = dto.id,
                     type = dto.type,
-                    title = dto.other_user?.name ?: title ?: "Chat",
+                    title = dto.title ?: dto.other_user?.name ?: title ?: "Chat",
+                    avatar = dto.avatar_url ?: dto.other_user?.avatar,
                     otherUser = dto.other_user?.let {
                         User(id = it.id, name = it.name, username = it.username, avatar = it.avatar)
-                    }
+                    },
+                    myRole = dto.my_role
                 )
                 emit(Result.Success(conv))
             } else {
-                val fallback = Conversation(
-                    id = System.currentTimeMillis(),
-                    type = if (recipientId != null) "direct" else "group",
-                    title = title ?: "New Conversation"
-                )
-                emit(Result.Success(fallback))
+                emit(Result.Error(Exception("Failed to create conversation.")))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -141,28 +147,13 @@ class MessengerRepositoryImpl @Inject constructor(
     ): Flow<Result<List<Message>>> = flow {
         emit(Result.Loading)
         try {
+            // Subscribe to real-time events for this conversation
+            reverbManager.subscribeConversation(conversationId)
+
             val response = api.getMessages(conversationId, page, perPage)
             if (response.isSuccessful && response.body() != null) {
                 val dtos = response.body()!!.data
-                val currentUserId = tokenStorageManager.getUserId()
-                val messages = dtos.map { dto ->
-                    Message(
-                        id = dto.id,
-                        conversationId = dto.conversation_id,
-                        senderId = dto.sender_id,
-                        senderName = if (dto.sender_id == currentUserId) "You" else "Sadia Islam",
-                        body = dto.body,
-                        type = dto.type,
-                        clientMessageId = dto.client_message_id ?: "msg_${dto.id}",
-                        deliveryStatus = when (dto.delivery_status) {
-                            "read" -> DeliveryStatus.READ
-                            "delivered" -> DeliveryStatus.DELIVERED
-                            else -> DeliveryStatus.SENT
-                        },
-                        isMine = dto.is_mine || (dto.sender_id == currentUserId),
-                        createdAt = System.currentTimeMillis()
-                    )
-                }
+                val messages = dtos.map { mapDtoToMessage(it) }
 
                 // Cache messages in Room
                 messageDao.insertMessages(messages.map { m ->
@@ -182,10 +173,10 @@ class MessengerRepositoryImpl @Inject constructor(
 
                 emit(Result.Success(messages))
             } else {
-                emit(Result.Success(getDefaultMockMessages(conversationId)))
+                emit(Result.Success(emptyList()))
             }
-        } catch (_: Exception) {
-            emit(Result.Success(getDefaultMockMessages(conversationId)))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
@@ -226,6 +217,7 @@ class MessengerRepositoryImpl @Inject constructor(
             clientMessageId = clientMessageId,
             deliveryStatus = DeliveryStatus.SENDING,
             isMine = true,
+            replyToMessageId = replyToId,
             createdAt = System.currentTimeMillis()
         )
         messageDao.insertMessage(
@@ -251,15 +243,110 @@ class MessengerRepositoryImpl @Inject constructor(
                     body = body,
                     client_message_id = clientMessageId,
                     type = type,
-                    media_ids = mediaIds
+                    media_ids = mediaIds,
+                    reply_to_id = replyToId,
+                    reply_to_message_id = replyToId
                 )
             )
             if (response.isSuccessful && response.body() != null) {
-                val serverMsg = response.body()!!.data
+                val serverMsg = mapDtoToMessage(response.body()!!.data)
                 messageDao.updateDeliveryStatus(optimisticMsg.id, DeliveryStatus.SENT.rawValue)
             }
         } catch (_: Exception) {
-            // Keep in local queue for retry
+            // Keep in local queue with SENDING/FAILED for background worker retry
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun editMessage(messageId: Long, newBody: String): Flow<Result<Message>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.editMessage(messageId, mapOf("body" to newBody))
+            if (response.isSuccessful && response.body() != null) {
+                val msg = mapDtoToMessage(response.body()!!.data)
+                emit(Result.Success(msg))
+            } else {
+                emit(Result.Error(Exception("Failed to edit message.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun forwardMessage(
+        messageId: Long,
+        targetConversationIds: List<Long>
+    ): Flow<Result<List<Message>>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.forwardMessage(messageId, mapOf("conversation_ids" to targetConversationIds))
+            if (response.isSuccessful && response.body() != null) {
+                val msgs = response.body()!!.data.map { mapDtoToMessage(it) }
+                emit(Result.Success(msgs))
+            } else {
+                emit(Result.Error(Exception("Failed to forward message.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun saveMessage(messageId: Long): Flow<Result<Unit>> = flow {
+        try {
+            api.saveMessage(messageId)
+            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun unsaveMessage(messageId: Long): Flow<Result<Unit>> = flow {
+        try {
+            api.unsaveMessage(messageId)
+            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun getSavedMessages(): Flow<Result<List<Message>>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.getSavedMessages()
+            if (response.isSuccessful && response.body() != null) {
+                val msgs = response.body()!!.data.map { mapDtoToMessage(it) }
+                emit(Result.Success(msgs))
+            } else {
+                emit(Result.Success(emptyList()))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun sendVoiceMessage(
+        conversationId: Long,
+        audioFile: File,
+        durationSeconds: Int,
+        waveform: List<Float>?
+    ): Flow<Result<Message>> = flow {
+        emit(Result.Loading)
+        try {
+            val reqFile = audioFile.asRequestBody("audio/mp4".toMediaTypeOrNull())
+            val audioPart = MultipartBody.Part.createFormData("audio", audioFile.name, reqFile)
+            val durationBody = durationSeconds.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+            val waveformBody = waveform?.let {
+                it.joinToString(",", "[", "]").toRequestBody("text/plain".toMediaTypeOrNull())
+            }
+
+            val response = api.sendVoiceMessage(conversationId, audioPart, durationBody, waveformBody)
+            if (response.isSuccessful && response.body() != null) {
+                val msg = mapDtoToMessage(response.body()!!.data)
+                emit(Result.Success(msg))
+            } else {
+                emit(Result.Error(Exception("Failed to send voice message.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
@@ -287,8 +374,8 @@ class MessengerRepositoryImpl @Inject constructor(
         try {
             api.reactToChatMessage(messageId, MessageReactionRequest(reaction = reaction))
             emit(Result.Success(Unit))
-        } catch (_: Exception) {
-            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
@@ -310,115 +397,199 @@ class MessengerRepositoryImpl @Inject constructor(
         }
     }.flowOn(ioDispatcher)
 
-    override fun observeIncomingMessages(conversationId: Long): Flow<Message> =
-        webSocketClient.incomingMessages.filter { it.conversationId == conversationId }
-
-    private fun getDefaultMockConversations(filter: String): List<Conversation> {
-        val list = listOf(
-            Conversation(
-                id = 501L,
-                title = "Sadia Islam",
-                avatar = "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-                otherUser = User(id = 21L, name = "Sadia Islam", username = "sadia", isVerified = true),
-                lastMessage = Message(id = 1L, conversationId = 501L, senderId = 21L, senderName = "Sadia", body = "Typing...", clientMessageId = "m1"),
-                unreadCount = 2,
-                isOnline = true
-            ),
-            Conversation(
-                id = 502L,
-                title = "Rahim Ahmed",
-                avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-                otherUser = User(id = 22L, name = "Rahim Ahmed", username = "rahim"),
-                lastMessage = Message(id = 2L, conversationId = 502L, senderId = 22L, senderName = "Rahim", body = "See you soon!", clientMessageId = "m2"),
-                unreadCount = 1,
-                isOnline = true
-            ),
-            Conversation(
-                id = 503L,
-                type = "group",
-                title = "Family Group",
-                avatar = "https://images.unsplash.com/photo-1511895426328-dc8714191300",
-                lastMessage = Message(id = 3L, conversationId = 503L, senderId = 23L, senderName = "Mom", body = "Sticker", clientMessageId = "m3"),
-                unreadCount = 0
-            ),
-            Conversation(
-                id = 504L,
-                type = "group",
-                title = "Friends Forever",
-                avatar = "https://images.unsplash.com/photo-1529156069898-49953e39b3ac",
-                lastMessage = Message(id = 4L, conversationId = 504L, senderId = 24L, senderName = "Tanvir", body = "📷 Photo", clientMessageId = "m4"),
-                unreadCount = 0
-            ),
-            Conversation(
-                id = 505L,
-                title = "Tech Support",
-                avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                lastMessage = Message(id = 5L, conversationId = 505L, senderId = 25L, senderName = "Support", body = "How can I help?", clientMessageId = "m5"),
-                unreadCount = 0
-            ),
-            Conversation(
-                id = 506L,
-                type = "group",
-                title = "Our Class Group",
-                avatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
-                lastMessage = Message(id = 6L, conversationId = 506L, senderId = 26L, senderName = "Nabil", body = "👍", clientMessageId = "m6"),
-                unreadCount = 3
-            ),
-            Conversation(
-                id = 507L,
-                title = "Nusrat Jahan",
-                avatar = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-                lastMessage = Message(id = 7L, conversationId = 507L, senderId = 27L, senderName = "Nusrat", body = "Okay!", clientMessageId = "m7"),
-                unreadCount = 0
-            )
-        )
-
-        return when (filter) {
-            "unread" -> list.filter { it.unreadCount > 0 }
-            "groups" -> list.filter { it.type == "group" }
-            else -> list
+    override fun togglePinConversation(conversationId: Long): Flow<Result<Boolean>> = flow {
+        try {
+            val response = api.togglePinConversation(conversationId)
+            val isPinned = response.body()?.data?.get("is_pinned") ?: false
+            emit(Result.Success(isPinned))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
+    }.flowOn(ioDispatcher)
+
+    override fun toggleArchiveConversation(conversationId: Long): Flow<Result<Boolean>> = flow {
+        try {
+            val response = api.toggleArchiveConversation(conversationId)
+            val isArchived = response.body()?.data?.get("is_archived") ?: false
+            emit(Result.Success(isArchived))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun muteConversation(conversationId: Long, duration: String): Flow<Result<Boolean>> = flow {
+        try {
+            val response = api.muteConversation(conversationId, mapOf("duration" to duration))
+            val isMuted = response.body()?.data?.get("is_muted") as? Boolean ?: true
+            emit(Result.Success(isMuted))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun clearConversation(conversationId: Long): Flow<Result<Boolean>> = flow {
+        try {
+            val response = api.clearConversation(conversationId)
+            val cleared = response.body()?.data?.get("cleared") ?: true
+            emit(Result.Success(cleared))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun leaveGroup(conversationId: Long): Flow<Result<Boolean>> = flow {
+        try {
+            val response = api.leaveGroup(conversationId)
+            val left = response.body()?.data?.get("left") ?: true
+            emit(Result.Success(left))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun updateGroupInfo(
+        conversationId: Long,
+        title: String?,
+        description: String?,
+        avatarUrl: String?
+    ): Flow<Result<Conversation>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.updateGroupInfo(
+                conversationId,
+                UpdateGroupInfoRequest(title = title, description = description, avatar_url = avatarUrl)
+            )
+            if (response.isSuccessful && response.body() != null) {
+                val dto = response.body()!!.data
+                val conv = Conversation(
+                    id = dto.id,
+                    type = dto.type,
+                    title = dto.title,
+                    avatar = dto.avatar_url,
+                    myRole = dto.my_role
+                )
+                emit(Result.Success(conv))
+            } else {
+                emit(Result.Error(Exception("Failed to update group.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun addGroupMembers(conversationId: Long, userIds: List<Long>): Flow<Result<Unit>> = flow {
+        try {
+            api.addGroupMembers(conversationId, mapOf("user_ids" to userIds))
+            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun removeGroupMember(conversationId: Long, userId: Long): Flow<Result<Unit>> = flow {
+        try {
+            api.removeGroupMember(conversationId, userId)
+            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun saveDraft(conversationId: Long, draftText: String): Flow<Result<Unit>> = flow {
+        try {
+            api.saveDraft(conversationId, mapOf("draft" to draftText))
+            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun markConversationUnread(conversationId: Long): Flow<Result<Unit>> = flow {
+        try {
+            api.markConversationUnread(conversationId)
+            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun sendTyping(conversationId: Long, isTyping: Boolean) {
+        reverbManager.sendTyping(conversationId, isTyping)
     }
 
-    private fun getDefaultMockMessages(conversationId: Long): List<Message> {
-        return listOf(
-            Message(
-                id = 701L,
-                conversationId = conversationId,
-                senderId = 21L,
-                senderName = "Sadia Islam",
-                body = "Assalamu Alaikum! Are you coming to Dhaka today?",
-                type = "text",
-                clientMessageId = "cm1",
-                deliveryStatus = DeliveryStatus.READ,
-                isMine = false,
-                createdAt = System.currentTimeMillis() - 3600000L
-            ),
-            Message(
-                id = 702L,
-                conversationId = conversationId,
-                senderId = 1L,
-                senderName = "You",
-                body = "Wa Alaikum Assalam! Yes, arrived at noon. Meeting around 5 PM at Gulshan.",
-                type = "text",
-                clientMessageId = "cm2",
-                deliveryStatus = DeliveryStatus.READ,
-                isMine = true,
-                createdAt = System.currentTimeMillis() - 1800000L
-            ),
-            Message(
-                id = 703L,
-                conversationId = conversationId,
-                senderId = 21L,
-                senderName = "Sadia Islam",
-                body = "Sounds great! See you soon! 🌸",
-                type = "text",
-                clientMessageId = "cm3",
-                deliveryStatus = DeliveryStatus.DELIVERED,
-                isMine = false,
-                createdAt = System.currentTimeMillis() - 300000L
-            )
+    override fun observeIncomingMessages(conversationId: Long): Flow<Message> =
+        reverbManager.messageNewFlow
+            .filter { it.conversationId == conversationId }
+            .map { it.message }
+
+    override fun observeTyping(conversationId: Long): Flow<Pair<Long, Boolean>> =
+        reverbManager.userTypingFlow
+            .filter { it.conversationId == conversationId }
+            .map { it.userId to it.isTyping }
+
+    override fun observePresence(): Flow<Pair<Long, Boolean>> =
+        reverbManager.userPresenceFlow
+            .map { it.userId to it.isOnline }
+
+    override fun searchMessages(query: String, conversationId: Long?): Flow<Result<List<Message>>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.searchMessenger(query = query, conversationId = conversationId)
+            if (response.isSuccessful && response.body() != null) {
+                val msgs = response.body()!!.data.map { mapDtoToMessage(it) }
+                emit(Result.Success(msgs))
+            } else {
+                emit(Result.Success(emptyList()))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun syncOfflineEvents(sinceId: Long): Flow<Result<Long>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.syncMessengerEvents(sinceId = sinceId)
+            if (response.isSuccessful && response.body() != null) {
+                val data = response.body()!!.data
+                val latestId = data.latest_event_id
+                emit(Result.Success(latestId))
+            } else {
+                emit(Result.Success(sinceId))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    private fun mapDtoToMessage(dto: MessageDto): Message {
+        val currentUserId = tokenStorageManager.getUserId()
+        return Message(
+            id = dto.id,
+            conversationId = dto.conversation_id,
+            senderId = dto.sender_id,
+            senderName = if (dto.sender_id == currentUserId) "You" else "User",
+            body = dto.body,
+            type = dto.type,
+            clientMessageId = dto.client_message_id ?: "msg_${dto.id}",
+            deliveryStatus = when (dto.delivery_status) {
+                "read" -> DeliveryStatus.READ
+                "delivered" -> DeliveryStatus.DELIVERED
+                else -> DeliveryStatus.SENT
+            },
+            isMine = dto.is_mine || (dto.sender_id == currentUserId),
+            isEdited = dto.is_edited,
+            isPinned = dto.is_pinned,
+            isSaved = dto.is_saved,
+            isDeleted = dto.is_deleted,
+            isForwarded = dto.is_forwarded,
+            replyToMessageId = dto.reply_to_message_id,
+            replyPreview = dto.reply_preview?.let {
+                MessagePreview(id = it.id, senderName = it.sender_name ?: "User", body = it.body ?: "", type = it.type)
+            },
+            reactions = dto.reactions?.counts ?: emptyMap(),
+            myReaction = dto.reactions?.my_reaction,
+            createdAt = System.currentTimeMillis()
         )
     }
 }
-

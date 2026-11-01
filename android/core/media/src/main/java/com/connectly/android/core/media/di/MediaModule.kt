@@ -31,3 +31,4 @@ object MediaModule {
         @ApplicationContext context: Context
     ): ConnectlyMedia3PlayerManager = ConnectlyMedia3PlayerManager(context)
 }
+
