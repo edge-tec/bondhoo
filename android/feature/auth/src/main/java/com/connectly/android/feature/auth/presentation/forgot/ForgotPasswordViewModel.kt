@@ -54,9 +54,13 @@ class ForgotPasswordViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = ForgotPasswordUiState.Loading
             try {
-                // In production, calls POST /api/v1/auth/forgot-password
-                _uiState.value = ForgotPasswordUiState.Success("Password reset instructions have been sent to $email")
-                _effect.send(ForgotPasswordUiEffect.ShowToast("Reset link sent to your email."))
+                val response = api.forgotPassword(com.connectly.android.core.network.api.ForgotPasswordRequest(email = email))
+                if (response.isSuccessful) {
+                    _uiState.value = ForgotPasswordUiState.Success("Password reset instructions have been sent to $email")
+                    _effect.send(ForgotPasswordUiEffect.ShowToast("Reset link sent to your email."))
+                } else {
+                    _uiState.value = ForgotPasswordUiState.Error("Failed to send reset link. Please check the email.")
+                }
             } catch (e: Exception) {
                 _uiState.value = ForgotPasswordUiState.Error(e.localizedMessage ?: "Failed to send reset link.")
             }

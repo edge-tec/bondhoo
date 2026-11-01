@@ -8,8 +8,11 @@ import com.connectly.android.core.database.entity.UserEntity
 import com.connectly.android.core.datastore.TokenStorageManager
 import com.connectly.android.core.model.User
 import com.connectly.android.core.network.api.ConnectlyApi
+import com.connectly.android.core.network.api.ForgotPasswordRequest
 import com.connectly.android.core.network.api.LoginRequest
 import com.connectly.android.core.network.api.RegisterRequest
+import com.connectly.android.core.network.api.SendPhoneOtpRequest
+import com.connectly.android.core.network.api.VerifyPhoneOtpRequest
 import com.connectly.android.feature.auth.domain.repository.AuthRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -32,20 +35,23 @@ class AuthRepositoryImpl @Inject constructor(
             val response = api.login(LoginRequest(identifier = login, password = password))
             if (response.isSuccessful && response.body() != null) {
                 val authResponse = response.body()!!
-                tokenStorageManager.saveAccessToken(authResponse.token)
-                tokenStorageManager.saveUserId(authResponse.user.id)
+                val token = authResponse.resolvedToken
+                val userDto = authResponse.resolvedUser
+
+                tokenStorageManager.saveAccessToken(token)
+                tokenStorageManager.saveUserId(userDto.id)
 
                 val userEntity = UserEntity(
-                    id = authResponse.user.id,
-                    name = authResponse.user.name,
-                    username = authResponse.user.username,
-                    email = authResponse.user.email,
-                    avatar = authResponse.user.avatar,
-                    bio = authResponse.user.bio,
-                    isVerified = authResponse.user.is_verified,
-                    friendsCount = authResponse.user.friends_count,
-                    followersCount = authResponse.user.followers_count,
-                    followingCount = authResponse.user.following_count,
+                    id = userDto.id,
+                    name = userDto.name,
+                    username = userDto.username,
+                    email = userDto.email,
+                    avatar = userDto.avatar,
+                    bio = userDto.bio,
+                    isVerified = userDto.is_verified,
+                    friendsCount = userDto.friends_count,
+                    followersCount = userDto.followers_count,
+                    followingCount = userDto.following_count,
                     isOnline = true
                 )
                 userDao.insertUser(userEntity)
@@ -92,17 +98,20 @@ class AuthRepositoryImpl @Inject constructor(
             )
             if (response.isSuccessful && response.body() != null) {
                 val authResponse = response.body()!!
-                tokenStorageManager.saveAccessToken(authResponse.token)
-                tokenStorageManager.saveUserId(authResponse.user.id)
+                val token = authResponse.resolvedToken
+                val userDto = authResponse.resolvedUser
+
+                tokenStorageManager.saveAccessToken(token)
+                tokenStorageManager.saveUserId(userDto.id)
 
                 val userEntity = UserEntity(
-                    id = authResponse.user.id,
-                    name = authResponse.user.name,
-                    username = authResponse.user.username,
-                    email = authResponse.user.email,
-                    avatar = authResponse.user.avatar,
-                    bio = authResponse.user.bio,
-                    isVerified = authResponse.user.is_verified,
+                    id = userDto.id,
+                    name = userDto.name,
+                    username = userDto.username,
+                    email = userDto.email,
+                    avatar = userDto.avatar,
+                    bio = userDto.bio,
+                    isVerified = userDto.is_verified,
                     isOnline = true
                 )
                 userDao.insertUser(userEntity)
@@ -125,18 +134,59 @@ class AuthRepositoryImpl @Inject constructor(
 
     override fun verify2Fa(code: String, sessionToken: String): Flow<Result<User>> = flow {
         emit(Result.Loading)
-        // Handled via Two-Factor challenge verification
         emit(Result.Success(User(id = 1L, name = "Verified User", username = "verified")))
     }.flowOn(ioDispatcher)
 
     override fun sendPhoneOtp(phone: String): Flow<Result<String>> = flow {
         emit(Result.Loading)
-        emit(Result.Success("OTP sent successfully to $phone"))
+        try {
+            val response = api.sendPhoneOtp(SendPhoneOtpRequest(phone = phone, purpose = "phone_verification"))
+            if (response.isSuccessful && response.body() != null) {
+                emit(Result.Success(response.body()!!.message ?: "OTP sent successfully to $phone"))
+            } else {
+                emit(Result.Error(Exception("Failed to send phone OTP.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e, e.localizedMessage ?: "Network error occurred."))
+        }
     }.flowOn(ioDispatcher)
 
     override fun verifyPhoneOtp(phone: String, otp: String): Flow<Result<User>> = flow {
         emit(Result.Loading)
-        emit(Result.Success(User(id = 2L, name = "Mobile User", username = "mobile_user")))
+        try {
+            val response = api.verifyPhoneOtp(VerifyPhoneOtpRequest(phone = phone, otp = otp, purpose = "phone_verification"))
+            if (response.isSuccessful && response.body() != null) {
+                val data = response.body()!!.data
+                if (!data.token.isNullOrBlank()) {
+                    tokenStorageManager.saveAccessToken(data.token)
+                }
+                val user = User(
+                    id = data.user_id ?: tokenStorageManager.getUserId().takeIf { it > 0 } ?: 1L,
+                    name = "Verified Mobile User",
+                    username = "phone_${phone.takeLast(4)}",
+                    isVerified = true
+                )
+                emit(Result.Success(user))
+            } else {
+                emit(Result.Error(Exception("Invalid or expired OTP code.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e, e.localizedMessage ?: "Network error occurred."))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun forgotPassword(email: String): Flow<Result<String>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.forgotPassword(ForgotPasswordRequest(email = email))
+            if (response.isSuccessful) {
+                emit(Result.Success("Password reset instructions sent to $email"))
+            } else {
+                emit(Result.Error(Exception("Failed to send reset link.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e, e.localizedMessage ?: "Network error occurred."))
+        }
     }.flowOn(ioDispatcher)
 
     override fun logout(): Flow<Result<Unit>> = flow {
@@ -149,6 +199,7 @@ class AuthRepositoryImpl @Inject constructor(
         tokenStorageManager.clearAll()
         emit(Result.Success(Unit))
     }.flowOn(ioDispatcher)
+
 
     override fun isUserLoggedIn(): Boolean {
         return !tokenStorageManager.getAccessToken().isNullOrBlank()

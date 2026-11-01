@@ -473,10 +473,24 @@ data class ApiResponse<T>(
 )
 
 @Serializable
-data class AuthResponse(
+data class AuthData(
     val user: UserDto,
-    val token: String
+    val token: String,
+    val token_type: String = "Bearer"
 )
+
+@Serializable
+data class AuthResponse(
+    val data: AuthData? = null,
+    val user: UserDto? = null,
+    val token: String? = null,
+    val message: String? = null,
+    val success: Boolean = true
+) {
+    val resolvedUser: UserDto get() = data?.user ?: user ?: UserDto(id = 0L, name = "", username = "")
+    val resolvedToken: String get() = data?.token ?: token ?: ""
+}
+
 
 @Serializable
 data class UserDto(
@@ -651,8 +665,10 @@ data class VerifyPhoneOtpRequest(
 @Serializable
 data class VerifyPhoneOtpResponse(
     val verified: Boolean = false,
-    val token: String? = null
+    val token: String? = null,
+    val user_id: Long? = null
 )
+
 
 @Serializable
 data class ForgotPasswordRequest(

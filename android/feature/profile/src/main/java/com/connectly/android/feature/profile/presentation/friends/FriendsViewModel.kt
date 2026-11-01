@@ -171,3 +171,4 @@ class FriendsViewModel @Inject constructor(
         )
     }
 }
+

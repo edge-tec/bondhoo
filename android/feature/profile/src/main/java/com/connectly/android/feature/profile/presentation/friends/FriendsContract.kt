@@ -34,3 +34,4 @@ sealed interface FriendsIntent {
     data class Unfriend(val userId: Long) : FriendsIntent
     object Refresh : FriendsIntent
 }
+

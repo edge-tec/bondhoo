@@ -109,3 +109,4 @@ class FriendsViewModelTest {
         assertFalse(state.friendsList.any { it.id == userId })
     }
 }
+

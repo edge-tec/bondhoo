@@ -57,3 +57,4 @@ class ConnectlyPhase2UiArchitectureTest {
         assertEquals("😡", ConnectlyReaction.ANGRY.emoji)
     }
 }
+

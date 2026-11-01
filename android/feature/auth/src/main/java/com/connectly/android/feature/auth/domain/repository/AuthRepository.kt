@@ -10,6 +10,7 @@ interface AuthRepository {
     fun verify2Fa(code: String, sessionToken: String): Flow<Result<User>>
     fun sendPhoneOtp(phone: String): Flow<Result<String>>
     fun verifyPhoneOtp(phone: String, otp: String): Flow<Result<User>>
+    fun forgotPassword(email: String): Flow<Result<String>>
     fun logout(): Flow<Result<Unit>>
     fun isUserLoggedIn(): Boolean
     fun getSavedUserId(): Long

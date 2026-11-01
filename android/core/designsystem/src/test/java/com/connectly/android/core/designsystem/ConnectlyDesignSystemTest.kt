@@ -54,3 +54,4 @@ class ConnectlyDesignSystemTest {
         assertEquals("Menu", BottomBarDestination.MENU.title)
     }
 }
+

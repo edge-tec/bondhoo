@@ -27,3 +27,4 @@ sealed interface PagesIntent {
     data class ToggleFollowPage(val pageId: Long) : PagesIntent
     object Refresh : PagesIntent
 }
+
