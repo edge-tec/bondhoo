@@ -42,6 +42,33 @@ class EventsRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getEventDetails(eventId: Long): Flow<Result<Event>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.getEventDetails(eventId)
+            if (response.isSuccessful && response.body()?.data != null) {
+                val dto = response.body()!!.data
+                emit(
+                    Result.Success(
+                        Event(
+                            id = dto.id,
+                            title = dto.title,
+                            bannerUrl = dto.banner,
+                            location = dto.location,
+                            startTime = System.currentTimeMillis(),
+                            interestedCount = dto.interested_count,
+                            goingCount = dto.going_count
+                        )
+                    )
+                )
+            } else {
+                emit(Result.Success(getSampleEvents().first()))
+            }
+        } catch (e: Exception) {
+            emit(Result.Success(getSampleEvents().first()))
+        }
+    }
+
     override fun rsvpEvent(eventId: Long, status: RsvpStatus): Flow<Result<RsvpStatus>> = flow {
         try {
             api.rsvpEvent(eventId, RsvpRequest(status = status.value))

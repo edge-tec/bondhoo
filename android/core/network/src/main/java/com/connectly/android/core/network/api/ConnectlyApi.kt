@@ -505,11 +505,87 @@ interface ConnectlyApi {
     @POST("v1/groups")
     suspend fun createGroup(@Body body: CreateGroupRequest): Response<ApiResponse<GroupDto>>
 
+    @GET("v1/groups/{slugOrId}")
+    suspend fun getGroupDetails(@Path("slugOrId") slugOrId: String): Response<ApiResponse<GroupDto>>
+
+    @PUT("v1/groups/{id}")
+    suspend fun updateGroup(
+        @Path("id") id: Long,
+        @Body body: UpdateGroupRequest
+    ): Response<ApiResponse<GroupDto>>
+
     @POST("v1/groups/{id}/join")
     suspend fun joinGroup(@Path("id") groupId: Long): Response<ApiResponse<Unit>>
 
     @POST("v1/groups/{id}/leave")
     suspend fun leaveGroup(@Path("id") groupId: Long): Response<ApiResponse<Unit>>
+
+    @GET("v1/groups/{id}/members")
+    suspend fun getGroupMembers(@Path("id") groupId: Long): Response<ApiResponse<List<GroupMemberDto>>>
+
+    @PUT("v1/groups/{id}/members/{userId}/role")
+    suspend fun updateGroupMemberRole(
+        @Path("id") groupId: Long,
+        @Path("userId") userId: Long,
+        @Body body: UpdateGroupRoleRequest
+    ): Response<ApiResponse<Unit>>
+
+    @DELETE("v1/groups/{id}/members/{userId}")
+    suspend fun removeGroupMember(
+        @Path("id") groupId: Long,
+        @Path("userId") userId: Long
+    ): Response<ApiResponse<Unit>>
+
+    @GET("v1/groups/{id}/posts")
+    suspend fun getGroupPosts(@Path("id") groupId: Long): Response<ApiResponse<List<PostDto>>>
+
+    @POST("v1/groups/{id}/posts")
+    suspend fun createGroupPost(
+        @Path("id") groupId: Long,
+        @Body body: CreateGroupPostRequest
+    ): Response<ApiResponse<PostDto>>
+
+    @POST("v1/groups/{id}/announcements")
+    suspend fun createGroupAnnouncement(
+        @Path("id") groupId: Long,
+        @Body body: CreateGroupAnnouncementRequest
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v1/groups/{id}/invitations")
+    suspend fun inviteGroupMembers(
+        @Path("id") groupId: Long,
+        @Body body: InviteGroupMembersRequest
+    ): Response<ApiResponse<Unit>>
+
+    @GET("v1/groups/{id}/requests")
+    suspend fun getGroupRequests(@Path("id") groupId: Long): Response<ApiResponse<List<UserDto>>>
+
+    @POST("v1/groups/{id}/requests/{userId}/approve")
+    suspend fun approveGroupRequest(
+        @Path("id") groupId: Long,
+        @Path("userId") userId: Long
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v1/groups/{id}/requests/{userId}/reject")
+    suspend fun rejectGroupRequest(
+        @Path("id") groupId: Long,
+        @Path("userId") userId: Long
+    ): Response<ApiResponse<Unit>>
+
+    @GET("v1/groups/{id}/moderation/posts")
+    suspend fun getGroupModerationPosts(@Path("id") groupId: Long): Response<ApiResponse<List<PostDto>>>
+
+    @POST("v1/groups/{id}/moderation/posts/{postId}/approve")
+    suspend fun approveGroupModerationPost(
+        @Path("id") groupId: Long,
+        @Path("postId") postId: Long
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v1/groups/{id}/moderation/posts/{postId}/reject")
+    suspend fun rejectGroupModerationPost(
+        @Path("id") groupId: Long,
+        @Path("postId") postId: Long
+    ): Response<ApiResponse<Unit>>
 
     // -------------------------------------------------------------
     // Pages (Screen 6)
@@ -522,8 +598,31 @@ interface ConnectlyApi {
     @POST("v1/pages")
     suspend fun createPage(@Body body: CreatePageRequest): Response<ApiResponse<PageDto>>
 
+    @GET("v1/pages/{slug}")
+    suspend fun getPageDetails(@Path("slug") slug: String): Response<ApiResponse<PageDto>>
+
     @POST("v1/pages/{id}/follow")
     suspend fun followPage(@Path("id") pageId: Long): Response<ApiResponse<Unit>>
+
+    @GET("v1/pages/{id}/posts")
+    suspend fun getPagePosts(@Path("id") pageId: Long): Response<ApiResponse<List<PostDto>>>
+
+    @POST("v1/pages/{id}/posts")
+    suspend fun createPagePost(
+        @Path("id") pageId: Long,
+        @Body body: CreateGroupPostRequest
+    ): Response<ApiResponse<PostDto>>
+
+    @PUT("v2/pages/{pageId}")
+    suspend fun updatePage(
+        @Path("pageId") pageId: Long,
+        @Body body: UpdatePageRequest
+    ): Response<ApiResponse<PageDto>>
+
+    @GET("v2/pages/{pageId}/analytics/overview")
+    suspend fun getPageAnalytics(
+        @Path("pageId") pageId: Long
+    ): Response<ApiResponse<PageAnalyticsDto>>
 
     // -------------------------------------------------------------
     // Events & RSVP (Screen 7)
@@ -536,6 +635,9 @@ interface ConnectlyApi {
 
     @POST("v1/events")
     suspend fun createEvent(@Body body: CreateEventRequest): Response<ApiResponse<EventDto>>
+
+    @GET("v1/events/{id}")
+    suspend fun getEventDetails(@Path("id") eventId: Long): Response<ApiResponse<EventDto>>
 
     @POST("v1/events/{id}/rsvp")
     suspend fun rsvpEvent(
@@ -555,14 +657,23 @@ interface ConnectlyApi {
     @POST("v1/live/streams")
     suspend fun startLiveStream(@Body body: CreateLiveStreamRequest): Response<ApiResponse<LiveStreamDto>>
 
+    @GET("v1/live/streams/{id}")
+    suspend fun getLiveStreamDetails(@Path("id") streamId: Long): Response<ApiResponse<LiveStreamDto>>
+
     @POST("v1/live/streams/{id}/end")
     suspend fun endLiveStream(@Path("id") streamId: Long): Response<ApiResponse<Unit>>
 
     @POST("v1/live/streams/{id}/join")
-    suspend fun joinLiveStream(@Path("id") streamId: Long): Response<ApiResponse<LiveStreamDto>>
+    suspend fun joinLiveStream(
+        @Path("id") streamId: Long,
+        @Body body: JoinLiveSessionRequest
+    ): Response<ApiResponse<LiveViewerCountDto>>
 
     @POST("v1/live/streams/{id}/leave")
-    suspend fun leaveLiveStream(@Path("id") streamId: Long): Response<ApiResponse<Unit>>
+    suspend fun leaveLiveStream(
+        @Path("id") streamId: Long,
+        @Body body: JoinLiveSessionRequest
+    ): Response<ApiResponse<LiveViewerCountDto>>
 
     @POST("v1/live/streams/{id}/comments")
     suspend fun sendLiveComment(
@@ -570,10 +681,28 @@ interface ConnectlyApi {
         @Body body: CreateLiveCommentRequest
     ): Response<ApiResponse<LiveCommentDto>>
 
+    @DELETE("v1/live/streams/{id}/comments/{commentId}")
+    suspend fun deleteLiveComment(
+        @Path("id") streamId: Long,
+        @Path("commentId") commentId: Long
+    ): Response<ApiResponse<Unit>>
+
     @POST("v1/live/streams/{id}/reactions")
     suspend fun sendLiveReaction(
         @Path("id") streamId: Long,
         @Body body: LiveReactionRequest
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v1/live/streams/{id}/share")
+    suspend fun shareLiveStream(
+        @Path("id") streamId: Long,
+        @Body body: ShareLiveStreamRequest
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v1/live/streams/{id}/moderators")
+    suspend fun addLiveModerator(
+        @Path("id") streamId: Long,
+        @Body body: LiveModeratorRequest
     ): Response<ApiResponse<Unit>>
 
     // -------------------------------------------------------------
@@ -1317,11 +1446,84 @@ data class CreateEventRequest(
 data class LiveStreamDto(
     val id: Long,
     val title: String,
-    val streamer: UserDto,
+    val streamer: UserDto? = null,
+    val user: UserDto? = null,
     val playback_url: String? = null,
     val viewer_count: Int = 0,
     val is_live: Boolean = true,
     val started_at: String? = null
+)
+
+@Serializable
+data class UpdateGroupRequest(
+    val name: String? = null,
+    val description: String? = null,
+    val privacy: String? = null
+)
+
+@Serializable
+data class GroupMemberDto(
+    val id: Long = 0L,
+    val user: UserDto,
+    val role: String = "member",
+    val joined_at: String? = null
+)
+
+@Serializable
+data class UpdateGroupRoleRequest(
+    val role: String // "admin", "moderator", "member"
+)
+
+@Serializable
+data class CreateGroupPostRequest(
+    val body: String,
+    val media_urls: List<String> = emptyList()
+)
+
+@Serializable
+data class CreateGroupAnnouncementRequest(
+    val body: String
+)
+
+@Serializable
+data class InviteGroupMembersRequest(
+    val user_ids: List<Long>
+)
+
+@Serializable
+data class UpdatePageRequest(
+    val name: String? = null,
+    val bio: String? = null,
+    val category: String? = null
+)
+
+@Serializable
+data class PageAnalyticsDto(
+    val page_views: Int = 0,
+    val total_followers: Int = 0,
+    val post_reach: Int = 0,
+    val engagement_rate: Double = 0.0
+)
+
+@Serializable
+data class JoinLiveSessionRequest(
+    val session_id: String
+)
+
+@Serializable
+data class LiveViewerCountDto(
+    val viewer_count: Int = 0,
+    val total_views: Int = 0
+)
+
+@Serializable
+data class ShareLiveStreamRequest(
+    val destination: String = "feed"
+)
+
+@Serializable
+data class LiveModeratorRequest(
+    val user_id: Long
 )
 
 @Serializable
