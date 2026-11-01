@@ -30,6 +30,18 @@ class TokenStorageManager @Inject constructor(
         securePrefs.edit().putString(KEY_ACCESS_TOKEN, token).apply()
     }
 
+    fun getRefreshToken(): String? = securePrefs.getString(KEY_REFRESH_TOKEN, null)
+
+    fun saveRefreshToken(token: String) {
+        securePrefs.edit().putString(KEY_REFRESH_TOKEN, token).apply()
+    }
+
+    fun isBiometricEnabled(): Boolean = securePrefs.getBoolean(KEY_BIOMETRIC_ENABLED, false)
+
+    fun setBiometricEnabled(enabled: Boolean) {
+        securePrefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
+    }
+
     fun getUserId(): Long = securePrefs.getLong(KEY_USER_ID, -1L)
 
     fun saveUserId(id: Long) {
@@ -42,6 +54,8 @@ class TokenStorageManager @Inject constructor(
 
     companion object {
         private const val KEY_ACCESS_TOKEN = "jwt_access_token"
+        private const val KEY_REFRESH_TOKEN = "jwt_refresh_token"
+        private const val KEY_BIOMETRIC_ENABLED = "biometric_auth_enabled"
         private const val KEY_USER_ID = "authenticated_user_id"
     }
 }

@@ -98,6 +98,7 @@ class NotificationChannelManager @Inject constructor(
 
     /**
      * Dispatch an Android notification with deep link and deduplication.
+     * Enforces lock screen privacy and deep-link URI scheme validation.
      */
     fun showNotification(
         notificationId: Int,
@@ -107,7 +108,9 @@ class NotificationChannelManager @Inject constructor(
         deepLinkUri: String? = null,
         tag: String? = null
     ) {
-        val intent = if (!deepLinkUri.isNullOrEmpty()) {
+        // Secure deep link verification: Only allow trusted connectly:// URI scheme
+        val isSafeDeepLink = !deepLinkUri.isNullOrEmpty() && deepLinkUri.startsWith("connectly://")
+        val intent = if (isSafeDeepLink) {
             Intent(Intent.ACTION_VIEW, Uri.parse(deepLinkUri)).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
@@ -124,12 +127,21 @@ class NotificationChannelManager @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
         )
 
+        // Lock screen privacy: Redacted content shown when device is locked
+        val publicNotification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Connectly")
+            .setContentText("You have a new alert")
+            .build()
+
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(publicNotification)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 

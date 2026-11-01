@@ -22,7 +22,11 @@ class AuthInterceptor @Inject constructor(
             builder.header("Authorization", "Bearer $token")
         }
 
-        return chain.proceed(builder.build())
+        val response = chain.proceed(builder.build())
+        if (response.code == 401) {
+            tokenStorageManager.clearAll()
+        }
+        return response
     }
 }
 
