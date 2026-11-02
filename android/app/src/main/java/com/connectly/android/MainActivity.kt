@@ -41,6 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import com.connectly.android.core.designsystem.theme.ThemeManager
 import com.connectly.android.feature.profile.navigation.navigateToAppearanceSettings
+import com.connectly.android.feature.profile.navigation.navigateToBlockedUsers
 import com.connectly.android.feature.profile.navigation.navigateToEditProfile
 import com.connectly.android.feature.profile.navigation.navigateToFeedPreferences
 import com.connectly.android.feature.profile.navigation.navigateToLanguageSettings
@@ -225,6 +226,7 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToLanguage = { rootNavController.navigateToLanguageSettings() },
                                         onNavigateToMessagingCalls = { rootNavController.navigateToMessagingCallSettings() },
                                         onNavigateToFeedPreferences = { rootNavController.navigateToFeedPreferences() },
+                                        onNavigateToBlockedUsers = { rootNavController.navigateToBlockedUsers() },
                                         onLogoutSuccess = {
                                             rootNavController.navigate(LOGIN_ROUTE) {
                                                 popUpTo(0) { inclusive = true }

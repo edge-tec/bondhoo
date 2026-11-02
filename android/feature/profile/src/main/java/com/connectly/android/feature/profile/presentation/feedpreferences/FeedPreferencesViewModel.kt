@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.connectly.android.core.network.api.ConnectlyApi
-import com.connectly.android.core.network.api.UpdatePrivacyRequest
+import com.connectly.android.core.network.api.UpdateSettingsPrivacyRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -107,7 +107,7 @@ class FeedPreferencesViewModel @Inject constructor(
         _uiState.update { it.copy(defaultPostAudience = audience) }
         viewModelScope.launch {
             try {
-                api.updateSettingsPrivacy(UpdatePrivacyRequest(who_can_see_posts = audience))
+                api.updateSettingsPrivacy(UpdateSettingsPrivacyRequest(who_can_see_posts = audience))
             } catch (_: Exception) {
             }
         }
@@ -117,7 +117,7 @@ class FeedPreferencesViewModel @Inject constructor(
         _uiState.update { it.copy(storyVisibility = visibility) }
         viewModelScope.launch {
             try {
-                api.updateSettingsPrivacy(UpdatePrivacyRequest(story_visibility = visibility))
+                api.updateSettingsPrivacy(UpdateSettingsPrivacyRequest(story_visibility = visibility))
             } catch (_: Exception) {
             }
         }
@@ -184,7 +184,7 @@ class FeedPreferencesViewModel @Inject constructor(
             try {
                 val state = _uiState.value
                 val response = api.updateSettingsPrivacy(
-                    UpdatePrivacyRequest(
+                    UpdateSettingsPrivacyRequest(
                         who_can_see_posts = state.defaultPostAudience,
                         story_visibility = state.storyVisibility
                     )
@@ -227,3 +227,4 @@ class FeedPreferencesViewModel @Inject constructor(
         }
     }
 }
+

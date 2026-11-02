@@ -444,6 +444,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/blocking', [SettingsApiController::class, 'getBlockedUsers']);
             Route::post('/blocking/{userId}', [SettingsApiController::class, 'blockUser'])->whereNumber('userId');
             Route::delete('/blocking/{userId}', [SettingsApiController::class, 'unblockUser'])->whereNumber('userId');
+            Route::post('/blocking/{userId}/unrestrict', [SettingsApiController::class, 'unrestrictUser'])->whereNumber('userId');
+            Route::post('/blocking/{userId}/unmute', [SettingsApiController::class, 'unmuteUser'])->whereNumber('userId');
             Route::post('/2fa/toggle', [SettingsApiController::class, 'toggleTwoFactor']);
         });
 

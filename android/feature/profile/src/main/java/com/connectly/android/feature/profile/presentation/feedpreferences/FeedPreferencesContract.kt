@@ -35,3 +35,4 @@ sealed interface FeedPreferencesIntent {
     object SaveAllPreferences : FeedPreferencesIntent
     object DismissFeedback : FeedPreferencesIntent
 }
+

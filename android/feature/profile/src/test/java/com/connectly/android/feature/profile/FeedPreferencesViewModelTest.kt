@@ -136,3 +136,4 @@ class FeedPreferencesViewModelTest {
         coVerify { api.updateSettingsPrivacy(any()) }
     }
 }
+

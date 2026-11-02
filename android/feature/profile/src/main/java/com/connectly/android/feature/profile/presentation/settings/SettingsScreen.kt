@@ -53,6 +53,7 @@ fun SettingsScreen(
     onNavigateToLanguage: () -> Unit = {},
     onNavigateToMessagingCalls: () -> Unit = {},
     onNavigateToFeedPreferences: () -> Unit = {},
+    onNavigateToBlockedUsers: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -110,7 +111,7 @@ fun SettingsScreen(
                 icon = Icons.Default.Block,
                 category = "ACCOUNT & SECURITY",
                 value = if (state.blockedCount > 0) "${state.blockedCount} blocked" else "None",
-                onClick = { viewModel.openDialog(SettingsDialogType.BLOCKED_USERS) }
+                onClick = onNavigateToBlockedUsers
             ),
             SettingItemDef(
                 id = "notifications",

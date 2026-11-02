@@ -125,6 +125,21 @@ interface ConnectlyApi {
     @PUT("v1/settings/messenger-sounds")
     suspend fun updateMessengerSoundSettings(@Body body: UpdateMessengerSoundsRequest): Response<ApiResponse<MessengerSoundsDto>>
 
+    @GET("v1/settings/blocking")
+    suspend fun getBlockedAndRestrictedUsers(): Response<ApiResponse<BlockedUsersResponseDto>>
+
+    @POST("v1/settings/blocking/{userId}")
+    suspend fun blockUser(@Path("userId") userId: Long): Response<ApiResponse<Unit>>
+
+    @DELETE("v1/settings/blocking/{userId}")
+    suspend fun unblockUser(@Path("userId") userId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/settings/blocking/{userId}/unrestrict")
+    suspend fun unrestrictUser(@Path("userId") userId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/settings/blocking/{userId}/unmute")
+    suspend fun unmuteUser(@Path("userId") userId: Long): Response<ApiResponse<Unit>>
+
     // -------------------------------------------------------------
     // Home Feed & Stories (Screen 1 & 2)
     // -------------------------------------------------------------
@@ -1380,6 +1395,23 @@ data class SettingsSecurityDto(
 @Serializable
 data class SettingsBlockingDto(
     val blocked_count: Int = 0
+)
+
+@Serializable
+data class BlockedUsersResponseDto(
+    val blocked_users: List<RestrictedUserDto> = emptyList(),
+    val restricted_users: List<RestrictedUserDto> = emptyList(),
+    val muted_users: List<RestrictedUserDto> = emptyList(),
+    val total: Int = 0
+)
+
+@Serializable
+data class RestrictedUserDto(
+    val id: Long,
+    val name: String = "",
+    val username: String = "",
+    val avatar: String? = null,
+    val is_verified: Boolean = false
 )
 
 @Serializable

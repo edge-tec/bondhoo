@@ -456,14 +456,66 @@ class SettingsApiController extends Controller
             ->values()
             ->all();
 
+        // 3. Fetch restricted friends
+        $restrictedFriendIds = Friendship::where(function ($q) use ($actor) {
+            $q->where('user_id', $actor->id)->orWhere('friend_id', $actor->id);
+        })
+            ->where('is_restricted', true)
+            ->get()
+            ->map(fn ($f) => $f->user_id === $actor->id ? $f->friend_id : $f->user_id)
+            ->toArray();
+
+        $restrictedUsers = User::whereIn('id', $restrictedFriendIds)
+            ->with('profile')
+            ->get()
+            ->map(function (User $u): array {
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'username' => $u->username,
+                    'avatar' => $u->profile?->avatar_url ?: '/images/default-avatar.svg',
+                    'is_verified' => (bool) $u->is_verified,
+                ];
+            })
+            ->values()
+            ->all();
+
+        // 4. Fetch muted friends
+        $mutedFriendIds = Friendship::where(function ($q) use ($actor) {
+            $q->where('user_id', $actor->id)->orWhere('friend_id', $actor->id);
+        })
+            ->where('is_muted', true)
+            ->get()
+            ->map(fn ($f) => $f->user_id === $actor->id ? $f->friend_id : $f->user_id)
+            ->toArray();
+
+        $mutedUsers = User::whereIn('id', $mutedFriendIds)
+            ->with('profile')
+            ->get()
+            ->map(function (User $u): array {
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'username' => $u->username,
+                    'avatar' => $u->profile?->avatar_url ?: '/images/default-avatar.svg',
+                    'is_verified' => (bool) $u->is_verified,
+                ];
+            })
+            ->values()
+            ->all();
+
         return response()->json([
             'success' => true,
             'status' => 'success',
             'data' => [
                 'blocked_users' => $blockedUsers,
+                'restricted_users' => $restrictedUsers,
+                'muted_users' => $mutedUsers,
                 'total' => count($blockedUsers),
             ],
             'blocked_users' => $blockedUsers,
+            'restricted_users' => $restrictedUsers,
+            'muted_users' => $mutedUsers,
             'message' => 'ব্লককৃত ব্যবহারকারীদের তালিকা লোড হয়েছে।',
         ]);
     }
@@ -528,6 +580,58 @@ class SettingsApiController extends Controller
             'success' => true,
             'status' => 'success',
             'message' => "{$targetName} কে সফলভাবে আনব্লক করা হয়েছে।",
+        ]);
+    }
+
+    /**
+     * POST /api/v1/settings/blocking/{userId}/unrestrict
+     *
+     * Unrestrict a friend.
+     */
+    public function unrestrictUser(Request $request, int $userId): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        Friendship::where(function ($q) use ($actor, $userId) {
+            $q->where('user_id', $actor->id)->where('friend_id', $userId);
+        })->orWhere(function ($q) use ($actor, $userId) {
+            $q->where('user_id', $userId)->where('friend_id', $actor->id);
+        })->update(['is_restricted' => false]);
+
+        $targetUser = User::find($userId);
+        $name = $targetUser?->name ?? 'ব্যবহারকারী';
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'message' => "{$name} কে সফলভাবে আনরেস্ট্রিক্ট করা হয়েছে।",
+        ]);
+    }
+
+    /**
+     * POST /api/v1/settings/blocking/{userId}/unmute
+     *
+     * Unmute a friend.
+     */
+    public function unmuteUser(Request $request, int $userId): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        Friendship::where(function ($q) use ($actor, $userId) {
+            $q->where('user_id', $actor->id)->where('friend_id', $userId);
+        })->orWhere(function ($q) use ($actor, $userId) {
+            $q->where('user_id', $userId)->where('friend_id', $actor->id);
+        })->update(['is_muted' => false]);
+
+        $targetUser = User::find($userId);
+        $name = $targetUser?->name ?? 'ব্যবহারকারী';
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'message' => "{$name} কে সফলভাবে আনমিউট করা হয়েছে।",
         ]);
     }
 

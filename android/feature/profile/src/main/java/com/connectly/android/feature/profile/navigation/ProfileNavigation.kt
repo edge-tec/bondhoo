@@ -6,6 +6,7 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import com.connectly.android.core.designsystem.theme.ThemeManager
 import com.connectly.android.feature.profile.presentation.appearance.AppearanceSettingsScreen
+import com.connectly.android.feature.profile.presentation.blocking.BlockedUsersScreen
 import com.connectly.android.feature.profile.presentation.edit.EditProfileScreen
 import com.connectly.android.feature.profile.presentation.feedpreferences.FeedPreferencesScreen
 import com.connectly.android.feature.profile.presentation.friends.FriendsScreen
@@ -24,6 +25,7 @@ const val APPEARANCE_SETTINGS_ROUTE = "appearance_settings_route"
 const val LANGUAGE_SETTINGS_ROUTE = "language_settings_route"
 const val MESSAGING_CALL_SETTINGS_ROUTE = "messaging_call_settings_route"
 const val FEED_PREFERENCES_ROUTE = "feed_preferences_route"
+const val BLOCKED_USERS_ROUTE = "blocked_users_route"
 const val SETTINGS_ROUTE = "settings_route"
 const val FRIENDS_ROUTE = "friends_route"
 
@@ -61,6 +63,10 @@ fun NavController.navigateToMessagingCallSettings(navOptions: NavOptions? = null
 
 fun NavController.navigateToFeedPreferences(navOptions: NavOptions? = null) {
     navigate(FEED_PREFERENCES_ROUTE, navOptions)
+}
+
+fun NavController.navigateToBlockedUsers(navOptions: NavOptions? = null) {
+    navigate(BLOCKED_USERS_ROUTE, navOptions)
 }
 
 fun NavController.navigateToSettings(navOptions: NavOptions? = null) {
@@ -125,6 +131,13 @@ fun NavGraphBuilder.profileGraph(
         )
     }
 
+    composable(BLOCKED_USERS_ROUTE) {
+        BlockedUsersScreen(
+            onNavigateBack = { navController.popBackStack() },
+            onNavigateToUserProfile = { navController.navigateToProfile() }
+        )
+    }
+
     composable(SETTINGS_ROUTE) {
         SettingsScreen(
             onNavigateBack = { navController.popBackStack() },
@@ -136,6 +149,7 @@ fun NavGraphBuilder.profileGraph(
             onNavigateToLanguage = { navController.navigateToLanguageSettings() },
             onNavigateToMessagingCalls = { navController.navigateToMessagingCallSettings() },
             onNavigateToFeedPreferences = { navController.navigateToFeedPreferences() },
+            onNavigateToBlockedUsers = { navController.navigateToBlockedUsers() },
             onLogoutSuccess = onLogout
         )
     }
