@@ -25,3 +25,4 @@ sealed interface DataStorageIntent {
     object RequestDataExport : DataStorageIntent
     object DismissFeedback : DataStorageIntent
 }
+

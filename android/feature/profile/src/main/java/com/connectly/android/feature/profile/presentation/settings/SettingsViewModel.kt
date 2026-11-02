@@ -218,11 +218,15 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(statusMessage = null, errorMessage = null) }
     }
 
-    fun confirmLogout() {
+    fun confirmLogout(logoutAllDevices: Boolean = false) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoggingOut = true, activeDialog = null) }
             try {
-                api.logout()
+                if (logoutAllDevices) {
+                    api.logoutAllSessions()
+                } else {
+                    api.logout()
+                }
             } catch (_: Exception) {
                 // Ignore network failure on local credential clearing
             } finally {

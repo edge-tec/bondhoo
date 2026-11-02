@@ -40,12 +40,14 @@ import com.connectly.android.feature.notifications.navigation.notificationsGraph
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import com.connectly.android.core.designsystem.theme.ThemeManager
+import com.connectly.android.feature.profile.navigation.navigateToAboutConnectly
 import com.connectly.android.feature.profile.navigation.navigateToAccessibility
 import com.connectly.android.feature.profile.navigation.navigateToAppearanceSettings
 import com.connectly.android.feature.profile.navigation.navigateToBlockedUsers
 import com.connectly.android.feature.profile.navigation.navigateToDataStorage
 import com.connectly.android.feature.profile.navigation.navigateToEditProfile
 import com.connectly.android.feature.profile.navigation.navigateToFeedPreferences
+import com.connectly.android.feature.profile.navigation.navigateToHelpSupport
 import com.connectly.android.feature.profile.navigation.navigateToLanguageSettings
 import com.connectly.android.feature.profile.navigation.navigateToMessagingCallSettings
 import com.connectly.android.feature.profile.navigation.navigateToNotificationSettings
@@ -231,6 +233,8 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToBlockedUsers = { rootNavController.navigateToBlockedUsers() },
                                         onNavigateToStorage = { rootNavController.navigateToDataStorage() },
                                         onNavigateToAccessibility = { rootNavController.navigateToAccessibility() },
+                                        onNavigateToHelpSupport = { rootNavController.navigateToHelpSupport() },
+                                        onNavigateToAboutConnectly = { rootNavController.navigateToAboutConnectly() },
                                         onLogoutSuccess = {
                                             rootNavController.navigate(LOGIN_ROUTE) {
                                                 popUpTo(0) { inclusive = true }

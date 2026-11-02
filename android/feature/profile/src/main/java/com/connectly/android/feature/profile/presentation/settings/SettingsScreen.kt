@@ -56,6 +56,8 @@ fun SettingsScreen(
     onNavigateToBlockedUsers: () -> Unit = {},
     onNavigateToStorage: () -> Unit = {},
     onNavigateToAccessibility: () -> Unit = {},
+    onNavigateToHelpSupport: () -> Unit = {},
+    onNavigateToAboutConnectly: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -182,7 +184,7 @@ fun SettingsScreen(
                 subtitle = "Help center, report a problem, contact support",
                 icon = Icons.AutoMirrored.Filled.Help,
                 category = "SUPPORT & ABOUT",
-                onClick = { viewModel.openDialog(SettingsDialogType.HELP_SUPPORT) }
+                onClick = onNavigateToHelpSupport
             ),
             SettingItemDef(
                 id = "about",
@@ -191,7 +193,7 @@ fun SettingsScreen(
                 icon = Icons.Default.Info,
                 category = "SUPPORT & ABOUT",
                 value = "v1.0.0",
-                onClick = { viewModel.openDialog(SettingsDialogType.ABOUT_CONNECTLY) }
+                onClick = onNavigateToAboutConnectly
             )
         )
     }
@@ -460,16 +462,42 @@ fun SettingsScreen(
     // Interactive Dialogs for each setting feature
     when (state.activeDialog) {
         SettingsDialogType.LOGOUT_CONFIRMATION -> {
+            var logoutAllDevices by remember { mutableStateOf(false) }
+
             AlertDialog(
                 onDismissRequest = { viewModel.dismissDialog() },
-                title = { Text("Log Out from Connectly?") },
-                text = { Text("Are you sure you want to log out? You will need your password to log back in.") },
+                title = { Text("Log Out from Connectly?", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Are you sure you want to log out? Your local credentials and security tokens will be removed from this device.")
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { logoutAllDevices = !logoutAllDevices }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Checkbox(
+                                checked = logoutAllDevices,
+                                onCheckedChange = { logoutAllDevices = it },
+                                colors = CheckboxDefaults.colors(checkedColor = ConnectlyRose)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Log out of all other devices as well",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                },
                 confirmButton = {
                     Button(
-                        onClick = { viewModel.confirmLogout() },
+                        onClick = { viewModel.confirmLogout(logoutAllDevices) },
                         colors = ButtonDefaults.buttonColors(containerColor = ConnectlyRose)
                     ) {
-                        Text("Log Out", color = Color.White)
+                        Text("Log Out", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {

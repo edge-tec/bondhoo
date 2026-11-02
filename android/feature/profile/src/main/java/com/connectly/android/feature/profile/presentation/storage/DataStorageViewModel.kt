@@ -196,3 +196,4 @@ class DataStorageViewModel @Inject constructor(
         return DecimalFormat("#,##0.#").format(bytes / Math.pow(1024.0, digitGroups.toDouble())) + " " + units[digitGroups]
     }
 }
+

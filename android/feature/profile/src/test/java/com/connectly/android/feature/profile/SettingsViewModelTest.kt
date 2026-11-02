@@ -114,5 +114,17 @@ class SettingsViewModelTest {
         assertTrue(viewModel.uiState.value.isLoggedOut)
         assertFalse(viewModel.uiState.value.isLoggingOut)
     }
+
+    @Test
+    fun testLogoutAllDevicesClearsCredentials() = runTest {
+        coEvery { api.logoutAllSessions() } returns Response.success(ApiResponse(status = "success", message = "Logged out from all sessions"))
+
+        viewModel.confirmLogout(logoutAllDevices = true)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isLoggedOut)
+        assertFalse(viewModel.uiState.value.isLoggingOut)
+        io.mockk.coVerify { api.logoutAllSessions() }
+    }
 }
 

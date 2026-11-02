@@ -5,12 +5,14 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import com.connectly.android.core.designsystem.theme.ThemeManager
+import com.connectly.android.feature.profile.presentation.about.AboutConnectlyScreen
 import com.connectly.android.feature.profile.presentation.accessibility.AccessibilitySettingsScreen
 import com.connectly.android.feature.profile.presentation.appearance.AppearanceSettingsScreen
 import com.connectly.android.feature.profile.presentation.blocking.BlockedUsersScreen
 import com.connectly.android.feature.profile.presentation.edit.EditProfileScreen
 import com.connectly.android.feature.profile.presentation.feedpreferences.FeedPreferencesScreen
 import com.connectly.android.feature.profile.presentation.friends.FriendsScreen
+import com.connectly.android.feature.profile.presentation.help.HelpSupportScreen
 import com.connectly.android.feature.profile.presentation.language.LanguageSettingsScreen
 import com.connectly.android.feature.profile.presentation.messaging.MessagingCallSettingsScreen
 import com.connectly.android.feature.profile.presentation.notifications.NotificationSettingsScreen
@@ -30,6 +32,8 @@ const val FEED_PREFERENCES_ROUTE = "feed_preferences_route"
 const val BLOCKED_USERS_ROUTE = "blocked_users_route"
 const val DATA_STORAGE_ROUTE = "data_storage_route"
 const val ACCESSIBILITY_SETTINGS_ROUTE = "accessibility_settings_route"
+const val HELP_SUPPORT_ROUTE = "help_support_route"
+const val ABOUT_CONNECTLY_ROUTE = "about_connectly_route"
 const val SETTINGS_ROUTE = "settings_route"
 const val FRIENDS_ROUTE = "friends_route"
 
@@ -79,6 +83,14 @@ fun NavController.navigateToDataStorage(navOptions: NavOptions? = null) {
 
 fun NavController.navigateToAccessibility(navOptions: NavOptions? = null) {
     navigate(ACCESSIBILITY_SETTINGS_ROUTE, navOptions)
+}
+
+fun NavController.navigateToHelpSupport(navOptions: NavOptions? = null) {
+    navigate(HELP_SUPPORT_ROUTE, navOptions)
+}
+
+fun NavController.navigateToAboutConnectly(navOptions: NavOptions? = null) {
+    navigate(ABOUT_CONNECTLY_ROUTE, navOptions)
 }
 
 fun NavController.navigateToSettings(navOptions: NavOptions? = null) {
@@ -163,6 +175,18 @@ fun NavGraphBuilder.profileGraph(
         )
     }
 
+    composable(HELP_SUPPORT_ROUTE) {
+        HelpSupportScreen(
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
+    composable(ABOUT_CONNECTLY_ROUTE) {
+        AboutConnectlyScreen(
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
     composable(SETTINGS_ROUTE) {
         SettingsScreen(
             onNavigateBack = { navController.popBackStack() },
@@ -177,6 +201,8 @@ fun NavGraphBuilder.profileGraph(
             onNavigateToBlockedUsers = { navController.navigateToBlockedUsers() },
             onNavigateToStorage = { navController.navigateToDataStorage() },
             onNavigateToAccessibility = { navController.navigateToAccessibility() },
+            onNavigateToHelpSupport = { navController.navigateToHelpSupport() },
+            onNavigateToAboutConnectly = { navController.navigateToAboutConnectly() },
             onLogoutSuccess = onLogout
         )
     }
