@@ -83,6 +83,9 @@ interface ConnectlyApi {
     @PUT("v2/profile/privacy/settings")
     suspend fun updatePrivacySettings(@Body body: UpdatePrivacySettingsRequest): Response<ApiResponse<Unit>>
 
+    @GET("v1/settings/overview")
+    suspend fun getSettingsOverview(): Response<ApiResponse<SettingsOverviewDto>>
+
     // -------------------------------------------------------------
     // Home Feed & Stories (Screen 1 & 2)
     // -------------------------------------------------------------
@@ -1238,6 +1241,56 @@ data class UpdatePrivacySettingsRequest(
     val profile_visibility: String? = null,
     val avatar_privacy: String? = null,
     val bio_privacy: String? = null
+)
+
+@Serializable
+data class SettingsOverviewDto(
+    val account: SettingsAccountDto? = null,
+    val privacy: SettingsPrivacyDto? = null,
+    val security: SettingsSecurityDto? = null,
+    val blocking: SettingsBlockingDto? = null
+)
+
+@Serializable
+data class SettingsAccountDto(
+    val id: Long = 0L,
+    val name: String = "",
+    val username: String = "",
+    val email: String? = null,
+    val phone: String? = null,
+    val gender: String? = null,
+    val birth_date: String? = null,
+    val avatar: String? = null,
+    val bio: String? = null,
+    val created_at: String? = null
+)
+
+@Serializable
+data class SettingsPrivacyDto(
+    val who_can_see_posts: String = "public",
+    val who_can_send_friend_requests: String = "everyone",
+    val who_can_follow: String = "everyone",
+    val who_can_message: String = "everyone",
+    val who_can_see_friends: String = "public",
+    val is_profile_locked: Boolean = false,
+    val has_avatar_guard: Boolean = false,
+    val show_online_status: Boolean = true,
+    val search_engine_indexing: Boolean = true,
+    val dark_mode: Boolean = false,
+    val language: String = "en"
+)
+
+@Serializable
+data class SettingsSecurityDto(
+    val two_factor_enabled: Boolean = false,
+    val two_factor_type: String = "totp",
+    val email_verified: Boolean = false,
+    val phone_verified: Boolean = false
+)
+
+@Serializable
+data class SettingsBlockingDto(
+    val blocked_count: Int = 0
 )
 
 @Serializable
