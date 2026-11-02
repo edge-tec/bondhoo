@@ -79,7 +79,11 @@ class ReelsRepositoryImpl @Inject constructor(
                     )
                 })
 
-                emit(Result.Success(reels))
+                if (reels.isNotEmpty()) {
+                    emit(Result.Success(reels))
+                } else {
+                    emit(Result.Success(getDefaultMockReels()))
+                }
             } else {
                 emit(Result.Success(getDefaultMockReels()))
             }

@@ -40,6 +40,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
+import com.connectly.android.core.designsystem.component.ConnectlyAvatar
+import com.connectly.android.core.designsystem.component.resolveMediaUrl
 import com.connectly.android.core.designsystem.theme.ConnectlyBlue
 import com.connectly.android.core.designsystem.theme.ConnectlyRose
 import com.connectly.android.core.model.Comment
@@ -61,7 +63,44 @@ fun ReelsScreen(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = Color.White)
+            if (state.isLoading) {
+                CircularProgressIndicator(color = Color.White)
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.VideoLibrary,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "No Videos Yet",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Be the first to share an exciting video!",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Button(
+                        onClick = onNavigateToCreateReel,
+                        colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Create Video", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
         }
         return
     }
@@ -164,10 +203,14 @@ private fun ReelPlayerItem(
     val context = LocalContext.current
     var isPlaying by remember { mutableStateOf(true) }
 
+    val resolvedVideoUrl = remember(reel.videoUrl) {
+        resolveMediaUrl(reel.videoUrl) ?: reel.videoUrl
+    }
+
     // Media3 ExoPlayer instance lifecycle managed per reel
-    val exoPlayer = remember(context, reel.videoUrl) {
+    val exoPlayer = remember(context, resolvedVideoUrl) {
         ExoPlayer.Builder(context).build().apply {
-            val mediaItem = MediaItem.fromUri(reel.videoUrl)
+            val mediaItem = MediaItem.fromUri(resolvedVideoUrl)
             setMediaItem(mediaItem)
             repeatMode = Player.REPEAT_MODE_ONE
             prepare()
@@ -311,20 +354,12 @@ private fun ReelPlayerItem(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .border(1.5.dp, Color.White, CircleShape)
-                        .background(Color.Gray)
-                ) {
-                    AsyncImage(
-                        model = reel.creator.avatar ?: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-                        contentDescription = reel.creator.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                ConnectlyAvatar(
+                    imageUrl = reel.creator.avatar,
+                    name = reel.creator.name,
+                    size = 38.dp,
+                    isVerified = reel.creator.isVerified
+                )
 
                 Spacer(modifier = Modifier.width(10.dp))
 
