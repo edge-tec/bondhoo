@@ -119,6 +119,12 @@ interface ConnectlyApi {
     @POST("v2/auth/logout-all")
     suspend fun logoutAllSessions(): Response<ApiResponse<Unit>>
 
+    @GET("v1/settings/messenger-sounds")
+    suspend fun getMessengerSoundSettings(): Response<ApiResponse<MessengerSoundsDto>>
+
+    @PUT("v1/settings/messenger-sounds")
+    suspend fun updateMessengerSoundSettings(@Body body: UpdateMessengerSoundsRequest): Response<ApiResponse<MessengerSoundsDto>>
+
     // -------------------------------------------------------------
     // Home Feed & Stories (Screen 1 & 2)
     // -------------------------------------------------------------
@@ -1779,6 +1785,34 @@ data class NotificationPreferencesDto(
     val page_alerts: Boolean = true,
     val group_alerts: Boolean = true,
     val security_alerts: Boolean = true
+)
+
+@Serializable
+data class MessengerSoundsDto(
+    val messenger_sounds_enabled: Boolean = true,
+    val incoming_call_sound_enabled: Boolean = true,
+    val incoming_call_sound: String = "bondhoo_ring",
+    val incoming_call_volume: Int = 80,
+    val incoming_message_sound_enabled: Boolean = true,
+    val incoming_message_sound: String = "bubble_pop",
+    val incoming_message_volume: Int = 80,
+    val outgoing_message_sound_enabled: Boolean = true,
+    val outgoing_message_sound: String = "subtle_sent",
+    val outgoing_message_volume: Int = 80
+)
+
+@Serializable
+data class UpdateMessengerSoundsRequest(
+    val messenger_sounds_enabled: Boolean? = null,
+    val incoming_call_sound_enabled: Boolean? = null,
+    val incoming_call_sound: String? = null,
+    val incoming_call_volume: Int? = null,
+    val incoming_message_sound_enabled: Boolean? = null,
+    val incoming_message_sound: String? = null,
+    val incoming_message_volume: Int? = null,
+    val outgoing_message_sound_enabled: Boolean? = null,
+    val outgoing_message_sound: String? = null,
+    val outgoing_message_volume: Int? = null
 )
 
 @Serializable

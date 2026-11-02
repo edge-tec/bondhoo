@@ -51,6 +51,7 @@ fun SettingsScreen(
     onNavigateToNotificationSettings: () -> Unit = {},
     onNavigateToAppearance: () -> Unit = {},
     onNavigateToLanguage: () -> Unit = {},
+    onNavigateToMessagingCalls: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -152,7 +153,7 @@ fun SettingsScreen(
                 icon = Icons.AutoMirrored.Filled.Chat,
                 category = "PREFERENCES",
                 value = state.whoCanMessage,
-                onClick = { viewModel.openDialog(SettingsDialogType.MESSAGING_CALLS) }
+                onClick = onNavigateToMessagingCalls
             ),
             SettingItemDef(
                 id = "storage",

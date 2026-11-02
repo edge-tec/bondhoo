@@ -101,3 +101,4 @@ class ThemeManagerTest {
         assertTrue(AvailableAccents.any { it.id == "green" && it.color == ConnectlyGreen })
     }
 }
+

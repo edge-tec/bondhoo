@@ -43,6 +43,7 @@ import com.connectly.android.core.designsystem.theme.ThemeManager
 import com.connectly.android.feature.profile.navigation.navigateToAppearanceSettings
 import com.connectly.android.feature.profile.navigation.navigateToEditProfile
 import com.connectly.android.feature.profile.navigation.navigateToLanguageSettings
+import com.connectly.android.feature.profile.navigation.navigateToMessagingCallSettings
 import com.connectly.android.feature.profile.navigation.navigateToNotificationSettings
 import com.connectly.android.feature.profile.navigation.navigateToPrivacySettings
 import javax.inject.Inject
@@ -221,6 +222,7 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToNotificationSettings = { rootNavController.navigateToNotificationSettings() },
                                         onNavigateToAppearance = { rootNavController.navigateToAppearanceSettings() },
                                         onNavigateToLanguage = { rootNavController.navigateToLanguageSettings() },
+                                        onNavigateToMessagingCalls = { rootNavController.navigateToMessagingCallSettings() },
                                         onLogoutSuccess = {
                                             rootNavController.navigate(LOGIN_ROUTE) {
                                                 popUpTo(0) { inclusive = true }

@@ -9,6 +9,7 @@ import com.connectly.android.feature.profile.presentation.appearance.AppearanceS
 import com.connectly.android.feature.profile.presentation.edit.EditProfileScreen
 import com.connectly.android.feature.profile.presentation.friends.FriendsScreen
 import com.connectly.android.feature.profile.presentation.language.LanguageSettingsScreen
+import com.connectly.android.feature.profile.presentation.messaging.MessagingCallSettingsScreen
 import com.connectly.android.feature.profile.presentation.notifications.NotificationSettingsScreen
 import com.connectly.android.feature.profile.presentation.privacy.PrivacySettingsScreen
 import com.connectly.android.feature.profile.presentation.profile.ProfileScreen
@@ -20,6 +21,7 @@ const val PRIVACY_SETTINGS_ROUTE = "privacy_settings_route"
 const val NOTIFICATION_SETTINGS_ROUTE = "notification_settings_route"
 const val APPEARANCE_SETTINGS_ROUTE = "appearance_settings_route"
 const val LANGUAGE_SETTINGS_ROUTE = "language_settings_route"
+const val MESSAGING_CALL_SETTINGS_ROUTE = "messaging_call_settings_route"
 const val SETTINGS_ROUTE = "settings_route"
 const val FRIENDS_ROUTE = "friends_route"
 
@@ -49,6 +51,10 @@ fun NavController.navigateToAppearanceSettings(navOptions: NavOptions? = null) {
 
 fun NavController.navigateToLanguageSettings(navOptions: NavOptions? = null) {
     navigate(LANGUAGE_SETTINGS_ROUTE, navOptions)
+}
+
+fun NavController.navigateToMessagingCallSettings(navOptions: NavOptions? = null) {
+    navigate(MESSAGING_CALL_SETTINGS_ROUTE, navOptions)
 }
 
 fun NavController.navigateToSettings(navOptions: NavOptions? = null) {
@@ -101,6 +107,12 @@ fun NavGraphBuilder.profileGraph(
         )
     }
 
+    composable(MESSAGING_CALL_SETTINGS_ROUTE) {
+        MessagingCallSettingsScreen(
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
     composable(SETTINGS_ROUTE) {
         SettingsScreen(
             onNavigateBack = { navController.popBackStack() },
@@ -110,6 +122,7 @@ fun NavGraphBuilder.profileGraph(
             onNavigateToNotificationSettings = { navController.navigateToNotificationSettings() },
             onNavigateToAppearance = { navController.navigateToAppearanceSettings() },
             onNavigateToLanguage = { navController.navigateToLanguageSettings() },
+            onNavigateToMessagingCalls = { navController.navigateToMessagingCallSettings() },
             onLogoutSuccess = onLogout
         )
     }
