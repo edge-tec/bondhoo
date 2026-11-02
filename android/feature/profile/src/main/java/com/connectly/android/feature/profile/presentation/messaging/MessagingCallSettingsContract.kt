@@ -60,3 +60,4 @@ sealed interface MessagingCallSettingsIntent {
     object SaveAllSettings : MessagingCallSettingsIntent
     object DismissMessages : MessagingCallSettingsIntent
 }
+

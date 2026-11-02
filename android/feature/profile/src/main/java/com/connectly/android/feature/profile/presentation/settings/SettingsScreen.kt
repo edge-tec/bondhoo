@@ -52,6 +52,7 @@ fun SettingsScreen(
     onNavigateToAppearance: () -> Unit = {},
     onNavigateToLanguage: () -> Unit = {},
     onNavigateToMessagingCalls: () -> Unit = {},
+    onNavigateToFeedPreferences: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -144,7 +145,7 @@ fun SettingsScreen(
                 subtitle = "Video autoplay, sensitive content controls",
                 icon = Icons.Default.DynamicFeed,
                 category = "PREFERENCES",
-                onClick = { viewModel.openDialog(SettingsDialogType.FEED_PREFERENCES) }
+                onClick = onNavigateToFeedPreferences
             ),
             SettingItemDef(
                 id = "messaging",

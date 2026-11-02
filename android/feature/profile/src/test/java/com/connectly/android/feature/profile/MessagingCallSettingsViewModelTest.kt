@@ -138,3 +138,4 @@ class MessagingCallSettingsViewModelTest {
         assertEquals("Messaging & call settings saved.", viewModel.uiState.value.successMessage)
     }
 }
+

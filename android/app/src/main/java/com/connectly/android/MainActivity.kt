@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import com.connectly.android.core.designsystem.theme.ThemeManager
 import com.connectly.android.feature.profile.navigation.navigateToAppearanceSettings
 import com.connectly.android.feature.profile.navigation.navigateToEditProfile
+import com.connectly.android.feature.profile.navigation.navigateToFeedPreferences
 import com.connectly.android.feature.profile.navigation.navigateToLanguageSettings
 import com.connectly.android.feature.profile.navigation.navigateToMessagingCallSettings
 import com.connectly.android.feature.profile.navigation.navigateToNotificationSettings
@@ -223,6 +224,7 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToAppearance = { rootNavController.navigateToAppearanceSettings() },
                                         onNavigateToLanguage = { rootNavController.navigateToLanguageSettings() },
                                         onNavigateToMessagingCalls = { rootNavController.navigateToMessagingCallSettings() },
+                                        onNavigateToFeedPreferences = { rootNavController.navigateToFeedPreferences() },
                                         onLogoutSuccess = {
                                             rootNavController.navigate(LOGIN_ROUTE) {
                                                 popUpTo(0) { inclusive = true }

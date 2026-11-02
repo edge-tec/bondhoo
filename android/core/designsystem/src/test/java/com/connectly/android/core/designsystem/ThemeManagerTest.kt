@@ -25,6 +25,9 @@ class ThemeManagerTest {
 
     @Before
     fun setup() {
+        every { sharedPrefs.getString(any(), any()) } answers { secondArg() as String? }
+        every { sharedPrefs.getFloat(any(), any()) } answers { secondArg() as Float }
+        every { sharedPrefs.getBoolean(any(), any()) } answers { secondArg() as Boolean }
         every { context.getSharedPreferences(any(), any()) } returns sharedPrefs
         every { sharedPrefs.edit() } returns prefsEditor
         every { prefsEditor.putString(any(), any()) } returns prefsEditor
