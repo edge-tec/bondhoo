@@ -38,7 +38,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
 
-    implementation(libs.coil.compose)
+    api(libs.coil.compose)
+    api(libs.coil.network.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

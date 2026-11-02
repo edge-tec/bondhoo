@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.connectly.android.core.designsystem.component.ConnectlyAvatar
+import com.connectly.android.core.designsystem.component.resolveMediaUrl
 import com.connectly.android.core.designsystem.theme.*
 import com.connectly.android.core.model.Comment
 import com.connectly.android.core.model.Post
@@ -118,19 +120,11 @@ fun FeedScreen(
                         }
                     }
                     IconButton(onClick = onNavigateToProfile) {
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(Color.LightGray)
-                        ) {
-                            AsyncImage(
-                                model = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                                contentDescription = "My Avatar",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+                        ConnectlyAvatar(
+                            imageUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                            name = "My Profile",
+                            size = 34.dp
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -352,13 +346,13 @@ private fun StoriesTraySection(
                                 .size(64.dp)
                                 .clip(CircleShape)
                                 .border(2.5.dp, ConnectlyBlue, CircleShape)
-                                .padding(3.dp)
+                                .padding(3.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            AsyncImage(
-                                model = avatar,
-                                contentDescription = name,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize().clip(CircleShape)
+                            ConnectlyAvatar(
+                                imageUrl = avatar,
+                                name = name,
+                                size = 56.dp
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -386,19 +380,11 @@ private fun CreatePostCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color.LightGray)
-                ) {
-                    AsyncImage(
-                        model = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                        contentDescription = "User Avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                ConnectlyAvatar(
+                    imageUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                    name = "You",
+                    size = 40.dp
+                )
 
                 Spacer(modifier = Modifier.width(10.dp))
 
@@ -489,19 +475,11 @@ private fun SuggestedFriendsCarousel(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.padding(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(60.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.LightGray)
-                            ) {
-                                AsyncImage(
-                                    model = user.avatar,
-                                    contentDescription = user.name,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
+                            ConnectlyAvatar(
+                                imageUrl = user.avatar,
+                                name = user.name,
+                                size = 60.dp
+                            )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(user.name, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1)
                             Text("${user.friendsCount} mutual friends", fontSize = 11.sp, color = TextSecondaryLight, maxLines = 1)
@@ -549,19 +527,12 @@ private fun PostItemCard(
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(Color.LightGray)
-                ) {
-                    AsyncImage(
-                        model = post.author.avatar,
-                        contentDescription = post.author.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                ConnectlyAvatar(
+                    imageUrl = post.author.avatar,
+                    name = post.author.name,
+                    size = 42.dp,
+                    isVerified = post.author.isVerified
+                )
 
                 Spacer(modifier = Modifier.width(10.dp))
 
@@ -651,7 +622,7 @@ private fun PostItemCard(
             // Attached Media Image(s)
             if (post.mediaUrls.isNotEmpty()) {
                 AsyncImage(
-                    model = post.mediaUrls.first(),
+                    model = resolveMediaUrl(post.mediaUrls.first()),
                     contentDescription = "Post Media",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -772,19 +743,11 @@ private fun CommentsDrawerContent(
                         .fillMaxWidth()
                         .padding(start = if (comment.parentId != null) 36.dp else 0.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(Color.LightGray)
-                    ) {
-                        AsyncImage(
-                            model = comment.author.avatar,
-                            contentDescription = comment.author.name,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
+                    ConnectlyAvatar(
+                        imageUrl = comment.author.avatar,
+                        name = comment.author.name,
+                        size = 36.dp
+                    )
 
                     Spacer(modifier = Modifier.width(10.dp))
 

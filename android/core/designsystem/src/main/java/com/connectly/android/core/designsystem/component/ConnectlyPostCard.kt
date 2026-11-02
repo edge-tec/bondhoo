@@ -294,10 +294,13 @@ fun PostPhotoGallery(
     onPhotoClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    when (mediaUrls.size) {
+    val resolvedUrls = remember(mediaUrls) {
+        mediaUrls.map { resolveMediaUrl(it) ?: it }
+    }
+    when (resolvedUrls.size) {
         1 -> {
             AsyncImage(
-                model = mediaUrls[0],
+                model = resolvedUrls[0],
                 contentDescription = "Post photo",
                 contentScale = ContentScale.Crop,
                 modifier = modifier
@@ -315,7 +318,7 @@ fun PostPhotoGallery(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 AsyncImage(
-                    model = mediaUrls[0],
+                    model = resolvedUrls[0],
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -325,7 +328,7 @@ fun PostPhotoGallery(
                         .clickable { onPhotoClick(0) }
                 )
                 AsyncImage(
-                    model = mediaUrls[1],
+                    model = resolvedUrls[1],
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -345,7 +348,7 @@ fun PostPhotoGallery(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 AsyncImage(
-                    model = mediaUrls[0],
+                    model = resolvedUrls[0],
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -361,7 +364,7 @@ fun PostPhotoGallery(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     AsyncImage(
-                        model = mediaUrls[1],
+                        model = resolvedUrls[1],
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -378,7 +381,7 @@ fun PostPhotoGallery(
                             .clickable { onPhotoClick(2) }
                     ) {
                         AsyncImage(
-                            model = mediaUrls[2],
+                            model = resolvedUrls[2],
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()

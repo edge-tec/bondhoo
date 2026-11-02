@@ -24,6 +24,15 @@ import coil3.compose.AsyncImage
 import com.connectly.android.core.designsystem.theme.ConnectlyBlue
 import com.connectly.android.core.designsystem.theme.ConnectlyGreen
 
+fun resolveMediaUrl(url: String?): String? {
+    if (url.isNullOrBlank()) return null
+    return when {
+        url.startsWith("http://") || url.startsWith("https://") -> url
+        url.startsWith("/") -> "https://bondhoo.com$url"
+        else -> "https://bondhoo.com/$url"
+    }
+}
+
 @Composable
 fun ConnectlyAvatar(
     imageUrl: String?,
@@ -33,13 +42,15 @@ fun ConnectlyAvatar(
     isVerified: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val resolvedUrl = resolveMediaUrl(imageUrl)
+
     Box(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center
     ) {
-        if (!imageUrl.isNullOrBlank()) {
+        if (!resolvedUrl.isNullOrBlank()) {
             AsyncImage(
-                model = imageUrl,
+                model = resolvedUrl,
                 contentDescription = name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
