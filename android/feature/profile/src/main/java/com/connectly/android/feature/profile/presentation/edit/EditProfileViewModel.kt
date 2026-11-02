@@ -50,7 +50,7 @@ class EditProfileViewModel @Inject constructor(
                                 userId = userEntity.id,
                                 name = if (state.name.isBlank()) userEntity.name else state.name,
                                 username = if (state.username.isBlank()) userEntity.username else state.username,
-                                email = userEntity.email,
+                                email = userEntity.email ?: state.email,
                                 avatarUrl = userEntity.avatar,
                                 bio = userEntity.bio ?: state.bio,
                                 isIdentityVerified = userEntity.isVerified
@@ -98,7 +98,7 @@ class EditProfileViewModel @Inject constructor(
                             occupation = user.occupation ?: state.occupation,
                             location = user.location ?: state.location,
                             coverUrl = user.coverPhoto ?: state.coverUrl,
-                            isEmailVerified = user.email.isNotBlank(),
+                            isEmailVerified = !user.email.isNullOrBlank(),
                             isIdentityVerified = user.isVerified
                         )
                     }

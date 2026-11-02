@@ -83,7 +83,7 @@ class SettingsViewModel @Inject constructor(
                                 userId = userEntity.id,
                                 userName = userEntity.name,
                                 userUsername = userEntity.username,
-                                userEmail = userEntity.email,
+                                userEmail = userEntity.email ?: state.userEmail,
                                 userAvatar = userEntity.avatar,
                                 isVerified = userEntity.isVerified
                             )

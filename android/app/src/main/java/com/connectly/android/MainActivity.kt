@@ -38,6 +38,7 @@ import com.connectly.android.feature.notifications.navigation.navigateToNotifica
 import com.connectly.android.feature.notifications.navigation.navigateToSearch
 import com.connectly.android.feature.notifications.navigation.notificationsGraph
 import com.connectly.android.feature.profile.navigation.navigateToEditProfile
+import com.connectly.android.feature.profile.navigation.navigateToNotificationSettings
 import com.connectly.android.feature.profile.navigation.navigateToPrivacySettings
 import com.connectly.android.feature.profile.navigation.navigateToProfile
 import com.connectly.android.feature.profile.navigation.profileGraph
@@ -193,6 +194,7 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToProfile = { rootNavController.navigateToProfile() },
                                         onNavigateToEditProfile = { rootNavController.navigateToEditProfile() },
                                         onNavigateToPrivacy = { rootNavController.navigateToPrivacySettings() },
+                                        onNavigateToNotificationSettings = { rootNavController.navigateToNotificationSettings() },
                                         onLogoutSuccess = {
                                             rootNavController.navigate(LOGIN_ROUTE) {
                                                 popUpTo(0) { inclusive = true }

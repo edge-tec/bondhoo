@@ -11,6 +11,7 @@ val ConnectlyIndigo = Color(0xFF4F46E5)
 val ConnectlyPurple = Color(0xFF7C3AED)
 val ConnectlyViolet = Color(0xFF8B5CF6)
 val ConnectlyRose = Color(0xFFE11D48)
+val ConnectlyRed = Color(0xFFEF4444)
 val ConnectlyGreen = Color(0xFF10B981)
 val ConnectlyAmber = Color(0xFFF59E0B)
 

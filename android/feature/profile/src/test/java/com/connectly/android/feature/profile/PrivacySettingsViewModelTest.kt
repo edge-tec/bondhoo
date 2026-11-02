@@ -157,3 +157,4 @@ class PrivacySettingsViewModelTest {
         assertEquals("New passwords do not match.", viewModel.uiState.value.errorMessage)
     }
 }
+

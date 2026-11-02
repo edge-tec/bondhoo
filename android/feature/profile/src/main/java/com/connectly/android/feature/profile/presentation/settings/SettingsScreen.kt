@@ -48,6 +48,7 @@ fun SettingsScreen(
     onNavigateToPrivacy: () -> Unit,
     onLogoutSuccess: () -> Unit,
     onNavigateToEditProfile: () -> Unit = onNavigateToProfile,
+    onNavigateToNotificationSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -114,7 +115,7 @@ fun SettingsScreen(
                 icon = Icons.Default.Notifications,
                 category = "PREFERENCES",
                 value = "Active",
-                onClick = { viewModel.openDialog(SettingsDialogType.NOTIFICATIONS_INFO) }
+                onClick = onNavigateToNotificationSettings
             ),
             SettingItemDef(
                 id = "appearance",

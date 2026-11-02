@@ -144,3 +144,4 @@ class EditProfileViewModelTest {
         assertNull(viewModel.uiState.value.activeDialog)
     }
 }
+

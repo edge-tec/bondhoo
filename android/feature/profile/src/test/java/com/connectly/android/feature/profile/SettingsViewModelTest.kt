@@ -115,3 +115,4 @@ class SettingsViewModelTest {
         assertFalse(viewModel.uiState.value.isLoggingOut)
     }
 }
+

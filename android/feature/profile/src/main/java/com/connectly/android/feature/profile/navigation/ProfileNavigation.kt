@@ -6,6 +6,7 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import com.connectly.android.feature.profile.presentation.edit.EditProfileScreen
 import com.connectly.android.feature.profile.presentation.friends.FriendsScreen
+import com.connectly.android.feature.profile.presentation.notifications.NotificationSettingsScreen
 import com.connectly.android.feature.profile.presentation.privacy.PrivacySettingsScreen
 import com.connectly.android.feature.profile.presentation.profile.ProfileScreen
 import com.connectly.android.feature.profile.presentation.settings.SettingsScreen
@@ -13,6 +14,7 @@ import com.connectly.android.feature.profile.presentation.settings.SettingsScree
 const val PROFILE_ROUTE = "profile_route"
 const val EDIT_PROFILE_ROUTE = "edit_profile_route"
 const val PRIVACY_SETTINGS_ROUTE = "privacy_settings_route"
+const val NOTIFICATION_SETTINGS_ROUTE = "notification_settings_route"
 const val SETTINGS_ROUTE = "settings_route"
 const val FRIENDS_ROUTE = "friends_route"
 
@@ -24,13 +26,16 @@ fun NavController.navigateToFriends(navOptions: NavOptions? = null) {
     navigate(FRIENDS_ROUTE, navOptions)
 }
 
-
 fun NavController.navigateToEditProfile(navOptions: NavOptions? = null) {
     navigate(EDIT_PROFILE_ROUTE, navOptions)
 }
 
 fun NavController.navigateToPrivacySettings(navOptions: NavOptions? = null) {
     navigate(PRIVACY_SETTINGS_ROUTE, navOptions)
+}
+
+fun NavController.navigateToNotificationSettings(navOptions: NavOptions? = null) {
+    navigate(NOTIFICATION_SETTINGS_ROUTE, navOptions)
 }
 
 fun NavController.navigateToSettings(navOptions: NavOptions? = null) {
@@ -62,12 +67,19 @@ fun NavGraphBuilder.profileGraph(
         )
     }
 
+    composable(NOTIFICATION_SETTINGS_ROUTE) {
+        NotificationSettingsScreen(
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
     composable(SETTINGS_ROUTE) {
         SettingsScreen(
             onNavigateBack = { navController.popBackStack() },
             onNavigateToProfile = { navController.navigateToProfile() },
             onNavigateToEditProfile = { navController.navigateToEditProfile() },
             onNavigateToPrivacy = { navController.navigateToPrivacySettings() },
+            onNavigateToNotificationSettings = { navController.navigateToNotificationSettings() },
             onLogoutSuccess = onLogout
         )
     }
