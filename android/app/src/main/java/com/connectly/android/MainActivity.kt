@@ -37,6 +37,7 @@ import com.connectly.android.feature.live.navigation.navigateToLive
 import com.connectly.android.feature.notifications.navigation.navigateToNotifications
 import com.connectly.android.feature.notifications.navigation.navigateToSearch
 import com.connectly.android.feature.notifications.navigation.notificationsGraph
+import com.connectly.android.feature.profile.navigation.navigateToEditProfile
 import com.connectly.android.feature.profile.navigation.navigateToPrivacySettings
 import com.connectly.android.feature.profile.navigation.navigateToProfile
 import com.connectly.android.feature.profile.navigation.profileGraph
@@ -190,6 +191,7 @@ class MainActivity : ComponentActivity() {
                                     SettingsScreen(
                                         onNavigateBack = { selectedTab = BottomBarDestination.HOME },
                                         onNavigateToProfile = { rootNavController.navigateToProfile() },
+                                        onNavigateToEditProfile = { rootNavController.navigateToEditProfile() },
                                         onNavigateToPrivacy = { rootNavController.navigateToPrivacySettings() },
                                         onLogoutSuccess = {
                                             rootNavController.navigate(LOGIN_ROUTE) {

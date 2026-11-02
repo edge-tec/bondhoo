@@ -51,7 +51,8 @@ fun NavGraphBuilder.profileGraph(
 
     composable(EDIT_PROFILE_ROUTE) {
         EditProfileScreen(
-            onNavigateBack = { navController.popBackStack() }
+            onNavigateBack = { navController.popBackStack() },
+            onAccountTerminated = onLogout
         )
     }
 
@@ -65,6 +66,7 @@ fun NavGraphBuilder.profileGraph(
         SettingsScreen(
             onNavigateBack = { navController.popBackStack() },
             onNavigateToProfile = { navController.navigateToProfile() },
+            onNavigateToEditProfile = { navController.navigateToEditProfile() },
             onNavigateToPrivacy = { navController.navigateToPrivacySettings() },
             onLogoutSuccess = onLogout
         )

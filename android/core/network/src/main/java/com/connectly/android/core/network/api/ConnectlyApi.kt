@@ -86,6 +86,21 @@ interface ConnectlyApi {
     @GET("v1/settings/overview")
     suspend fun getSettingsOverview(): Response<ApiResponse<SettingsOverviewDto>>
 
+    @GET("v1/settings/account")
+    suspend fun getAccountSettings(): Response<ApiResponse<SettingsAccountDto>>
+
+    @PUT("v1/settings/account")
+    suspend fun updateAccountSettings(@Body body: UpdateAccountRequest): Response<ApiResponse<SettingsAccountDto>>
+
+    @PUT("v1/settings/password")
+    suspend fun updatePassword(@Body body: UpdatePasswordRequest): Response<ApiResponse<Unit>>
+
+    @POST("v2/profile/deactivate")
+    suspend fun deactivateAccount(@Body body: DeactivateAccountRequest): Response<ApiResponse<Unit>>
+
+    @POST("v2/profile/delete")
+    suspend fun deleteAccount(@Body body: DeleteAccountRequest): Response<ApiResponse<Unit>>
+
     // -------------------------------------------------------------
     // Home Feed & Stories (Screen 1 & 2)
     // -------------------------------------------------------------
@@ -1291,6 +1306,36 @@ data class SettingsSecurityDto(
 @Serializable
 data class SettingsBlockingDto(
     val blocked_count: Int = 0
+)
+
+@Serializable
+data class UpdateAccountRequest(
+    val name: String? = null,
+    val username: String? = null,
+    val phone: String? = null,
+    val gender: String? = null,
+    val birth_date: String? = null,
+    val bio: String? = null
+)
+
+@Serializable
+data class UpdatePasswordRequest(
+    val current_password: String,
+    val password: String,
+    val password_confirmation: String
+)
+
+@Serializable
+data class DeactivateAccountRequest(
+    val password: String? = null,
+    val reason: String? = null
+)
+
+@Serializable
+data class DeleteAccountRequest(
+    val password: String,
+    val confirmation: String = "DELETE",
+    val reason: String? = null
 )
 
 @Serializable

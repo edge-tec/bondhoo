@@ -47,6 +47,7 @@ fun SettingsScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToPrivacy: () -> Unit,
     onLogoutSuccess: () -> Unit,
+    onNavigateToEditProfile: () -> Unit = onNavigateToProfile,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -87,7 +88,7 @@ fun SettingsScreen(
                 subtitle = "Personal information, email, phone, verification",
                 icon = Icons.Default.Person,
                 category = "ACCOUNT & SECURITY",
-                onClick = onNavigateToProfile
+                onClick = onNavigateToEditProfile
             ),
             SettingItemDef(
                 id = "privacy",
