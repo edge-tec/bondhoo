@@ -148,7 +148,7 @@ class ReverbWebSocketManager @Inject constructor(
 
         val token = tokenStorageManager.getAccessToken()
         val request = Request.Builder()
-            .url("wss://bondhoo.edge-tec.com/app/connectly_reverb_key?protocol=7&client=android&version=1.0.0")
+            .url("wss://bondhoo.com/app/connectly_reverb_key?protocol=7&client=android&version=1.0.0")
             .apply {
                 if (!token.isNullOrBlank()) {
                     header("Authorization", "Bearer $token")
