@@ -71,7 +71,7 @@ class AuthRepositoryImpl @Inject constructor(
                 )
                 emit(Result.Success(domainUser))
             } else {
-                val errorMsg = response.errorBody()?.string() ?: "Login failed. Please check credentials."
+                val errorMsg = parseErrorMessage(response.errorBody()?.string(), "Login failed. Please check credentials.")
                 emit(Result.Error(Exception(errorMsg), errorMsg))
             }
         } catch (e: Exception) {
@@ -124,7 +124,7 @@ class AuthRepositoryImpl @Inject constructor(
                     avatar = userEntity.avatar
                 )))
             } else {
-                val errorMsg = response.errorBody()?.string() ?: "Registration failed."
+                val errorMsg = parseErrorMessage(response.errorBody()?.string(), "Registration failed.")
                 emit(Result.Error(Exception(errorMsg), errorMsg))
             }
         } catch (e: Exception) {
@@ -208,6 +208,20 @@ class AuthRepositoryImpl @Inject constructor(
 
     override fun getSavedUserId(): Long {
         return tokenStorageManager.getUserId()
+    }
+
+    private fun parseErrorMessage(rawError: String?, fallback: String): String {
+        if (rawError.isNullOrBlank()) return fallback
+        return try {
+            val json = org.json.JSONObject(rawError)
+            when {
+                json.has("message") -> json.getString("message")
+                json.has("error") -> json.getString("error")
+                else -> rawError
+            }
+        } catch (_: Exception) {
+            rawError
+        }
     }
 }
 
