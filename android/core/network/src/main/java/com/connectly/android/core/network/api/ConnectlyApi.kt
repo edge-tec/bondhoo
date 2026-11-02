@@ -101,6 +101,24 @@ interface ConnectlyApi {
     @POST("v2/profile/delete")
     suspend fun deleteAccount(@Body body: DeleteAccountRequest): Response<ApiResponse<Unit>>
 
+    @GET("v1/settings/privacy")
+    suspend fun getSettingsPrivacy(): Response<ApiResponse<SettingsPrivacyDto>>
+
+    @PUT("v1/settings/privacy")
+    suspend fun updateSettingsPrivacy(@Body body: UpdateSettingsPrivacyRequest): Response<ApiResponse<SettingsPrivacyDto>>
+
+    @POST("v1/settings/2fa/toggle")
+    suspend fun toggleTwoFactor(@Body body: Toggle2faRequest): Response<ApiResponse<Toggle2faDto>>
+
+    @GET("v2/auth/sessions")
+    suspend fun getActiveSessions(): Response<ApiResponse<List<UserSessionDto>>>
+
+    @DELETE("v2/auth/sessions/{id}")
+    suspend fun revokeSession(@Path("id") id: Long): Response<ApiResponse<Unit>>
+
+    @POST("v2/auth/logout-all")
+    suspend fun logoutAllSessions(): Response<ApiResponse<Unit>>
+
     // -------------------------------------------------------------
     // Home Feed & Stories (Screen 1 & 2)
     // -------------------------------------------------------------
@@ -1287,12 +1305,62 @@ data class SettingsPrivacyDto(
     val who_can_follow: String = "everyone",
     val who_can_message: String = "everyone",
     val who_can_see_friends: String = "public",
+    val story_visibility: String = "public",
     val is_profile_locked: Boolean = false,
     val has_avatar_guard: Boolean = false,
-    val show_online_status: Boolean = true,
+    val find_by_email: String = "everyone",
+    val find_by_phone: String = "everyone",
+    val profile_visibility: String = "public",
     val search_engine_indexing: Boolean = true,
+    val show_online_status: Boolean = true,
+    val show_last_seen: String = "everyone",
+    val read_receipts_enabled: Boolean = true,
+    val two_factor_enabled: Boolean = false,
     val dark_mode: Boolean = false,
     val language: String = "en"
+)
+
+@Serializable
+data class UpdateSettingsPrivacyRequest(
+    val who_can_see_posts: String? = null,
+    val who_can_send_friend_requests: String? = null,
+    val who_can_follow: String? = null,
+    val who_can_message: String? = null,
+    val who_can_see_friends: String? = null,
+    val story_visibility: String? = null,
+    val is_profile_locked: Boolean? = null,
+    val has_avatar_guard: Boolean? = null,
+    val find_by_email: String? = null,
+    val find_by_phone: String? = null,
+    val profile_visibility: String? = null,
+    val search_engine_indexing: Boolean? = null,
+    val show_online_status: Boolean? = null,
+    val show_last_seen: String? = null,
+    val read_receipts_enabled: Boolean? = null,
+    val two_factor_enabled: Boolean? = null
+)
+
+@Serializable
+data class Toggle2faRequest(
+    val enabled: Boolean
+)
+
+@Serializable
+data class Toggle2faDto(
+    val two_factor_enabled: Boolean = false
+)
+
+@Serializable
+data class UserSessionDto(
+    val id: Long,
+    val user_id: Long = 0L,
+    val device_name: String? = null,
+    val browser: String? = null,
+    val os: String? = null,
+    val ip_address: String? = null,
+    val location: String? = null,
+    val is_current: Boolean = false,
+    val last_active_at: String? = null
 )
 
 @Serializable

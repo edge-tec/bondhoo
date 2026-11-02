@@ -263,12 +263,16 @@ class SettingsApiController extends Controller
                 'story_visibility' => $userSetting->story_visibility ?? 'public',
                 'is_profile_locked' => (bool) $userSetting->is_profile_locked,
                 'has_avatar_guard' => (bool) $userSetting->has_avatar_guard,
+                'find_by_email' => $userSetting->find_by_email ?? 'everyone',
+                'find_by_phone' => $userSetting->find_by_phone ?? 'everyone',
                 'dark_mode' => (bool) $userSetting->dark_mode,
                 'language' => $userSetting->language ?? 'bn',
                 'profile_visibility' => $privacySetting->profile_visibility ?? 'public',
                 'search_engine_indexing' => (bool) $privacySetting->search_engine_indexing,
                 'show_online_status' => (bool) $privacySetting->show_online_status,
+                'show_last_seen' => $privacySetting->show_last_seen ?? 'everyone',
                 'read_receipts_enabled' => (bool) $privacySetting->read_receipts_enabled,
+                'two_factor_enabled' => (bool) ($user->two_factor_enabled || $user->twoFactorSetting?->is_enabled),
                 'notification_email' => (bool) $userSetting->notification_email,
                 'notification_push' => (bool) $userSetting->notification_push,
                 'notification_sms' => (bool) $userSetting->notification_sms,
@@ -296,12 +300,16 @@ class SettingsApiController extends Controller
             'story_visibility' => ['nullable', 'string', 'in:public,friends'],
             'is_profile_locked' => ['nullable', 'boolean'],
             'has_avatar_guard' => ['nullable', 'boolean'],
+            'find_by_email' => ['nullable', 'string', 'in:everyone,friends,only_me'],
+            'find_by_phone' => ['nullable', 'string', 'in:everyone,friends,only_me'],
             'dark_mode' => ['nullable', 'boolean'],
             'language' => ['nullable', 'string', 'in:bn,en'],
             'profile_visibility' => ['nullable', 'string', 'in:public,friends,private'],
             'search_engine_indexing' => ['nullable', 'boolean'],
             'show_online_status' => ['nullable', 'boolean'],
+            'show_last_seen' => ['nullable', 'string', 'in:everyone,friends,nobody'],
             'read_receipts_enabled' => ['nullable', 'boolean'],
+            'two_factor_enabled' => ['nullable', 'boolean'],
             'notification_email' => ['nullable', 'boolean'],
             'notification_push' => ['nullable', 'boolean'],
             'notification_sms' => ['nullable', 'boolean'],
@@ -319,6 +327,8 @@ class SettingsApiController extends Controller
             'story_visibility',
             'is_profile_locked',
             'has_avatar_guard',
+            'find_by_email',
+            'find_by_phone',
             'dark_mode',
             'language',
             'notification_email',
@@ -330,6 +340,7 @@ class SettingsApiController extends Controller
             'profile_visibility',
             'search_engine_indexing',
             'show_online_status',
+            'show_last_seen',
             'read_receipts_enabled',
         ];
 
@@ -355,6 +366,24 @@ class SettingsApiController extends Controller
             $privacySetting->update($privacySettingUpdates);
         }
 
+        if (array_key_exists('two_factor_enabled', $validated)) {
+            $twoFactorEnabled = (bool) $validated['two_factor_enabled'];
+            $user->two_factor_enabled = $twoFactorEnabled;
+            if ($twoFactorEnabled && empty($user->two_factor_confirmed_at)) {
+                $user->two_factor_confirmed_at = now();
+            }
+            $user->save();
+
+            UserTwoFactor::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'is_enabled' => $twoFactorEnabled,
+                    'confirmed_at' => $twoFactorEnabled ? now() : null,
+                    'type' => $user->two_factor_type ?? 'totp',
+                ]
+            );
+        }
+
         return response()->json([
             'success' => true,
             'status' => 'success',
@@ -367,12 +396,16 @@ class SettingsApiController extends Controller
                 'story_visibility' => $userSetting->story_visibility ?? 'public',
                 'is_profile_locked' => (bool) $userSetting->is_profile_locked,
                 'has_avatar_guard' => (bool) $userSetting->has_avatar_guard,
+                'find_by_email' => $userSetting->find_by_email ?? 'everyone',
+                'find_by_phone' => $userSetting->find_by_phone ?? 'everyone',
                 'dark_mode' => (bool) $userSetting->dark_mode,
                 'language' => $userSetting->language ?? 'bn',
                 'profile_visibility' => $privacySetting->profile_visibility ?? 'public',
                 'search_engine_indexing' => (bool) $privacySetting->search_engine_indexing,
                 'show_online_status' => (bool) $privacySetting->show_online_status,
+                'show_last_seen' => $privacySetting->show_last_seen ?? 'everyone',
                 'read_receipts_enabled' => (bool) $privacySetting->read_receipts_enabled,
+                'two_factor_enabled' => (bool) ($user->two_factor_enabled || $user->twoFactorSetting?->is_enabled),
                 'notification_email' => (bool) $userSetting->notification_email,
                 'notification_push' => (bool) $userSetting->notification_push,
                 'notification_sms' => (bool) $userSetting->notification_sms,
