@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">কানেক্টলি</string>
+    <string name="nav_home">হোম</string>
+    <string name="nav_friends">বন্ধুগণ</string>
+    <string name="nav_videos">ভিডিও</string>
+    <string name="nav_messenger">মেসেঞ্জার</string>
+    <string name="nav_menu">মেনু</string>
+
+    <!-- Settings & Appearance -->
+    <string name="settings_title">সেটিংস</string>
+    <string name="appearance_title">অ্যাপিয়ারেন্স ও থিম</string>
+    <string name="theme_light">লাইট থিম</string>
+    <string name="theme_dark">ডার্ক থিম</string>
+    <string name="theme_system">সিস্টেম ডিফল্ট</string>
+    <string name="accent_color">অ্যাকসেন্ট কালার</string>
+    <string name="font_size">ফন্ট সাইজ</string>
+    <string name="compact_mode">কমপ্যাক্ট ডিসপ্লে</string>
+    <string name="reduce_animations">অ্যানিমেশন হ্রাস করুন</string>
+
+    <!-- Languages -->
+    <string name="language_title">ভাষা ও অঞ্চল</string>
+    <string name="lang_english">English (US)</string>
+    <string name="lang_bangla">বাংলা (বাংলাদেশ)</string>
+    <string name="save_changes">সংরক্ষণ করুন</string>
+    <string name="cancel">বাতিল</string>
+</resources>

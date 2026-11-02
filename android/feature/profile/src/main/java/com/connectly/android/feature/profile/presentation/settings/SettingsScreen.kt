@@ -49,6 +49,8 @@ fun SettingsScreen(
     onLogoutSuccess: () -> Unit,
     onNavigateToEditProfile: () -> Unit = onNavigateToProfile,
     onNavigateToNotificationSettings: () -> Unit = {},
+    onNavigateToAppearance: () -> Unit = {},
+    onNavigateToLanguage: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -124,7 +126,7 @@ fun SettingsScreen(
                 icon = Icons.Default.Palette,
                 category = "PREFERENCES",
                 value = state.selectedTheme,
-                onClick = { viewModel.openDialog(SettingsDialogType.THEME_PICKER) }
+                onClick = onNavigateToAppearance
             ),
             SettingItemDef(
                 id = "language",
@@ -133,7 +135,7 @@ fun SettingsScreen(
                 icon = Icons.Default.Language,
                 category = "PREFERENCES",
                 value = state.selectedLanguage,
-                onClick = { viewModel.openDialog(SettingsDialogType.LANGUAGE_PICKER) }
+                onClick = onNavigateToLanguage
             ),
             SettingItemDef(
                 id = "feed",

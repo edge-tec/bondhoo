@@ -83,3 +83,4 @@ sealed interface NotificationSettingsIntent {
     object SaveAllSettings : NotificationSettingsIntent
     object DismissMessages : NotificationSettingsIntent
 }
+

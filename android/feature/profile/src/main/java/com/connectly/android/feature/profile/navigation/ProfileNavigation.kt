@@ -4,8 +4,11 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
+import com.connectly.android.core.designsystem.theme.ThemeManager
+import com.connectly.android.feature.profile.presentation.appearance.AppearanceSettingsScreen
 import com.connectly.android.feature.profile.presentation.edit.EditProfileScreen
 import com.connectly.android.feature.profile.presentation.friends.FriendsScreen
+import com.connectly.android.feature.profile.presentation.language.LanguageSettingsScreen
 import com.connectly.android.feature.profile.presentation.notifications.NotificationSettingsScreen
 import com.connectly.android.feature.profile.presentation.privacy.PrivacySettingsScreen
 import com.connectly.android.feature.profile.presentation.profile.ProfileScreen
@@ -15,6 +18,8 @@ const val PROFILE_ROUTE = "profile_route"
 const val EDIT_PROFILE_ROUTE = "edit_profile_route"
 const val PRIVACY_SETTINGS_ROUTE = "privacy_settings_route"
 const val NOTIFICATION_SETTINGS_ROUTE = "notification_settings_route"
+const val APPEARANCE_SETTINGS_ROUTE = "appearance_settings_route"
+const val LANGUAGE_SETTINGS_ROUTE = "language_settings_route"
 const val SETTINGS_ROUTE = "settings_route"
 const val FRIENDS_ROUTE = "friends_route"
 
@@ -38,12 +43,21 @@ fun NavController.navigateToNotificationSettings(navOptions: NavOptions? = null)
     navigate(NOTIFICATION_SETTINGS_ROUTE, navOptions)
 }
 
+fun NavController.navigateToAppearanceSettings(navOptions: NavOptions? = null) {
+    navigate(APPEARANCE_SETTINGS_ROUTE, navOptions)
+}
+
+fun NavController.navigateToLanguageSettings(navOptions: NavOptions? = null) {
+    navigate(LANGUAGE_SETTINGS_ROUTE, navOptions)
+}
+
 fun NavController.navigateToSettings(navOptions: NavOptions? = null) {
     navigate(SETTINGS_ROUTE, navOptions)
 }
 
 fun NavGraphBuilder.profileGraph(
     navController: NavController,
+    themeManager: ThemeManager,
     onLogout: () -> Unit
 ) {
     composable(PROFILE_ROUTE) {
@@ -73,6 +87,20 @@ fun NavGraphBuilder.profileGraph(
         )
     }
 
+    composable(APPEARANCE_SETTINGS_ROUTE) {
+        AppearanceSettingsScreen(
+            themeManager = themeManager,
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
+    composable(LANGUAGE_SETTINGS_ROUTE) {
+        LanguageSettingsScreen(
+            themeManager = themeManager,
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
     composable(SETTINGS_ROUTE) {
         SettingsScreen(
             onNavigateBack = { navController.popBackStack() },
@@ -80,6 +108,8 @@ fun NavGraphBuilder.profileGraph(
             onNavigateToEditProfile = { navController.navigateToEditProfile() },
             onNavigateToPrivacy = { navController.navigateToPrivacySettings() },
             onNavigateToNotificationSettings = { navController.navigateToNotificationSettings() },
+            onNavigateToAppearance = { navController.navigateToAppearanceSettings() },
+            onNavigateToLanguage = { navController.navigateToLanguageSettings() },
             onLogoutSuccess = onLogout
         )
     }

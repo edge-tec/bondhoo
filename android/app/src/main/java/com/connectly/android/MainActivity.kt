@@ -37,9 +37,15 @@ import com.connectly.android.feature.live.navigation.navigateToLive
 import com.connectly.android.feature.notifications.navigation.navigateToNotifications
 import com.connectly.android.feature.notifications.navigation.navigateToSearch
 import com.connectly.android.feature.notifications.navigation.notificationsGraph
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import com.connectly.android.core.designsystem.theme.ThemeManager
+import com.connectly.android.feature.profile.navigation.navigateToAppearanceSettings
 import com.connectly.android.feature.profile.navigation.navigateToEditProfile
+import com.connectly.android.feature.profile.navigation.navigateToLanguageSettings
 import com.connectly.android.feature.profile.navigation.navigateToNotificationSettings
 import com.connectly.android.feature.profile.navigation.navigateToPrivacySettings
+import javax.inject.Inject
 import com.connectly.android.feature.profile.navigation.navigateToProfile
 import com.connectly.android.feature.profile.navigation.profileGraph
 import com.connectly.android.feature.profile.presentation.friends.FriendsScreen
@@ -56,11 +62,28 @@ const val MAIN_HOME_ROUTE = "main_home"
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    @Inject
+    lateinit var themeManager: ThemeManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            ConnectlyTheme {
+            val themeMode by themeManager.themeMode.collectAsState()
+            val accentId by themeManager.accentId.collectAsState()
+            val fontScale by themeManager.fontScale.collectAsState()
+            val compactDisplay by themeManager.compactDisplay.collectAsState()
+            val reduceAnimations by themeManager.reduceAnimations.collectAsState()
+
+            val accent = remember(accentId) { themeManager.getCurrentAccent() }
+
+            ConnectlyTheme(
+                themeMode = themeMode,
+                accentColor = accent.color,
+                fontScale = fontScale,
+                reduceAnimations = reduceAnimations,
+                compactDisplay = compactDisplay
+            ) {
                 val rootNavController = rememberNavController()
 
                 NavHost(
@@ -78,6 +101,7 @@ class MainActivity : ComponentActivity() {
 
                     profileGraph(
                         navController = rootNavController,
+                        themeManager = themeManager,
                         onLogout = {
                             rootNavController.navigate(LOGIN_ROUTE) {
                                 popUpTo(0) { inclusive = true }
@@ -195,6 +219,8 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToEditProfile = { rootNavController.navigateToEditProfile() },
                                         onNavigateToPrivacy = { rootNavController.navigateToPrivacySettings() },
                                         onNavigateToNotificationSettings = { rootNavController.navigateToNotificationSettings() },
+                                        onNavigateToAppearance = { rootNavController.navigateToAppearanceSettings() },
+                                        onNavigateToLanguage = { rootNavController.navigateToLanguageSettings() },
                                         onLogoutSuccess = {
                                             rootNavController.navigate(LOGIN_ROUTE) {
                                                 popUpTo(0) { inclusive = true }

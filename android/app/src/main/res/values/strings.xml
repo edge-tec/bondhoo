@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Connectly</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_friends">Friends</string>
+    <string name="nav_videos">Videos</string>
+    <string name="nav_messenger">Messenger</string>
+    <string name="nav_menu">Menu</string>
+
+    <!-- Settings & Appearance -->
+    <string name="settings_title">Settings</string>
+    <string name="appearance_title">Appearance &amp; Theme</string>
+    <string name="theme_light">Light Theme</string>
+    <string name="theme_dark">Dark Theme</string>
+    <string name="theme_system">System Default</string>
+    <string name="accent_color">Accent Color</string>
+    <string name="font_size">Font Size</string>
+    <string name="compact_mode">Compact Display</string>
+    <string name="reduce_animations">Reduce Animations</string>
+
+    <!-- Languages -->
+    <string name="language_title">Language &amp; Region</string>
+    <string name="lang_english">English (US)</string>
+    <string name="lang_bangla">বাংলা (বাংলাদেশ)</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="cancel">Cancel</string>
+</resources>

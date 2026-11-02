@@ -135,3 +135,4 @@ class NotificationSettingsViewModelTest {
         assertEquals("Notification preferences updated.", viewModel.uiState.value.successMessage)
     }
 }
+
