@@ -49,24 +49,33 @@ class CallingService
             ],
         ];
 
-        $turnUrl = config('services.turn.url', env('TURN_SERVER_URL'));
-        $turnSecret = config('services.turn.secret', env('TURN_SERVER_SECRET'));
+        $turnUrl = config('services.turn.url') ?: env('TURN_SERVER_URL');
+        $turnSecret = config('services.turn.secret') ?: env('TURN_SERVER_SECRET');
+        $turnTlsUrl = config('services.turn.tls_url') ?: env('TURN_SERVER_TLS_URL');
+        $ttl = (int) (config('services.turn.ttl') ?: env('TURN_CREDENTIAL_TTL', 86400));
 
-        // If custom TURN server is configured in env/config (and not non-existent placeholder)
-        if ($turnUrl && ! str_contains($turnUrl, 'turn.jugajug.com')) {
-            $timestamp = time() + 86400; // 24 hours validity
+        // When a real TURN server is configured with an ephemeral HMAC secret
+        if (! empty($turnUrl) && ! empty($turnSecret) && ! str_contains((string) $turnUrl, 'placeholder')) {
+            $timestamp = time() + max(300, $ttl); // Enforce minimum 5 minutes validity
             $username = $user ? "{$timestamp}:{$user->id}" : "{$timestamp}:guest";
             $credential = base64_encode(hash_hmac('sha1', $username, (string) $turnSecret, true));
 
+            $cleanUrl = preg_replace('/^(turn|turns):\/\/?/i', '', (string) $turnUrl);
+
             $turnUrls = [
-                $turnUrl.'?transport=udp',
-                $turnUrl.'?transport=tcp',
+                "turn:{$cleanUrl}?transport=udp",
+                "turn:{$cleanUrl}?transport=tcp",
             ];
 
-            // If hostname is available, add turns (TLS) port 5349 fallback
-            $host = parse_url($turnUrl, PHP_URL_HOST) ?: parse_url('turn://'.$turnUrl, PHP_URL_HOST);
-            if ($host) {
-                $turnUrls[] = "turns:{$host}:5349?transport=tcp";
+            // If explicit TLS URL is configured, or extract host for port 5349
+            if (! empty($turnTlsUrl)) {
+                $cleanTls = preg_replace('/^(turn|turns):\/\/?/i', '', (string) $turnTlsUrl);
+                $turnUrls[] = "turns:{$cleanTls}?transport=tcp";
+            } else {
+                $host = parse_url('turn://'.$cleanUrl, PHP_URL_HOST) ?: explode(':', $cleanUrl)[0];
+                if (! empty($host)) {
+                    $turnUrls[] = "turns:{$host}:5349?transport=tcp";
+                }
             }
 
             $servers[] = [
@@ -75,7 +84,7 @@ class CallingService
                 'credential' => $credential,
             ];
         } else {
-            // Live public OpenRelay TURN fallback for reliable NAT traversal across mobile CGNAT
+            // Live public OpenRelay fallback for reliable NAT traversal across mobile CGNAT during development
             $servers[] = [
                 'urls' => [
                     'turn:openrelay.metered.ca:80',

@@ -44,6 +44,8 @@ return [
     'turn' => [
         'url' => env('TURN_SERVER_URL'),
         'secret' => env('TURN_SERVER_SECRET'),
+        'tls_url' => env('TURN_SERVER_TLS_URL'),
+        'ttl' => (int) env('TURN_CREDENTIAL_TTL', 86400),
     ],
 
     'livekit' => [

@@ -737,12 +737,17 @@ interface ConnectlyApi {
     ): Response<ApiResponse<List<UserDto>>>
 
     // -------------------------------------------------------------
-    // Device & FCM Push Token Registration
+    // Device & FCM Push Token Registration & Lifecycle
     // -------------------------------------------------------------
     @POST("v1/devices/register")
     suspend fun registerDevice(
         @Body body: RegisterDeviceRequest
     ): Response<ApiResponse<DeviceSessionDto>>
+
+    @DELETE("v1/devices/{id}")
+    suspend fun revokeDeviceSession(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Map<String, Boolean>>>
 
     // -------------------------------------------------------------
     // Content Moderation & Reports
