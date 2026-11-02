@@ -48,6 +48,23 @@ fun ConnectlyAvatar(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center
     ) {
+        // Base layer: Initials Avatar (always rendered as background/placeholder)
+        Box(
+            modifier = Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(ConnectlyBlue),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = name.firstOrNull()?.uppercase() ?: "U",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = (size.value * 0.4).sp
+            )
+        }
+
+        // Overlay: Real image loaded from remote URL
         if (!resolvedUrl.isNullOrBlank()) {
             AsyncImage(
                 model = resolvedUrl,
@@ -57,22 +74,6 @@ fun ConnectlyAvatar(
                     .size(size)
                     .clip(CircleShape)
             )
-        } else {
-            // Fallback Initials Avatar
-            Box(
-                modifier = Modifier
-                    .size(size)
-                    .clip(CircleShape)
-                    .background(ConnectlyBlue),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = name.firstOrNull()?.uppercase() ?: "U",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = (size.value * 0.4).sp
-                )
-            }
         }
 
         // Online presence indicator dot

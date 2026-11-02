@@ -44,46 +44,43 @@ class FriendsViewModel @Inject constructor(
     }
 
     private fun acceptFriendRequest(userId: Long) {
+        val accepted = _uiState.value.friendRequests.find { it.user.id == userId }
+        _uiState.update { state ->
+            state.copy(
+                friendRequests = state.friendRequests.filterNot { it.user.id == userId },
+                friendsList = if (accepted != null) state.friendsList + accepted.user else state.friendsList
+            )
+        }
         viewModelScope.launch {
-            profileRepository.acceptFriendRequest(userId).collect { result ->
-                if (result is Result.Success) {
-                    val accepted = _uiState.value.friendRequests.find { it.user.id == userId }
-                    _uiState.update { state ->
-                        state.copy(
-                            friendRequests = state.friendRequests.filterNot { it.user.id == userId },
-                            friendsList = if (accepted != null) state.friendsList + accepted.user else state.friendsList
-                        )
-                    }
-                }
-            }
+            try {
+                profileRepository.acceptFriendRequest(userId).collect { }
+            } catch (_: Exception) {}
         }
     }
 
     private fun rejectFriendRequest(userId: Long) {
+        _uiState.update { state ->
+            state.copy(
+                friendRequests = state.friendRequests.filterNot { it.user.id == userId }
+            )
+        }
         viewModelScope.launch {
-            profileRepository.rejectFriendRequest(userId).collect { result ->
-                if (result is Result.Success) {
-                    _uiState.update { state ->
-                        state.copy(
-                            friendRequests = state.friendRequests.filterNot { it.user.id == userId }
-                        )
-                    }
-                }
-            }
+            try {
+                profileRepository.rejectFriendRequest(userId).collect { }
+            } catch (_: Exception) {}
         }
     }
 
     private fun sendFriendRequest(userId: Long) {
+        _uiState.update { state ->
+            state.copy(
+                suggestions = state.suggestions.filterNot { it.user.id == userId }
+            )
+        }
         viewModelScope.launch {
-            profileRepository.sendFriendRequest(userId).collect { result ->
-                if (result is Result.Success) {
-                    _uiState.update { state ->
-                        state.copy(
-                            suggestions = state.suggestions.filterNot { it.user.id == userId }
-                        )
-                    }
-                }
-            }
+            try {
+                profileRepository.sendFriendRequest(userId).collect { }
+            } catch (_: Exception) {}
         }
     }
 
@@ -96,6 +93,11 @@ class FriendsViewModel @Inject constructor(
     private fun unfriendUser(userId: Long) {
         _uiState.update { state ->
             state.copy(friendsList = state.friendsList.filterNot { it.id == userId })
+        }
+        viewModelScope.launch {
+            try {
+                profileRepository.unfollowUser(userId).collect { }
+            } catch (_: Exception) {}
         }
     }
 

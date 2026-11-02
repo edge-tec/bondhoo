@@ -17,6 +17,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -418,6 +421,8 @@ private fun FriendItemCard(
     onMessageClick: () -> Unit,
     onUnfriendClick: () -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -464,13 +469,34 @@ private fun FriendItemCard(
                 )
             }
 
-            IconButton(onClick = onUnfriendClick) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "Options",
-                    tint = TextSecondaryLight,
-                    modifier = Modifier.size(20.dp)
-                )
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Options",
+                        tint = TextSecondaryLight,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("View Profile") },
+                        onClick = {
+                            showMenu = false
+                            onProfileClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Unfriend", color = ConnectlyRose) },
+                        onClick = {
+                            showMenu = false
+                            onUnfriendClick()
+                        }
+                    )
+                }
             }
         }
     }
