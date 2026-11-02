@@ -309,3 +309,4 @@ private fun AboutActionRow(
         Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
+

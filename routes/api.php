@@ -438,15 +438,15 @@ Route::prefix('v1')->group(function () {
             Route::get('/overview', [SettingsApiController::class, 'overview']);
             Route::get('/account', [SettingsApiController::class, 'getAccount']);
             Route::put('/account', [SettingsApiController::class, 'updateAccount']);
-            Route::put('/password', [SettingsApiController::class, 'updatePassword']);
+            Route::put('/password', [SettingsApiController::class, 'updatePassword'])->middleware('throttle:6,1');
             Route::get('/privacy', [SettingsApiController::class, 'getPrivacy']);
             Route::put('/privacy', [SettingsApiController::class, 'updatePrivacy']);
             Route::get('/blocking', [SettingsApiController::class, 'getBlockedUsers']);
-            Route::post('/blocking/{userId}', [SettingsApiController::class, 'blockUser'])->whereNumber('userId');
-            Route::delete('/blocking/{userId}', [SettingsApiController::class, 'unblockUser'])->whereNumber('userId');
-            Route::post('/blocking/{userId}/unrestrict', [SettingsApiController::class, 'unrestrictUser'])->whereNumber('userId');
-            Route::post('/blocking/{userId}/unmute', [SettingsApiController::class, 'unmuteUser'])->whereNumber('userId');
-            Route::post('/2fa/toggle', [SettingsApiController::class, 'toggleTwoFactor']);
+            Route::post('/blocking/{userId}', [SettingsApiController::class, 'blockUser'])->whereNumber('userId')->middleware('throttle:30,1');
+            Route::delete('/blocking/{userId}', [SettingsApiController::class, 'unblockUser'])->whereNumber('userId')->middleware('throttle:30,1');
+            Route::post('/blocking/{userId}/unrestrict', [SettingsApiController::class, 'unrestrictUser'])->whereNumber('userId')->middleware('throttle:30,1');
+            Route::post('/blocking/{userId}/unmute', [SettingsApiController::class, 'unmuteUser'])->whereNumber('userId')->middleware('throttle:30,1');
+            Route::post('/2fa/toggle', [SettingsApiController::class, 'toggleTwoFactor'])->middleware('throttle:10,1');
         });
 
         // OpenAPI Documentation Endpoint
