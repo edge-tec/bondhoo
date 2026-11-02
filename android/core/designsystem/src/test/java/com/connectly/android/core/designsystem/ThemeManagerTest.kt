@@ -91,6 +91,25 @@ class ThemeManagerTest {
     }
 
     @Test
+    fun testAccessibilityToggles() {
+        assertFalse(themeManager.highContrast.value)
+        assertFalse(themeManager.videoCaptions.value)
+        assertFalse(themeManager.screenReaderOptimized.value)
+
+        themeManager.setHighContrast(true)
+        assertTrue(themeManager.highContrast.value)
+        verify { prefsEditor.putBoolean("high_contrast", true) }
+
+        themeManager.setVideoCaptions(true)
+        assertTrue(themeManager.videoCaptions.value)
+        verify { prefsEditor.putBoolean("video_captions", true) }
+
+        themeManager.setScreenReaderOptimized(true)
+        assertTrue(themeManager.screenReaderOptimized.value)
+        verify { prefsEditor.putBoolean("screen_reader_optimized", true) }
+    }
+
+    @Test
     fun testSetLanguage() {
         themeManager.setLanguage("bn")
         assertEquals("bn", themeManager.language.value)

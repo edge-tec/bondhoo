@@ -49,6 +49,15 @@ class ThemeManager @Inject constructor(
     private val _reduceAnimations = MutableStateFlow(prefs.getBoolean("reduce_animations", false))
     val reduceAnimations: StateFlow<Boolean> = _reduceAnimations.asStateFlow()
 
+    private val _highContrast = MutableStateFlow(prefs.getBoolean("high_contrast", false))
+    val highContrast: StateFlow<Boolean> = _highContrast.asStateFlow()
+
+    private val _videoCaptions = MutableStateFlow(prefs.getBoolean("video_captions", false))
+    val videoCaptions: StateFlow<Boolean> = _videoCaptions.asStateFlow()
+
+    private val _screenReaderOptimized = MutableStateFlow(prefs.getBoolean("screen_reader_optimized", false))
+    val screenReaderOptimized: StateFlow<Boolean> = _screenReaderOptimized.asStateFlow()
+
     private val _language = MutableStateFlow(prefs.getString("language_code", "en") ?: "en")
     val language: StateFlow<String> = _language.asStateFlow()
 
@@ -80,6 +89,21 @@ class ThemeManager @Inject constructor(
     fun setReduceAnimations(reduce: Boolean) {
         _reduceAnimations.value = reduce
         prefs.edit().putBoolean("reduce_animations", reduce).apply()
+    }
+
+    fun setHighContrast(enabled: Boolean) {
+        _highContrast.value = enabled
+        prefs.edit().putBoolean("high_contrast", enabled).apply()
+    }
+
+    fun setVideoCaptions(enabled: Boolean) {
+        _videoCaptions.value = enabled
+        prefs.edit().putBoolean("video_captions", enabled).apply()
+    }
+
+    fun setScreenReaderOptimized(enabled: Boolean) {
+        _screenReaderOptimized.value = enabled
+        prefs.edit().putBoolean("screen_reader_optimized", enabled).apply()
     }
 
     fun setLanguage(langCode: String) {

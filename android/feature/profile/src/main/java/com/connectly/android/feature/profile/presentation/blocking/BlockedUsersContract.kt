@@ -51,3 +51,4 @@ sealed interface BlockedUsersIntent {
     object ExecuteConfirmedAction : BlockedUsersIntent
     object DismissFeedback : BlockedUsersIntent
 }
+

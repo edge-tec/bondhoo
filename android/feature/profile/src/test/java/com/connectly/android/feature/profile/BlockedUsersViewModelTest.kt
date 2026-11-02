@@ -129,3 +129,4 @@ class BlockedUsersViewModelTest {
         assertEquals("Muted Person has been unmuted.", viewModel.uiState.value.successMessage)
     }
 }
+

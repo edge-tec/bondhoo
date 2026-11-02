@@ -54,6 +54,8 @@ fun SettingsScreen(
     onNavigateToMessagingCalls: () -> Unit = {},
     onNavigateToFeedPreferences: () -> Unit = {},
     onNavigateToBlockedUsers: () -> Unit = {},
+    onNavigateToStorage: () -> Unit = {},
+    onNavigateToAccessibility: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -164,7 +166,7 @@ fun SettingsScreen(
                 icon = Icons.Default.Storage,
                 category = "DATA & ACCESSIBILITY",
                 value = state.cacheSizeFormatted,
-                onClick = { viewModel.openDialog(SettingsDialogType.DATA_STORAGE) }
+                onClick = onNavigateToStorage
             ),
             SettingItemDef(
                 id = "accessibility",
@@ -172,7 +174,7 @@ fun SettingsScreen(
                 subtitle = "Larger text, high contrast, reduce motion",
                 icon = Icons.Default.Accessibility,
                 category = "DATA & ACCESSIBILITY",
-                onClick = { viewModel.openDialog(SettingsDialogType.ACCESSIBILITY) }
+                onClick = onNavigateToAccessibility
             ),
             SettingItemDef(
                 id = "help",

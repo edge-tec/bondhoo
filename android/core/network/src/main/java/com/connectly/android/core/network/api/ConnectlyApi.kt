@@ -140,6 +140,9 @@ interface ConnectlyApi {
     @POST("v1/settings/blocking/{userId}/unmute")
     suspend fun unmuteUser(@Path("userId") userId: Long): Response<ApiResponse<Unit>>
 
+    @GET("v2/profile/export")
+    suspend fun exportUserData(): Response<ApiResponse<Map<String, JsonElement>>>
+
     // -------------------------------------------------------------
     // Home Feed & Stories (Screen 1 & 2)
     // -------------------------------------------------------------

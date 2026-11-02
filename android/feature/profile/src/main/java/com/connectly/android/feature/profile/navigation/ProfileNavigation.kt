@@ -5,6 +5,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import com.connectly.android.core.designsystem.theme.ThemeManager
+import com.connectly.android.feature.profile.presentation.accessibility.AccessibilitySettingsScreen
 import com.connectly.android.feature.profile.presentation.appearance.AppearanceSettingsScreen
 import com.connectly.android.feature.profile.presentation.blocking.BlockedUsersScreen
 import com.connectly.android.feature.profile.presentation.edit.EditProfileScreen
@@ -16,6 +17,7 @@ import com.connectly.android.feature.profile.presentation.notifications.Notifica
 import com.connectly.android.feature.profile.presentation.privacy.PrivacySettingsScreen
 import com.connectly.android.feature.profile.presentation.profile.ProfileScreen
 import com.connectly.android.feature.profile.presentation.settings.SettingsScreen
+import com.connectly.android.feature.profile.presentation.storage.DataStorageSettingsScreen
 
 const val PROFILE_ROUTE = "profile_route"
 const val EDIT_PROFILE_ROUTE = "edit_profile_route"
@@ -26,6 +28,8 @@ const val LANGUAGE_SETTINGS_ROUTE = "language_settings_route"
 const val MESSAGING_CALL_SETTINGS_ROUTE = "messaging_call_settings_route"
 const val FEED_PREFERENCES_ROUTE = "feed_preferences_route"
 const val BLOCKED_USERS_ROUTE = "blocked_users_route"
+const val DATA_STORAGE_ROUTE = "data_storage_route"
+const val ACCESSIBILITY_SETTINGS_ROUTE = "accessibility_settings_route"
 const val SETTINGS_ROUTE = "settings_route"
 const val FRIENDS_ROUTE = "friends_route"
 
@@ -67,6 +71,14 @@ fun NavController.navigateToFeedPreferences(navOptions: NavOptions? = null) {
 
 fun NavController.navigateToBlockedUsers(navOptions: NavOptions? = null) {
     navigate(BLOCKED_USERS_ROUTE, navOptions)
+}
+
+fun NavController.navigateToDataStorage(navOptions: NavOptions? = null) {
+    navigate(DATA_STORAGE_ROUTE, navOptions)
+}
+
+fun NavController.navigateToAccessibility(navOptions: NavOptions? = null) {
+    navigate(ACCESSIBILITY_SETTINGS_ROUTE, navOptions)
 }
 
 fun NavController.navigateToSettings(navOptions: NavOptions? = null) {
@@ -138,6 +150,19 @@ fun NavGraphBuilder.profileGraph(
         )
     }
 
+    composable(DATA_STORAGE_ROUTE) {
+        DataStorageSettingsScreen(
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
+    composable(ACCESSIBILITY_SETTINGS_ROUTE) {
+        AccessibilitySettingsScreen(
+            themeManager = themeManager,
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
     composable(SETTINGS_ROUTE) {
         SettingsScreen(
             onNavigateBack = { navController.popBackStack() },
@@ -150,6 +175,8 @@ fun NavGraphBuilder.profileGraph(
             onNavigateToMessagingCalls = { navController.navigateToMessagingCallSettings() },
             onNavigateToFeedPreferences = { navController.navigateToFeedPreferences() },
             onNavigateToBlockedUsers = { navController.navigateToBlockedUsers() },
+            onNavigateToStorage = { navController.navigateToDataStorage() },
+            onNavigateToAccessibility = { navController.navigateToAccessibility() },
             onLogoutSuccess = onLogout
         )
     }
