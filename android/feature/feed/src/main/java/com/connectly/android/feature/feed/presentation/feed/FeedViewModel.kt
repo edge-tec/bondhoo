@@ -65,6 +65,7 @@ class FeedViewModel @Inject constructor(
             is FeedIntent.OpenReportDialog -> _uiState.update { it.copy(reportingPostId = intent.postId) }
             FeedIntent.CloseReportDialog -> _uiState.update { it.copy(reportingPostId = null) }
             is FeedIntent.SubmitReport -> submitReport(intent.postId, intent.reason, intent.details)
+            is FeedIntent.AddSuggestedFriend -> addSuggestedFriend(intent.userId)
             FeedIntent.DismissMessages -> _uiState.update { it.copy(errorMessage = null, reportSuccessMessage = null) }
         }
     }
@@ -117,6 +118,15 @@ class FeedViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    private fun addSuggestedFriend(userId: Long) {
+        _uiState.update { state ->
+            state.copy(
+                suggestedFriends = state.suggestedFriends.filterNot { it.id == userId },
+                reportSuccessMessage = "Friend request sent!"
+            )
         }
     }
 

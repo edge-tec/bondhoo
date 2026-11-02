@@ -195,7 +195,8 @@ fun FeedScreen(
                 item {
                     SuggestedFriendsCarousel(
                         users = state.suggestedFriends,
-                        onAddFriend = { /* Handled via FriendRepository */ }
+                        onAddFriend = { userId -> viewModel.handleIntent(FeedIntent.AddSuggestedFriend(userId)) },
+                        onProfileClick = onNavigateToProfile
                     )
                 }
             }
@@ -298,7 +299,7 @@ private fun StoriesTraySection(
                     color = ConnectlyBlue,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { }
+                    modifier = Modifier.clickable { onStoryClick(301L) }
                 )
             }
 
@@ -442,7 +443,8 @@ private fun CreatePostCard(
 @Composable
 private fun SuggestedFriendsCarousel(
     users: List<User>,
-    onAddFriend: (Long) -> Unit
+    onAddFriend: (Long) -> Unit,
+    onProfileClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -467,7 +469,8 @@ private fun SuggestedFriendsCarousel(
                     Card(
                         modifier = Modifier
                             .width(140.dp)
-                            .border(1.dp, BorderLight, RoundedCornerShape(12.dp)),
+                            .border(1.dp, BorderLight, RoundedCornerShape(12.dp))
+                            .clickable(onClick = onProfileClick),
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {

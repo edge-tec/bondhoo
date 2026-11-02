@@ -43,5 +43,6 @@ sealed interface FeedIntent {
     data class OpenReportDialog(val postId: Long) : FeedIntent
     object CloseReportDialog : FeedIntent
     data class SubmitReport(val postId: Long, val reason: String, val details: String? = null) : FeedIntent
+    data class AddSuggestedFriend(val userId: Long) : FeedIntent
     object DismissMessages : FeedIntent
 }
