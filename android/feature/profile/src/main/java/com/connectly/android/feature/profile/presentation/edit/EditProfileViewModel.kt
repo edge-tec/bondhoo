@@ -166,6 +166,11 @@ class EditProfileViewModel @Inject constructor(
             return
         }
 
+        if (!s.username.matches(Regex("^[a-zA-Z0-9_.-]+$"))) {
+            _uiState.update { it.copy(errorMessage = "Username can only contain letters, numbers, dashes and underscores.") }
+            return
+        }
+
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {

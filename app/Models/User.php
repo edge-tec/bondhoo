@@ -115,6 +115,41 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(ProfileSkill::class)->orderBy('display_order')->orderBy('name');
     }
 
+    public function candidateProfile(): HasOne
+    {
+        return $this->hasOne(CandidateProfile::class);
+    }
+
+    public function candidateResumes(): HasMany
+    {
+        return $this->hasMany(CandidateResume::class);
+    }
+
+    public function candidateCertifications(): HasMany
+    {
+        return $this->hasMany(CandidateCertification::class);
+    }
+
+    public function companyMemberships(): HasMany
+    {
+        return $this->hasMany(CompanyMember::class);
+    }
+
+    public function ownedCompanies(): HasMany
+    {
+        return $this->hasMany(Company::class, 'owner_user_id');
+    }
+
+    public function savedJobs(): HasMany
+    {
+        return $this->hasMany(SavedJob::class);
+    }
+
+    public function jobAlerts(): HasMany
+    {
+        return $this->hasMany(JobAlert::class);
+    }
+
     /**
      * Relationship: Profile Interests
      */

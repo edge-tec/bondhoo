@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Search
@@ -40,17 +41,73 @@ fun ConversationListScreen(
     viewModel: ConversationsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    var newChatName by remember { mutableStateOf("") }
+
+    if (state.showNewChatDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.handleIntent(ConversationsIntent.ShowNewChatDialog(false)) },
+            title = { Text("New Message", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Type the name of the friend you want to chat with:")
+                    OutlinedTextField(
+                        value = newChatName,
+                        onValueChange = { newChatName = it },
+                        placeholder = { Text("e.g. Sadia Islam") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (newChatName.isNotBlank()) {
+                            viewModel.handleIntent(ConversationsIntent.StartNewChat(newChatName))
+                            newChatName = ""
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue)
+                ) {
+                    Text("Start Chat")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.handleIntent(ConversationsIntent.ShowNewChatDialog(false)) }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Messenger",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp,
-                        color = TextPrimaryLight
-                    )
+                    if (state.isSearchVisible) {
+                        OutlinedTextField(
+                            value = state.searchQuery,
+                            onValueChange = { viewModel.handleIntent(ConversationsIntent.SearchQueryChanged(it)) },
+                            placeholder = { Text("Search messages...", fontSize = 14.sp) },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            shape = RoundedCornerShape(25.dp),
+                            trailingIcon = {
+                                IconButton(onClick = { viewModel.handleIntent(ConversationsIntent.ToggleSearch) }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Close Search")
+                                }
+                            }
+                        )
+                    } else {
+                        Text(
+                            text = "Messenger",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            color = TextPrimaryLight
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -58,10 +115,12 @@ fun ConversationListScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Search chats */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search chats")
+                    if (!state.isSearchVisible) {
+                        IconButton(onClick = { viewModel.handleIntent(ConversationsIntent.ToggleSearch) }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search chats")
+                        }
                     }
-                    IconButton(onClick = { /* Compose new chat */ }) {
+                    IconButton(onClick = { viewModel.handleIntent(ConversationsIntent.ShowNewChatDialog(true)) }) {
                         Icon(Icons.Default.Edit, contentDescription = "New message")
                     }
                 },
@@ -75,13 +134,14 @@ fun ConversationListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Segmented Filter Tabs: "All", "Unread 2", "Groups" (Matching Screen 5)
+            // Segmented Filter Tabs: "All", "Unread", "Groups"
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val unreadCount = state.conversations.count { it.unreadCount > 0 }
                 FilterTabButton(
                     label = "All",
                     isSelected = state.selectedFilter == "all",
@@ -90,7 +150,7 @@ fun ConversationListScreen(
 
                 FilterTabButton(
                     label = "Unread",
-                    badge = "2",
+                    badge = if (unreadCount > 0) unreadCount.toString() else null,
                     isSelected = state.selectedFilter == "unread",
                     onClick = { viewModel.handleIntent(ConversationsIntent.SelectFilter("unread")) }
                 )
@@ -102,11 +162,24 @@ fun ConversationListScreen(
                 )
             }
 
-            // Conversation items list
+            // Filtered conversation items list
+            val filteredList = state.conversations.filter { conversation ->
+                val matchesFilter = when (state.selectedFilter) {
+                    "unread" -> conversation.unreadCount > 0
+                    "groups" -> conversation.type == "group"
+                    else -> true
+                }
+                val matchesQuery = if (state.searchQuery.isNotBlank()) {
+                    (conversation.title ?: "").contains(state.searchQuery, ignoreCase = true) ||
+                        (conversation.lastMessage?.body ?: "").contains(state.searchQuery, ignoreCase = true)
+                } else true
+                matchesFilter && matchesQuery
+            }
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(state.conversations, key = { it.id }) { conversation ->
+                items(filteredList, key = { it.id }) { conversation ->
                     ConversationRowItem(
                         conversation = conversation,
                         onClick = { onNavigateToChat(conversation.id) }
@@ -258,4 +331,3 @@ private fun ConversationRowItem(
         }
     }
 }
-

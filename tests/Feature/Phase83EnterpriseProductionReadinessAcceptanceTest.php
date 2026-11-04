@@ -71,7 +71,8 @@ class Phase83EnterpriseProductionReadinessAcceptanceTest extends TestCase
         $stressScript = base_path('tests/Javascript/reel-player-engine-stress.mjs');
         $this->assertFileExists($stressScript);
 
-        $output = shell_exec("node {$stressScript} 2>&1");
+        $escapedScript = escapeshellarg($stressScript);
+        $output = shell_exec("node {$escapedScript} 2>&1");
         $this->assertNotEmpty($output, 'Stress runner should yield json output');
 
         $result = json_decode($output, true);

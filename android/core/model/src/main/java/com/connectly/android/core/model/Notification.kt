@@ -42,6 +42,7 @@ data class SearchResult(
     val users: List<User> = emptyList(),
     val posts: List<Post> = emptyList(),
     val groups: List<Group> = emptyList(),
+    val pages: List<Page> = emptyList(),
     val events: List<Event> = emptyList(),
     val hashtags: List<String> = emptyList()
 )

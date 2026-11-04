@@ -45,4 +45,7 @@ include(":feature:events")
 include(":feature:live")
 include(":feature:notifications")
 include(":feature:settings")
+include(":feature:jobs")
+include(":feature:learning")
+include(":feature:parental")
 

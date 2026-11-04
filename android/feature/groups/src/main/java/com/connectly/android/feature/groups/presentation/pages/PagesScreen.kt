@@ -1,7 +1,6 @@
 package com.connectly.android.feature.groups.presentation.pages
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.connectly.android.core.designsystem.component.ConnectlyAvatar
 import com.connectly.android.core.designsystem.theme.*
@@ -35,57 +36,120 @@ fun PagesScreen(
     onNavigateBack: () -> Unit = {},
     onPageClick: (Long) -> Unit = {},
     onCreatePage: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: PagesViewModel = hiltViewModel()
 ) {
-    var selectedTab by remember { mutableStateOf("discover") }
-    var followedPages by remember { mutableStateOf(setOf(1L)) }
+    val state by viewModel.uiState.collectAsState()
 
-    val samplePages = remember {
-        listOf(
-            PageItem(
-                id = 1L,
-                name = "Tech World BD",
-                category = "Technology & Media",
-                avatarUrl = "https://images.unsplash.com/photo-1518770660439-4636190af475",
-                coverUrl = "https://images.unsplash.com/photo-1519389950473-47ba0277781c",
-                followersCount = 186000,
-                rating = 4.9,
-                isVerified = true,
-                about = "Your daily dose of tech trends, gadget reviews, and programming insights."
-            ),
-            PageItem(
-                id = 2L,
-                name = "Foodies BD Official",
-                category = "Food & Restaurant",
-                avatarUrl = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5",
-                coverUrl = "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
-                followersCount = 312000,
-                rating = 4.8,
-                isVerified = true,
-                about = "Discover the best culinary spots, street food, and authentic recipes in Bangladesh."
-            ),
-            PageItem(
-                id = 3L,
-                name = "Dhaka Living & Lifestyle",
-                category = "Community & Lifestyle",
-                avatarUrl = "https://images.unsplash.com/photo-1513694203232-719a280e022f",
-                coverUrl = "https://images.unsplash.com/photo-1477959858617-67f30bc75b82",
-                followersCount = 94000,
-                rating = 4.7,
-                isVerified = false,
-                about = "Urban lifestyle, cultural events, and living tips in the heart of Dhaka."
-            ),
-            PageItem(
-                id = 4L,
-                name = "Business Growth Accelerator",
-                category = "Business & Entrepreneurship",
-                avatarUrl = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab",
-                coverUrl = "https://images.unsplash.com/photo-1497366216548-37526070297c",
-                followersCount = 175000,
-                rating = 4.9,
-                isVerified = true,
-                about = "Insights, mentorship, and funding opportunities for ambitious startups."
-            )
+    var newPageName by remember { mutableStateOf("") }
+    var newPageUsername by remember { mutableStateOf("") }
+    var newPageCategory by remember { mutableStateOf("Business") }
+    var newPageWebsite by remember { mutableStateOf("") }
+    var newPageEmail by remember { mutableStateOf("") }
+    var newPagePhone by remember { mutableStateOf("") }
+    var newPageBio by remember { mutableStateOf("") }
+
+    if (state.showCreateDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.handleIntent(PagesIntent.ShowCreateDialog(false)) },
+            title = { Text("Create Professional Page", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = newPageName,
+                        onValueChange = { newPageName = it },
+                        label = { Text("Page Name *") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newPageUsername,
+                        onValueChange = { newPageUsername = it },
+                        label = { Text("Username / Custom URL") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newPageCategory,
+                        onValueChange = { newPageCategory = it },
+                        label = { Text("Category") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newPageWebsite,
+                        onValueChange = { newPageWebsite = it },
+                        label = { Text("Website") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = newPageEmail,
+                            onValueChange = { newPageEmail = it },
+                            label = { Text("Business Email") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = newPagePhone,
+                            onValueChange = { newPagePhone = it },
+                            label = { Text("Phone") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    OutlinedTextField(
+                        value = newPageBio,
+                        onValueChange = { newPageBio = it },
+                        label = { Text("Description & Bio") },
+                        maxLines = 2,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (newPageName.isNotBlank()) {
+                            viewModel.handleIntent(
+                                PagesIntent.CreatePageDetailed(
+                                    com.connectly.android.core.network.api.CreatePageRequest(
+                                        name = newPageName,
+                                        username = newPageUsername.ifBlank { null },
+                                        category = newPageCategory,
+                                        website = newPageWebsite.ifBlank { null },
+                                        email = newPageEmail.ifBlank { null },
+                                        phone = newPagePhone.ifBlank { null },
+                                        bio = newPageBio,
+                                        description = newPageBio
+                                    )
+                                )
+                            )
+                            newPageName = ""
+                            newPageUsername = ""
+                            newPageWebsite = ""
+                            newPageEmail = ""
+                            newPagePhone = ""
+                            newPageBio = ""
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = ConnectlyElectricBlue)
+                ) {
+                    Text("Create Page")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.handleIntent(PagesIntent.ShowCreateDialog(false)) }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 
@@ -93,12 +157,28 @@ fun PagesScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Business Pages",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp,
-                        color = TextPrimaryLight
-                    )
+                    if (state.isSearchVisible) {
+                        OutlinedTextField(
+                            value = state.searchQuery,
+                            onValueChange = { viewModel.handleIntent(PagesIntent.SearchQueryChanged(it)) },
+                            placeholder = { Text("Search pages...", fontSize = 14.sp) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().height(50.dp),
+                            shape = RoundedCornerShape(25.dp),
+                            trailingIcon = {
+                                IconButton(onClick = { viewModel.handleIntent(PagesIntent.ToggleSearch) }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Close Search")
+                                }
+                            }
+                        )
+                    } else {
+                        Text(
+                            text = "Business Pages",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            color = TextPrimaryLight
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -106,10 +186,12 @@ fun PagesScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Search */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search Pages")
+                    if (!state.isSearchVisible) {
+                        IconButton(onClick = { viewModel.handleIntent(PagesIntent.ToggleSearch) }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search Pages")
+                        }
                     }
-                    IconButton(onClick = onCreatePage) {
+                    IconButton(onClick = { viewModel.handleIntent(PagesIntent.ShowCreateDialog(true)) }) {
                         Icon(Icons.Default.Add, contentDescription = "Create Page")
                     }
                 },
@@ -132,95 +214,95 @@ fun PagesScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    val followedCount = state.pages.count { it.isFollowed }
                     PageFilterPill(
                         label = "Discover",
-                        isSelected = selectedTab == "discover",
-                        onClick = { selectedTab = "discover" }
+                        isSelected = state.selectedTab == "discover",
+                        onClick = { viewModel.handleIntent(PagesIntent.SelectTab("discover")) }
                     )
                     PageFilterPill(
                         label = "Following",
-                        badge = followedPages.size.toString(),
-                        isSelected = selectedTab == "following",
-                        onClick = { selectedTab = "following" }
+                        badge = if (followedCount > 0) followedCount.toString() else null,
+                        isSelected = state.selectedTab == "following",
+                        onClick = { viewModel.handleIntent(PagesIntent.SelectTab("following")) }
                     )
                     PageFilterPill(
                         label = "Your Pages",
-                        isSelected = selectedTab == "your_pages",
-                        onClick = { selectedTab = "your_pages" }
+                        isSelected = state.selectedTab == "your_pages",
+                        onClick = { viewModel.handleIntent(PagesIntent.SelectTab("your_pages")) }
                     )
                 }
             }
 
             // Featured Business Page Banner (Discover mode)
-            if (selectedTab == "discover") {
+            if (state.selectedTab == "discover" && state.searchQuery.isBlank()) {
                 item {
-                    val featured = samplePages.first()
-                    val isFollowed = followedPages.contains(featured.id)
-
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
-                            .clickable { onPageClick(featured.id) },
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
-                            AsyncImage(
-                                model = featured.coverUrl,
-                                contentDescription = featured.name,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))
+                    state.featuredPage?.let { featured ->
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp)
+                                .clickable { onPageClick(featured.id) },
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
+                                AsyncImage(
+                                    model = featured.coverUrl,
+                                    contentDescription = featured.name,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.verticalGradient(
+                                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))
+                                            )
                                         )
-                                    )
-                            )
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .align(Alignment.BottomStart)
-                                    .padding(14.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = featured.name,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 17.sp,
-                                        color = Color.White
-                                    )
-                                    Text(
-                                        text = "${featured.category} • ${featured.followersCount / 1000}K followers",
-                                        fontSize = 12.sp,
-                                        color = Color.White.copy(alpha = 0.85f)
-                                    )
-                                }
-
-                                Button(
-                                    onClick = {
-                                        followedPages = if (isFollowed) followedPages - featured.id else followedPages + featured.id
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (isFollowed) Color.White.copy(alpha = 0.25f) else ConnectlyElectricBlue,
-                                        contentColor = Color.White
-                                    ),
-                                    shape = RoundedCornerShape(20.dp),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-                                    modifier = Modifier.height(34.dp)
+                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .align(Alignment.BottomStart)
+                                        .padding(14.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    if (isFollowed) {
-                                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Following", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                    } else {
-                                        Text("Follow", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = featured.name,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 17.sp,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = "${featured.category} • ${featured.followersCount / 1000}K followers",
+                                            fontSize = 12.sp,
+                                            color = Color.White.copy(alpha = 0.85f)
+                                        )
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            viewModel.handleIntent(PagesIntent.ToggleFollowPage(featured.id))
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (featured.isFollowed) Color.White.copy(alpha = 0.25f) else ConnectlyElectricBlue,
+                                            contentColor = Color.White
+                                        ),
+                                        shape = RoundedCornerShape(20.dp),
+                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                                        modifier = Modifier.height(34.dp)
+                                    ) {
+                                        if (featured.isFollowed) {
+                                            Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Following", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        } else {
+                                            Text("Follow", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
                                     }
                                 }
                             }
@@ -229,24 +311,164 @@ fun PagesScreen(
                 }
             }
 
-            // Pages List
-            val displayedPages = when (selectedTab) {
-                "following" -> samplePages.filter { followedPages.contains(it.id) }
-                "your_pages" -> emptyList()
-                else -> samplePages
+            // Error Banner
+            if (state.errorMessage != null) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = state.errorMessage ?: "Unable to connect to server",
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                fontSize = 12.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(onClick = { viewModel.handleIntent(PagesIntent.Refresh) }) {
+                                Text("Retry", color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
             }
 
-            items(displayedPages, key = { it.id }) { page ->
-                val isFollowed = followedPages.contains(page.id)
-                BusinessPageCard(
-                    page = page,
-                    isFollowed = isFollowed,
-                    onFollowToggle = {
-                        followedPages = if (isFollowed) followedPages - page.id else followedPages + page.id
-                    },
-                    onClick = { onPageClick(page.id) },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                )
+            // Pages List
+            val displayedPages = state.pages.filter { page ->
+                val matchesTab = when (state.selectedTab) {
+                    "following" -> page.isFollowed
+                    "your_pages" -> page.isOwner
+                    else -> true
+                }
+                val matchesQuery = if (state.searchQuery.isNotBlank()) {
+                    page.name.contains(state.searchQuery, ignoreCase = true) ||
+                        page.category.contains(state.searchQuery, ignoreCase = true)
+                } else true
+                matchesTab && matchesQuery
+            }
+
+            if (displayedPages.isEmpty() && !state.isLoading && state.errorMessage == null) {
+                item {
+                    when (state.selectedTab) {
+                        "following" -> {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Star,
+                                        contentDescription = null,
+                                        tint = ConnectlyBlue,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Text(
+                                        text = "You're not following any pages yet",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = TextPrimaryLight
+                                    )
+                                    Text(
+                                        text = "Follow businesses, creators, and official organisations to see their latest updates in your feed.",
+                                        fontSize = 13.sp,
+                                        color = TextSecondaryLight,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Button(
+                                        onClick = { viewModel.handleIntent(PagesIntent.SelectTab("discover")) },
+                                        colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue),
+                                        shape = RoundedCornerShape(20.dp)
+                                    ) {
+                                        Text("Discover Pages")
+                                    }
+                                }
+                            }
+                        }
+                        "your_pages" -> {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Add,
+                                        contentDescription = null,
+                                        tint = ConnectlyBlue,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Text(
+                                        text = "You haven't created any pages yet",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = TextPrimaryLight
+                                    )
+                                    Text(
+                                        text = "Create a page for your business, brand, or project to connect with customers and share updates.",
+                                        fontSize = 13.sp,
+                                        color = TextSecondaryLight,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Button(
+                                        onClick = { viewModel.handleIntent(PagesIntent.ShowCreateDialog(true)) },
+                                        colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue),
+                                        shape = RoundedCornerShape(20.dp)
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Create Page")
+                                    }
+                                }
+                            }
+                        }
+                        else -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("No pages found.", color = TextSecondaryLight, fontSize = 14.sp)
+                            }
+                        }
+                    }
+                }
+            } else {
+                items(displayedPages, key = { it.id }) { page ->
+                    BusinessPageCard(
+                        page = page,
+                        isFollowed = page.isFollowed,
+                        onFollowToggle = {
+                            viewModel.handleIntent(PagesIntent.ToggleFollowPage(page.id))
+                        },
+                        onClick = { onPageClick(page.id) },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                    )
+                }
             }
         }
     }
@@ -377,4 +599,3 @@ private fun BusinessPageCard(
         }
     }
 }
-

@@ -29,7 +29,8 @@ class Phase84PhysicalDeviceAndProductionDeploymentReliabilityTest extends TestCa
         $stressScript = base_path('tests/Javascript/phase84-prolonged-stress-runner.mjs');
         $this->assertFileExists($stressScript);
 
-        $output = shell_exec("node {$stressScript} 2>&1");
+        $escapedScript = escapeshellarg($stressScript);
+        $output = shell_exec("node {$escapedScript} 2>&1");
         $this->assertNotEmpty($output, 'Prolonged stress runner should produce JSON output');
 
         $result = json_decode($output, true);

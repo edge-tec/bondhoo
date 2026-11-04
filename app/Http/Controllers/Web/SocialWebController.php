@@ -22,6 +22,7 @@ use App\Models\PageMember;
 use App\Models\PageProduct;
 use App\Models\Post;
 use App\Models\Reel;
+use App\Models\SavedItem;
 use App\Models\Story;
 use App\Models\User;
 use App\Models\UserFollower;
@@ -145,10 +146,33 @@ class SocialWebController extends Controller
 
                 return $contentMatch || $authorMatch;
             });
+        } elseif ($activeTab === 'saved') {
+            $savedQuery = SavedItem::where('user_id', $viewer->id)
+                ->where(function ($q): void {
+                    $q->where('item_type', 'post')
+                        ->orWhere('item_type', Post::class);
+                });
+
+            if ($request->filled('collection') && $request->query('collection') !== 'all') {
+                $savedQuery->where('collection_name', $request->query('collection'));
+            }
+
+            $savedPostIds = $savedQuery->pluck('item_id');
+
+            $postsCollection = Post::with(['user.profile', 'media', 'reactions', 'comments'])
+                ->whereIn('id', $savedPostIds)
+                ->latest('id')
+                ->get();
         } elseif ($activeTab === 'memories') {
-            $postsCollection = $postsCollection->filter(function (Post $post) use ($viewer) {
-                return (int) $post->user_id === (int) $viewer->id;
-            });
+            $userPosts = Post::where('user_id', $viewer->id)
+                ->with(['user.profile', 'media', 'reactions', 'comments'])
+                ->latest('created_at')
+                ->take(20)
+                ->get();
+
+            $postsCollection = $userPosts->isNotEmpty()
+                ? $userPosts
+                : $postsCollection->filter(fn (Post $post) => (int) $post->user_id === (int) $viewer->id);
         }
 
         $postsData = $postsCollection->map(function (Post $post) use ($viewer) {

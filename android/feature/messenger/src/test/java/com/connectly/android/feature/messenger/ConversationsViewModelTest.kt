@@ -19,6 +19,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -92,5 +93,33 @@ class ConversationsViewModelTest {
             assertEquals(1, state.conversations.size)
         }
     }
-}
 
+    @Test
+    fun `when toggleSearch dispatched, flips isSearchVisible`() = runTest {
+        viewModel = ConversationsViewModel(getConversationsUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.handleIntent(ConversationsIntent.ToggleSearch)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertTrue(state.isSearchVisible)
+        }
+    }
+
+    @Test
+    fun `when startNewChat dispatched, prepends new conversation and closes dialog`() = runTest {
+        viewModel = ConversationsViewModel(getConversationsUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.handleIntent(ConversationsIntent.StartNewChat("Tariq Islam"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertEquals(2, state.conversations.size)
+            assertEquals("Tariq Islam", state.conversations.first().title)
+        }
+    }
+}

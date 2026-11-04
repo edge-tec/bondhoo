@@ -15,6 +15,7 @@ use App\Services\ProfilePrivacyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class SettingsApiController extends Controller
@@ -230,6 +231,12 @@ class SettingsApiController extends Controller
 
         $user->password = Hash::make($validated['password']);
         $user->save();
+
+        // Invalidate other active tokens for security
+        $currentTokenId = $request->user()->currentAccessToken()?->id;
+        if ($currentTokenId) {
+            $user->tokens()->where('id', '!=', $currentTokenId)->delete();
+        }
 
         return response()->json([
             'success' => true,
@@ -651,6 +658,14 @@ class SettingsApiController extends Controller
 
         $enabled = (bool) $validated['enabled'];
 
+        if ($enabled && empty($user->two_factor_secret)) {
+            // Generate a secure 16-character base32 secret and recovery codes so the user is never locked out
+            $secret = strtoupper(Str::random(16));
+            $recoveryCodes = collect(range(1, 8))->map(fn () => Str::random(10))->toArray();
+            $user->two_factor_secret = encrypt($secret);
+            $user->two_factor_recovery_codes = encrypt(json_encode($recoveryCodes));
+        }
+
         $user->two_factor_enabled = $enabled;
         if ($enabled && empty($user->two_factor_confirmed_at)) {
             $user->two_factor_confirmed_at = now();
@@ -666,12 +681,26 @@ class SettingsApiController extends Controller
             ]
         );
 
+        $responseData = [
+            'two_factor_enabled' => $enabled,
+        ];
+
+        if ($enabled && $user->two_factor_secret) {
+            try {
+                $decryptedSecret = decrypt($user->two_factor_secret);
+                $responseData['secret'] = $decryptedSecret;
+                $responseData['qr_code_url'] = "otpauth://totp/JUGAJUG:{$user->email}?secret={$decryptedSecret}&issuer=JUGAJUG";
+                if ($user->two_factor_recovery_codes) {
+                    $responseData['recovery_codes'] = json_decode(decrypt($user->two_factor_recovery_codes), true);
+                }
+            } catch (\Throwable) {
+            }
+        }
+
         return response()->json([
             'success' => true,
             'status' => 'success',
-            'data' => [
-                'two_factor_enabled' => $enabled,
-            ],
+            'data' => $responseData,
             'message' => $enabled
                 ? 'টু-ফ্যাক্টর অথেনটিকেশন সক্রিয় করা হয়েছে।'
                 : 'টু-ফ্যাক্টর অথেনটিকেশন নিষ্ক্রিয় করা হয়েছে।',

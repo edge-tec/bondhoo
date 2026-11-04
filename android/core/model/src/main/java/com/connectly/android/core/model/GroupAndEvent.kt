@@ -15,7 +15,47 @@ data class Group(
     val isMember: Boolean = false,
     val isAdmin: Boolean = false,
     val isPrivate: Boolean = false,
-    val category: String? = null
+    val category: String? = null,
+    val location: String? = null,
+    val industry: String? = null,
+    val healthScore: Double = 100.0
+)
+
+@Serializable
+data class GroupCategoryItem(
+    val id: Long? = null,
+    val name: String,
+    val slug: String,
+    val icon: String = "folder-outline",
+    val description: String? = null,
+    val groupsCount: Int = 0
+)
+
+@Serializable
+data class GroupInvitationItem(
+    val id: Long,
+    val groupId: Long,
+    val groupName: String = "",
+    val groupAvatar: String? = null,
+    val groupMembersCount: Int = 0,
+    val inviterName: String = "",
+    val role: String = "member",
+    val createdAt: String? = null
+)
+
+@Serializable
+data class GroupFeedItem(
+    val id: Long,
+    val content: String = "",
+    val type: String = "post",
+    val createdAt: String? = null,
+    val likesCount: Int = 0,
+    val commentsCount: Int = 0,
+    val authorName: String = "",
+    val authorAvatar: String? = null,
+    val groupName: String = "",
+    val groupAvatar: String? = null,
+    val groupId: Long? = null
 )
 
 @Serializable

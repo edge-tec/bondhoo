@@ -85,7 +85,7 @@ class BlockedUsersViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val response = when (action) {
-                    RestrictionActionType.UNBLOCK -> api.unblockUser(user.id)
+                    RestrictionActionType.UNBLOCK -> api.unblockUserInSettings(user.id)
                     RestrictionActionType.UNRESTRICT -> api.unrestrictUser(user.id)
                     RestrictionActionType.UNMUTE -> api.unmuteUser(user.id)
                 }

@@ -22,7 +22,11 @@ class GroupMember extends Model
 
     public const ROLE_EDITOR = 'editor';
 
+    public const ROLE_CONTENT_MANAGER = 'content_manager';
+
     public const ROLE_MEMBER = 'member';
+
+    public const ROLE_RESTRICTED = 'restricted';
 
     public const STATUS_ACTIVE = 'active';
 
@@ -126,15 +130,70 @@ class GroupMember extends Model
         return ($this->role === self::ROLE_MODERATOR || $this->isAdmin()) && $this->isActive();
     }
 
+    public function isContentManager(): bool
+    {
+        return ($this->role === self::ROLE_CONTENT_MANAGER || $this->role === self::ROLE_EDITOR || $this->isAdmin()) && $this->isActive();
+    }
+
+    public static function getDefaultPermissionsForRole(string $role): array
+    {
+        return match ($role) {
+            self::ROLE_OWNER => [
+                'manage_settings', 'transfer_ownership', 'delete_group', 'manage_roles',
+                'manage_admins', 'manage_moderators', 'manage_members', 'approve_members',
+                'manage_posts', 'manage_comments', 'manage_announcements', 'manage_events',
+                'manage_files', 'manage_media', 'manage_reports', 'warn_members', 'suspend_members',
+                'view_analytics', 'publish_content', 'comment_and_react', 'invite_members',
+            ],
+            self::ROLE_ADMIN => [
+                'manage_settings', 'manage_moderators', 'manage_members', 'approve_members',
+                'manage_posts', 'approve_posts', 'delete_posts', 'pin_posts', 'manage_comments', 'manage_announcements', 'manage_events',
+                'manage_files', 'manage_media', 'manage_reports', 'moderate_members', 'warn_members', 'suspend_members',
+                'view_analytics', 'publish_content', 'comment_and_react', 'invite_members',
+            ],
+            self::ROLE_MODERATOR => [
+                'approve_members', 'manage_posts', 'approve_posts', 'delete_posts', 'pin_posts', 'manage_comments', 'manage_reports',
+                'moderate_members', 'warn_members', 'suspend_members', 'publish_content', 'comment_and_react',
+                'invite_members', 'view_analytics',
+            ],
+            self::ROLE_CONTENT_MANAGER, self::ROLE_EDITOR => [
+                'publish_content', 'manage_announcements', 'manage_events', 'manage_files',
+                'manage_media', 'schedule_posts', 'comment_and_react', 'invite_members',
+            ],
+            self::ROLE_MEMBER => [
+                'publish_content', 'comment_and_react', 'invite_members', 'rsvp_events',
+            ],
+            self::ROLE_RESTRICTED => [
+                'view_content',
+            ],
+            default => [],
+        };
+    }
+
     public function hasPermission(string $permission): bool
     {
-        if ($this->isAdmin()) {
+        if ($this->isOwner() || $this->isAdmin()) {
             return true;
         }
 
-        $perms = $this->permissions ?? [];
+        if ($this->isRestricted() || $this->isBanned()) {
+            return false;
+        }
 
-        return in_array($permission, $perms, true);
+        $defaultPerms = self::getDefaultPermissionsForRole($this->role);
+        $customPerms = $this->permissions ?? [];
+
+        if (in_array($permission, $defaultPerms, true) || in_array($permission, $customPerms, true)) {
+            return true;
+        }
+
+        // Check if role matches a custom role record for this group
+        $customRole = GroupCustomRole::where('group_id', $this->group_id)->where('name', $this->role)->first();
+        if ($customRole && is_array($customRole->permissions) && in_array($permission, $customRole->permissions, true)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function toResponseArray(): array
@@ -161,5 +220,44 @@ class GroupMember extends Model
             'ban_reason' => $this->ban_reason,
             'joined_at' => $this->joined_at?->toIso8601String(),
         ];
+    }
+
+    public function toDetailedResponseArray(): array
+    {
+        $base = $this->toResponseArray();
+
+        $postsCount = Post::where('group_id', $this->group_id)->where('user_id', $this->user_id)->count();
+        $groupPostIds = Post::where('group_id', $this->group_id)->pluck('id');
+        $commentsCount = Comment::whereIn('post_id', $groupPostIds)->where('user_id', $this->user_id)->count();
+
+        $lastPost = Post::where('group_id', $this->group_id)->where('user_id', $this->user_id)->latest('created_at')->first();
+        $lastComment = Comment::whereIn('post_id', $groupPostIds)->where('user_id', $this->user_id)->latest('created_at')->first();
+
+        $lastActivity = collect([$lastPost?->created_at, $lastComment?->created_at, $this->joined_at])
+            ->filter()
+            ->sortDesc()
+            ->first();
+
+        $accountStatus = 'active';
+        if ($this->isBanned()) {
+            $accountStatus = 'banned';
+        } elseif ($this->isRestricted()) {
+            $accountStatus = 'restricted';
+        } elseif ($this->isMuted()) {
+            $accountStatus = 'muted';
+        } elseif ($this->isPending()) {
+            $accountStatus = 'pending';
+        }
+
+        return array_merge($base, [
+            'name' => $this->user?->name,
+            'username' => $this->user?->username,
+            'avatar_url' => $this->user?->profile?->avatar_url,
+            'posts_published' => $postsCount,
+            'posts_count' => $postsCount,
+            'comments_count' => $commentsCount,
+            'last_activity_at' => $lastActivity?->toIso8601String(),
+            'account_status' => $accountStatus,
+        ]);
     }
 }

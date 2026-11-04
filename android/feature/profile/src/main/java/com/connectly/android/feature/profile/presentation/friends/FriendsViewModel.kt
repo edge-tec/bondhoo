@@ -96,7 +96,7 @@ class FriendsViewModel @Inject constructor(
         }
         viewModelScope.launch {
             try {
-                profileRepository.unfollowUser(userId).collect { }
+                profileRepository.unfriendUser(userId).collect { }
             } catch (_: Exception) {}
         }
     }

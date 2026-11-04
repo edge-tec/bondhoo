@@ -82,4 +82,3 @@ class Phase8BlockedAndRestrictedUsersTest extends TestCase
         $this->assertFalse((bool) $friendship->fresh()->is_muted);
     }
 }
-

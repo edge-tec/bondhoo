@@ -106,7 +106,7 @@ class SettingsViewModelTest {
 
     @Test
     fun testLogoutClearsCredentials() = runTest {
-        coEvery { api.logout() } returns Response.success(ApiResponse(status = "success", message = "Logged out"))
+        coEvery { api.logout() } returns Response.success(Unit)
 
         viewModel.confirmLogout()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -117,7 +117,7 @@ class SettingsViewModelTest {
 
     @Test
     fun testLogoutAllDevicesClearsCredentials() = runTest {
-        coEvery { api.logoutAllSessions() } returns Response.success(ApiResponse(status = "success", message = "Logged out from all sessions"))
+        coEvery { api.logoutAllSessions() } returns Response.success(ApiResponse(data = Unit, message = "Logged out from all sessions"))
 
         viewModel.confirmLogout(logoutAllDevices = true)
         testDispatcher.scheduler.advanceUntilIdle()

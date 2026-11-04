@@ -1,11 +1,14 @@
 package com.connectly.android.core.network.api
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.*
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
@@ -61,6 +64,9 @@ interface ConnectlyApi {
 
     @DELETE("v1/friends/{id}/reject")
     suspend fun rejectFriendRequest(@Path("id") userId: Long): Response<ApiResponse<Unit>>
+
+    @DELETE("v1/friends/{id}")
+    suspend fun unfriendUser(@Path("id") userId: Long): Response<ApiResponse<Unit>>
 
     @POST("v1/friends/{id}/follow")
     suspend fun followUser(@Path("id") userId: Long): Response<ApiResponse<Unit>>
@@ -129,10 +135,10 @@ interface ConnectlyApi {
     suspend fun getBlockedAndRestrictedUsers(): Response<ApiResponse<BlockedUsersResponseDto>>
 
     @POST("v1/settings/blocking/{userId}")
-    suspend fun blockUser(@Path("userId") userId: Long): Response<ApiResponse<Unit>>
+    suspend fun blockUserInSettings(@Path("userId") userId: Long): Response<ApiResponse<Unit>>
 
     @DELETE("v1/settings/blocking/{userId}")
-    suspend fun unblockUser(@Path("userId") userId: Long): Response<ApiResponse<Unit>>
+    suspend fun unblockUserInSettings(@Path("userId") userId: Long): Response<ApiResponse<Unit>>
 
     @POST("v1/settings/blocking/{userId}/unrestrict")
     suspend fun unrestrictUser(@Path("userId") userId: Long): Response<ApiResponse<Unit>>
@@ -170,6 +176,21 @@ interface ConnectlyApi {
 
     @POST("v1/profile/saved-items/toggle")
     suspend fun toggleSavePost(@Body body: ToggleSaveItemPayload): Response<ApiResponse<Unit>>
+
+    @GET("v1/marketplace/products")
+    suspend fun getMarketplaceProducts(
+        @Query("category") category: String? = null,
+        @Query("q") query: String? = null,
+        @Query("page") page: Int = 1
+    ): Response<ApiResponse<List<MarketplaceProductDto>>>
+
+    @GET("v1/profile/saved-items")
+    suspend fun getSavedItems(
+        @Query("collection") collection: String? = null
+    ): Response<ApiResponse<List<SavedItemDto>>>
+
+    @GET("v1/memories")
+    suspend fun getMemories(): Response<ApiResponse<List<MemoryItemDto>>>
 
     @POST("v1/posts/{id}/share")
     suspend fun sharePost(
@@ -544,9 +565,20 @@ interface ConnectlyApi {
     // -------------------------------------------------------------
     // Groups & Community (Screen 4)
     // -------------------------------------------------------------
+    @GET("v1/groups/home")
+    suspend fun getGroupsHome(): Response<ApiResponse<GroupsHomeResponseDto>>
+
+    @GET("v1/groups/categories")
+    suspend fun getGroupCategories(): Response<ApiResponse<List<GroupCategoryDto>>>
+
     @GET("v1/groups")
     suspend fun getGroups(
         @Query("filter") filter: String = "discover",
+        @Query("category") category: String? = null,
+        @Query("q") q: String? = null,
+        @Query("sort") sort: String? = null,
+        @Query("location") location: String? = null,
+        @Query("privacy") privacy: String? = null,
         @Query("page") page: Int = 1
     ): Response<ApiResponse<List<GroupDto>>>
 
@@ -556,6 +588,102 @@ interface ConnectlyApi {
     @GET("v1/groups/{slugOrId}")
     suspend fun getGroupDetails(@Path("slugOrId") slugOrId: String): Response<ApiResponse<GroupDto>>
 
+    @GET("v1/groups/{slugOrId}/profile")
+    suspend fun getGroupProfile(@Path("slugOrId") slugOrId: String): Response<ApiResponse<GroupProfileResponseDto>>
+
+    @GET("v1/groups/{id}/dashboard")
+    suspend fun getGroupDashboard(
+        @Path("id") groupId: Long,
+        @Query("period") period: String? = null,
+        @Query("start_date") startDate: String? = null,
+        @Query("end_date") endDate: String? = null
+    ): Response<ApiResponse<GroupDashboardResponseDto>>
+
+    @GET("v1/groups/{id}/announcements")
+    suspend fun getGroupAnnouncements(@Path("id") groupId: Long): Response<ApiResponse<List<GroupAnnouncementDto>>>
+
+    @GET("v1/groups/{id}/media")
+    suspend fun getGroupMedia(@Path("id") groupId: Long): Response<ApiResponse<List<GroupMediaItemDto>>>
+
+    @POST("v1/groups/{id}/follow")
+    suspend fun toggleFollowGroup(@Path("id") groupId: Long): Response<ApiResponse<ToggleFollowGroupResponseDto>>
+
+    @POST("v1/groups/{id}/cancel-request")
+    suspend fun cancelGroupRequest(@Path("id") groupId: Long): Response<ApiResponse<Unit>>
+
+    @GET("v1/groups/{id}/roles")
+    suspend fun getGroupRoles(@Path("id") groupId: Long): Response<ApiResponse<GroupRolesCatalogResponseDto>>
+
+    @POST("v1/groups/{id}/roles")
+    suspend fun createCustomRole(
+        @Path("id") groupId: Long,
+        @Body request: CreateCustomRoleRequest
+    ): Response<ApiResponse<GroupRoleDto>>
+
+    @PUT("v1/groups/{id}/roles/{roleId}")
+    suspend fun updateCustomRole(
+        @Path("id") groupId: Long,
+        @Path("roleId") roleId: Long,
+        @Body request: UpdateCustomRoleRequest
+    ): Response<ApiResponse<GroupRoleDto>>
+
+    @DELETE("v1/groups/{id}/roles/{roleId}")
+    suspend fun deleteCustomRole(
+        @Path("id") groupId: Long,
+        @Path("roleId") roleId: Long
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v1/groups/{id}/roles/assign")
+    suspend fun assignGroupRole(
+        @Path("id") groupId: Long,
+        @Body request: AssignRoleRequest
+    ): Response<ApiResponse<List<GroupMemberDto>>>
+
+    @POST("v1/groups/{id}/roles/revoke")
+    suspend fun revokeGroupRole(
+        @Path("id") groupId: Long,
+        @Body request: AssignRoleRequest
+    ): Response<ApiResponse<List<GroupMemberDto>>>
+
+    @GET("v1/groups/{id}/roles/history")
+    suspend fun getGroupRoleHistory(@Path("id") groupId: Long): Response<ApiResponse<List<RoleHistoryItemDto>>>
+
+    @GET("v1/groups/{id}/members")
+    suspend fun getGroupMembersDetailed(
+        @Path("id") groupId: Long,
+        @Query("q") query: String? = null,
+        @Query("role") role: String? = null,
+        @Query("status") status: String? = null,
+        @Query("sort") sort: String? = null,
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 20
+    ): Response<ApiResponse<List<GroupMemberDto>>>
+
+    @POST("v1/groups/{id}/members/{userId}/restrict")
+    suspend fun restrictMember(
+        @Path("id") groupId: Long,
+        @Path("userId") userId: Long,
+        @Body request: RestrictMemberRequest
+    ): Response<ApiResponse<GroupMemberDto>>
+
+    @POST("v1/groups/{id}/members/{userId}/unrestrict")
+    suspend fun unrestrictMember(
+        @Path("id") groupId: Long,
+        @Path("userId") userId: Long
+    ): Response<ApiResponse<GroupMemberDto>>
+
+    @GET("v1/groups/{id}/members/{userId}/activity")
+    suspend fun getMemberActivity(
+        @Path("id") groupId: Long,
+        @Path("userId") userId: Long
+    ): Response<ApiResponse<MemberActivityResponseDto>>
+
+    @POST("v1/groups/{id}/members/bulk-action")
+    suspend fun bulkManageMembers(
+        @Path("id") groupId: Long,
+        @Body request: BulkMemberActionRequest
+    ): Response<ApiResponse<BulkMemberActionResponseDto>>
+
     @PUT("v1/groups/{id}")
     suspend fun updateGroup(
         @Path("id") id: Long,
@@ -563,10 +691,10 @@ interface ConnectlyApi {
     ): Response<ApiResponse<GroupDto>>
 
     @POST("v1/groups/{id}/join")
-    suspend fun joinGroup(@Path("id") groupId: Long): Response<ApiResponse<Unit>>
+    suspend fun joinGroup(@Path("id") groupId: Long): Response<ApiResponse<GroupJoinResponseDto>>
 
     @POST("v1/groups/{id}/leave")
-    suspend fun leaveGroup(@Path("id") groupId: Long): Response<ApiResponse<Unit>>
+    suspend fun leaveGroup(@Path("id") groupId: Long): Response<ApiResponse<GroupActionResponseDto?>>
 
     @GET("v1/groups/{id}/members")
     suspend fun getGroupMembers(@Path("id") groupId: Long): Response<ApiResponse<List<GroupMemberDto>>>
@@ -585,7 +713,72 @@ interface ConnectlyApi {
     ): Response<ApiResponse<Unit>>
 
     @GET("v1/groups/{id}/posts")
-    suspend fun getGroupPosts(@Path("id") groupId: Long): Response<ApiResponse<List<PostDto>>>
+    suspend fun getGroupPosts(
+        @Path("id") groupId: Long,
+        @Query("filter") filter: String? = null,
+        @Query("type") type: String? = null,
+        @Query("sort") sort: String? = null,
+        @Query("page") page: Int = 1
+    ): Response<ApiResponse<List<PostDto>>>
+
+    @GET("v1/groups/{id}/posts/{postId}")
+    suspend fun getGroupPostDetails(
+        @Path("id") groupId: Long,
+        @Path("postId") postId: Long
+    ): Response<ApiResponse<PostDto>>
+
+    @PUT("v1/groups/{id}/posts/{postId}")
+    suspend fun updateGroupPost(
+        @Path("id") groupId: Long,
+        @Path("postId") postId: Long,
+        @Body body: UpdateGroupPostRequest
+    ): Response<ApiResponse<PostDto>>
+
+    @DELETE("v1/groups/{id}/posts/{postId}")
+    suspend fun deleteGroupPost(
+        @Path("id") groupId: Long,
+        @Path("postId") postId: Long
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v1/groups/{id}/posts/{postId}/pin")
+    suspend fun togglePinGroupPost(
+        @Path("id") groupId: Long,
+        @Path("postId") postId: Long
+    ): Response<ApiResponse<TogglePinResponseDto>>
+
+    @POST("v1/groups/{id}/posts/{postId}/vote")
+    suspend fun voteGroupPostPoll(
+        @Path("id") groupId: Long,
+        @Path("postId") postId: Long,
+        @Body body: VoteGroupPostPollRequest
+    ): Response<ApiResponse<JsonElement>>
+
+    @POST("v1/groups/{id}/posts/{postId}/react")
+    suspend fun reactGroupPost(
+        @Path("id") groupId: Long,
+        @Path("postId") postId: Long,
+        @Body body: ReactGroupPostRequest
+    ): Response<ApiResponse<ReactionResponse>>
+
+    @POST("v1/groups/{id}/posts/{postId}/report")
+    suspend fun reportGroupPost(
+        @Path("id") groupId: Long,
+        @Path("postId") postId: Long,
+        @Body body: ReportGroupPostRequest
+    ): Response<ApiResponse<Unit>>
+
+    @GET("v1/groups/{id}/moderation/reports")
+    suspend fun getGroupReports(
+        @Path("id") groupId: Long,
+        @Query("page") page: Int = 1
+    ): Response<ApiResponse<List<GroupReportDto>>>
+
+    @POST("v1/groups/{id}/moderation/reports/{reportId}/action")
+    suspend fun actionGroupReport(
+        @Path("id") groupId: Long,
+        @Path("reportId") reportId: Long,
+        @Body body: ActionGroupReportRequest
+    ): Response<ApiResponse<Unit>>
 
     @POST("v1/groups/{id}/posts")
     suspend fun createGroupPost(
@@ -636,10 +829,11 @@ interface ConnectlyApi {
     ): Response<ApiResponse<Unit>>
 
     // -------------------------------------------------------------
-    // Pages (Screen 6)
+    // Pages Management & Professional System
     // -------------------------------------------------------------
     @GET("v1/pages")
     suspend fun getPages(
+        @Query("filter") filter: String = "discover",
         @Query("page") page: Int = 1
     ): Response<ApiResponse<List<PageDto>>>
 
@@ -650,7 +844,10 @@ interface ConnectlyApi {
     suspend fun getPageDetails(@Path("slug") slug: String): Response<ApiResponse<PageDto>>
 
     @POST("v1/pages/{id}/follow")
-    suspend fun followPage(@Path("id") pageId: Long): Response<ApiResponse<Unit>>
+    suspend fun followPage(@Path("id") pageId: Long): Response<ApiResponse<PageFollowResponseDto>>
+
+    @POST("v1/pages/{id}/like")
+    suspend fun likePage(@Path("id") pageId: Long): Response<ApiResponse<kotlinx.serialization.json.JsonElement?>>
 
     @GET("v1/pages/{id}/posts")
     suspend fun getPagePosts(@Path("id") pageId: Long): Response<ApiResponse<List<PostDto>>>
@@ -667,10 +864,65 @@ interface ConnectlyApi {
         @Body body: UpdatePageRequest
     ): Response<ApiResponse<PageDto>>
 
+    @DELETE("v2/pages/{pageId}")
+    suspend fun deletePage(@Path("pageId") pageId: Long): Response<ApiResponse<Unit>>
+
     @GET("v2/pages/{pageId}/analytics/overview")
     suspend fun getPageAnalytics(
-        @Path("pageId") pageId: Long
-    ): Response<ApiResponse<PageAnalyticsDto>>
+        @Path("pageId") pageId: Long,
+        @Query("range") range: String = "7d"
+    ): Response<ApiResponse<PageAnalyticsDetailDto>>
+
+    @GET("v2/pages/{pageId}/roles")
+    suspend fun getPageRoles(@Path("pageId") pageId: Long): Response<ApiResponse<List<PageRoleDto>>>
+
+    @POST("v2/pages/{pageId}/roles")
+    suspend fun assignPageRole(
+        @Path("pageId") pageId: Long,
+        @Body body: AssignPageRoleRequest
+    ): Response<ApiResponse<PageRoleDto>>
+
+    @DELETE("v2/pages/{pageId}/roles/{roleId}")
+    suspend fun removePageRole(
+        @Path("pageId") pageId: Long,
+        @Path("roleId") roleId: Long
+    ): Response<ApiResponse<Unit>>
+
+    @GET("v2/pages/{pageId}/reviews")
+    suspend fun getPageReviews(@Path("pageId") pageId: Long): Response<ApiResponse<List<PageReviewDto>>>
+
+    @POST("v2/pages/{pageId}/reviews")
+    suspend fun createPageReview(
+        @Path("pageId") pageId: Long,
+        @Body body: CreatePageReviewRequest
+    ): Response<ApiResponse<PageReviewDto>>
+
+    @GET("v2/pages/{pageId}/products")
+    suspend fun getPageProducts(@Path("pageId") pageId: Long): Response<ApiResponse<List<PageProductDto>>>
+
+    @GET("v2/pages/{pageId}/services")
+    suspend fun getPageServices(@Path("pageId") pageId: Long): Response<ApiResponse<List<PageServiceDto>>>
+
+    @GET("v2/pages/{pageId}/inbox")
+    suspend fun getPageInbox(@Path("pageId") pageId: Long): Response<ApiResponse<List<PageInboxMessageDto>>>
+
+    @POST("v2/pages/{pageId}/inbox/send")
+    suspend fun sendPageMessage(
+        @Path("pageId") pageId: Long,
+        @Body body: SendPageMessageRequest
+    ): Response<ApiResponse<PageInboxMessageDto>>
+
+    @GET("v2/pages/{pageId}/settings")
+    suspend fun getPageSettings(@Path("pageId") pageId: Long): Response<ApiResponse<PageSettingsDto>>
+
+    @PUT("v2/pages/{pageId}/settings")
+    suspend fun updatePageSettings(
+        @Path("pageId") pageId: Long,
+        @Body body: PageSettingsDto
+    ): Response<ApiResponse<PageSettingsDto>>
+
+    @GET("v2/pages/{pageId}/monetization")
+    suspend fun getPageMonetization(@Path("pageId") pageId: Long): Response<ApiResponse<PageMonetizationStatusDto>>
 
     // -------------------------------------------------------------
     // Events & RSVP (Screen 7)
@@ -772,6 +1024,12 @@ interface ConnectlyApi {
     @POST("v1/notifications/read-all")
     suspend fun markAllNotificationsAsRead(): Response<ApiResponse<Unit>>
 
+    @DELETE("v1/notifications/{id}")
+    suspend fun deleteNotification(@Path("id") id: String): Response<ApiResponse<Unit>>
+
+    @DELETE("v1/notifications")
+    suspend fun deleteAllNotifications(@Query("only_read") onlyRead: Boolean = false): Response<ApiResponse<Unit>>
+
     @GET("v1/notifications/preferences")
     suspend fun getNotificationPreferences(): Response<ApiResponse<NotificationPreferencesDto>>
 
@@ -790,6 +1048,17 @@ interface ConnectlyApi {
         @Query("limit") limit: Int = 15,
         @Query("suggest") suggest: Boolean = false
     ): Response<ApiResponse<SearchResponseDto>>
+
+    @GET("v1/search/history")
+    suspend fun getSearchHistory(): Response<ApiResponse<List<String>>>
+
+    @DELETE("v1/search/history/{term}")
+    suspend fun deleteSearchHistoryItem(
+        @Path("term") term: String
+    ): Response<ApiResponse<List<String>>>
+
+    @DELETE("v1/search/history")
+    suspend fun clearSearchHistory(): Response<ApiResponse<List<String>>>
 
     @GET("v1/friends/suggestions")
     suspend fun getSuggestedFriends(
@@ -816,6 +1085,264 @@ interface ConnectlyApi {
     suspend fun reportContent(
         @Body body: ReportContentRequest
     ): Response<ApiResponse<Unit>>
+
+    // -------------------------------------------------------------
+    // Job Portal & Recruitment Management (Phase 12)
+    // -------------------------------------------------------------
+    @GET("v1/jobs")
+    suspend fun getJobs(
+        @Query("q") query: String? = null,
+        @Query("category_id") categoryId: Long? = null,
+        @Query("employment_type") employmentType: String? = null,
+        @Query("workplace_type") workplaceType: String? = null,
+        @Query("location") location: String? = null,
+        @Query("salary_min") salaryMin: Int? = null,
+        @Query("salary_max") salaryMax: Int? = null,
+        @Query("sort_by") sortBy: String? = null,
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 15
+    ): Response<ApiResponse<Map<String, List<JobDto>>>>
+
+    @GET("v1/jobs/{id}")
+    suspend fun getJobDetails(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Map<String, JobDto>>>
+
+    @POST("v1/jobs")
+    suspend fun createJob(
+        @Body body: Map<String, Any?>
+    ): Response<ApiResponse<Map<String, JobDto>>>
+
+    @PUT("v1/jobs/{id}")
+    suspend fun updateJob(
+        @Path("id") id: Long,
+        @Body body: Map<String, Any?>
+    ): Response<ApiResponse<Map<String, JobDto>>>
+
+    @POST("v1/jobs/{id}/publish")
+    suspend fun publishJob(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Map<String, JobDto>>>
+
+    @POST("v1/jobs/{id}/pause")
+    suspend fun pauseJob(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Map<String, JobDto>>>
+
+    @POST("v1/jobs/{id}/close")
+    suspend fun closeJob(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Map<String, JobDto>>>
+
+    @POST("v1/jobs/{id}/duplicate")
+    suspend fun duplicateJob(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Map<String, JobDto>>>
+
+    @POST("v1/jobs/{id}/apply")
+    suspend fun applyForJob(
+        @Path("id") id: Long,
+        @Body body: Map<String, Any?>
+    ): Response<ApiResponse<Map<String, JobApplicationDto>>>
+
+    @GET("v1/jobs/my/applications")
+    suspend fun getMyApplications(): Response<ApiResponse<List<JobApplicationDto>>>
+
+    @POST("v1/jobs/{id}/save")
+    suspend fun saveJob(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Unit>>
+
+    @DELETE("v1/jobs/{id}/save")
+    suspend fun unsaveJob(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Unit>>
+
+    @GET("v1/candidate/saved-jobs")
+    suspend fun getSavedJobs(): Response<ApiResponse<Map<String, List<JobDto>>>>
+
+    @GET("v1/candidate/profile")
+    suspend fun getCandidateProfile(): Response<ApiResponse<Map<String, CandidateProfileDto>>>
+
+    @PUT("v1/candidate/profile")
+    suspend fun updateCandidateProfile(
+        @Body body: Map<String, Any?>
+    ): Response<ApiResponse<Map<String, CandidateProfileDto>>>
+
+    @GET("v1/candidate/resumes")
+    suspend fun getCandidateResumes(): Response<ApiResponse<Map<String, List<CandidateResumeDto>>>>
+
+    @DELETE("v1/candidate/resumes/{id}")
+    suspend fun deleteResume(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Unit>>
+
+    @GET("v1/candidate/job-alerts")
+    suspend fun getJobAlerts(): Response<ApiResponse<Map<String, List<JobAlertDto>>>>
+
+    @POST("v1/candidate/job-alerts")
+    suspend fun createJobAlert(
+        @Body body: Map<String, Any?>
+    ): Response<ApiResponse<Map<String, JobAlertDto>>>
+
+    @DELETE("v1/candidate/job-alerts/{id}")
+    suspend fun deleteJobAlert(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Unit>>
+
+    @GET("v1/companies")
+    suspend fun getCompanies(
+        @Query("mine") mine: Boolean? = null
+    ): Response<ApiResponse<Map<String, List<CompanyDto>>>>
+
+    @POST("v1/companies")
+    suspend fun createCompany(
+        @Body body: Map<String, Any?>
+    ): Response<ApiResponse<Map<String, CompanyDto>>>
+
+    @GET("v1/companies/{id}")
+    suspend fun getCompanyDetails(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Map<String, CompanyDto>>>
+
+    @GET("v1/companies/{id}/dashboard")
+    suspend fun getCompanyDashboard(
+        @Path("id") id: Long
+    ): Response<ApiResponse<EmployerDashboardDto>>
+
+    @GET("v1/companies/{id}/recruitment/pipeline")
+    suspend fun getAtsPipeline(
+        @Path("id") id: Long,
+        @Query("job_id") jobId: Long? = null
+    ): Response<ApiResponse<AtsPipelineDto>>
+
+    @PATCH("v1/applications/{id}/stage")
+    suspend fun updateAtsStage(
+        @Path("id") id: Long,
+        @Body body: Map<String, String?>
+    ): Response<ApiResponse<Map<String, JobApplicationDto>>>
+
+    @POST("v1/applications/{id}/notes")
+    suspend fun addApplicationNote(
+        @Path("id") id: Long,
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<Unit>>
+
+    @GET("v1/interviews")
+    suspend fun getInterviews(): Response<ApiResponse<Map<String, List<InterviewDto>>>>
+
+    @POST("v1/applications/{id}/interviews")
+    suspend fun scheduleInterview(
+        @Path("id") applicationId: Long,
+        @Body body: Map<String, Any?>
+    ): Response<ApiResponse<Map<String, InterviewDto>>>
+
+    @POST("v1/interviews/{id}/response")
+    suspend fun respondInterview(
+        @Path("id") id: Long,
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<Map<String, InterviewDto>>>
+
+    // -------------------------------------------------------------
+    // Phase 13: Professional Learning & Development Platform (LMS)
+    // -------------------------------------------------------------
+    @GET("v1/learning/categories")
+    suspend fun getLearningCategories(): Response<ApiResponse<List<LearningCategoryDto>>>
+
+    @GET("v1/learning/courses")
+    suspend fun getLearningCourses(
+        @Query("q") query: String? = null,
+        @Query("category_id") categoryId: Long? = null,
+        @Query("level") level: String? = null,
+        @Query("type") type: String? = null,
+        @Query("skill") skill: String? = null,
+        @Query("sort_by") sortBy: String? = null,
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 15
+    ): Response<ApiResponse<List<LearningCourseDto>>>
+
+    @GET("v1/learning/courses/{slug}")
+    suspend fun getLearningCourseDetails(
+        @Path("slug") slug: String
+    ): Response<ApiResponse<kotlinx.serialization.json.JsonElement?>>
+
+    @POST("v1/learning/courses")
+    suspend fun createLearningCourse(
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<ApiResponse<LearningCourseDto>>
+
+    @GET("v1/learning/courses/{id}/curriculum")
+    suspend fun getLearningCurriculum(
+        @Path("id") courseId: Long
+    ): Response<ApiResponse<List<LearningSectionDto>>>
+
+    @POST("v1/learning/courses/{id}/enroll")
+    suspend fun enrollInCourse(
+        @Path("id") courseId: Long,
+        @Body body: Map<String, String>? = null
+    ): Response<ApiResponse<LearningEnrollmentDto>>
+
+    @GET("v1/learning/my-learning")
+    suspend fun getMyLearning(): Response<ApiResponse<List<LearningEnrollmentDto>>>
+
+    @GET("v1/learning/lessons/{id}")
+    suspend fun getLearningLesson(
+        @Path("id") lessonId: Long
+    ): Response<ApiResponse<kotlinx.serialization.json.JsonElement?>>
+
+    @POST("v1/learning/lessons/{id}/progress")
+    suspend fun updateLessonProgress(
+        @Path("id") lessonId: Long,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<ApiResponse<kotlinx.serialization.json.JsonElement?>>
+
+    @GET("v1/learning/quizzes/{id}")
+    suspend fun getLearningQuiz(
+        @Path("id") quizId: Long
+    ): Response<ApiResponse<LearningQuizDto>>
+
+    @POST("v1/learning/quizzes/{id}/attempt")
+    suspend fun startQuizAttempt(
+        @Path("id") quizId: Long
+    ): Response<ApiResponse<LearningQuizAttemptDto>>
+
+    @POST("v1/learning/quizzes/attempts/{attemptId}/submit")
+    suspend fun submitQuizAttempt(
+        @Path("attemptId") attemptId: Long,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<ApiResponse<LearningQuizAttemptDto>>
+
+    @POST("v1/learning/courses/{id}/certificate")
+    suspend fun claimCertificate(
+        @Path("id") courseId: Long
+    ): Response<ApiResponse<LearningCertificateDto>>
+
+    @GET("v1/learning/my-certificates")
+    suspend fun getMyCertificates(): Response<ApiResponse<List<LearningCertificateDto>>>
+
+    @GET("v1/learning/certificates/{code}")
+    suspend fun verifyCertificate(
+        @Path("code") code: String
+    ): Response<ApiResponse<kotlinx.serialization.json.JsonElement?>>
+
+    @GET("v1/learning/courses/{id}/reviews")
+    suspend fun getCourseReviews(
+        @Path("id") courseId: Long
+    ): Response<ApiResponse<List<LearningReviewDto>>>
+
+    @POST("v1/learning/courses/{id}/reviews")
+    suspend fun submitCourseReview(
+        @Path("id") courseId: Long,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<ApiResponse<LearningReviewDto>>
+
+    @POST("v1/learning/instructors/apply")
+    suspend fun applyAsInstructor(
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<ApiResponse<kotlinx.serialization.json.JsonElement?>>
+
+    @GET("v1/learning/instructors/dashboard")
+    suspend fun getInstructorDashboard(): Response<ApiResponse<kotlinx.serialization.json.JsonElement?>>
 }
 
 // -------------------------------------------------------------
@@ -861,9 +1388,9 @@ data class AuthResponse(
 
 @Serializable
 data class UserDto(
-    val id: Long,
-    val name: String,
-    val username: String,
+    val id: Long = 0L,
+    val name: String = "",
+    val username: String = "",
     val email: String? = null,
     val avatar: String? = null,
     val avatar_url: String? = null,
@@ -1106,22 +1633,457 @@ data class UnreadCountDto(
 data class GroupDto(
     val id: Long,
     val name: String,
-    val slug: String,
+    val slug: String = "",
     val cover_image: String? = null,
+    val cover_image_url: String? = null,
+    val avatar_url: String? = null,
+    val description: String? = null,
+    val category: String? = null,
+    val privacy: String? = "public",
     val members_count: Int = 0,
-    val is_member: Boolean = false
+    val is_member: Boolean = false,
+    val is_admin: Boolean = false
+) {
+    val resolvedCoverImage: String? get() = cover_image_url ?: cover_image
+    val resolvedAvatar: String? get() = avatar_url
+}
+
+@Serializable
+data class GroupCategoryDto(
+    val id: Long? = null,
+    val name: String,
+    val slug: String,
+    val icon: String? = "folder-outline",
+    val description: String? = null,
+    val groups_count: Int = 0
 )
 
 @Serializable
-data class EventDto(
+data class GroupInvitationDto(
     val id: Long,
+    val group_id: Long,
+    val group_name: String? = null,
+    val group_avatar: String? = null,
+    val group_members_count: Int = 0,
+    val inviter_name: String? = null,
+    val role: String? = null,
+    val created_at: String? = null
+)
+
+@Serializable
+data class GroupFeedAuthorDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val avatar: String? = null
+)
+
+@Serializable
+data class GroupFeedGroupSummaryDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val avatar: String? = null
+)
+
+@Serializable
+data class GroupFeedItemDto(
+    val id: Long,
+    val content: String? = null,
+    val type: String? = null,
+    val created_at: String? = null,
+    val likes_count: Int = 0,
+    val comments_count: Int = 0,
+    val author: GroupFeedAuthorDto? = null,
+    val group: GroupFeedGroupSummaryDto? = null
+)
+
+@Serializable
+data class GroupsHomeResponseDto(
+    val featured_group: GroupDto? = null,
+    val my_groups: List<GroupDto> = emptyList(),
+    val groups_you_manage: List<GroupDto> = emptyList(),
+    val suggested_groups: List<GroupDto> = emptyList(),
+    val discover_communities: List<GroupDto> = emptyList(),
+    val trending_groups: List<GroupDto> = emptyList(),
+    val recently_active_groups: List<GroupDto> = emptyList(),
+    val groups_you_may_like: List<GroupDto> = emptyList(),
+    val categories: List<GroupCategoryDto> = emptyList(),
+    val pending_invitations: List<GroupInvitationDto> = emptyList(),
+    val activity_feed: List<GroupFeedItemDto> = emptyList()
+)
+
+@Serializable
+data class GroupAnnouncementDto(
+    val id: Long = 0L,
+    val group_id: Long = 0L,
+    val title: String = "",
+    val content: String = "",
+    val cta_text: String? = null,
+    val cta_url: String? = null,
+    val is_pinned: Boolean = false,
+    val created_at: String? = null,
+    val author_name: String? = null
+) {
+    val body: String get() = content
+}
+
+@Serializable
+data class GroupMediaItemDto(
+    val id: String,
+    val url: String,
+    val thumbnail: String? = null,
+    val type: String = "image",
+    val title: String? = null,
+    val created_at: String? = null
+)
+
+@Serializable
+data class ToggleFollowGroupResponseDto(
+    val group_id: Long,
+    val is_following: Boolean
+)
+
+@Serializable
+data class GroupHeaderActionsDto(
+    val can_join: Boolean = false,
+    val can_request: Boolean = false,
+    val can_cancel_request: Boolean = false,
+    val can_accept_invitation: Boolean = false,
+    val can_invite: Boolean = false,
+    val can_share: Boolean = true,
+    val can_follow: Boolean = true,
+    val is_following: Boolean = false,
+    val can_leave: Boolean = false,
+    val can_report: Boolean = true,
+    val can_manage: Boolean = false
+)
+
+@Serializable
+data class GroupDiscussionDto(
+    val id: Long = 0L,
+    val title: String? = null,
+    val content: String? = null,
+    val type: String = "discussion",
+    val views_count: Int = 0,
+    val replies_count: Int = 0,
+    val created_at: String? = null,
+    val author_name: String? = null,
+    val comments_count: Int = 0
+) {
+    val resolvedTitle: String get() = title ?: "Untitled Discussion"
+    val resolvedAuthorName: String get() = author_name ?: "Member"
+    val resolvedCommentsCount: Int get() = if (comments_count > 0) comments_count else replies_count
+}
+
+@Serializable
+data class GroupFileDto(
+    val id: Long = 0L,
+    val name: String = "",
+    val file_url: String? = null,
+    val file_type: String? = null,
+    val file_size: Long = 0,
+    val downloads_count: Int = 0,
+    val created_at: String? = null
+) {
+    val size: String get() = if (file_size > 1024) "${file_size / 1024} KB" else "$file_size B"
+}
+
+@Serializable
+data class GroupDetailHeaderDto(
+    val id: Long = 0L,
+    val name: String = "",
+    val slug: String = "",
+    val username: String? = null,
+    val description: String? = null,
+    val category: String? = null,
+    val industry: String? = null,
+    val location: String? = null,
+    val website: String? = null,
+    val cover_image_url: String? = null,
+    val avatar_url: String? = null,
+    val privacy: String = "public",
+    val is_verified: Boolean = false,
+    val verification_status: String = "unverified",
+    val members_count: Int = 0,
+    val active_members_count: Int = 0,
+    val online_members_count: Int = 0,
+    val activity_status: String = "Active",
+    val is_owner: Boolean = false,
+    val is_admin: Boolean = false,
+    val is_moderator: Boolean = false,
+    val is_member: Boolean = false,
+    val is_pending: Boolean = false,
+    val is_following: Boolean = false,
+    val has_pending_invitation: Boolean = false,
+    val actions: GroupHeaderActionsDto? = null,
+    val created_at: String? = null,
+    val dashboard_url: String? = null
+) {
+    val cover_image: String? get() = cover_image_url
+}
+
+@Serializable
+data class GroupMetricsDto(
+    val total_members: Long = 0,
+    val total_discussions: Long = 0,
+    val total_events: Long = 0
+)
+
+@Serializable
+data class GroupProfileOverviewDto(
+    val pinned_announcement: GroupAnnouncementDto? = null,
+    val recent_discussions: List<GroupDiscussionDto> = emptyList(),
+    val recent_posts: List<GroupFeedItemDto> = emptyList(),
+    val upcoming_events: List<EventDto> = emptyList(),
+    val recent_media: List<GroupMediaItemDto> = emptyList(),
+    val key_members: List<GroupMemberDto> = emptyList(),
+    val metrics: GroupMetricsDto? = null
+)
+
+@Serializable
+data class GroupDiscussionSummaryDto(
+    val discussions: List<GroupDiscussionDto> = emptyList(),
+    val posts: List<GroupFeedItemDto> = emptyList()
+)
+
+@Serializable
+data class GroupAboutTabDto(
+    val description: String? = null,
+    val category: String? = null,
+    val industry: String? = null,
+    val location: String? = null,
+    val website: String? = null,
+    val contact_email: String? = null,
+    val contact_phone: String? = null,
+    val privacy: String = "public",
+    val membership_approval_mode: String = "anyone",
+    val rules: List<CreateGroupRuleItem> = emptyList(),
+    val created_at: String? = null,
+    val health_score: Double = 100.0
+) {
+    val creation_date: String? get() = created_at
+}
+
+@Serializable
+data class GroupProfileTabsDto(
+    val overview: GroupProfileOverviewDto? = null,
+    val discussion: GroupDiscussionSummaryDto? = null,
+    val announcements: List<GroupAnnouncementDto> = emptyList(),
+    val members: List<GroupMemberDto> = emptyList(),
+    val events: List<EventDto> = emptyList(),
+    val media: List<GroupMediaItemDto> = emptyList(),
+    val files: List<GroupFileDto> = emptyList(),
+    val about: GroupAboutTabDto? = null,
+    val dashboard_access: Boolean = false
+)
+
+@Serializable
+data class GroupProfileResponseDto(
+    val group: GroupDetailHeaderDto,
+    val tabs: GroupProfileTabsDto
+)
+
+@Serializable
+data class DashboardOverviewDto(
+    val total_members: Long = 0,
+    val new_members: Long = 0,
+    val active_members: Long = 0,
+    val online_members: Long = 0,
+    val pending_join_requests: Long = 0,
+    val total_posts: Long = 0,
+    val total_comments: Long = 0,
+    val total_reactions: Long = 0,
+    val total_shares: Long = 0,
+    val total_events: Long = 0,
+    val pending_posts: Long = 0,
+    val reported_content: Long = 0,
+    val engagement_rate: Double = 0.0,
+    val member_growth: Double = 0.0
+)
+
+@Serializable
+data class ChartDataPointDto(
+    val date: String,
+    val count: Long = 0
+)
+
+@Serializable
+data class EngagementTrendPointDto(
+    val date: String,
+    val posts: Long = 0,
+    val comments: Long = 0,
+    val total: Long = 0
+)
+
+@Serializable
+data class ActiveMembersStatsDto(
+    val active_count: Long = 0,
+    val inactive_count: Long = 0,
+    val active_percentage: Double = 0.0
+)
+
+@Serializable
+data class TopPerformingPostAuthorDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val avatar_url: String? = null
+)
+
+@Serializable
+data class TopPerformingPostDto(
+    val id: Long,
+    val content: String,
+    val author: TopPerformingPostAuthorDto? = null,
+    val likes_count: Long = 0,
+    val comments_count: Long = 0,
+    val shares_count: Long = 0,
+    val total_engagement: Long = 0,
+    val created_at: String? = null
+)
+
+@Serializable
+data class ActiveMemberItemDto(
+    val user_id: Long,
+    val name: String,
+    val username: String? = null,
+    val avatar_url: String? = null,
+    val role: String = "member",
+    val posts_count: Long = 0,
+    val joined_at: String? = null
+)
+
+@Serializable
+data class MemberRetentionDto(
+    val retention_rate: Double = 0.0,
+    val retained_members: Long = 0,
+    val inactive_members: Long = 0
+)
+
+@Serializable
+data class DashboardChartsDto(
+    val daily_member_growth: List<ChartDataPointDto> = emptyList(),
+    val post_activity: List<ChartDataPointDto> = emptyList(),
+    val comment_activity: List<ChartDataPointDto> = emptyList(),
+    val engagement_trends: List<EngagementTrendPointDto> = emptyList(),
+    val active_members_stats: ActiveMembersStatsDto? = null,
+    val top_performing_posts: List<TopPerformingPostDto> = emptyList(),
+    val most_active_members: List<ActiveMemberItemDto> = emptyList(),
+    val member_retention: MemberRetentionDto? = null
+)
+
+@Serializable
+data class DashboardQuickActionDto(
+    val id: String,
     val title: String,
+    val description: String,
+    val icon: String,
+    val route: String,
+    val badge: String? = null
+)
+
+@Serializable
+data class DashboardFilterDto(
+    val period: String,
+    val label: String,
+    val days: Int = 30,
+    val start_date: String? = null,
+    val end_date: String? = null
+)
+
+@Serializable
+data class GroupDashboardResponseDto(
+    val overview: DashboardOverviewDto,
+    val charts: DashboardChartsDto,
+    val quick_actions: List<DashboardQuickActionDto> = emptyList(),
+    val filter: DashboardFilterDto? = null
+)
+
+@Serializable
+data class PermissionItemDto(
+    val key: String,
+    val label: String,
+    val description: String
+)
+
+@Serializable
+data class PermissionCategoryDto(
+    val category: String,
+    val permissions: List<PermissionItemDto> = emptyList()
+)
+
+@Serializable
+data class GroupRoleDto(
+    val id: Long? = null,
+    val group_id: Long? = null,
+    val name: String,
+    val display_name: String,
+    val description: String? = null,
+    val color: String = "#6366f1",
+    val permissions: List<String> = emptyList(),
+    val is_system: Boolean = false,
+    val sort_order: Int = 0,
+    val members_count: Long = 0,
+    val created_at: String? = null
+)
+
+@Serializable
+data class GroupRolesCatalogResponseDto(
+    val default_roles: List<GroupRoleDto> = emptyList(),
+    val custom_roles: List<GroupRoleDto> = emptyList(),
+    val available_permissions: List<PermissionCategoryDto> = emptyList(),
+    val can_manage_roles: Boolean = false
+)
+
+@Serializable
+data class CreateCustomRoleRequest(
+    val name: String,
+    val display_name: String? = null,
+    val description: String? = null,
+    val color: String = "#6366f1",
+    val permissions: List<String> = emptyList()
+)
+
+@Serializable
+data class UpdateCustomRoleRequest(
+    val display_name: String? = null,
+    val description: String? = null,
+    val color: String? = null,
+    val permissions: List<String>? = null
+)
+
+@Serializable
+data class AssignRoleRequest(
+    val role: String,
+    val user_ids: List<Long>? = null,
+    val user_id: Long? = null,
+    val permissions: List<String>? = null
+)
+
+@Serializable
+data class RoleHistoryItemDto(
+    val id: Long = 0L,
+    val action: String = "",
+    val reason: String? = null,
+    val moderator: TopPerformingPostAuthorDto? = null,
+    val target_user: TopPerformingPostAuthorDto? = null,
+    val created_at: String? = null
+) {
+    val action_type: String get() = action
+    val moderator_name: String get() = moderator?.name ?: "Moderator"
+}
+
+@Serializable
+data class EventDto(
+    val id: Long = 0L,
+    val title: String = "",
     val banner: String? = null,
-    val location: String,
-    val start_time: String,
+    val location: String = "",
+    val start_time: String = "",
     val interested_count: Int = 0,
     val going_count: Int = 0
-)
+) {
+    val starts_at: String? get() = start_time.ifBlank { null }
+    val attendees_count: Int get() = going_count
+}
 
 @Serializable
 data class ReactionResponse(
@@ -1606,31 +2568,439 @@ data class CallParticipantDto(
 )
 
 @Serializable
+data class CreateGroupRuleItem(
+    val title: String,
+    val description: String = "",
+    val enforcement_level: String = "warning"
+)
+
+@Serializable
+data class CreateGroupQuestionItem(
+    val question: String,
+    val type: String = "text"
+)
+
+@Serializable
 data class CreateGroupRequest(
     val name: String,
+    val username: String? = null,
     val description: String? = null,
-    val privacy: String = "public"
+    val category: String = "General Community",
+    val industry: String? = null,
+    val website: String? = null,
+    val location: String? = null,
+    val contact_email: String? = null,
+    val contact_phone: String? = null,
+    val privacy: String = "public",
+    val membership_approval_mode: String = "anyone",
+    val allow_member_invitations: Boolean = true,
+    val allow_member_recommendations: Boolean = true,
+    val enable_membership_screening: Boolean = false,
+    val max_members_limit: Int? = null,
+    val auto_approve_trusted: Boolean = false,
+    val who_can_post: String = "anyone_in_group",
+    val who_can_comment: String = "anyone_in_group",
+    val who_can_upload_media: String = "anyone_in_group",
+    val who_can_create_polls: String = "anyone_in_group",
+    val who_can_create_events: String = "anyone_in_group",
+    val who_can_create_announcements: String = "admins_moderators_only",
+    val post_approval_mode: String = "auto",
+    val enable_comment_moderation: Boolean = false,
+    val allow_anonymous_posts: Boolean = false,
+    val allow_scheduled_posts: Boolean = true,
+    val cover_image_url: String? = null,
+    val avatar_url: String? = null,
+    val rules: List<CreateGroupRuleItem> = emptyList(),
+    val questions: List<CreateGroupQuestionItem> = emptyList()
+)
+
+@Serializable
+data class PageSocialLinkDto(
+    val platform: String = "",
+    val url: String = "",
+    val is_visible: Boolean = true
+)
+
+object PageSocialLinksSerializer : KSerializer<List<PageSocialLinkDto>?> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("PageSocialLinksSerializer", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): List<PageSocialLinkDto> {
+        val jsonDecoder = decoder as? JsonDecoder ?: return emptyList()
+        return when (val element = jsonDecoder.decodeJsonElement()) {
+            is JsonNull -> emptyList()
+            is JsonArray -> {
+                element.mapNotNull { item ->
+                    when (item) {
+                        is JsonPrimitive -> {
+                            val str = item.contentOrNull
+                            if (!str.isNullOrBlank()) PageSocialLinkDto(platform = "website", url = str) else null
+                        }
+                        is JsonObject -> {
+                            val platform = item["platform"]?.jsonPrimitive?.contentOrNull
+                                ?: item["name"]?.jsonPrimitive?.contentOrNull
+                                ?: "link"
+                            val url = item["url"]?.jsonPrimitive?.contentOrNull
+                                ?: item["link"]?.jsonPrimitive?.contentOrNull
+                                ?: ""
+                            val isVisible = item["is_visible"]?.jsonPrimitive?.booleanOrNull ?: true
+                            if (url.isNotBlank()) PageSocialLinkDto(platform, url, isVisible) else null
+                        }
+                        else -> null
+                    }
+                }
+            }
+            is JsonObject -> {
+                element.mapNotNull { (key, value) ->
+                    val url = when (value) {
+                        is JsonPrimitive -> value.contentOrNull
+                        is JsonObject -> value["url"]?.jsonPrimitive?.contentOrNull
+                        else -> null
+                    }
+                    if (!url.isNullOrBlank()) PageSocialLinkDto(platform = key, url = url) else null
+                }
+            }
+            is JsonPrimitive -> {
+                val str = element.contentOrNull
+                if (!str.isNullOrBlank()) listOf(PageSocialLinkDto(platform = "link", url = str)) else emptyList()
+            }
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: List<PageSocialLinkDto>?) {
+        val jsonEncoder = encoder as? JsonEncoder
+        val list = value ?: emptyList()
+        if (jsonEncoder != null) {
+            val array = buildJsonArray {
+                list.forEach { item ->
+                    add(buildJsonObject {
+                        put("platform", item.platform)
+                        put("url", item.url)
+                        put("is_visible", item.is_visible)
+                    })
+                }
+            }
+            jsonEncoder.encodeJsonElement(array)
+        } else {
+            ListSerializer(PageSocialLinkDto.serializer()).serialize(encoder, list)
+        }
+    }
+}
+
+@Serializable
+data class BusinessDayHoursDto(
+    val mode: String = "open",
+    val open: String? = null,
+    val close: String? = null
+)
+
+@Serializable
+data class BusinessHoursDto(
+    val monday: BusinessDayHoursDto? = null,
+    val tuesday: BusinessDayHoursDto? = null,
+    val wednesday: BusinessDayHoursDto? = null,
+    val thursday: BusinessDayHoursDto? = null,
+    val friday: BusinessDayHoursDto? = null,
+    val saturday: BusinessDayHoursDto? = null,
+    val sunday: BusinessDayHoursDto? = null,
+    val raw_summary: String? = null
+)
+
+object BusinessHoursSerializer : KSerializer<BusinessHoursDto?> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("BusinessHoursSerializer", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): BusinessHoursDto? {
+        val jsonDecoder = decoder as? JsonDecoder ?: return null
+        return when (val element = jsonDecoder.decodeJsonElement()) {
+            is JsonNull -> null
+            is JsonPrimitive -> BusinessHoursDto(raw_summary = element.contentOrNull)
+            is JsonObject -> {
+                fun parseDay(name: String): BusinessDayHoursDto? {
+                    val dayObj = element[name] as? JsonObject ?: return null
+                    return BusinessDayHoursDto(
+                        mode = dayObj["mode"]?.jsonPrimitive?.contentOrNull ?: "open",
+                        open = dayObj["open"]?.jsonPrimitive?.contentOrNull,
+                        close = dayObj["close"]?.jsonPrimitive?.contentOrNull
+                    )
+                }
+                BusinessHoursDto(
+                    monday = parseDay("monday"),
+                    tuesday = parseDay("tuesday"),
+                    wednesday = parseDay("wednesday"),
+                    thursday = parseDay("thursday"),
+                    friday = parseDay("friday"),
+                    saturday = parseDay("saturday"),
+                    sunday = parseDay("sunday"),
+                    raw_summary = element["summary"]?.jsonPrimitive?.contentOrNull
+                )
+            }
+            else -> null
+        }
+    }
+
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+    override fun serialize(encoder: Encoder, value: BusinessHoursDto?) {
+        val jsonEncoder = encoder as? JsonEncoder
+        if (value == null) {
+            jsonEncoder?.encodeJsonElement(JsonNull) ?: encoder.encodeNull()
+            return
+        }
+        val obj = buildJsonObject {
+            fun addDay(name: String, day: BusinessDayHoursDto?) {
+                if (day != null) {
+                    put(name, buildJsonObject {
+                        put("mode", day.mode)
+                        day.open?.let { put("open", it) }
+                        day.close?.let { put("close", it) }
+                    })
+                }
+            }
+            addDay("monday", value.monday)
+            addDay("tuesday", value.tuesday)
+            addDay("wednesday", value.wednesday)
+            addDay("thursday", value.thursday)
+            addDay("friday", value.friday)
+            addDay("saturday", value.saturday)
+            addDay("sunday", value.sunday)
+            value.raw_summary?.let { put("summary", it) }
+        }
+        jsonEncoder?.encodeJsonElement(obj)
+    }
+}
+
+@Serializable
+data class PageFollowResponseDto(
+    val page_id: Long? = null,
+    val is_following: Boolean = false,
+    val followers_count: Int = 0
+)
+
+@Serializable
+data class GroupJoinResponseDto(
+    val group_id: Long? = null,
+    val status: String = "member",
+    val members_count: Int = 0
+)
+
+@Serializable
+data class GroupActionResponseDto(
+    val success: Boolean = true,
+    val message: String? = null
 )
 
 @Serializable
 data class PageDto(
-    val id: Long,
-    val name: String,
+    val id: Long = 0L,
+    val name: String = "",
     val username: String? = null,
+    val slug: String? = null,
     val category: String = "Business",
+    val business_category: String? = null,
     val bio: String? = null,
+    val description: String? = null,
     val avatar: String? = null,
+    val avatar_url: String? = null,
     val cover: String? = null,
+    val cover_url: String? = null,
+    val cover_image_url: String? = null,
+    val website: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val whatsapp: String? = null,
+    val address: String? = null,
+    val country: String? = null,
+    val city: String? = null,
+    val opening_hours: String? = null,
+    @Serializable(with = BusinessHoursSerializer::class)
+    val business_hours: BusinessHoursDto? = null,
+    @Serializable(with = PageSocialLinksSerializer::class)
+    val social_links: List<PageSocialLinkDto>? = emptyList(),
+    val services_summary: String? = null,
     val followers_count: Int = 0,
+    val following_count: Int = 0,
+    val total_posts: Int = 0,
+    val total_videos: Int = 0,
+    val total_reels: Int = 0,
+    val rating: Double = 4.8,
     val is_following: Boolean = false,
-    val is_verified: Boolean = false
-)
+    val is_liked: Boolean = false,
+    val is_verified: Boolean = false,
+    val publishing_status: String = "published",
+    val is_owner: Boolean = false,
+    val is_admin: Boolean = false,
+    val user_role: String? = null,
+    val cta_text: String? = null,
+    val cta_type: String? = null,
+    val cta_url: String? = null
+) {
+    val resolvedAvatar: String? get() = avatar_url ?: avatar
+    val resolvedCover: String? get() = cover_url ?: cover ?: cover_image_url
+    val resolvedUsername: String get() = username ?: slug ?: "page_$id"
+    val resolvedSocialLinks: List<PageSocialLinkDto> get() = social_links ?: emptyList()
+}
 
 @Serializable
 data class CreatePageRequest(
     val name: String,
+    val username: String? = null,
     val category: String = "Business",
-    val bio: String? = null
+    val business_category: String? = null,
+    val bio: String? = null,
+    val description: String? = null,
+    val website: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val whatsapp: String? = null,
+    val address: String? = null,
+    val country: String? = null,
+    val city: String? = null,
+    val opening_hours: String? = null,
+    val publishing_status: String = "published"
+)
+
+@Serializable
+data class UpdatePageRequest(
+    val name: String? = null,
+    val username: String? = null,
+    val category: String? = null,
+    val business_category: String? = null,
+    val bio: String? = null,
+    val description: String? = null,
+    val website: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val whatsapp: String? = null,
+    val address: String? = null,
+    val country: String? = null,
+    val city: String? = null,
+    val opening_hours: String? = null,
+    val cta_text: String? = null,
+    val cta_url: String? = null,
+    val publishing_status: String? = null
+)
+
+@Serializable
+data class PageRoleDto(
+    val id: Long = 0L,
+    val user_id: Long = 0L,
+    val user_name: String = "",
+    val user_username: String = "",
+    val user_avatar: String? = null,
+    val role: String = "editor",
+    val permissions: List<String> = emptyList(),
+    val assigned_at: String? = null
+)
+
+@Serializable
+data class AssignPageRoleRequest(
+    val user_id: Long,
+    val role: String = "editor",
+    val permissions: List<String> = emptyList()
+)
+
+@Serializable
+data class PageAnalyticsDetailDto(
+    val total_followers: Int = 0,
+    val new_followers: Int = 0,
+    val unfollowers: Int = 0,
+    val total_reach: Int = 0,
+    val total_impressions: Int = 0,
+    val total_page_views: Int = 0,
+    val profile_visits: Int = 0,
+    val post_engagement: Int = 0,
+    val total_reactions: Int = 0,
+    val total_comments: Int = 0,
+    val total_shares: Int = 0,
+    val video_views: Int = 0,
+    val reels_views: Int = 0,
+    val story_views: Int = 0,
+    val live_views: Int = 0,
+    val link_clicks: Int = 0,
+    val engagement_rate: Double = 0.0,
+    val growth_rate: Double = 0.0
+)
+
+@Serializable
+data class PageReviewDto(
+    val id: Long = 0L,
+    val user_id: Long = 0L,
+    val author_name: String = "",
+    val author_avatar: String? = null,
+    val rating: Int = 5,
+    val review_text: String = "",
+    val created_at: String? = null,
+    val reply_text: String? = null,
+    val helpful_count: Int = 0
+)
+
+@Serializable
+data class CreatePageReviewRequest(
+    val rating: Int,
+    val review_text: String
+)
+
+@Serializable
+data class PageProductDto(
+    val id: Long = 0L,
+    val name: String = "",
+    val description: String = "",
+    val price: Double = 0.0,
+    val discount_price: Double? = null,
+    val image_url: String? = null,
+    val category: String = "General",
+    val product_url: String? = null,
+    val is_available: Boolean = true
+)
+
+@Serializable
+data class PageServiceDto(
+    val id: Long = 0L,
+    val name: String = "",
+    val description: String = "",
+    val price_info: String = "Contact for pricing",
+    val image_url: String? = null,
+    val booking_url: String? = null
+)
+
+@Serializable
+data class PageInboxMessageDto(
+    val id: Long = 0L,
+    val conversation_id: Long = 0L,
+    val sender_id: Long = 0L,
+    val sender_name: String = "",
+    val sender_avatar: String? = null,
+    val text: String = "",
+    val timestamp: String = "",
+    val is_read: Boolean = false,
+    val assigned_team_member: String? = null
+)
+
+@Serializable
+data class SendPageMessageRequest(
+    val conversation_id: Long,
+    val text: String
+)
+
+@Serializable
+data class PageSettingsDto(
+    val page_visibility: String = "public",
+    val allow_reviews: Boolean = true,
+    val allow_messages: Boolean = true,
+    val allow_tagging: Boolean = true,
+    val comment_moderation: Boolean = false,
+    val age_restriction: String = "everyone",
+    val country_restrictions: List<String> = emptyList(),
+    val blocked_words: List<String> = emptyList()
+)
+
+@Serializable
+data class PageMonetizationStatusDto(
+    val is_eligible: Boolean = false,
+    val status: String = "In Review",
+    val estimated_earnings: Double = 0.0,
+    val net_payout: Double = 0.0,
+    val policy_status: String = "Good Standing"
 )
 
 @Serializable
@@ -1664,9 +3034,67 @@ data class UpdateGroupRequest(
 @Serializable
 data class GroupMemberDto(
     val id: Long = 0L,
-    val user: UserDto,
+    val user: UserDto = UserDto(),
     val role: String = "member",
+    val status: String = "active",
+    val permissions: List<String> = emptyList(),
+    val strikes_count: Int = 0,
+    val is_muted: Boolean = false,
+    val muted_until: String? = null,
+    val is_restricted: Boolean = false,
+    val restricted_until: String? = null,
+    val is_banned: Boolean = false,
+    val banned_at: String? = null,
+    val ban_reason: String? = null,
+    val posts_published: Long = 0,
+    val comments_count: Long = 0,
+    val last_activity_at: String? = null,
+    val account_status: String = "active",
     val joined_at: String? = null
+) {
+    val name: String get() = user.name
+    val username: String get() = user.username
+    val avatar_url: String? get() = user.resolvedAvatar
+    val posts_count: Long get() = posts_published
+}
+
+@Serializable
+data class MemberActivitySummaryDto(
+    val posts_count: Long = 0,
+    val comments_count: Long = 0,
+    val warnings_count: Long = 0
+)
+
+@Serializable
+data class MemberActivityResponseDto(
+    val member: GroupMemberDto,
+    val activity_summary: MemberActivitySummaryDto = MemberActivitySummaryDto(),
+    val recent_posts: List<TopPerformingPostDto> = emptyList(),
+    val strikes_and_warnings: List<RoleHistoryItemDto> = emptyList(),
+    val audit_history: List<RoleHistoryItemDto> = emptyList(),
+    val recent_moderation_actions: List<RoleHistoryItemDto> = emptyList()
+)
+
+@Serializable
+data class RestrictMemberRequest(
+    val duration_days: Int = 7,
+    val reason: String
+)
+
+@Serializable
+data class BulkMemberActionRequest(
+    val action: String,
+    val user_ids: List<Long>,
+    val role: String? = null,
+    val duration_days: Int? = null,
+    val reason: String? = null
+)
+
+@Serializable
+data class BulkMemberActionResponseDto(
+    val action: String,
+    val processed_count: Int = 0,
+    val successful_user_ids: List<Long> = emptyList()
 )
 
 @Serializable
@@ -1675,9 +3103,71 @@ data class UpdateGroupRoleRequest(
 )
 
 @Serializable
+data class GroupPollInput(
+    val question: String = "",
+    val options: List<String> = emptyList(),
+    val duration_days: Int = 7
+)
+
+@Serializable
 data class CreateGroupPostRequest(
-    val body: String,
-    val media_urls: List<String> = emptyList()
+    val content: String? = null,
+    val body: String? = null,
+    val type: String? = "text",
+    val media_ids: List<Long> = emptyList(),
+    val media_urls: List<String> = emptyList(),
+    val poll_data: GroupPollInput? = null,
+    val is_pinned: Boolean = false,
+    val status: String = "published",
+    val scheduled_at: String? = null
+)
+
+@Serializable
+data class UpdateGroupPostRequest(
+    val content: String? = null,
+    val is_pinned: Boolean? = null
+)
+
+@Serializable
+data class VoteGroupPostPollRequest(
+    val option_id: Int
+)
+
+@Serializable
+data class ReactGroupPostRequest(
+    val type: String = "like"
+)
+
+@Serializable
+data class ReportGroupPostRequest(
+    val reason_category: String,
+    val description: String? = null
+)
+
+@Serializable
+data class TogglePinResponseDto(
+    val is_pinned: Boolean
+)
+
+@Serializable
+data class GroupReportDto(
+    val id: Long = 0L,
+    val group_id: Long = 0L,
+    val reporter: UserDto? = null,
+    val reportable_type: String = "",
+    val reportable_id: Long = 0L,
+    val reason_category: String = "",
+    val description: String? = null,
+    val status: String = "pending",
+    val decision_note: String? = null,
+    val created_at: String? = null
+)
+
+@Serializable
+data class ActionGroupReportRequest(
+    val status: String,
+    val decision_note: String? = null,
+    val remove_content: Boolean = false
 )
 
 @Serializable
@@ -1688,13 +3178,6 @@ data class CreateGroupAnnouncementRequest(
 @Serializable
 data class InviteGroupMembersRequest(
     val user_ids: List<Long>
-)
-
-@Serializable
-data class UpdatePageRequest(
-    val name: String? = null,
-    val bio: String? = null,
-    val category: String? = null
 )
 
 @Serializable
@@ -1867,5 +3350,438 @@ data class NotificationPreferencesRequest(
     val group_alerts: Boolean? = null,
     val security_alerts: Boolean? = null
 )
+
+@Serializable
+data class MarketplaceProductDto(
+    val id: Long,
+    val title: String,
+    val price: Double = 0.0,
+    val currency: String = "BDT",
+    val description: String? = null,
+    val location: String? = null,
+    val condition: String = "used",
+    val primary_image_url: String? = null,
+    val status: String = "active",
+    val seller_name: String? = null
+)
+
+@Serializable
+data class SavedItemDto(
+    val id: Long,
+    val item_type: String = "post",
+    val item_id: Long,
+    val collection_name: String? = null,
+    val created_at: String? = null,
+    val post: SavedPostPreviewDto? = null
+)
+
+@Serializable
+data class SavedPostPreviewDto(
+    val id: Long,
+    val content: String? = null,
+    val author_name: String? = null,
+    val author_avatar: String? = null,
+    val media_url: String? = null,
+    val created_at: String? = null
+)
+
+@Serializable
+data class MemoryItemDto(
+    val id: Long,
+    val content: String = "",
+    val created_at: String? = null,
+    val created_at_formatted: String? = null,
+    val years_ago: Int = 1,
+    val years_ago_label: String = "1 year ago",
+    val media_url: String? = null,
+    val author_name: String? = null,
+    val author_avatar: String? = null
+)
+
+// -------------------------------------------------------------
+// Recruitment & Jobs DTOs (Phase 12)
+// -------------------------------------------------------------
+@Serializable
+data class JobDto(
+    val id: Long,
+    val company_id: Long? = null,
+    val category_id: Long? = null,
+    val title: String,
+    val slug: String? = null,
+    val company_name: String = "",
+    val company_logo: String? = null,
+    val location: String = "",
+    val country: String? = null,
+    val city: String? = null,
+    val location_type: String = "onsite",
+    val location_type_label: String = "",
+    val workplace_type: String = "onsite",
+    val employment_type: String = "full_time",
+    val employment_type_label: String = "",
+    val experience_level: String = "mid",
+    val salary_formatted: String = "আলোচনা সাপেক্ষে",
+    val salary_min: Int? = null,
+    val salary_max: Int? = null,
+    val salary_currency: String = "BDT",
+    val salary_negotiable: Boolean = false,
+    val vacancies: Int = 1,
+    val description: String = "",
+    val responsibilities: String? = null,
+    val requirements: String? = null,
+    val qualifications: String? = null,
+    val benefits: String? = null,
+    val deadline: String? = null,
+    val deadline_formatted: String? = null,
+    val is_expired: Boolean = false,
+    val status: String = "active",
+    val applications_count: Int = 0,
+    val views_count: Int = 0,
+    val has_applied: Boolean = false,
+    val is_saved: Boolean = false,
+    val skills: List<JobSkillDto> = emptyList(),
+    val company: CompanySummaryDto? = null
+)
+
+@Serializable
+data class JobSkillDto(
+    val id: Long,
+    val name: String,
+    val slug: String? = null
+)
+
+@Serializable
+data class CompanySummaryDto(
+    val id: Long,
+    val name: String,
+    val slug: String? = null,
+    val logo: String? = null,
+    val industry: String? = null,
+    val is_verified: Boolean = false
+)
+
+@Serializable
+data class CompanyDto(
+    val id: Long,
+    val owner_user_id: Long = 0,
+    val name: String,
+    val slug: String? = null,
+    val logo: String? = null,
+    val cover_image: String? = null,
+    val description: String? = null,
+    val industry: String? = null,
+    val company_size: String? = null,
+    val founded_year: Int? = null,
+    val website: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val headquarters: String? = null,
+    val verification_status: String = "unverified",
+    val is_verified: Boolean = false,
+    val visibility: String = "public",
+    val viewer_role: String? = null,
+    val active_jobs_count: Int = 0,
+    val total_jobs_count: Int = 0
+)
+
+@Serializable
+data class JobApplicationDto(
+    val id: Long,
+    val job_posting_id: Long = 0,
+    val company_id: Long? = null,
+    val user_id: Long = 0,
+    val resume_id: Long? = null,
+    val full_name: String = "",
+    val email: String = "",
+    val phone: String = "",
+    val cover_letter: String? = null,
+    val resume_url: String? = null,
+    val resume_title: String? = null,
+    val expected_salary: Int? = null,
+    val status: String = "applied",
+    val status_label: String = "Applied",
+    val status_color: String = "#0284c7",
+    val status_bg: String = "#e0f2fe",
+    val created_at: String? = null,
+    val applied_at: String? = null,
+    val applied_at_human: String? = null,
+    val job_title: String? = null,
+    val company_name: String? = null
+)
+
+@Serializable
+data class CandidateProfileDto(
+    val id: Long = 0,
+    val user_id: Long = 0,
+    val professional_title: String? = null,
+    val professional_summary: String? = null,
+    val experience_years: Int = 0,
+    val current_company: String? = null,
+    val current_position: String? = null,
+    val expected_salary: Int? = null,
+    val salary_currency: String = "BDT",
+    val availability_status: String = "open_to_work",
+    val profile_visibility: String = "public"
+)
+
+@Serializable
+data class CandidateResumeDto(
+    val id: Long,
+    val user_id: Long = 0,
+    val title: String,
+    val original_filename: String = "",
+    val mime_type: String = "",
+    val file_size: Long = 0,
+    val file_size_formatted: String = "",
+    val is_default: Boolean = false
+)
+
+@Serializable
+data class InterviewDto(
+    val id: Long,
+    val application_id: Long = 0,
+    val company_id: Long? = null,
+    val company_name: String? = null,
+    val interview_type: String = "video",
+    val scheduled_at: String = "",
+    val scheduled_at_formatted: String = "",
+    val duration_minutes: Int = 45,
+    val timezone: String = "Asia/Dhaka",
+    val meeting_url: String? = null,
+    val location: String? = null,
+    val instructions: String? = null,
+    val status: String = "scheduled",
+    val job_title: String? = null,
+    val candidate_name: String? = null
+)
+
+@Serializable
+data class JobAlertDto(
+    val id: Long,
+    val user_id: Long = 0,
+    val title: String,
+    val keywords: String? = null,
+    val frequency: String = "daily",
+    val is_active: Boolean = true
+)
+
+@Serializable
+data class AtsColumnDto(
+    val stage_key: String,
+    val title: String,
+    val color: String = "#0284c7",
+    val count: Int = 0,
+    val candidates: List<AtsCandidateDto> = emptyList()
+)
+
+@Serializable
+data class AtsCandidateDto(
+    val id: Long,
+    val job_id: Long = 0,
+    val job_title: String? = null,
+    val candidate_name: String = "",
+    val candidate_email: String = "",
+    val avatar: String? = null,
+    val applied_at: String? = null,
+    val expected_salary: Int? = null
+)
+
+@Serializable
+data class AtsPipelineDto(
+    val company_id: Long = 0,
+    val company_name: String = "",
+    val total_active_candidates: Int = 0,
+    val columns: List<AtsColumnDto> = emptyList()
+)
+
+@Serializable
+data class EmployerDashboardDto(
+    val company: CompanyDto? = null,
+    val metrics: EmployerMetricsDto = EmployerMetricsDto(),
+    val recent_applications: List<JobApplicationDto> = emptyList(),
+    val upcoming_interviews: List<InterviewDto> = emptyList()
+)
+
+@Serializable
+data class EmployerMetricsDto(
+    val total_jobs: Int = 0,
+    val active_jobs: Int = 0,
+    val draft_jobs: Int = 0,
+    val paused_jobs: Int = 0,
+    val closed_jobs: Int = 0,
+    val total_applications: Int = 0,
+    val new_applications: Int = 0,
+    val shortlisted_candidates: Int = 0,
+    val interviews_scheduled: Int = 0,
+    val offers_sent: Int = 0,
+    val hired_candidates: Int = 0
+)
+
+// -------------------------------------------------------------
+// Phase 13: LMS DTOs
+// -------------------------------------------------------------
+
+@Serializable
+data class LearningCategoryDto(
+    val id: Long = 0,
+    val parent_id: Long? = null,
+    val name: String = "",
+    val slug: String = "",
+    val icon: String? = null,
+    val description: String? = null,
+    val courses_count: Int = 0
+)
+
+@Serializable
+data class LearningCourseDto(
+    val id: Long = 0,
+    val instructor_id: Long = 0,
+    val category_id: Long? = null,
+    val title: String = "",
+    val slug: String = "",
+    val subtitle: String? = null,
+    val description: String = "",
+    val level: String = "all_levels",
+    val language: String = "en",
+    val thumbnail_url: String? = null,
+    val promotional_video_url: String? = null,
+    val type: String = "free",
+    val price: Double = 0.0,
+    val discounted_price: Double? = null,
+    val currency: String = "USD",
+    val status: String = "draft",
+    val duration_minutes: Int = 0,
+    val total_sections: Int = 0,
+    val total_lessons: Int = 0,
+    val enrollments_count: Int = 0,
+    val rating_avg: Double = 0.0,
+    val rating_count: Int = 0,
+    val is_featured: Boolean = false,
+    val published_at: String? = null,
+    val instructor: UserDto? = null,
+    val category: LearningCategoryDto? = null
+)
+
+@Serializable
+data class LearningSectionDto(
+    val id: Long = 0,
+    val course_id: Long = 0,
+    val title: String = "",
+    val description: String? = null,
+    val sort_order: Int = 0,
+    val lessons: List<LearningLessonDto> = emptyList()
+)
+
+@Serializable
+data class LearningLessonDto(
+    val id: Long = 0,
+    val section_id: Long = 0,
+    val course_id: Long = 0,
+    val title: String = "",
+    val slug: String = "",
+    val type: String = "video",
+    val content: String? = null,
+    val video_url: String? = null,
+    val video_duration_seconds: Int = 0,
+    val sort_order: Int = 0,
+    val is_preview: Boolean = false,
+    val is_mandatory: Boolean = true,
+    val is_published: Boolean = true
+)
+
+@Serializable
+data class LearningEnrollmentDto(
+    val id: Long = 0,
+    val course_id: Long = 0,
+    val user_id: Long = 0,
+    val status: String = "active",
+    val price_paid: Double = 0.0,
+    val currency: String = "USD",
+    val enrolled_at: String? = null,
+    val completed_at: String? = null,
+    val last_accessed_at: String? = null,
+    val course: LearningCourseDto? = null,
+    val course_progress: LearningCourseProgressDto? = null
+)
+
+@Serializable
+data class LearningCourseProgressDto(
+    val id: Long = 0,
+    val enrollment_id: Long = 0,
+    val completed_lessons_count: Int = 0,
+    val total_lessons_count: Int = 0,
+    val percentage: Double = 0.0,
+    val is_completed: Boolean = false
+)
+
+@Serializable
+data class LearningQuizDto(
+    val id: Long = 0,
+    val lesson_id: Long = 0,
+    val title: String = "",
+    val instructions: String? = null,
+    val time_limit_minutes: Int = 0,
+    val passing_score: Int = 70,
+    val max_attempts: Int = 0,
+    val total_questions: Int = 0,
+    val questions: List<LearningQuizQuestionDto> = emptyList()
+)
+
+@Serializable
+data class LearningQuizQuestionDto(
+    val id: Long = 0,
+    val question: String = "",
+    val type: String = "multiple_choice",
+    val points: Int = 1,
+    val options: List<LearningQuizOptionDto> = emptyList()
+)
+
+@Serializable
+data class LearningQuizOptionDto(
+    val id: Long = 0,
+    val option_text: String = ""
+)
+
+@Serializable
+data class LearningQuizAttemptDto(
+    val id: Long = 0,
+    val quiz_id: Long = 0,
+    val user_id: Long = 0,
+    val attempt_number: Int = 1,
+    val score: Double = 0.0,
+    val total_points: Int = 0,
+    val earned_points: Int = 0,
+    val passed: Boolean = false,
+    val started_at: String? = null,
+    val submitted_at: String? = null
+)
+
+@Serializable
+data class LearningCertificateDto(
+    val id: Long = 0,
+    val course_id: Long = 0,
+    val certificate_code: String = "",
+    val verification_token: String = "",
+    val student_name: String = "",
+    val course_title: String = "",
+    val instructor_name: String = "",
+    val pdf_url: String? = null,
+    val qr_code_url: String? = null,
+    val issued_at: String? = null,
+    val is_revoked: Boolean = false,
+    val course: LearningCourseDto? = null
+)
+
+@Serializable
+data class LearningReviewDto(
+    val id: Long = 0,
+    val course_id: Long = 0,
+    val rating: Int = 5,
+    val content: String? = null,
+    val instructor_reply: String? = null,
+    val created_at: String? = null,
+    val user: UserDto? = null
+)
+
+
 
 

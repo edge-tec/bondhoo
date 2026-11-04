@@ -39,10 +39,10 @@ class BlockedUsersViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        coEvery { api.getBlockedAndRestrictedUsers() } returns Response.success(ApiResponse(success = true, data = dummyResponse))
-        coEvery { api.unblockUser(any()) } returns Response.success(ApiResponse(success = true, data = Unit))
-        coEvery { api.unrestrictUser(any()) } returns Response.success(ApiResponse(success = true, data = Unit))
-        coEvery { api.unmuteUser(any()) } returns Response.success(ApiResponse(success = true, data = Unit))
+        coEvery { api.getBlockedAndRestrictedUsers() } returns Response.success(ApiResponse(data = dummyResponse))
+        coEvery { api.unblockUserInSettings(any()) } returns Response.success(ApiResponse(data = Unit))
+        coEvery { api.unrestrictUser(any()) } returns Response.success(ApiResponse(data = Unit))
+        coEvery { api.unmuteUser(any()) } returns Response.success(ApiResponse(data = Unit))
 
         viewModel = BlockedUsersViewModel(api)
     }
@@ -97,7 +97,7 @@ class BlockedUsersViewModelTest {
         viewModel.handleIntent(BlockedUsersIntent.ExecuteConfirmedAction)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { api.unblockUser(101L) }
+        coVerify { api.unblockUserInSettings(101L) }
         assertTrue(viewModel.uiState.value.blockedUsers.isEmpty())
         assertNull(viewModel.uiState.value.pendingActionUser)
         assertEquals("Bad Actor has been unblocked.", viewModel.uiState.value.successMessage)

@@ -55,10 +55,10 @@ class PrivacySettingsViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        coEvery { api.getSettingsPrivacy() } returns Response.success(ApiResponse(success = true, data = dummyPrivacy))
-        coEvery { api.getActiveSessions() } returns Response.success(ApiResponse(success = true, data = dummySessions))
-        coEvery { api.updateSettingsPrivacy(any()) } returns Response.success(ApiResponse(success = true, data = dummyPrivacy))
-        coEvery { api.toggleTwoFactor(any()) } returns Response.success(ApiResponse(success = true, data = Toggle2faDto(true)))
+        coEvery { api.getSettingsPrivacy() } returns Response.success(ApiResponse(data = dummyPrivacy))
+        coEvery { api.getActiveSessions() } returns Response.success(ApiResponse(data = dummySessions))
+        coEvery { api.updateSettingsPrivacy(any()) } returns Response.success(ApiResponse(data = dummyPrivacy))
+        coEvery { api.toggleTwoFactor(any()) } returns Response.success(ApiResponse(data = Toggle2faDto(true)))
 
         viewModel = PrivacySettingsViewModel(api, tokenStorageManager)
     }
@@ -98,7 +98,7 @@ class PrivacySettingsViewModelTest {
 
     @Test
     fun testTwoFactorToggle() = runTest {
-        coEvery { api.toggleTwoFactor(Toggle2faRequest(false)) } returns Response.success(ApiResponse(success = true, data = Toggle2faDto(false)))
+        coEvery { api.toggleTwoFactor(Toggle2faRequest(false)) } returns Response.success(ApiResponse(data = Toggle2faDto(false)))
 
         viewModel.handleIntent(PrivacySettingsIntent.TwoFactorToggled(false))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -112,7 +112,7 @@ class PrivacySettingsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         val sessionToRevoke = dummySessions[1] // Chrome on macOS
 
-        coEvery { api.revokeSession(sessionToRevoke.id) } returns Response.success(ApiResponse(success = true))
+        coEvery { api.revokeSession(sessionToRevoke.id) } returns Response.success(ApiResponse(data = Unit))
 
         viewModel.handleIntent(PrivacySettingsIntent.ConfirmRevokeSession(sessionToRevoke))
         assertEquals(sessionToRevoke, viewModel.uiState.value.sessionToRevoke)
@@ -129,7 +129,7 @@ class PrivacySettingsViewModelTest {
     fun testLogoutOtherSessions() = runTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coEvery { api.logoutAllSessions() } returns Response.success(ApiResponse(success = true))
+        coEvery { api.logoutAllSessions() } returns Response.success(ApiResponse(data = Unit))
 
         viewModel.handleIntent(PrivacySettingsIntent.ConfirmLogoutOthers)
         assertTrue(viewModel.uiState.value.showLogoutOthersDialog)

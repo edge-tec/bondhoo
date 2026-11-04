@@ -203,6 +203,20 @@ class ProfileRepositoryImpl @Inject constructor(
         }
     }.flowOn(ioDispatcher)
 
+    override fun unfriendUser(userId: Long): Flow<Result<Unit>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.unfriendUser(userId)
+            if (response.isSuccessful) {
+                emit(Result.Success(Unit))
+            } else {
+                emit(Result.Error(Exception("Failed to remove friend.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
     override fun followUser(userId: Long): Flow<Result<Boolean>> = flow {
         emit(Result.Loading)
         try {

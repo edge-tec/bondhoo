@@ -46,6 +46,8 @@ fun FeedScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToSearch: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
+    onNavigateToGroups: () -> Unit = {},
+    onNavigateToPages: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: FeedViewModel = hiltViewModel()
 ) {
@@ -157,7 +159,15 @@ fun FeedScreen(
                     tabs.forEach { (key, label) ->
                         val isSelected = state.selectedTab == key
                         Button(
-                            onClick = { viewModel.handleIntent(FeedIntent.SelectTab(key)) },
+                            onClick = {
+                                if (key == "groups") {
+                                    onNavigateToGroups()
+                                } else if (key == "pages") {
+                                    onNavigateToPages()
+                                } else {
+                                    viewModel.handleIntent(FeedIntent.SelectTab(key))
+                                }
+                            },
                             shape = RoundedCornerShape(20.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (isSelected) ConnectlyBlue else Color(0xFFF1F5F9),

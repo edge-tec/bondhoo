@@ -118,4 +118,60 @@ class GroupPolicy
 
         return $user !== null && $group->hasMember($user->id);
     }
+
+    /**
+     * কাস্টম রোল তৈরি ও ম্যানেজ করতে পারবে কিনা (Owner বা manage_roles পারমিশন)
+     */
+    public function manageRoles(User $user, Group $group): bool
+    {
+        return $group->isOwner($user->id) || $group->hasPermission($user->id, 'manage_roles');
+    }
+
+    /**
+     * অ্যাডমিন যোগ/রিমুভ করতে পারবে কিনা (শুধুমাত্র Owner)
+     */
+    public function manageAdmins(User $user, Group $group): bool
+    {
+        return $group->isOwner($user->id);
+    }
+
+    /**
+     * মডারেটর ম্যানেজ করতে পারবে কিনা
+     */
+    public function manageModerators(User $user, Group $group): bool
+    {
+        return $group->isOwner($user->id) || $group->isAdmin($user->id);
+    }
+
+    /**
+     * অফিশিয়াল অ্যানাউন্সমেন্ট ম্যানেজ করতে পারবে কিনা
+     */
+    public function manageAnnouncements(User $user, Group $group): bool
+    {
+        return $group->hasPermission($user->id, 'manage_announcements');
+    }
+
+    /**
+     * পোস্ট ও ডিসকাশন পরিচালনা করতে পারবে কিনা
+     */
+    public function managePosts(User $user, Group $group): bool
+    {
+        return $group->hasPermission($user->id, 'manage_posts');
+    }
+
+    /**
+     * কমেন্ট মডারেশন করতে পারবে কিনা
+     */
+    public function manageComments(User $user, Group $group): bool
+    {
+        return $group->hasPermission($user->id, 'manage_comments');
+    }
+
+    /**
+     * ড্যাশবোর্ড ও অ্যানালিটিক্স অ্যাক্সেস করতে পারবে কিনা
+     */
+    public function viewAnalytics(User $user, Group $group): bool
+    {
+        return $group->hasPermission($user->id, 'view_analytics');
+    }
 }

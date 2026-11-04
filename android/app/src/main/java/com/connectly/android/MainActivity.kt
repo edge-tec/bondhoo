@@ -54,9 +54,21 @@ import com.connectly.android.feature.profile.navigation.navigateToNotificationSe
 import com.connectly.android.feature.profile.navigation.navigateToPrivacySettings
 import javax.inject.Inject
 import com.connectly.android.feature.profile.navigation.navigateToProfile
+import androidx.activity.compose.BackHandler
+import com.connectly.android.feature.profile.navigation.navigateToMarketplace
+import com.connectly.android.feature.profile.navigation.navigateToMemories
+import com.connectly.android.feature.profile.navigation.navigateToSavedPosts
+import com.connectly.android.feature.profile.navigation.navigateToSettings
 import com.connectly.android.feature.profile.navigation.profileGraph
 import com.connectly.android.feature.profile.presentation.friends.FriendsScreen
-import com.connectly.android.feature.profile.presentation.settings.SettingsScreen
+import com.connectly.android.feature.profile.presentation.menu.MenuScreen
+import com.connectly.android.feature.groups.navigation.navigateToGroups
+import com.connectly.android.feature.groups.navigation.navigateToPages
+import com.connectly.android.feature.events.navigation.navigateToEvents
+import com.connectly.android.feature.jobs.navigation.jobsScreen
+import com.connectly.android.feature.jobs.navigation.navigateToJobs
+import com.connectly.android.feature.learning.navigation.learningScreen
+import com.connectly.android.feature.learning.navigation.navigateToLearning
 import com.connectly.android.feature.reels.navigation.reelsGraph
 import com.connectly.android.feature.reels.presentation.player.ReelsScreen
 import com.connectly.android.feature.stories.navigation.navigateToCreateStory
@@ -168,8 +180,20 @@ class MainActivity : ComponentActivity() {
                         navController = rootNavController
                     )
 
+                    jobsScreen(
+                        onNavigateBack = { rootNavController.popBackStack() }
+                    )
+
+                    learningScreen(
+                        onNavigateBack = { rootNavController.popBackStack() }
+                    )
+
                     composable(MAIN_HOME_ROUTE) {
                         var selectedTab by remember { mutableStateOf(BottomBarDestination.HOME) }
+
+                        BackHandler(enabled = selectedTab != BottomBarDestination.HOME) {
+                            selectedTab = BottomBarDestination.HOME
+                        }
 
                         Scaffold(
                             bottomBar = {
@@ -194,6 +218,8 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToProfile = { rootNavController.navigateToProfile() },
                                         onNavigateToSearch = { rootNavController.navigateToSearch() },
                                         onNavigateToNotifications = { rootNavController.navigateToNotifications() },
+                                        onNavigateToGroups = { rootNavController.navigateToGroups() },
+                                        onNavigateToPages = { rootNavController.navigateToPages() },
                                         modifier = Modifier.padding(innerPadding)
                                     )
                                 }
@@ -220,21 +246,23 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 BottomBarDestination.MENU -> {
-                                    SettingsScreen(
-                                        onNavigateBack = { selectedTab = BottomBarDestination.HOME },
+                                    MenuScreen(
                                         onNavigateToProfile = { rootNavController.navigateToProfile() },
-                                        onNavigateToEditProfile = { rootNavController.navigateToEditProfile() },
-                                        onNavigateToPrivacy = { rootNavController.navigateToPrivacySettings() },
-                                        onNavigateToNotificationSettings = { rootNavController.navigateToNotificationSettings() },
-                                        onNavigateToAppearance = { rootNavController.navigateToAppearanceSettings() },
-                                        onNavigateToLanguage = { rootNavController.navigateToLanguageSettings() },
-                                        onNavigateToMessagingCalls = { rootNavController.navigateToMessagingCallSettings() },
-                                        onNavigateToFeedPreferences = { rootNavController.navigateToFeedPreferences() },
-                                        onNavigateToBlockedUsers = { rootNavController.navigateToBlockedUsers() },
-                                        onNavigateToStorage = { rootNavController.navigateToDataStorage() },
-                                        onNavigateToAccessibility = { rootNavController.navigateToAccessibility() },
+                                        onNavigateToMessages = { selectedTab = BottomBarDestination.MESSENGER },
+                                        onNavigateToNotifications = { rootNavController.navigateToNotifications() },
+                                        onNavigateToReels = { selectedTab = BottomBarDestination.REELS },
+                                        onNavigateToGroups = { rootNavController.navigateToGroups() },
+                                        onNavigateToPages = { rootNavController.navigateToPages() },
+                                        onNavigateToLive = { rootNavController.navigateToLive() },
+                                        onNavigateToEvents = { rootNavController.navigateToEvents() },
+                                        onNavigateToSettings = { rootNavController.navigateToSettings() },
                                         onNavigateToHelpSupport = { rootNavController.navigateToHelpSupport() },
-                                        onNavigateToAboutConnectly = { rootNavController.navigateToAboutConnectly() },
+                                        onNavigateToSearch = { rootNavController.navigateToSearch() },
+                                        onNavigateToMarketplace = { rootNavController.navigateToMarketplace() },
+                                        onNavigateToSaved = { rootNavController.navigateToSavedPosts() },
+                                        onNavigateToMemories = { rootNavController.navigateToMemories() },
+                                        onNavigateToJobs = { rootNavController.navigateToJobs() },
+                                        onNavigateToLearning = { rootNavController.navigateToLearning() },
                                         onLogoutSuccess = {
                                             rootNavController.navigate(LOGIN_ROUTE) {
                                                 popUpTo(0) { inclusive = true }

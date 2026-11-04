@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.connectly.android.core.network.api.ConnectlyApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +24,8 @@ class DataStorageViewModel @Inject constructor(
     private val api: ConnectlyApi,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
     private val prefs: SharedPreferences by lazy {
         context.getSharedPreferences("connectly_storage_prefs", Context.MODE_PRIVATE)
@@ -70,7 +73,7 @@ class DataStorageViewModel @Inject constructor(
 
     fun refreshStorageUsage() {
         viewModelScope.launch {
-            val totalBytes = withContext(Dispatchers.IO) {
+            val totalBytes = withContext(ioDispatcher) {
                 calculateCacheBytes()
             }
             _uiState.update {
@@ -85,14 +88,14 @@ class DataStorageViewModel @Inject constructor(
     private fun clearCache() {
         _uiState.update { it.copy(isClearingCache = true) }
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 try {
                     deleteDirContents(context.cacheDir)
                     context.externalCacheDir?.let { deleteDirContents(it) }
                 } catch (_: Exception) {
                 }
             }
-            val newBytes = withContext(Dispatchers.IO) {
+            val newBytes = withContext(ioDispatcher) {
                 calculateCacheBytes()
             }
             _uiState.update {

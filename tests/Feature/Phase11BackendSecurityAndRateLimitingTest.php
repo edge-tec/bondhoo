@@ -68,4 +68,25 @@ class Phase11BackendSecurityAndRateLimitingTest extends TestCase
 
         $successRes->assertOk();
     }
+
+    public function test_two_factor_toggle_generates_secret_and_recovery_codes(): void
+    {
+        $user = User::factory()->create([
+            'two_factor_enabled' => false,
+            'two_factor_secret' => null,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $res = $this->postJson('/api/v1/settings/2fa/toggle', ['enabled' => true]);
+        $res->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.two_factor_enabled', true)
+            ->assertJsonStructure(['data' => ['secret', 'qr_code_url', 'recovery_codes']]);
+
+        $user->refresh();
+        $this->assertTrue((bool) $user->two_factor_enabled);
+        $this->assertNotNull($user->two_factor_secret);
+        $this->assertNotNull($user->two_factor_recovery_codes);
+    }
 }

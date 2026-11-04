@@ -15,6 +15,7 @@ use App\Http\Controllers\Web\MarketplaceWebController;
 use App\Http\Controllers\Web\MessengerWebController;
 use App\Http\Controllers\Web\NotificationWebController;
 use App\Http\Controllers\Web\PageWebController;
+use App\Http\Controllers\Web\ParentalWebController;
 use App\Http\Controllers\Web\ProfileWebController;
 use App\Http\Controllers\Web\SeoWebController;
 use App\Http\Controllers\Web\SettingsWebController;
@@ -925,6 +926,9 @@ Route::middleware(['web'])->group(function () use ($resolveWebUser) {
     Route::get('/settings/privacy', [SettingsWebController::class, 'privacy'])->name('settings.privacy');
     Route::get('/settings/blocking', [SettingsWebController::class, 'blocking'])->name('settings.blocking');
     Route::get('/settings/sounds', [SettingsWebController::class, 'sounds'])->name('settings.sounds');
+
+    // Connectly Parental Control & Family Digital Safety Dashboard
+    Route::get('/parental', [ParentalWebController::class, 'index'])->name('parental.dashboard');
 });
 
 // Public Legal, Compliance and Policy Pages (Unrestricted Guest Access)
@@ -932,6 +936,7 @@ Route::get('/terms', [SettingsWebController::class, 'terms'])->name('terms');
 Route::get('/privacy', [SettingsWebController::class, 'privacyPolicy'])->name('privacy');
 Route::get('/cookies', [SettingsWebController::class, 'cookies'])->name('cookies');
 Route::get('/community-guidelines', [SettingsWebController::class, 'guidelines'])->name('community.guidelines');
+Route::get('/help', [SettingsWebController::class, 'guidelines'])->name('help');
 
 // Search Engine Optimization (SEO) Dynamic XML Sitemap
 Route::get('/sitemap.xml', [SeoWebController::class, 'sitemap'])->name('sitemap');

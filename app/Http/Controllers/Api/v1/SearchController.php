@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Search\GlobalSearchRequest;
 use App\Services\SearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,15 +21,27 @@ class SearchController extends Controller
     /**
      * সার্বজনীন সার্চ কোয়েরি এক্সিকিউট করে ফলাফল রিটার্ন করে।
      */
-    public function search(Request $request): JsonResponse
+    public function search(GlobalSearchRequest $request): JsonResponse
     {
         $user = $request->user('sanctum') ?? $request->user('web') ?? auth('sanctum')->user() ?? auth('web')->user();
-        $query = (string) ($request->query('q') ?? $request->query('query') ?? $request->query('search') ?? $request->input('q') ?? $request->input('query') ?? '');
-        $type = (string) $request->query('type', 'all');
-        $limit = min((int) ($request->query('limit', 15)), 50);
-        $suggest = $request->boolean('suggest');
+        $validated = $request->validated();
+        $query = (string) ($validated['q'] ?? $validated['query'] ?? $validated['search'] ?? '');
+        $type = (string) ($validated['type'] ?? 'all');
+        $limit = min((int) ($validated['limit'] ?? 15), 50);
+        $suggest = (bool) ($validated['suggest'] ?? false);
+        $filters = [
+            'location' => $validated['location'] ?? null,
+            'country' => $validated['country'] ?? null,
+            'industry' => $validated['industry'] ?? null,
+            'skills' => $validated['skills'] ?? null,
+            'category' => $validated['category'] ?? null,
+            'date_from' => $validated['date_from'] ?? null,
+            'date_to' => $validated['date_to'] ?? null,
+            'job_type' => $validated['job_type'] ?? null,
+            'sort_by' => $validated['sort_by'] ?? 'relevance',
+        ];
 
-        $results = $this->searchService->search($query, $type, $user, $limit, $suggest);
+        $results = $this->searchService->search($query, $type, $user, $limit, $suggest, $filters);
 
         return $this->successResponse(
             data: $results,
@@ -47,6 +60,20 @@ class SearchController extends Controller
         return $this->successResponse(
             data: $history,
             message: 'Search history retrieved.'
+        );
+    }
+
+    /**
+     * নির্দিষ্ট সার্চ হিস্ট্রি আইটেম মুছে ফেলা।
+     */
+    public function removeHistoryItem(Request $request, string $term): JsonResponse
+    {
+        $user = $request->user();
+        $updated = $this->searchService->removeSearchHistoryItem($user, $term);
+
+        return $this->successResponse(
+            data: $updated,
+            message: 'Search history item removed successfully.'
         );
     }
 

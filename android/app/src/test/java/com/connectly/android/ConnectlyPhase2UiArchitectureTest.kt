@@ -45,6 +45,7 @@ class ConnectlyPhase2UiArchitectureTest {
         assertNotNull(tabs.find { it == BottomBarDestination.REELS })
         assertNotNull(tabs.find { it == BottomBarDestination.MESSENGER })
         assertNotNull(tabs.find { it == BottomBarDestination.MENU })
+        assertEquals("Menu", BottomBarDestination.MENU.title)
     }
 
     @Test

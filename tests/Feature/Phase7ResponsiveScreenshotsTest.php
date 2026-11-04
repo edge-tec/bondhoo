@@ -74,7 +74,7 @@ class Phase7ResponsiveScreenshotsTest extends TestCase
             $content
         );
 
-        $scratchDir = '/Users/mizanurrahman/.gemini/antigravity/brain/5d035332-14ae-4a6c-9e07-028000eeee19/scratch/screenshots';
+        $scratchDir = sys_get_temp_dir().'/connectly_screenshots';
         if (! is_dir($scratchDir)) {
             mkdir($scratchDir, 0777, true);
         }

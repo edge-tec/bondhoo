@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Event;
 use App\Models\Group;
+use App\Models\JobPosting;
+use App\Models\LearningCourse;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Reel;
@@ -22,9 +24,9 @@ class SearchService
     ) {}
 
     /**
-     * সার্চ কোয়েরি অনুযায়ী ফলাফল রিটার্ন করে।
+     * সার্চ কোয়েরি ও ফিল্টার অনুযায়ী ফলাফল রিটার্ন করে।
      */
-    public function search(string $query, string $type = 'all', ?User $viewer = null, int $limit = 10, bool $suggest = false): array
+    public function search(string $query, string $type = 'all', ?User $viewer = null, int $limit = 10, bool $suggest = false, array $filters = []): array
     {
         $term = trim($query);
 
@@ -84,6 +86,19 @@ class SearchService
                                 'location' => $e->address ?: $e->location_type,
                             ])
                             ->values(),
+                        'jobs' => JobPosting::where('status', JobPosting::STATUS_ACTIVE)
+                            ->latest('id')
+                            ->limit(min($limit, 4))
+                            ->get()
+                            ->map(fn (JobPosting $j) => [
+                                'id' => $j->id,
+                                'title' => $j->title,
+                                'company_name' => $j->company_name,
+                                'company_logo' => $j->company_logo,
+                                'location' => $j->location,
+                                'employment_type' => $j->employment_type,
+                            ])
+                            ->values(),
                         'trending' => ['#Connectly', '#Dhaka', '#Bangladesh', '#TechSummit2026'],
                     ],
                 ];
@@ -97,6 +112,7 @@ class SearchService
                     'groups' => [],
                     'pages' => [],
                     'events' => [],
+                    'jobs' => [],
                     'reels' => [],
                     'hashtags' => [],
                 ],
@@ -119,6 +135,26 @@ class SearchService
                 }
             }
 
+            if (! empty($filters['location'])) {
+                $userQuery->whereHas('profile', fn ($pq) => $pq->where('location', 'like', "%{$filters['location']}%")->orWhere('city', 'like', "%{$filters['location']}%"));
+            }
+
+            if (! empty($filters['country'])) {
+                $userQuery->whereHas('profile', fn ($pq) => $pq->where('country', 'like', "%{$filters['country']}%"));
+            }
+
+            if (! empty($filters['industry'])) {
+                $userQuery->whereHas('profile', fn ($pq) => $pq->where('category', 'like', "%{$filters['industry']}%")->orWhere('headline', 'like', "%{$filters['industry']}%"));
+            }
+
+            if (! empty($filters['skills'])) {
+                $userQuery->whereHas('skills', fn ($sq) => $sq->where('name', 'like', "%{$filters['skills']}%"));
+            }
+
+            if (! empty($filters['sort_by']) && $filters['sort_by'] === 'newest') {
+                $userQuery->latest('id');
+            }
+
             $results['users'] = $userQuery
                 ->with('profile')
                 ->limit($limit)
@@ -129,6 +165,8 @@ class SearchService
                     'username' => $u->username,
                     'avatar_url' => $u->profile?->avatar_url,
                     'bio' => $u->profile?->bio,
+                    'location' => $u->profile?->location,
+                    'headline' => $u->profile?->headline,
                 ])
                 ->values();
         }
@@ -142,6 +180,18 @@ class SearchService
                 $postQuery->whereNotIn('user_id', $blockedUserIds);
             }
 
+            if (! empty($filters['category'])) {
+                $postQuery->where('category', 'like', "%{$filters['category']}%");
+            }
+
+            if (! empty($filters['date_from'])) {
+                $postQuery->whereDate('created_at', '>=', $filters['date_from']);
+            }
+
+            if (! empty($filters['date_to'])) {
+                $postQuery->whereDate('created_at', '<=', $filters['date_to']);
+            }
+
             // Group privacy check: Only show group posts if group is public or viewer is active member
             $postQuery->where(function ($q) use ($viewer) {
                 $q->whereNull('group_id')
@@ -153,9 +203,14 @@ class SearchService
                     });
             });
 
+            if (! empty($filters['sort_by']) && $filters['sort_by'] === 'popularity') {
+                $postQuery->orderByDesc('reactions_count')->orderByDesc('comments_count');
+            } else {
+                $postQuery->latest('id');
+            }
+
             $results['posts'] = $postQuery
                 ->with(['user.profile', 'media'])
-                ->latest('id')
                 ->limit($limit)
                 ->get()
                 ->map(fn (Post $p) => $p->toResponseArray($viewer))
@@ -180,6 +235,14 @@ class SearchService
                 $groupQuery->where('privacy', Group::PRIVACY_PUBLIC);
             }
 
+            if (! empty($filters['category'])) {
+                $groupQuery->where('category', 'like', "%{$filters['category']}%");
+            }
+
+            if (! empty($filters['sort_by']) && $filters['sort_by'] === 'popularity') {
+                $groupQuery->orderByDesc('members_count');
+            }
+
             $results['groups'] = $groupQuery
                 ->limit($limit)
                 ->get()
@@ -189,11 +252,22 @@ class SearchService
 
         // ৪. পেজ সার্চ
         if ($type === 'all' || $type === 'pages') {
-            $results['pages'] = Page::where(function ($q) use ($term) {
+            $pageQuery = Page::where(function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
                     ->orWhere('category', 'like', "%{$term}%")
                     ->orWhere('bio', 'like', "%{$term}%");
-            })
+            });
+
+            if (! empty($filters['category']) || ! empty($filters['industry'])) {
+                $cat = $filters['category'] ?? $filters['industry'];
+                $pageQuery->where('category', 'like', "%{$cat}%");
+            }
+
+            if (! empty($filters['sort_by']) && $filters['sort_by'] === 'popularity') {
+                $pageQuery->orderByDesc('followers_count');
+            }
+
+            $results['pages'] = $pageQuery
                 ->limit($limit)
                 ->get()
                 ->map(fn (Page $p) => $p->toResponseArray($viewer))
@@ -222,11 +296,25 @@ class SearchService
 
         // ৬. ইভেন্ট সার্চ
         if ($type === 'all' || $type === 'events') {
-            $results['events'] = Event::where(function ($q) use ($term) {
+            $eventQuery = Event::where(function ($q) use ($term) {
                 $q->where('title', 'like', "%{$term}%")
                     ->orWhere('description', 'like', "%{$term}%")
                     ->orWhere('address', 'like', "%{$term}%");
-            })
+            });
+
+            if (! empty($filters['location'])) {
+                $eventQuery->where('address', 'like', "%{$filters['location']}%");
+            }
+
+            if (! empty($filters['date_from'])) {
+                $eventQuery->whereDate('start_time', '>=', $filters['date_from']);
+            }
+
+            if (! empty($filters['date_to'])) {
+                $eventQuery->whereDate('start_time', '<=', $filters['date_to']);
+            }
+
+            $results['events'] = $eventQuery
                 ->limit($limit)
                 ->get()
                 ->map(fn (Event $e) => [
@@ -242,7 +330,58 @@ class SearchService
                 ->values();
         }
 
-        // ৭. হ্যাশট্যাগ সার্চ
+        // ৭. জবস সার্চ
+        if ($type === 'all' || $type === 'jobs') {
+            $jobQuery = JobPosting::where('status', JobPosting::STATUS_ACTIVE)
+                ->where(function ($q) use ($term) {
+                    $q->where('title', 'like', "%{$term}%")
+                        ->orWhere('company_name', 'like', "%{$term}%")
+                        ->orWhere('description', 'like', "%{$term}%")
+                        ->orWhere('location', 'like', "%{$term}%");
+                });
+
+            if (! empty($filters['job_type'])) {
+                $jobQuery->where(function ($q) use ($filters) {
+                    $q->where('employment_type', $filters['job_type'])
+                        ->orWhere('location_type', $filters['job_type']);
+                });
+            }
+
+            if (! empty($filters['location'])) {
+                $jobQuery->where('location', 'like', "%{$filters['location']}%");
+            }
+
+            if (! empty($filters['skills'])) {
+                $jobQuery->where(function ($q) use ($filters) {
+                    $q->where('title', 'like', "%{$filters['skills']}%")
+                        ->orWhere('requirements', 'like', "%{$filters['skills']}%");
+                });
+            }
+
+            if (! empty($filters['sort_by']) && $filters['sort_by'] === 'newest') {
+                $jobQuery->latest('id');
+            } elseif (! empty($filters['sort_by']) && $filters['sort_by'] === 'popularity') {
+                $jobQuery->orderByDesc('views_count');
+            }
+
+            $results['jobs'] = $jobQuery
+                ->limit($limit)
+                ->get()
+                ->map(fn (JobPosting $j) => [
+                    'id' => $j->id,
+                    'title' => $j->title,
+                    'company_name' => $j->company_name,
+                    'company_logo' => $j->company_logo,
+                    'location' => $j->location,
+                    'location_type' => $j->location_type,
+                    'employment_type' => $j->employment_type,
+                    'salary' => $j->salaryFormatted(),
+                    'created_at' => $j->created_at?->toIso8601String(),
+                ])
+                ->values();
+        }
+
+        // ৮. হ্যাশট্যাগ সার্চ
         if ($type === 'all' || $type === 'hashtags') {
             $cleanTerm = ltrim($term, '#');
             $postsWithTags = Post::where('audience', 'public')
@@ -263,6 +402,36 @@ class SearchService
                 'tag' => $tag,
                 'count' => $count,
             ])->values();
+        }
+
+        // ৯. কোর্স সার্চ (Phase 13 LMS)
+        if ($type === 'all' || $type === 'courses') {
+            $courseQuery = LearningCourse::with('instructor')
+                ->where('status', LearningCourse::STATUS_PUBLISHED)
+                ->where(function ($q) use ($term) {
+                    $q->where('title', 'like', "%{$term}%")
+                        ->orWhere('subtitle', 'like', "%{$term}%")
+                        ->orWhere('description', 'like', "%{$term}%")
+                        ->orWhereHas('skills', function ($sq) use ($term) {
+                            $sq->where('skill_name', 'like', "%{$term}%");
+                        });
+                });
+
+            $results['courses'] = $courseQuery
+                ->limit($limit)
+                ->get()
+                ->map(fn (LearningCourse $c) => [
+                    'id' => $c->id,
+                    'title' => $c->title,
+                    'slug' => $c->slug,
+                    'subtitle' => $c->subtitle,
+                    'level' => $c->level,
+                    'price' => (float) $c->price,
+                    'rating_avg' => (float) $c->rating_avg,
+                    'thumbnail_url' => $c->thumbnail_url,
+                    'instructor_name' => $c->instructor?->name,
+                ])
+                ->values();
         }
 
         return [
@@ -303,6 +472,22 @@ class SearchService
         $history = $this->cacheService->get($key);
 
         return is_array($history) ? $history : [];
+    }
+
+    /**
+     * ইউজারের সার্চ হিস্ট্রি থেকে নির্দিষ্ট একটি টার্ম মুছে ফেলা।
+     */
+    public function removeSearchHistoryItem(User $user, string $term): array
+    {
+        $term = trim($term);
+        $key = "user:{$user->id}:recent_searches";
+        $history = $this->getSearchHistory($user);
+
+        $updated = array_values(array_filter($history, fn ($item) => strcasecmp($item, $term) !== 0));
+
+        $this->cacheService->set($key, $updated, 86400 * 30);
+
+        return $updated;
     }
 
     /**

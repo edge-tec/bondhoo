@@ -5,8 +5,10 @@ use App\Http\Controllers\Admin\AuthManagementController;
 use App\Http\Controllers\Admin\EmailManagementController;
 use App\Http\Controllers\Api\v1\Admin\AdminAuthController;
 use App\Http\Controllers\Api\v1\Admin\InfrastructureController;
+use App\Http\Controllers\Api\v1\AdminJobPortalApiController;
 use App\Http\Controllers\Api\v1\AnalyticsController;
 use App\Http\Controllers\Api\v1\AppVersionController;
+use App\Http\Controllers\Api\v1\AtsApiController;
 use App\Http\Controllers\Api\v1\Auth\DeviceManagementController;
 use App\Http\Controllers\Api\v1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\v1\Auth\LoginController;
@@ -17,13 +19,24 @@ use App\Http\Controllers\Api\v1\Auth\TwoFactorController;
 use App\Http\Controllers\Api\v1\Auth\WebAuthnController;
 use App\Http\Controllers\Api\v1\CallController;
 use App\Http\Controllers\Api\v1\CallSignalController;
+use App\Http\Controllers\Api\v1\CandidateApiController;
 use App\Http\Controllers\Api\v1\CommentController;
+use App\Http\Controllers\Api\v1\CompanyApiController;
 use App\Http\Controllers\Api\v1\ConversationController;
 use App\Http\Controllers\Api\v1\DeviceSessionController;
 use App\Http\Controllers\Api\v1\EventApiController;
 use App\Http\Controllers\Api\v1\FriendController;
 use App\Http\Controllers\Api\v1\GroupController;
+use App\Http\Controllers\Api\v1\InterviewApiController;
 use App\Http\Controllers\Api\v1\JobApiController;
+use App\Http\Controllers\Api\v1\Learning\LearningAssignmentApiController;
+use App\Http\Controllers\Api\v1\Learning\LearningCertificateApiController;
+use App\Http\Controllers\Api\v1\Learning\LearningCourseApiController;
+use App\Http\Controllers\Api\v1\Learning\LearningCurriculumApiController;
+use App\Http\Controllers\Api\v1\Learning\LearningEnrollmentApiController;
+use App\Http\Controllers\Api\v1\Learning\LearningInstructorApiController;
+use App\Http\Controllers\Api\v1\Learning\LearningQuizApiController;
+use App\Http\Controllers\Api\v1\Learning\LearningReviewApiController;
 use App\Http\Controllers\Api\v1\MarketplaceApiController;
 use App\Http\Controllers\Api\v1\MediaController;
 use App\Http\Controllers\Api\v1\MemoriesApiController;
@@ -142,7 +155,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/messages/{id}/voice', [VoiceMessageController::class, 'stream'])->whereNumber('id');
 
     // Universal Real-Time Search (Public & Authenticated)
-    Route::get('/search', [SearchController::class, 'search']);
+    Route::get('/search', [SearchController::class, 'search'])->middleware('throttle:search');
 
     // Public Marketplace v1 endpoints
     Route::get('/marketplace/categories', [MarketplaceApiController::class, 'categories']);
@@ -319,14 +332,188 @@ Route::prefix('v1')->group(function () {
         Route::post('/events', [EventApiController::class, 'store']);
         Route::post('/events/{id}/rsvp', [EventApiController::class, 'rsvp'])->whereNumber('id');
 
-        // Job Board & Career Portal
+        // Job Board & Career Portal (Phase 12 Professional Recruitment Platform)
+        Route::get('/jobs/categories', [JobApiController::class, 'categories']);
+        Route::get('/jobs/skills', [JobApiController::class, 'skills']);
         Route::get('/jobs', [JobApiController::class, 'index']);
         Route::get('/jobs/my/applications', [JobApiController::class, 'myApplications']);
         Route::get('/jobs/{id}', [JobApiController::class, 'show'])->whereNumber('id');
         Route::post('/jobs', [JobApiController::class, 'store']);
+        Route::put('/jobs/{id}', [JobApiController::class, 'update'])->whereNumber('id');
         Route::post('/jobs/{id}/apply', [JobApiController::class, 'apply'])->whereNumber('id');
         Route::get('/jobs/{id}/applications', [JobApiController::class, 'applicantList'])->whereNumber('id');
         Route::put('/jobs/applications/{id}/status', [JobApiController::class, 'updateApplicationStatus'])->whereNumber('id');
+        Route::post('/jobs/{id}/publish', [JobApiController::class, 'publish'])->whereNumber('id');
+        Route::post('/jobs/{id}/pause', [JobApiController::class, 'pause'])->whereNumber('id');
+        Route::post('/jobs/{id}/resume', [JobApiController::class, 'resume'])->whereNumber('id');
+        Route::post('/jobs/{id}/close', [JobApiController::class, 'close'])->whereNumber('id');
+        Route::post('/jobs/{id}/duplicate', [JobApiController::class, 'duplicate'])->whereNumber('id');
+        Route::get('/jobs/{id}/analytics', [JobApiController::class, 'analytics'])->whereNumber('id');
+        Route::post('/jobs/{id}/save', [CandidateApiController::class, 'saveJob'])->whereNumber('id');
+        Route::delete('/jobs/{id}/save', [CandidateApiController::class, 'unsaveJob'])->whereNumber('id');
+
+        // Company Management
+        Route::get('/companies', [CompanyApiController::class, 'index']);
+        Route::post('/companies', [CompanyApiController::class, 'store']);
+        Route::get('/companies/{id}', [CompanyApiController::class, 'show'])->whereNumber('id');
+        Route::put('/companies/{id}', [CompanyApiController::class, 'update'])->whereNumber('id');
+        Route::get('/companies/{id}/career-page', [CompanyApiController::class, 'careerPage'])->whereNumber('id');
+        Route::post('/companies/{id}/members/invite', [CompanyApiController::class, 'inviteMember'])->whereNumber('id');
+        Route::get('/companies/{id}/members', [CompanyApiController::class, 'listMembers'])->whereNumber('id');
+        Route::patch('/companies/{companyId}/members/{memberId}', [CompanyApiController::class, 'updateMemberRole'])->whereNumber('companyId')->whereNumber('memberId');
+        Route::delete('/companies/{companyId}/members/{memberId}', [CompanyApiController::class, 'removeMember'])->whereNumber('companyId')->whereNumber('memberId');
+        Route::post('/companies/{id}/verification', [CompanyApiController::class, 'requestVerification'])->whereNumber('id');
+        Route::get('/companies/{id}/dashboard', [AtsApiController::class, 'companyDashboard'])->whereNumber('id');
+        Route::get('/companies/{id}/recruitment/pipeline', [AtsApiController::class, 'pipeline'])->whereNumber('id');
+
+        // Candidate Profile & Resume Management
+        Route::get('/candidate/profile', [CandidateApiController::class, 'profile']);
+        Route::put('/candidate/profile', [CandidateApiController::class, 'updateProfile']);
+        Route::get('/candidate/resumes', [CandidateApiController::class, 'resumes']);
+        Route::post('/candidate/resumes', [CandidateApiController::class, 'uploadResume']);
+        Route::post('/candidate/resumes/{id}/default', [CandidateApiController::class, 'setDefaultResume'])->whereNumber('id');
+        Route::delete('/candidate/resumes/{id}', [CandidateApiController::class, 'deleteResume'])->whereNumber('id');
+        Route::get('/candidate/resumes/{id}/download', [CandidateApiController::class, 'downloadResume'])->whereNumber('id');
+        Route::get('/candidate/saved-jobs', [CandidateApiController::class, 'savedJobs']);
+        Route::get('/candidate/job-alerts', [CandidateApiController::class, 'jobAlerts']);
+        Route::post('/candidate/job-alerts', [CandidateApiController::class, 'createJobAlert']);
+        Route::put('/candidate/job-alerts/{id}', [CandidateApiController::class, 'updateJobAlert'])->whereNumber('id');
+        Route::delete('/candidate/job-alerts/{id}', [CandidateApiController::class, 'deleteJobAlert'])->whereNumber('id');
+        Route::get('/candidate/experiences', [CandidateApiController::class, 'experiences']);
+        Route::post('/candidate/experiences', [CandidateApiController::class, 'addExperience']);
+        Route::put('/candidate/experiences/{id}', [CandidateApiController::class, 'updateExperience'])->whereNumber('id');
+        Route::delete('/candidate/experiences/{id}', [CandidateApiController::class, 'deleteExperience'])->whereNumber('id');
+        Route::get('/candidate/education', [CandidateApiController::class, 'educations']);
+        Route::post('/candidate/education', [CandidateApiController::class, 'addEducation']);
+        Route::put('/candidate/education/{id}', [CandidateApiController::class, 'updateEducation'])->whereNumber('id');
+        Route::delete('/candidate/education/{id}', [CandidateApiController::class, 'deleteEducation'])->whereNumber('id');
+
+        // ATS & Recruitment Pipeline Operations
+        Route::get('/applications/{id}', [AtsApiController::class, 'showApplication'])->whereNumber('id');
+        Route::post('/applications/{id}/withdraw', [AtsApiController::class, 'withdraw'])->whereNumber('id');
+        Route::patch('/applications/{id}/stage', [AtsApiController::class, 'updateStage'])->whereNumber('id');
+        Route::post('/applications/{id}/notes', [AtsApiController::class, 'addNote'])->whereNumber('id');
+        Route::get('/applications/{id}/notes', [AtsApiController::class, 'listNotes'])->whereNumber('id');
+        Route::post('/applications/{id}/assign', [AtsApiController::class, 'assign'])->whereNumber('id');
+        Route::post('/applications/{id}/reject', [AtsApiController::class, 'reject'])->whereNumber('id');
+
+        // Interviews
+        Route::get('/interviews', [InterviewApiController::class, 'index']);
+        Route::get('/interviews/{id}', [InterviewApiController::class, 'show'])->whereNumber('id');
+        Route::post('/applications/{id}/interviews', [InterviewApiController::class, 'schedule'])->whereNumber('id');
+        Route::put('/interviews/{id}', [InterviewApiController::class, 'reschedule'])->whereNumber('id');
+        Route::post('/interviews/{id}/cancel', [InterviewApiController::class, 'cancel'])->whereNumber('id');
+        Route::post('/interviews/{id}/response', [InterviewApiController::class, 'response'])->whereNumber('id');
+        Route::post('/interviews/{id}/feedback', [InterviewApiController::class, 'feedback'])->whereNumber('id');
+
+        // Admin Recruitment Management
+        Route::get('/admin/jobs/pending', [AdminJobPortalApiController::class, 'pendingJobs']);
+        Route::post('/admin/jobs/{id}/approve', [AdminJobPortalApiController::class, 'approveJob'])->whereNumber('id');
+        Route::post('/admin/jobs/{id}/reject', [AdminJobPortalApiController::class, 'rejectJob'])->whereNumber('id');
+        Route::get('/admin/companies/verifications', [AdminJobPortalApiController::class, 'companyVerifications']);
+        Route::post('/admin/companies/verifications/{id}/approve', [AdminJobPortalApiController::class, 'approveVerification'])->whereNumber('id');
+        Route::post('/admin/companies/verifications/{id}/reject', [AdminJobPortalApiController::class, 'rejectVerification'])->whereNumber('id');
+        Route::post('/admin/jobs/categories', [AdminJobPortalApiController::class, 'createCategory']);
+        Route::post('/admin/jobs/skills', [AdminJobPortalApiController::class, 'createSkill']);
+
+        // Professional Learning & Development Platform (Phase 13 LMS)
+        Route::prefix('learning')->group(function () {
+            // Marketplace & Course Discovery
+            Route::get('/categories', [LearningCourseApiController::class, 'categories']);
+            Route::get('/categories/{category}', [LearningCourseApiController::class, 'showCategory']);
+            Route::post('/admin/categories', [LearningCourseApiController::class, 'storeCategory']);
+            Route::put('/admin/categories/{id}', [LearningCourseApiController::class, 'updateCategory'])->whereNumber('id');
+            Route::delete('/admin/categories/{id}', [LearningCourseApiController::class, 'destroyCategory'])->whereNumber('id');
+
+            Route::get('/courses/featured', [LearningCourseApiController::class, 'featured']);
+            Route::get('/courses/popular', [LearningCourseApiController::class, 'popular']);
+            Route::get('/courses', [LearningCourseApiController::class, 'index']);
+            Route::get('/courses/{slug}', [LearningCourseApiController::class, 'show']);
+            Route::post('/courses', [LearningCourseApiController::class, 'store']);
+            Route::put('/courses/{id}', [LearningCourseApiController::class, 'update'])->whereNumber('id');
+            Route::delete('/courses/{id}', [LearningCourseApiController::class, 'destroyCourse'])->whereNumber('id');
+            Route::post('/courses/{id}/publish', [LearningCourseApiController::class, 'publish'])->whereNumber('id');
+
+            // Instructor Self Profile & Course Management Hub
+            Route::get('/instructors/me', [LearningInstructorApiController::class, 'me']);
+            Route::get('/instructors/{id}', [LearningInstructorApiController::class, 'show'])->whereNumber('id');
+            Route::get('/instructor/courses', [LearningCourseApiController::class, 'instructorCourses']);
+            Route::post('/instructor/courses', [LearningCourseApiController::class, 'store']);
+            Route::get('/instructor/courses/{id}', [LearningCourseApiController::class, 'instructorCourseShow'])->whereNumber('id');
+            Route::put('/instructor/courses/{id}', [LearningCourseApiController::class, 'update'])->whereNumber('id');
+            Route::delete('/instructor/courses/{id}', [LearningCourseApiController::class, 'destroyCourse'])->whereNumber('id');
+
+            // Curriculum & Content Management
+            Route::get('/courses/{id}/curriculum', [LearningCurriculumApiController::class, 'index'])->whereNumber('id');
+            Route::post('/courses/{id}/sections', [LearningCurriculumApiController::class, 'storeSection'])->whereNumber('id');
+            Route::post('/instructor/courses/{id}/sections', [LearningCurriculumApiController::class, 'storeSection'])->whereNumber('id');
+            Route::put('/sections/{id}', [LearningCurriculumApiController::class, 'updateSection'])->whereNumber('id');
+            Route::put('/instructor/sections/{id}', [LearningCurriculumApiController::class, 'updateSection'])->whereNumber('id');
+            Route::delete('/sections/{id}', [LearningCurriculumApiController::class, 'destroySection'])->whereNumber('id');
+            Route::delete('/instructor/sections/{id}', [LearningCurriculumApiController::class, 'destroySection'])->whereNumber('id');
+            Route::post('/sections/{id}/lessons', [LearningCurriculumApiController::class, 'storeLesson'])->whereNumber('id');
+            Route::post('/instructor/sections/{id}/lessons', [LearningCurriculumApiController::class, 'storeLesson'])->whereNumber('id');
+            Route::put('/lessons/{id}', [LearningCurriculumApiController::class, 'updateLesson'])->whereNumber('id');
+            Route::put('/instructor/lessons/{id}', [LearningCurriculumApiController::class, 'updateLesson'])->whereNumber('id');
+            Route::delete('/lessons/{id}', [LearningCurriculumApiController::class, 'destroyLesson'])->whereNumber('id');
+            Route::delete('/instructor/lessons/{id}', [LearningCurriculumApiController::class, 'destroyLesson'])->whereNumber('id');
+
+            // Enrollments & Progress Tracking
+            Route::post('/courses/{id}/enroll', [LearningEnrollmentApiController::class, 'enroll'])->whereNumber('id');
+            Route::get('/my-learning', [LearningEnrollmentApiController::class, 'myLearning']);
+            Route::get('/enrollments/{id}', [LearningEnrollmentApiController::class, 'showEnrollment'])->whereNumber('id');
+            Route::get('/enrollments/{id}/progress', [LearningEnrollmentApiController::class, 'enrollmentProgress'])->whereNumber('id');
+            Route::post('/enrollments/{id}/cancel', [LearningEnrollmentApiController::class, 'cancel'])->whereNumber('id');
+            Route::get('/courses/{id}/progress', [LearningEnrollmentApiController::class, 'courseProgress'])->whereNumber('id');
+            Route::get('/lessons/{id}', [LearningEnrollmentApiController::class, 'showLesson'])->whereNumber('id');
+            Route::get('/lessons/{id}/progress', [LearningEnrollmentApiController::class, 'lessonProgress'])->whereNumber('id');
+            Route::post('/lessons/{id}/progress', [LearningEnrollmentApiController::class, 'updateProgress'])->whereNumber('id');
+            Route::post('/lessons/{id}/complete', [LearningEnrollmentApiController::class, 'completeLesson'])->whereNumber('id');
+            Route::get('/lessons/{id}/stream', [LearningEnrollmentApiController::class, 'stream'])->whereNumber('id');
+            Route::get('/lessons/{id}/attachments', [LearningEnrollmentApiController::class, 'attachments'])->whereNumber('id');
+
+            // Quizzes & Examinations
+            Route::get('/quizzes/{id}', [LearningQuizApiController::class, 'show'])->whereNumber('id');
+            Route::post('/quizzes/{id}/attempt', [LearningQuizApiController::class, 'startAttempt'])->whereNumber('id');
+            Route::post('/quizzes/{id}/attempts', [LearningQuizApiController::class, 'startAttempt'])->whereNumber('id');
+            Route::get('/quiz-attempts/{attemptId}', [LearningQuizApiController::class, 'showAttempt'])->whereNumber('attemptId');
+            Route::post('/quiz-attempts/{attemptId}/answers', [LearningQuizApiController::class, 'saveAnswers'])->whereNumber('attemptId');
+            Route::post('/quizzes/attempts/{attemptId}/submit', [LearningQuizApiController::class, 'submitAttempt'])->whereNumber('attemptId');
+            Route::post('/quiz-attempts/{attemptId}/submit', [LearningQuizApiController::class, 'submitAttempt'])->whereNumber('attemptId');
+            Route::get('/quiz-attempts/{attemptId}/result', [LearningQuizApiController::class, 'attemptResult'])->whereNumber('attemptId');
+
+            // Assignments & Submissions
+            Route::get('/courses/{id}/assignments', [LearningAssignmentApiController::class, 'indexCourse'])->whereNumber('id');
+            Route::get('/assignments/{id}', [LearningAssignmentApiController::class, 'show'])->whereNumber('id');
+            Route::post('/assignments/{id}/submit', [LearningAssignmentApiController::class, 'submit'])->whereNumber('id');
+            Route::post('/assignments/{id}/submissions', [LearningAssignmentApiController::class, 'submit'])->whereNumber('id');
+            Route::get('/assignment-submissions/{id}', [LearningAssignmentApiController::class, 'showSubmission'])->whereNumber('id');
+            Route::post('/assignment-submissions/{id}/resubmit', [LearningAssignmentApiController::class, 'resubmit'])->whereNumber('id');
+            Route::post('/assignments/submissions/{id}/grade', [LearningAssignmentApiController::class, 'grade'])->whereNumber('id');
+            Route::post('/instructor/submissions/{id}/grade', [LearningAssignmentApiController::class, 'grade'])->whereNumber('id');
+            Route::post('/instructor/courses/{id}/assignments', [LearningAssignmentApiController::class, 'storeInstructor'])->whereNumber('id');
+            Route::put('/instructor/assignments/{id}', [LearningAssignmentApiController::class, 'updateInstructor'])->whereNumber('id');
+            Route::delete('/instructor/assignments/{id}', [LearningAssignmentApiController::class, 'destroyInstructor'])->whereNumber('id');
+            Route::get('/instructor/assignments/{id}/submissions', [LearningAssignmentApiController::class, 'submissionsInstructor'])->whereNumber('id');
+
+            // Verified Certifications
+            Route::post('/courses/{id}/certificate', [LearningCertificateApiController::class, 'claim'])->whereNumber('id');
+            Route::get('/my-certificates', [LearningCertificateApiController::class, 'myCertificates']);
+            Route::get('/certificates/verify/{code}', [LearningCertificateApiController::class, 'verify']);
+            Route::get('/certificates/{id}', [LearningCertificateApiController::class, 'show'])->whereNumber('id');
+            Route::get('/certificates/{code}', [LearningCertificateApiController::class, 'verify']);
+            Route::post('/instructor/certificates/{id}/revoke', [LearningCertificateApiController::class, 'revoke'])->whereNumber('id');
+
+            // Reviews & Ratings
+            Route::get('/courses/{id}/reviews', [LearningReviewApiController::class, 'index'])->whereNumber('id');
+            Route::post('/courses/{id}/reviews', [LearningReviewApiController::class, 'store'])->whereNumber('id');
+            Route::post('/reviews/{id}/reply', [LearningReviewApiController::class, 'reply'])->whereNumber('id');
+
+            // Instructor & Administrative Hub
+            Route::post('/instructors/apply', [LearningInstructorApiController::class, 'apply']);
+            Route::get('/instructors/dashboard', [LearningInstructorApiController::class, 'dashboard']);
+            Route::post('/admin/instructors/{id}/verify', [LearningInstructorApiController::class, 'verify'])->whereNumber('id');
+        });
 
         // Real-time Presence & Typing
         Route::post('/presence/heartbeat', [PresenceController::class, 'heartbeat']);
@@ -342,7 +529,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/notifications/preferences', [NotificationController::class, 'getPreferences']);
         Route::match(['put', 'patch'], '/notifications/preferences', [NotificationController::class, 'updatePreferences']);
         Route::match(['put', 'post'], '/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
-        Route::match(['put', 'patch'], '/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::match(['put', 'post'], '/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::match(['put', 'patch', 'post'], '/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
         Route::delete('/notifications', [NotificationController::class, 'destroyAll']);
 
@@ -461,18 +649,23 @@ Route::prefix('v1')->group(function () {
 
         // Enterprise Groups & Community Platform
         Route::get('/groups', [GroupController::class, 'index']);
+        Route::get('/groups/home', [GroupController::class, 'home']);
         Route::post('/groups', [GroupController::class, 'store']);
         Route::get('/groups/categories', [GroupController::class, 'categories']);
+        Route::post('/groups/categories', [GroupController::class, 'storeCategory']);
         Route::post('/groups/media/upload', [GroupController::class, 'uploadMedia']);
         Route::get('/groups/invitations', [GroupController::class, 'myInvitations']);
         Route::post('/groups/invitations/{invitationId}/accept', [GroupController::class, 'acceptInvitation']);
         Route::post('/groups/invitations/{invitationId}/decline', [GroupController::class, 'declineInvitation']);
         Route::get('/groups/my', [GroupController::class, 'myGroups']);
+        Route::get('/groups/{slug}/profile', [GroupController::class, 'profile']);
+        Route::get('/groups/{id}/overview', [GroupController::class, 'overview']);
         Route::get('/groups/{slug}', [GroupController::class, 'show']);
         Route::put('/groups/{id}', [GroupController::class, 'update']);
         Route::delete('/groups/{id}', [GroupController::class, 'destroy']);
         Route::post('/groups/{id}/join', [GroupController::class, 'join']);
         Route::post('/groups/{id}/leave', [GroupController::class, 'leave']);
+        Route::post('/groups/{id}/follow', [GroupController::class, 'toggleFollow']);
         Route::post('/groups/{id}/transfer-ownership', [GroupController::class, 'transferOwnership']);
         Route::get('/groups/{id}/members', [GroupController::class, 'members']);
         Route::get('/groups/{id}/requests', [GroupController::class, 'requests']);
@@ -484,33 +677,61 @@ Route::prefix('v1')->group(function () {
         Route::post('/groups/{id}/reject/{userId}', [GroupController::class, 'reject']);
         Route::delete('/groups/{id}/members/{userId}', [GroupController::class, 'removeMember']);
         Route::put('/groups/{id}/members/{userId}/role', [GroupController::class, 'updateMemberRole']);
+        Route::get('/groups/{id}/roles', [GroupController::class, 'roles']);
+        Route::post('/groups/{id}/roles', [GroupController::class, 'storeRole']);
+        Route::put('/groups/{id}/roles/{roleId}', [GroupController::class, 'updateRole']);
+        Route::delete('/groups/{id}/roles/{roleId}', [GroupController::class, 'destroyRole']);
+        Route::post('/groups/{id}/roles/assign', [GroupController::class, 'assignRole']);
+        Route::post('/groups/{id}/roles/revoke', [GroupController::class, 'revokeRole']);
+        Route::get('/groups/{id}/roles/history', [GroupController::class, 'rolesHistory']);
         Route::post('/groups/{id}/members/{userId}/warn', [GroupController::class, 'warnMember']);
         Route::post('/groups/{id}/members/{userId}/mute', [GroupController::class, 'muteMember']);
+        Route::post('/groups/{id}/members/{userId}/restrict', [GroupController::class, 'restrictMember']);
+        Route::post('/groups/{id}/members/{userId}/unrestrict', [GroupController::class, 'unrestrictMember']);
         Route::post('/groups/{id}/members/{userId}/ban', [GroupController::class, 'banMember']);
         Route::post('/groups/{id}/members/{userId}/unban', [GroupController::class, 'unbanMember']);
+        Route::get('/groups/{id}/members/{userId}/activity', [GroupController::class, 'memberActivity']);
+        Route::post('/groups/{id}/members/bulk-action', [GroupController::class, 'bulkManage']);
         Route::get('/groups/{id}/posts', [GroupController::class, 'feed']);
         Route::post('/groups/{id}/posts', [GroupController::class, 'storePost']);
+        Route::get('/groups/{id}/posts/pending', [GroupController::class, 'moderationPosts']);
+        Route::get('/groups/{id}/posts/{postId}', [GroupController::class, 'showPost']);
+        Route::put('/groups/{id}/posts/{postId}', [GroupController::class, 'updatePost']);
         Route::delete('/groups/{id}/posts/{postId}', [GroupController::class, 'destroyPost']);
+        Route::post('/groups/{id}/posts/{postId}/pin', [GroupController::class, 'togglePinPost']);
+        Route::post('/groups/{id}/posts/{postId}/vote', [GroupController::class, 'votePostPoll']);
+        Route::post('/groups/{id}/posts/{postId}/react', [GroupController::class, 'reactPost']);
+        Route::post('/groups/{id}/posts/{postId}/report', [GroupController::class, 'reportPost']);
+        Route::post('/groups/{id}/posts/{postId}/approve', [GroupController::class, 'approvePost']);
+        Route::post('/groups/{id}/posts/{postId}/reject', [GroupController::class, 'rejectPost']);
         Route::get('/groups/{id}/moderation/posts', [GroupController::class, 'moderationPosts']);
         Route::post('/groups/{id}/moderation/posts/{postId}/approve', [GroupController::class, 'approvePost']);
         Route::post('/groups/{id}/moderation/posts/{postId}/reject', [GroupController::class, 'rejectPost']);
+        Route::get('/groups/{id}/moderation/reports', [GroupController::class, 'moderationReports']);
+        Route::post('/groups/{id}/moderation/reports/{reportId}/action', [GroupController::class, 'actionReport']);
         Route::get('/groups/{id}/polls', [GroupController::class, 'polls']);
         Route::post('/groups/{id}/polls', [GroupController::class, 'storePoll']);
         Route::post('/groups/{id}/polls/{pollId}/vote', [GroupController::class, 'votePoll']);
         Route::get('/groups/{id}/events', [GroupController::class, 'events']);
         Route::post('/groups/{id}/events', [GroupController::class, 'storeEvent']);
         Route::post('/groups/{id}/events/{eventId}/rsvp', [GroupController::class, 'rsvpEvent']);
+        Route::get('/groups/{id}/announcements', [GroupController::class, 'announcements']);
         Route::post('/groups/{id}/announcements', [GroupController::class, 'storeAnnouncement']);
         Route::get('/groups/{id}/rules', [GroupController::class, 'rules']);
         Route::post('/groups/{id}/rules', [GroupController::class, 'storeRule']);
+        Route::put('/groups/{id}/rules/{ruleId}', [GroupController::class, 'updateRule']);
+        Route::delete('/groups/{id}/rules/{ruleId}', [GroupController::class, 'destroyRule']);
+        Route::post('/groups/{id}/rules/reorder', [GroupController::class, 'reorderRules']);
         Route::get('/groups/{id}/questions', [GroupController::class, 'questions']);
         Route::post('/groups/{id}/questions', [GroupController::class, 'storeQuestion']);
         Route::get('/groups/{id}/files', [GroupController::class, 'files']);
         Route::post('/groups/{id}/files', [GroupController::class, 'storeFile']);
+        Route::get('/groups/{id}/media', [GroupController::class, 'media']);
         Route::post('/groups/{id}/media', [GroupController::class, 'uploadGroupMedia']);
         Route::post('/groups/{id}/reports', [GroupController::class, 'storeReport']);
         Route::get('/groups/{id}/moderation/reports', [GroupController::class, 'reports']);
         Route::post('/groups/{id}/moderation/reports/{reportId}/review', [GroupController::class, 'reviewReport']);
+        Route::get('/groups/{id}/dashboard', [GroupController::class, 'dashboard']);
         Route::get('/groups/{id}/analytics', [GroupController::class, 'analytics']);
         Route::get('/groups/{id}/moderation/history', [GroupController::class, 'moderationHistory']);
         Route::get('/groups/{id}/invitations', [GroupController::class, 'groupInvitations']);
@@ -527,9 +748,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/pages/{id}/posts', [PageController::class, 'storePost']);
 
         // Universal Search
-        Route::get('/search', [SearchController::class, 'search']);
-        Route::get('/search/history', [SearchController::class, 'history']);
-        Route::delete('/search/history', [SearchController::class, 'clearHistory']);
+        Route::get('/search', [SearchController::class, 'search'])->middleware('throttle:search');
+        Route::get('/search/history', [SearchController::class, 'history'])->middleware('throttle:search');
+        Route::delete('/search/history', [SearchController::class, 'clearHistory'])->middleware('throttle:search');
+        Route::delete('/search/history/{term}', [SearchController::class, 'removeHistoryItem'])->middleware('throttle:search');
 
         // Enterprise Post Composer & Operations
         Route::post('/posts/link-preview', [PostController::class, 'linkPreview']);

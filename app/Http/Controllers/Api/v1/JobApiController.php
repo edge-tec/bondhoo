@@ -5,15 +5,27 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Recruitment\CreateJobRequest;
+use App\Http\Requests\Recruitment\SubmitJobApplicationRequest;
+use App\Models\CompanyMember;
 use App\Models\JobApplication;
+use App\Models\JobCategory;
 use App\Models\JobPosting;
+use App\Models\JobSkill;
 use App\Models\User;
+use App\Services\Recruitment\JobPortalService;
+use App\Services\Recruitment\RecruitmentAtsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class JobApiController extends Controller
 {
+    public function __construct(
+        protected JobPortalService $jobPortalService,
+        protected RecruitmentAtsService $atsService
+    ) {}
+
     /**
      * GET /api/v1/jobs
      *
@@ -23,37 +35,26 @@ class JobApiController extends Controller
     {
         /** @var ?User $viewer */
         $viewer = $request->user();
-        $query = JobPosting::with(['user.profile', 'page']);
 
-        // Default to active jobs unless specified otherwise
-        $status = $request->query('status', JobPosting::STATUS_ACTIVE);
-        if ($status !== 'all') {
-            $query->where('status', $status);
-        }
-
-        if ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search): void {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('company_name', 'like', "%{$search}%")
-                    ->orWhere('location', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        if ($empType = $request->query('employment_type')) {
-            if ($empType !== 'all') {
-                $query->where('employment_type', $empType);
-            }
-        }
-
-        if ($locType = $request->query('location_type')) {
-            if ($locType !== 'all') {
-                $query->where('location_type', $locType);
-            }
-        }
+        $filters = [
+            'q' => $request->query('q') ?? $request->query('search'),
+            'category_id' => $request->query('category_id'),
+            'company_id' => $request->query('company_id'),
+            'employment_type' => $request->query('employment_type'),
+            'workplace_type' => $request->query('workplace_type') ?? $request->query('location_type'),
+            'experience_level' => $request->query('experience_level'),
+            'location' => $request->query('location'),
+            'country' => $request->query('country'),
+            'city' => $request->query('city'),
+            'salary_min' => $request->query('salary_min'),
+            'salary_max' => $request->query('salary_max'),
+            'is_remote' => $request->boolean('is_remote'),
+            'date_from' => $request->query('date_from'),
+            'sort_by' => $request->query('sort_by', 'newest'),
+        ];
 
         $perPage = min(50, max(1, (int) $request->query('per_page', 15)));
-        $jobs = $query->latest('id')->paginate($perPage);
+        $jobs = $this->jobPortalService->searchJobs($filters, $viewer, $perPage);
 
         $items = collect($jobs->items())->map(
             fn (JobPosting $job) => $job->toResponseArray($viewer)
@@ -84,9 +85,14 @@ class JobApiController extends Controller
     {
         /** @var ?User $viewer */
         $viewer = $request->user();
-        $job = JobPosting::with(['user.profile', 'page'])->findOrFail($id);
+        $job = JobPosting::with(['user.profile', 'page', 'company', 'category', 'skills', 'questions'])->findOrFail($id);
 
-        $job->increment('views_count');
+        $this->jobPortalService->recordView(
+            $job,
+            $viewer,
+            $request->ip(),
+            $request->query('source', 'direct')
+        );
 
         return response()->json([
             'success' => true,
@@ -103,59 +109,200 @@ class JobApiController extends Controller
      *
      * Create a new job posting.
      */
-    public function store(Request $request): JsonResponse
+    public function store(CreateJobRequest $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
 
-        $validated = $request->validate([
-            'title' => 'required|string|max:200',
-            'company_name' => 'required|string|max:150',
-            'company_logo' => 'nullable|string|max:255',
-            'location' => 'required|string|max:150',
-            'location_type' => 'required|string|in:onsite,remote,hybrid',
-            'employment_type' => 'required|string|in:full_time,part_time,contract,internship,freelance',
-            'experience_level' => 'nullable|string|in:entry,mid,senior,lead,any',
-            'salary_min' => 'nullable|integer|min:0',
-            'salary_max' => 'nullable|integer|gte:salary_min',
-            'salary_currency' => 'nullable|string|max:10',
-            'salary_negotiable' => 'nullable|boolean',
-            'description' => 'required|string|max:10000',
-            'requirements' => 'nullable|string|max:5000',
-            'benefits' => 'nullable|string|max:3000',
-            'deadline' => 'nullable|date|after_or_equal:today',
-            'page_id' => 'nullable|integer|exists:pages,id',
-        ]);
-
-        $job = JobPosting::create([
-            'user_id' => $user->id,
-            'page_id' => $validated['page_id'] ?? null,
-            'title' => $validated['title'],
-            'company_name' => $validated['company_name'],
-            'company_logo' => $validated['company_logo'] ?? null,
-            'location' => $validated['location'],
-            'location_type' => $validated['location_type'],
-            'employment_type' => $validated['employment_type'],
-            'experience_level' => $validated['experience_level'] ?? 'mid',
-            'salary_min' => $validated['salary_min'] ?? null,
-            'salary_max' => $validated['salary_max'] ?? null,
-            'salary_currency' => $validated['salary_currency'] ?? 'BDT',
-            'salary_negotiable' => (bool) ($validated['salary_negotiable'] ?? false),
-            'description' => $validated['description'],
-            'requirements' => $validated['requirements'] ?? null,
-            'benefits' => $validated['benefits'] ?? null,
-            'deadline' => $validated['deadline'] ?? null,
-            'status' => JobPosting::STATUS_ACTIVE,
-        ]);
+        $job = $this->jobPortalService->createJob($user, $request->validated());
 
         return response()->json([
             'success' => true,
             'status' => 'success',
             'data' => [
-                'job' => $job->load(['user.profile', 'page'])->toResponseArray($user),
+                'job' => $job->toResponseArray($user),
             ],
             'message' => 'চাকরির নিয়োগ বিজ্ঞপ্তি সফলভাবে প্রকাশিত হয়েছে! 💼',
         ], 201);
+    }
+
+    /**
+     * PUT /api/v1/jobs/{id}
+     *
+     * Update an existing job posting.
+     */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $job = JobPosting::findOrFail($id);
+
+        if (! $this->canManageJob($user, $job)) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'এই চাকরির বিজ্ঞপ্তি এডিট করার অনুমতি নেই।',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'nullable|string|max:200',
+            'category_id' => 'nullable|integer|exists:job_categories,id',
+            'location' => 'nullable|string|max:150',
+            'country' => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'workplace_type' => 'nullable|string|in:onsite,remote,hybrid',
+            'employment_type' => 'nullable|string|in:full_time,part_time,contract,internship,freelance,temporary',
+            'experience_level' => 'nullable|string|in:entry,mid,senior,lead,any',
+            'salary_min' => 'nullable|integer|min:0',
+            'salary_max' => 'nullable|integer|gte:salary_min',
+            'salary_currency' => 'nullable|string|max:10',
+            'salary_negotiable' => 'nullable|boolean',
+            'salary_visibility' => 'nullable|string|in:visible,hidden,range_only',
+            'vacancies' => 'nullable|integer|min:1|max:1000',
+            'visibility' => 'nullable|string|in:public,unlisted,internal',
+            'description' => 'nullable|string|max:10000',
+            'responsibilities' => 'nullable|string|max:5000',
+            'requirements' => 'nullable|string|max:5000',
+            'qualifications' => 'nullable|string|max:5000',
+            'benefits' => 'nullable|string|max:3000',
+            'deadline' => 'nullable|date',
+            'skills' => 'nullable|array',
+        ]);
+
+        $updated = $this->jobPortalService->updateJob($job, $validated);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => [
+                'job' => $updated->toResponseArray($user),
+            ],
+            'message' => 'চাকরির বিজ্ঞপ্তি সফলভাবে আপডেট হয়েছে!',
+        ]);
+    }
+
+    /**
+     * POST /api/v1/jobs/{id}/publish
+     */
+    public function publish(Request $request, int $id): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $job = JobPosting::findOrFail($id);
+
+        if (! $this->canManageJob($user, $job)) {
+            return response()->json(['success' => false, 'message' => 'অননুমোদিত অ্যাকশন।'], 403);
+        }
+
+        $published = $this->jobPortalService->publishJob($job);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => ['job' => $published->toResponseArray($user)],
+            'message' => 'চাকরির বিজ্ঞপ্তি সফলভাবে প্রকাশিত হয়েছে।',
+        ]);
+    }
+
+    /**
+     * POST /api/v1/jobs/{id}/pause
+     */
+    public function pause(Request $request, int $id): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $job = JobPosting::findOrFail($id);
+
+        if (! $this->canManageJob($user, $job)) {
+            return response()->json(['success' => false, 'message' => 'অননুমোদিত অ্যাকশন।'], 403);
+        }
+
+        $paused = $this->jobPortalService->pauseJob($job);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => ['job' => $paused->toResponseArray($user)],
+            'message' => 'চাকরির বিজ্ঞপ্তি সাময়িকভাবে স্থগিত করা হয়েছে।',
+        ]);
+    }
+
+    /**
+     * POST /api/v1/jobs/{id}/resume
+     */
+    public function resume(Request $request, int $id): JsonResponse
+    {
+        return $this->publish($request, $id);
+    }
+
+    /**
+     * POST /api/v1/jobs/{id}/close
+     */
+    public function close(Request $request, int $id): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $job = JobPosting::findOrFail($id);
+
+        if (! $this->canManageJob($user, $job)) {
+            return response()->json(['success' => false, 'message' => 'অননুমোদিত অ্যাকশন।'], 403);
+        }
+
+        $closed = $this->jobPortalService->closeJob($job);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => ['job' => $closed->toResponseArray($user)],
+            'message' => 'চাকরির আবেদন গ্রহণ বন্ধ করা হয়েছে।',
+        ]);
+    }
+
+    /**
+     * POST /api/v1/jobs/{id}/duplicate
+     */
+    public function duplicate(Request $request, int $id): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $job = JobPosting::findOrFail($id);
+
+        if (! $this->canManageJob($user, $job)) {
+            return response()->json(['success' => false, 'message' => 'অননুমোদিত অ্যাকশন।'], 403);
+        }
+
+        $copy = $this->jobPortalService->duplicateJob($job, $user);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => ['job' => $copy->toResponseArray($user)],
+            'message' => 'চাকরির বিজ্ঞপ্তি সফলভাবে ক্লোন করা হয়েছে।',
+        ], 201);
+    }
+
+    /**
+     * GET /api/v1/jobs/{id}/analytics
+     */
+    public function analytics(Request $request, int $id): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $job = JobPosting::findOrFail($id);
+
+        if (! $this->canManageJob($user, $job)) {
+            return response()->json(['success' => false, 'message' => 'অ্যানালিটিক্স দেখার অনুমতি নেই।'], 403);
+        }
+
+        $stats = $this->jobPortalService->getJobAnalytics($job);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => $stats,
+            'message' => 'চাকরির অ্যানালিটিক্স লোড হয়েছে।',
+        ]);
     }
 
     /**
@@ -163,63 +310,28 @@ class JobApiController extends Controller
      *
      * Submit an application to a job posting.
      */
-    public function apply(Request $request, int $id): JsonResponse
+    public function apply(SubmitJobApplicationRequest $request, int $id): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
         $job = JobPosting::findOrFail($id);
 
-        if ($job->status !== JobPosting::STATUS_ACTIVE || $job->isExpired()) {
+        try {
+            $application = $this->atsService->applyForJob($user, $job, $request->validated());
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'status' => 'error',
-                'message' => 'এই চাকরির আবেদনের সময়সীমা শেষ হয়ে গেছে বা বিজ্ঞপ্তিটি বন্ধ রয়েছে।',
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
             ], 422);
         }
-
-        // Check if user already applied
-        if ($job->hasApplied($user->id)) {
-            return response()->json([
-                'success' => false,
-                'status' => 'error',
-                'message' => 'আপনি ইতিমধ্যে এই পদে আবেদন করেছেন।',
-            ], 422);
-        }
-
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:150',
-            'email' => 'required|email|max:150',
-            'phone' => 'required|string|max:50',
-            'cover_letter' => 'nullable|string|max:5000',
-            'resume_url' => 'nullable|string|max:255',
-            'portfolio_url' => 'nullable|string|max:255',
-            'expected_salary' => 'nullable|integer|min:0',
-        ]);
-
-        $application = DB::transaction(function () use ($job, $user, $validated) {
-            $app = JobApplication::create([
-                'job_posting_id' => $job->id,
-                'user_id' => $user->id,
-                'full_name' => $validated['full_name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'],
-                'cover_letter' => $validated['cover_letter'] ?? null,
-                'resume_url' => $validated['resume_url'] ?? null,
-                'portfolio_url' => $validated['portfolio_url'] ?? null,
-                'expected_salary' => $validated['expected_salary'] ?? null,
-                'status' => JobApplication::STATUS_PENDING,
-            ]);
-
-            $job->increment('applications_count');
-
-            return $app;
-        });
 
         return response()->json([
             'success' => true,
             'status' => 'success',
             'data' => [
-                'application' => $application->toResponseArray(),
+                'application' => $application->toResponseArray($user),
             ],
             'message' => 'আপনার চাকরির আবেদন সফলভাবে দাখিল হয়েছে! 🎯',
         ], 201);
@@ -235,12 +347,12 @@ class JobApiController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $applications = JobApplication::with(['jobPosting.page'])
+        $applications = JobApplication::with(['jobPosting.page', 'jobPosting.company', 'resume', 'stageHistory'])
             ->where('user_id', $user->id)
             ->latest('id')
             ->get();
 
-        $items = $applications->map(fn (JobApplication $app) => $app->toResponseArray())->values()->all();
+        $items = $applications->map(fn (JobApplication $app) => $app->toResponseArray($user))->values()->all();
 
         return response()->json([
             'success' => true,
@@ -254,7 +366,7 @@ class JobApiController extends Controller
     /**
      * GET /api/v1/jobs/{id}/applications
      *
-     * View applicant list for a job (creator or admin only).
+     * View applicant list for a job (creator or company recruiter only).
      */
     public function applicantList(Request $request, int $id): JsonResponse
     {
@@ -262,7 +374,7 @@ class JobApiController extends Controller
         $user = $request->user();
         $job = JobPosting::findOrFail($id);
 
-        if ($job->user_id !== $user->id && ! $user->hasRole('ADMIN') && ! $user->hasRole('SUPER_ADMIN')) {
+        if (! $this->canManageJob($user, $job)) {
             return response()->json([
                 'success' => false,
                 'status' => 'error',
@@ -270,13 +382,17 @@ class JobApiController extends Controller
             ], 403);
         }
 
-        $applications = JobApplication::with(['user.profile'])
-            ->where('job_posting_id', $job->id)
-            ->latest('id')
-            ->paginate(25);
+        $query = JobApplication::with(['user.profile', 'resume', 'stageHistory'])
+            ->where('job_posting_id', $job->id);
+
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        $applications = $query->latest('id')->paginate(25);
 
         $items = collect($applications->items())
-            ->map(fn (JobApplication $app) => $app->toResponseArray())
+            ->map(fn (JobApplication $app) => $app->toResponseArray($user))
             ->values()->all();
 
         return response()->json([
@@ -298,16 +414,16 @@ class JobApiController extends Controller
     /**
      * PUT /api/v1/jobs/applications/{id}/status
      *
-     * Update candidate status (shortlisted, interviewed, rejected, hired).
+     * Update candidate status.
      */
     public function updateApplicationStatus(Request $request, int $id): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
-        $application = JobApplication::with('jobPosting')->findOrFail($id);
+        $application = JobApplication::with('jobPosting.company')->findOrFail($id);
         $job = $application->jobPosting;
 
-        if ($job->user_id !== $user->id && ! $user->hasRole('ADMIN') && ! $user->hasRole('SUPER_ADMIN')) {
+        if (! $job || ! $this->canManageJob($user, $job)) {
             return response()->json([
                 'success' => false,
                 'status' => 'error',
@@ -316,22 +432,85 @@ class JobApiController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => 'required|string|in:pending,shortlisted,interviewed,rejected,hired',
+            'status' => 'required|string|in:pending,applied,under_review,shortlisted,screening,interview,interviewed,assessment,offer,hired,rejected',
             'admin_notes' => 'nullable|string|max:2000',
         ]);
 
-        $application->update([
-            'status' => $validated['status'],
-            'admin_notes' => $validated['admin_notes'] ?? $application->admin_notes,
-        ]);
+        $updated = $this->atsService->updateApplicationStage(
+            $application,
+            $validated['status'],
+            $validated['admin_notes'] ?? null,
+            $user
+        );
 
         return response()->json([
             'success' => true,
             'status' => 'success',
             'data' => [
-                'application' => $application->fresh()->toResponseArray(),
+                'application' => $updated->toResponseArray($user),
             ],
             'message' => 'প্রার্থীর আবেদনের স্ট্যাটাস সফলভাবে আপডেট হয়েছে!',
         ]);
+    }
+
+    /**
+     * GET /api/v1/jobs/categories
+     */
+    public function categories(): JsonResponse
+    {
+        $categories = JobCategory::with('children')
+            ->whereNull('parent_id')
+            ->where('status', JobCategory::STATUS_ACTIVE)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => $categories->map(fn (JobCategory $c) => $c->toResponseArray())->values()->all(),
+            'message' => 'ক্যাটাগরি তালিকা লোড হয়েছে।',
+        ]);
+    }
+
+    /**
+     * GET /api/v1/jobs/skills
+     */
+    public function skills(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        $query = JobSkill::query();
+        if ($q !== '') {
+            $query->where('name', 'like', "%{$q}%");
+        }
+        $skills = $query->limit(30)->get();
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => $skills->map(fn (JobSkill $s) => $s->toResponseArray())->values()->all(),
+            'message' => 'স্কিল তালিকা লোড হয়েছে।',
+        ]);
+    }
+
+    private function canManageJob(User $user, JobPosting $job): bool
+    {
+        if ($user->hasRole('ADMIN') || $user->hasRole('SUPER_ADMIN')) {
+            return true;
+        }
+
+        if ($job->user_id === $user->id) {
+            return true;
+        }
+
+        if ($job->company_id && $job->company) {
+            $role = $job->company->getMemberRole($user->id);
+
+            return in_array($role, [
+                CompanyMember::ROLE_OWNER,
+                CompanyMember::ROLE_ADMIN,
+                CompanyMember::ROLE_RECRUITER,
+            ], true);
+        }
+
+        return false;
     }
 }

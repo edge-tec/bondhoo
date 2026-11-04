@@ -75,7 +75,8 @@ class Phase85EnterpriseScalabilityAndExtremeLoadTest extends TestCase
         $scriptPath = base_path('tests/Javascript/phase85-extreme-load-benchmark.mjs');
         $this->assertFileExists($scriptPath);
 
-        $output = shell_exec("node {$scriptPath} 2>&1");
+        $escapedPath = escapeshellarg($scriptPath);
+        $output = shell_exec("node {$escapedPath} 2>&1");
         $this->assertNotEmpty($output, 'Load benchmark should produce JSON output');
 
         $result = json_decode($output, true);

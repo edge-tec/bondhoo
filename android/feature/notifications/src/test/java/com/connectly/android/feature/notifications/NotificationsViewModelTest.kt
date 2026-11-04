@@ -31,6 +31,7 @@ class NotificationsViewModelTest {
     private val getUnreadNotificationCountUseCase: GetUnreadNotificationCountUseCase = mockk()
     private val markNotificationAsReadUseCase: MarkNotificationAsReadUseCase = mockk()
     private val markAllNotificationsAsReadUseCase: MarkAllNotificationsAsReadUseCase = mockk()
+    private val deleteNotificationUseCase: DeleteNotificationUseCase = mockk()
     private val respondToFriendRequestUseCase: RespondToFriendRequestUseCase = mockk()
 
     private lateinit var viewModel: NotificationsViewModel
@@ -65,6 +66,7 @@ class NotificationsViewModelTest {
             getUnreadNotificationCountUseCase,
             markNotificationAsReadUseCase,
             markAllNotificationsAsReadUseCase,
+            deleteNotificationUseCase,
             respondToFriendRequestUseCase
         )
         testDispatcher.scheduler.advanceUntilIdle()
@@ -88,6 +90,7 @@ class NotificationsViewModelTest {
             getUnreadNotificationCountUseCase,
             markNotificationAsReadUseCase,
             markAllNotificationsAsReadUseCase,
+            deleteNotificationUseCase,
             respondToFriendRequestUseCase
         )
         testDispatcher.scheduler.advanceUntilIdle()
@@ -110,6 +113,7 @@ class NotificationsViewModelTest {
             getUnreadNotificationCountUseCase,
             markNotificationAsReadUseCase,
             markAllNotificationsAsReadUseCase,
+            deleteNotificationUseCase,
             respondToFriendRequestUseCase
         )
         testDispatcher.scheduler.advanceUntilIdle()
@@ -137,6 +141,7 @@ class NotificationsViewModelTest {
             getUnreadNotificationCountUseCase,
             markNotificationAsReadUseCase,
             markAllNotificationsAsReadUseCase,
+            deleteNotificationUseCase,
             respondToFriendRequestUseCase,
             getPrefsUseCase,
             updatePrefsUseCase

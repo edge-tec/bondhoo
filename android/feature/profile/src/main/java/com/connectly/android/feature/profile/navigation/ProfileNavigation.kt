@@ -18,6 +18,9 @@ import com.connectly.android.feature.profile.presentation.messaging.MessagingCal
 import com.connectly.android.feature.profile.presentation.notifications.NotificationSettingsScreen
 import com.connectly.android.feature.profile.presentation.privacy.PrivacySettingsScreen
 import com.connectly.android.feature.profile.presentation.profile.ProfileScreen
+import com.connectly.android.feature.profile.presentation.marketplace.MarketplaceScreen
+import com.connectly.android.feature.profile.presentation.memories.MemoriesScreen
+import com.connectly.android.feature.profile.presentation.saved.SavedPostsScreen
 import com.connectly.android.feature.profile.presentation.settings.SettingsScreen
 import com.connectly.android.feature.profile.presentation.storage.DataStorageSettingsScreen
 
@@ -36,6 +39,9 @@ const val HELP_SUPPORT_ROUTE = "help_support_route"
 const val ABOUT_CONNECTLY_ROUTE = "about_connectly_route"
 const val SETTINGS_ROUTE = "settings_route"
 const val FRIENDS_ROUTE = "friends_route"
+const val MARKETPLACE_ROUTE = "marketplace_route"
+const val SAVED_POSTS_ROUTE = "saved_posts_route"
+const val MEMORIES_ROUTE = "memories_route"
 
 fun NavController.navigateToProfile(navOptions: NavOptions? = null) {
     navigate(PROFILE_ROUTE, navOptions)
@@ -95,6 +101,18 @@ fun NavController.navigateToAboutConnectly(navOptions: NavOptions? = null) {
 
 fun NavController.navigateToSettings(navOptions: NavOptions? = null) {
     navigate(SETTINGS_ROUTE, navOptions)
+}
+
+fun NavController.navigateToMarketplace(navOptions: NavOptions? = null) {
+    navigate(MARKETPLACE_ROUTE, navOptions)
+}
+
+fun NavController.navigateToSavedPosts(navOptions: NavOptions? = null) {
+    navigate(SAVED_POSTS_ROUTE, navOptions)
+}
+
+fun NavController.navigateToMemories(navOptions: NavOptions? = null) {
+    navigate(MEMORIES_ROUTE, navOptions)
 }
 
 fun NavGraphBuilder.profileGraph(
@@ -210,6 +228,24 @@ fun NavGraphBuilder.profileGraph(
     composable(FRIENDS_ROUTE) {
         FriendsScreen(
             onNavigateToUserProfile = { navController.navigateToProfile() }
+        )
+    }
+
+    composable(MARKETPLACE_ROUTE) {
+        MarketplaceScreen(
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
+    composable(SAVED_POSTS_ROUTE) {
+        SavedPostsScreen(
+            onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
+    composable(MEMORIES_ROUTE) {
+        MemoriesScreen(
+            onNavigateBack = { navController.popBackStack() }
         )
     }
 }

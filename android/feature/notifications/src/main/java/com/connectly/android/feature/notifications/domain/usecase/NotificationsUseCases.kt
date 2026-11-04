@@ -7,6 +7,7 @@ import com.connectly.android.core.model.NotificationPreferences
 import com.connectly.android.core.model.SearchResult
 import com.connectly.android.core.model.User
 import com.connectly.android.feature.notifications.domain.repository.NotificationsRepository
+import com.connectly.android.feature.notifications.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -42,6 +43,14 @@ class MarkAllNotificationsAsReadUseCase @Inject constructor(
     }
 }
 
+class DeleteNotificationUseCase @Inject constructor(
+    private val repository: NotificationsRepository
+) {
+    operator fun invoke(notificationId: String): Flow<Result<Unit>> {
+        return repository.deleteNotification(notificationId)
+    }
+}
+
 class RespondToFriendRequestUseCase @Inject constructor(
     private val repository: NotificationsRepository
 ) {
@@ -51,7 +60,7 @@ class RespondToFriendRequestUseCase @Inject constructor(
 }
 
 class SearchUseCase @Inject constructor(
-    private val repository: NotificationsRepository
+    private val repository: SearchRepository
 ) {
     operator fun invoke(query: String, type: String = "all"): Flow<Result<SearchResult>> {
         return repository.search(query, type)
@@ -59,10 +68,34 @@ class SearchUseCase @Inject constructor(
 }
 
 class GetDiscoveryDataUseCase @Inject constructor(
-    private val repository: NotificationsRepository
+    private val repository: SearchRepository
 ) {
     operator fun invoke(): Flow<Result<DiscoveryData>> {
         return repository.getDiscoveryData()
+    }
+}
+
+class GetSearchHistoryUseCase @Inject constructor(
+    private val repository: SearchRepository
+) {
+    operator fun invoke(): Flow<Result<List<String>>> {
+        return repository.getSearchHistory()
+    }
+}
+
+class DeleteSearchHistoryItemUseCase @Inject constructor(
+    private val repository: SearchRepository
+) {
+    operator fun invoke(term: String): Flow<Result<List<String>>> {
+        return repository.deleteSearchHistoryItem(term)
+    }
+}
+
+class ClearSearchHistoryUseCase @Inject constructor(
+    private val repository: SearchRepository
+) {
+    operator fun invoke(): Flow<Result<Unit>> {
+        return repository.clearSearchHistory()
     }
 }
 

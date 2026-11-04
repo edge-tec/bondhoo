@@ -89,6 +89,8 @@ dependencies {
     implementation(project(":feature:events"))
     implementation(project(":feature:live"))
     implementation(project(":feature:notifications"))
+    implementation(project(":feature:jobs"))
+    implementation(project(":feature:learning"))
 
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.core.ktx)

@@ -36,6 +36,16 @@ class PageController extends Controller
             });
         }
 
+        $filter = $request->query('filter', 'discover');
+        if ($filter === 'following' && $user) {
+            $query->whereHas('followers', fn ($q) => $q->where('user_id', $user->id));
+        } elseif (($filter === 'your_pages' || $filter === 'my_pages') && $user) {
+            $query->where(function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                    ->orWhereHas('members', fn ($mq) => $mq->where('user_id', $user->id));
+            });
+        }
+
         if ($category = $request->query('category')) {
             if ($category !== 'all') {
                 $query->where('category', 'like', "%{$category}%");

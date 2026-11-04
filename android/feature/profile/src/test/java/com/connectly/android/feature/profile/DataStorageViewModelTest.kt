@@ -50,9 +50,11 @@ class DataStorageViewModelTest {
         every { cacheDir.exists() } returns true
         every { cacheDir.listFiles() } returns emptyArray()
 
-        coEvery { api.exportUserData() } returns Response.success(ApiResponse(success = true, data = emptyMap()))
+        coEvery { api.exportUserData() } returns Response.success(ApiResponse(data = emptyMap()))
 
-        viewModel = DataStorageViewModel(api, context)
+        viewModel = DataStorageViewModel(api, context).apply {
+            ioDispatcher = testDispatcher
+        }
     }
 
     @After

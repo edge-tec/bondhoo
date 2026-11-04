@@ -103,7 +103,10 @@ class FriendsViewModelTest {
     @Test
     fun unfriend_removes_from_friends_list() = runTest {
         val userId = 201L
+        every { profileRepository.unfriendUser(userId) } returns flowOf(Result.Success(Unit))
+
         viewModel.handleIntent(FriendsIntent.Unfriend(userId))
+        testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
         assertFalse(state.friendsList.any { it.id == userId })

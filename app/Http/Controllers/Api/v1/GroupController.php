@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Models\ConversationParticipant;
 use App\Models\Group;
+use App\Models\GroupCategory;
 use App\Models\GroupInvitation;
 use App\Models\GroupMember;
 use App\Models\GroupNotificationPreference;
+use App\Models\GroupReport;
 use App\Models\Media;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\GroupService;
@@ -28,7 +31,21 @@ class GroupController extends Controller
     ) {}
 
     /**
-     * গ্রুপ এক্সপ্লোর ও সার্চ।
+     * প্রফেশনাল গ্রুপস হোম হাব।
+     */
+    public function home(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $data = $this->groupService->getGroupsHome($user);
+
+        return $this->successResponse(
+            data: $data,
+            message: 'Groups home feed retrieved successfully.'
+        );
+    }
+
+    /**
+     * গ্রুপ এক্সপ্লোর ও সার্চ (মাল্টি-ক্রাইটেরিয়া ফিল্টারসহ)।
      */
     public function index(Request $request): JsonResponse
     {
@@ -37,7 +54,18 @@ class GroupController extends Controller
 
         $filters = [
             'q' => $request->query('q'),
+            'name' => $request->query('name'),
+            'username' => $request->query('username'),
+            'keywords' => $request->query('keywords'),
+            'location' => $request->query('location'),
+            'industry' => $request->query('industry'),
+            'description' => $request->query('description'),
             'category' => $request->query('category'),
+            'privacy' => $request->query('privacy'),
+            'min_members' => $request->query('min_members'),
+            'max_members' => $request->query('max_members'),
+            'activity' => $request->query('activity'),
+            'filter' => $request->query('filter'),
             'language' => $request->query('language'),
             'sort' => $request->query('sort', 'trending'),
         ];
@@ -83,13 +111,31 @@ class GroupController extends Controller
             'description' => ['nullable', 'string', 'max:2000'],
             'category' => ['nullable', 'string', 'max:60'],
             'subcategory' => ['nullable', 'string', 'max:60'],
+            'industry' => ['nullable', 'string', 'max:100'],
+            'website' => ['nullable', 'string', 'max:255'],
+            'contact_email' => ['nullable', 'email', 'max:120'],
+            'contact_phone' => ['nullable', 'string', 'max:50'],
             'group_type' => ['nullable', 'string', 'max:40'],
             'language' => ['nullable', 'string', 'max:10'],
             'location' => ['nullable', 'string', 'max:100'],
             'country' => ['nullable', 'string', 'max:60'],
             'privacy' => ['nullable', 'string', 'in:public,private,hidden,invite_only'],
-            'membership_approval_mode' => ['nullable', 'string', 'in:anyone,approval_required,admin_only'],
+            'membership_approval_mode' => ['nullable', 'string', 'in:anyone,approval_required,admin_only,invite_only'],
+            'allow_member_invitations' => ['nullable', 'boolean'],
+            'allow_member_recommendations' => ['nullable', 'boolean'],
+            'enable_membership_screening' => ['nullable', 'boolean'],
+            'max_members_limit' => ['nullable', 'integer', 'min:1'],
+            'auto_approve_trusted' => ['nullable', 'boolean'],
+            'who_can_post' => ['nullable', 'string', 'in:anyone_in_group,admins_moderators_only'],
+            'who_can_comment' => ['nullable', 'string', 'in:anyone_in_group,admins_moderators_only'],
+            'who_can_upload_media' => ['nullable', 'string', 'in:anyone_in_group,admins_only'],
+            'who_can_create_polls' => ['nullable', 'string', 'in:anyone_in_group,admins_only'],
+            'who_can_create_events' => ['nullable', 'string', 'in:anyone_in_group,admins_only'],
+            'who_can_create_announcements' => ['nullable', 'string', 'in:admins_moderators_only'],
             'post_approval_mode' => ['nullable', 'string', 'in:auto,admin_approval,new_members_approval'],
+            'enable_comment_moderation' => ['nullable', 'boolean'],
+            'allow_anonymous_posts' => ['nullable', 'boolean'],
+            'allow_scheduled_posts' => ['nullable', 'boolean'],
             'cover_image_url' => ['nullable', 'string'],
             'avatar_url' => ['nullable', 'string'],
             'features' => ['nullable', 'array'],
@@ -196,6 +242,115 @@ class GroupController extends Controller
         return $this->successResponse(
             data: $group->toResponseArray($user),
             message: 'Group retrieved successfully.'
+        );
+    }
+
+    /**
+     * প্রফেশনাল গ্রুপ প্রোফাইল ও সমস্ত ৯টি নেভিগেশন ট্যাবের ডাটা।
+     */
+    public function profile(Request $request, string $slug): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::where('slug', $slug)
+            ->orWhere('id', is_numeric($slug) ? (int) $slug : 0)
+            ->orWhere('username', $slug)
+            ->with(['creator', 'rules'])
+            ->firstOrFail();
+
+        if (! $group->canView($user)) {
+            return $this->errorResponse('This group is hidden and accessible only to members.', 403);
+        }
+
+        $data = $this->groupService->getGroupProfileData($group, $user);
+
+        return $this->successResponse(
+            data: $data,
+            message: 'Group profile retrieved successfully.'
+        );
+    }
+
+    /**
+     * ওভারভিউ ট্যাব তথ্য।
+     */
+    public function overview(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        if (! $group->canView($user)) {
+            return $this->errorResponse('This group is hidden and accessible only to members.', 403);
+        }
+
+        $data = $this->groupService->getGroupProfileData($group, $user);
+
+        return $this->successResponse(
+            data: $data['tabs']['overview'],
+            message: 'Overview data retrieved successfully.'
+        );
+    }
+
+    /**
+     * অ্যানাউন্সমেন্ট তালিকা (Tab 3)।
+     */
+    public function announcements(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        if (! $group->canView($user)) {
+            return $this->errorResponse('This group is private or hidden.', 403);
+        }
+
+        $announcements = $group->announcements()->with('author')->latest()->paginate((int) $request->query('per_page', 15));
+        $announcements->getCollection()->transform(fn ($a) => $a->toResponseArray());
+
+        return $this->successResponse(
+            data: $announcements->items(),
+            message: 'Announcements retrieved successfully.',
+            meta: [
+                'current_page' => $announcements->currentPage(),
+                'last_page' => $announcements->lastPage(),
+                'total' => $announcements->total(),
+            ]
+        );
+    }
+
+    /**
+     * গ্রুপ মিডিয়া গ্যালারি (Tab 6)।
+     */
+    public function media(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        if (! $group->canView($user)) {
+            return $this->errorResponse('This group is private or hidden.', 403);
+        }
+
+        $media = $this->groupService->getGroupMediaGallery($group, (int) $request->query('limit', 30));
+
+        return $this->successResponse(
+            data: $media,
+            message: 'Group media retrieved successfully.'
+        );
+    }
+
+    /**
+     * গ্রুপ ফলো/আনফলো টগল।
+     */
+    public function toggleFollow(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $followed = $this->groupService->toggleFollowGroup($group, $user);
+
+        return $this->successResponse(
+            data: [
+                'group_id' => $group->id,
+                'is_following' => $followed,
+            ],
+            message: $followed ? 'You are now following this group updates.' : 'Unfollowed group updates.'
         );
     }
 
@@ -335,12 +490,17 @@ class GroupController extends Controller
 
         $role = $request->query('role');
         $status = $request->query('status', 'active');
-        $search = $request->query('q');
+        $search = $request->query('q') ?? $request->query('query');
+        $sort = $request->query('sort', 'newest');
 
-        $query = GroupMember::where('group_id', $group->id)->where('status', $status);
+        $query = GroupMember::where('group_members.group_id', $group->id);
+
+        if ($status && $status !== 'all') {
+            $query->where('group_members.status', $status);
+        }
 
         if ($role && $role !== 'all') {
-            $query->where('role', $role);
+            $query->where('group_members.role', $role);
         }
 
         if ($search) {
@@ -350,8 +510,15 @@ class GroupController extends Controller
             });
         }
 
+        match ($sort) {
+            'oldest', 'join_date_asc' => $query->oldest('group_members.joined_at'),
+            'alphabetical', 'name_asc' => $query->join('users', 'group_members.user_id', '=', 'users.id')->orderBy('users.name')->select('group_members.*'),
+            'most_active', 'activity_desc' => $query->latest('group_members.updated_at'),
+            default => $query->latest('group_members.joined_at'),
+        };
+
         $members = $query->with('user.profile')->paginate((int) $request->query('per_page', 20));
-        $members->getCollection()->transform(fn (GroupMember $m) => $m->toResponseArray());
+        $members->getCollection()->transform(fn (GroupMember $m) => $m->toDetailedResponseArray());
 
         return $this->successResponse(
             data: $members->items(),
@@ -361,6 +528,96 @@ class GroupController extends Controller
                 'last_page' => $members->lastPage(),
                 'total' => $members->total(),
             ]
+        );
+    }
+
+    /**
+     * মেম্বারকে সাময়িক রেস্ট্রিক্ট করা।
+     */
+    public function restrictMember(Request $request, int $id, int $userId): JsonResponse
+    {
+        $actor = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'duration_days' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $member = $this->groupService->restrictMember(
+            $group,
+            $actor,
+            $userId,
+            (int) ($validated['duration_days'] ?? 7),
+            $validated['reason']
+        );
+
+        return $this->successResponse(
+            data: $member->toDetailedResponseArray(),
+            message: 'Member restricted successfully.'
+        );
+    }
+
+    /**
+     * মেম্বারের রেস্ট্রিকশন প্রত্যাহার করা।
+     */
+    public function unrestrictMember(Request $request, int $id, int $userId): JsonResponse
+    {
+        $actor = $request->user();
+        $group = Group::findOrFail($id);
+
+        $member = $this->groupService->unrestrictMember($group, $actor, $userId);
+
+        return $this->successResponse(
+            data: $member->toDetailedResponseArray(),
+            message: 'Member unrestricted successfully.'
+        );
+    }
+
+    /**
+     * মেম্বারের পূর্ণাঙ্গ অ্যাক্টিভিটি হিস্ট্রি ও ডিটেইলস (Phase 06)।
+     */
+    public function memberActivity(Request $request, int $id, int $userId): JsonResponse
+    {
+        $actor = $request->user();
+        $group = Group::findOrFail($id);
+
+        $activity = $this->groupService->getMemberActivityDetails($group, $actor, $userId);
+
+        return $this->successResponse(
+            data: $activity,
+            message: 'Member activity history retrieved successfully.'
+        );
+    }
+
+    /**
+     * বাল্ক মেম্বারশিপ ম্যানেজমেন্ট (Role Assign, Remove, Approve, Reject, Restrict, Ban)।
+     */
+    public function bulkManage(Request $request, int $id): JsonResponse
+    {
+        $actor = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'action' => ['required', 'string', 'in:assign_role,remove,approve,reject,restrict,ban'],
+            'user_ids' => ['required', 'array', 'min:1'],
+            'user_ids.*' => ['integer'],
+            'role' => ['nullable', 'string'],
+            'duration_days' => ['nullable', 'integer'],
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $result = $this->groupService->bulkManageMembers(
+            $group,
+            $actor,
+            $validated['action'],
+            $validated['user_ids'],
+            $validated
+        );
+
+        return $this->successResponse(
+            data: $result,
+            message: "Bulk action '{$validated['action']}' completed successfully."
         );
     }
 
@@ -485,15 +742,170 @@ class GroupController extends Controller
         $group = Group::findOrFail($id);
 
         $validated = $request->validate([
-            'role' => ['required', 'string', 'in:admin,moderator,editor,member'],
+            'role' => ['required', 'string'],
             'permissions' => ['nullable', 'array'],
         ]);
 
-        $member = $this->groupService->updateMemberRole($group, $actor, $userId, $validated['role'], $validated['permissions'] ?? null);
+        $results = $this->groupService->assignRole($group, $actor, [$userId], $validated['role'], $validated['permissions'] ?? null);
 
         return $this->successResponse(
-            data: $member->toResponseArray(),
+            data: $results[0] ?? null,
             message: 'Member role updated successfully.'
+        );
+    }
+
+    /**
+     * গ্রুপের সকল রোল ও পারমিশন ক্যাটালগ (Phase 05)।
+     */
+    public function roles(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $catalog = $this->groupService->getGroupRolesCatalog($group, $user);
+
+        return $this->successResponse(
+            data: $catalog,
+            message: 'Group roles and permissions retrieved successfully.'
+        );
+    }
+
+    /**
+     * কাস্টম রোল তৈরি করা।
+     */
+    public function storeRole(Request $request, int $id): JsonResponse
+    {
+        $actor = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:50'],
+            'display_name' => ['nullable', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'color' => ['nullable', 'string', 'max:20'],
+            'permissions' => ['required', 'array'],
+            'permissions.*' => ['string'],
+        ]);
+
+        $role = $this->groupService->createCustomRole($group, $actor, $validated);
+
+        return $this->successResponse(
+            data: $role->toResponseArray(),
+            message: 'Custom role created successfully.',
+            statusCode: 201
+        );
+    }
+
+    /**
+     * কাস্টম রোল আপডেট করা।
+     */
+    public function updateRole(Request $request, int $id, int $roleId): JsonResponse
+    {
+        $actor = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'display_name' => ['nullable', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'color' => ['nullable', 'string', 'max:20'],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string'],
+        ]);
+
+        $role = $this->groupService->updateCustomRole($group, $actor, $roleId, $validated);
+
+        return $this->successResponse(
+            data: $role->toResponseArray(),
+            message: 'Custom role updated successfully.'
+        );
+    }
+
+    /**
+     * কাস্টম রোল মুছে ফেলা।
+     */
+    public function destroyRole(Request $request, int $id, int $roleId): JsonResponse
+    {
+        $actor = $request->user();
+        $group = Group::findOrFail($id);
+
+        $this->groupService->deleteCustomRole($group, $actor, $roleId);
+
+        return $this->successResponse(
+            message: 'Custom role deleted successfully.'
+        );
+    }
+
+    /**
+     * মেম্বারদের একক বা বাল্ক রোল অ্যাসাইন করা।
+     */
+    public function assignRole(Request $request, int $id): JsonResponse
+    {
+        $actor = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'role' => ['required', 'string'],
+            'user_ids' => ['nullable', 'array'],
+            'user_ids.*' => ['integer'],
+            'user_id' => ['nullable', 'integer'],
+            'permissions' => ['nullable', 'array'],
+        ]);
+
+        $userIds = $validated['user_ids'] ?? ($validated['user_id'] ? [$validated['user_id']] : []);
+
+        if (empty($userIds)) {
+            return $this->errorResponse('At least one user must be specified for role assignment.', 422);
+        }
+
+        $results = $this->groupService->assignRole($group, $actor, $userIds, $validated['role'], $validated['permissions'] ?? null);
+
+        return $this->successResponse(
+            data: $results,
+            message: 'Role assigned successfully.'
+        );
+    }
+
+    /**
+     * মেম্বারদের রোল রিভোক করে সাধারণ মেম্বার করা।
+     */
+    public function revokeRole(Request $request, int $id): JsonResponse
+    {
+        $actor = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'user_ids' => ['nullable', 'array'],
+            'user_ids.*' => ['integer'],
+            'user_id' => ['nullable', 'integer'],
+        ]);
+
+        $userIds = $validated['user_ids'] ?? ($validated['user_id'] ? [$validated['user_id']] : []);
+
+        if (empty($userIds)) {
+            return $this->errorResponse('At least one user must be specified.', 422);
+        }
+
+        $results = $this->groupService->revokeRole($group, $actor, $userIds);
+
+        return $this->successResponse(
+            data: $results,
+            message: 'Role revoked successfully.'
+        );
+    }
+
+    /**
+     * রোল পরিবর্তনের হিস্ট্রি ও অডিট ট্রেইল।
+     */
+    public function rolesHistory(Request $request, int $id): JsonResponse
+    {
+        $actor = $request->user();
+        $group = Group::findOrFail($id);
+
+        $history = $this->groupService->getRolesHistory($group, $actor);
+
+        return $this->successResponse(
+            data: $history,
+            message: 'Role history retrieved successfully.'
         );
     }
 
@@ -579,7 +991,14 @@ class GroupController extends Controller
         $group = Group::findOrFail($id);
         $perPage = min((int) $request->query('per_page', 15), 50);
 
-        $posts = $this->groupService->getGroupFeed($group, $user, $perPage);
+        $filters = [
+            'filter' => $request->query('filter'),
+            'type' => $request->query('type'),
+            'sort' => $request->query('sort', 'newest'),
+            'status' => $request->query('status', 'published'),
+        ];
+
+        $posts = $this->groupService->getGroupFeed($group, $user, $perPage, $filters);
 
         return $this->successResponse(
             data: $posts->items(),
@@ -589,6 +1008,29 @@ class GroupController extends Controller
                 'last_page' => $posts->lastPage(),
                 'total' => $posts->total(),
             ]
+        );
+    }
+
+    /**
+     * নির্দিষ্ট পোস্ট বিস্তারিত দেখা।
+     */
+    public function showPost(Request $request, int $id, int $postId): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        if ($group->isPrivate() && (! $user || ! $group->hasMember($user->id))) {
+            return $this->errorResponse('This group is private.', 403);
+        }
+
+        $post = Post::where('group_id', $group->id)
+            ->where('id', $postId)
+            ->with(['user.profile', 'media', 'reactions', 'comments.user.profile'])
+            ->firstOrFail();
+
+        return $this->successResponse(
+            data: $post->toResponseArray($user),
+            message: 'Post retrieved successfully.'
         );
     }
 
@@ -607,18 +1049,202 @@ class GroupController extends Controller
             'media_ids.*' => ['integer', 'exists:media,id'],
             'poll_data' => ['nullable', 'array'],
             'link_preview' => ['nullable', 'array'],
+            'status' => ['nullable', 'string', 'in:published,draft,scheduled'],
+            'scheduled_at' => ['nullable', 'date'],
+            'is_pinned' => ['nullable', 'boolean'],
         ]);
 
-        if (empty(trim($validated['content'] ?? '')) && empty($validated['media_ids'])) {
-            return $this->errorResponse('Post content or media is required.', 422);
+        if (empty(trim($validated['content'] ?? '')) && empty($validated['media_ids']) && empty($validated['poll_data'])) {
+            return $this->errorResponse('Post content, media, or poll is required.', 422);
         }
 
-        $post = $this->groupService->createGroupPost($group, $user, $validated);
+        try {
+            $post = $this->groupService->createGroupPost($group, $user, $validated);
+
+            $statusMessage = match ($post->status) {
+                'draft' => 'Post saved as draft.',
+                'scheduled' => 'Post scheduled successfully.',
+                'pending_approval' => 'Post submitted for admin approval.',
+                default => 'Post published successfully.',
+            };
+
+            return $this->successResponse(
+                data: $post->toResponseArray($user),
+                message: $statusMessage,
+                statusCode: 201
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+    }
+
+    /**
+     * পোস্ট এডিট করা।
+     */
+    public function updatePost(Request $request, int $id, int $postId): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'content' => ['nullable', 'string', 'max:5000'],
+            'poll_data' => ['nullable', 'array'],
+            'link_preview' => ['nullable', 'array'],
+            'is_pinned' => ['nullable', 'boolean'],
+        ]);
+
+        $post = $this->groupService->updateGroupPost($group, $user, $postId, $validated);
 
         return $this->successResponse(
             data: $post->toResponseArray($user),
-            message: $post->status === 'published' ? 'Post published successfully.' : 'Post submitted for admin approval.',
-            statusCode: 201
+            message: 'Post updated successfully.'
+        );
+    }
+
+    /**
+     * পোস্ট পিন বা আনপিন করা।
+     */
+    public function togglePinPost(Request $request, int $id, int $postId): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $isPinned = $this->groupService->togglePinPost($group, $user, $postId);
+
+        return $this->successResponse(
+            data: ['is_pinned' => $isPinned],
+            message: $isPinned ? 'Post pinned successfully.' : 'Post unpinned successfully.'
+        );
+    }
+
+    /**
+     * পোস্টের পোলে ভোট দেওয়া।
+     */
+    public function votePostPoll(Request $request, int $id, int $postId): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'option_id' => ['required', 'integer'],
+        ]);
+
+        $updatedPoll = $this->groupService->votePostPoll($group, $user, $postId, (int) $validated['option_id']);
+
+        return $this->successResponse(
+            data: $updatedPoll,
+            message: 'Vote cast successfully.'
+        );
+    }
+
+    /**
+     * পোস্টে রিয়্যাকশন দেওয়া / টগল করা।
+     */
+    public function reactPost(Request $request, int $id, int $postId): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'type' => ['nullable', 'string', 'in:like,love,care,haha,wow,sad,angry'],
+        ]);
+
+        $res = $this->groupService->reactGroupPost($group, $user, $postId, $validated['type'] ?? 'like');
+
+        return $this->successResponse(
+            data: $res,
+            message: 'Reaction updated successfully.'
+        );
+    }
+
+    /**
+     * পোস্ট রিপোর্ট করা।
+     */
+    public function reportPost(Request $request, int $id, int $postId): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'reason_category' => ['required', 'string', 'max:50'],
+            'description' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $report = $this->groupService->reportItem($group, $user, [
+            'reportable_type' => Post::class,
+            'reportable_id' => $postId,
+            'reason_category' => $validated['reason_category'],
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        return $this->successResponse(
+            data: $report->toResponseArray(),
+            message: 'Post reported to moderators.'
+        );
+    }
+
+    /**
+     * মডারেশন রিপোর্ট তালিকা।
+     */
+    public function moderationReports(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        if (! $group->hasPermission($user->id, 'moderate_members')) {
+            return $this->errorResponse('Permission denied.', 403);
+        }
+
+        $reports = GroupReport::where('group_id', $group->id)
+            ->with(['reporter.profile', 'reviewer'])
+            ->latest('id')
+            ->paginate((int) $request->query('per_page', 15));
+
+        $reports->getCollection()->transform(fn (GroupReport $r) => $r->toResponseArray());
+
+        return $this->successResponse(
+            data: $reports->items(),
+            message: 'Moderation reports retrieved successfully.',
+            meta: [
+                'current_page' => $reports->currentPage(),
+                'last_page' => $reports->lastPage(),
+                'total' => $reports->total(),
+            ]
+        );
+    }
+
+    /**
+     * রিপোর্টে সিদ্ধান্ত নেওয়া ও অ্যাকশন গ্রহণ।
+     */
+    public function actionReport(Request $request, int $id, int $reportId): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:action_taken,dismissed,closed'],
+            'decision_note' => ['nullable', 'string', 'max:500'],
+            'remove_content' => ['nullable', 'boolean'],
+        ]);
+
+        $report = $this->groupService->reviewReport(
+            $group,
+            $user,
+            $reportId,
+            $validated['status'],
+            $validated['decision_note'] ?? null
+        );
+
+        if (! empty($validated['remove_content']) && $report->reportable_type === Post::class) {
+            Post::where('group_id', $group->id)->where('id', $report->reportable_id)->delete();
+            if ($group->posts_count > 0) {
+                $group->decrement('posts_count');
+            }
+        }
+
+        return $this->successResponse(
+            data: $report->toResponseArray(),
+            message: 'Report resolved successfully.'
         );
     }
 
@@ -884,6 +1510,70 @@ class GroupController extends Controller
         );
     }
 
+    public function updateRule(Request $request, int $id, int $ruleId): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'title' => ['nullable', 'string', 'max:150'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'enforcement_level' => ['nullable', 'string', 'in:warning,strike,removal'],
+            'sort_order' => ['nullable', 'integer'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        try {
+            $rule = $this->groupService->updateRule($group, $user, $ruleId, $validated);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
+        }
+
+        return $this->successResponse(
+            data: $rule,
+            message: 'Rule updated successfully.'
+        );
+    }
+
+    public function destroyRule(Request $request, int $id, int $ruleId): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        try {
+            $this->groupService->deleteRule($group, $user, $ruleId);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
+        }
+
+        return $this->successResponse(
+            data: null,
+            message: 'Rule deleted successfully.'
+        );
+    }
+
+    public function reorderRules(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $group = Group::findOrFail($id);
+
+        $validated = $request->validate([
+            'rule_ids' => ['required', 'array'],
+            'rule_ids.*' => ['integer', 'exists:group_rules,id'],
+        ]);
+
+        try {
+            $rules = $this->groupService->reorderRules($group, $user, $validated['rule_ids']);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
+        }
+
+        return $this->successResponse(
+            data: $rules,
+            message: 'Rules reordered successfully.'
+        );
+    }
+
     /**
      * স্ক্রিনিং প্রশ্নাবলি।
      */
@@ -1022,20 +1712,30 @@ class GroupController extends Controller
     }
 
     /**
-     * অ্যানালিটিক্স মেট্রিকস।
+     * গ্রুপ ড্যাশবোর্ড ও অ্যানালিটিক্স মেট্রিকস (Phase 04)।
      */
     public function analytics(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $group = Group::findOrFail($id);
-        $days = (int) $request->query('days', 30);
+        $period = $request->query('period', $request->query('days', '30d'));
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
 
-        $analytics = $this->groupService->getAnalytics($group, $user, $days);
+        $analytics = $this->groupService->getAnalytics($group, $user, $period, $startDate, $endDate);
 
         return $this->successResponse(
             data: $analytics,
-            message: 'Analytics retrieved successfully.'
+            message: 'Group dashboard analytics retrieved successfully.'
         );
+    }
+
+    /**
+     * গ্রুপ ড্যাশবোর্ড মূল ডেটা এন্ডপয়েন্ট।
+     */
+    public function dashboard(Request $request, int $id): JsonResponse
+    {
+        return $this->analytics($request, $id);
     }
 
     /**
@@ -1056,28 +1756,52 @@ class GroupController extends Controller
     }
 
     /**
-     * ক্যাটাগরি তালিকা।
+     * ক্যাটাগরি তালিকা (ডাটাবেজ ও প্রফেশনাল ক্যাটাগরি হাব)।
      */
     public function categories(Request $request): JsonResponse
     {
-        $categories = [
-            ['id' => 'technology', 'name' => 'Technology', 'slug' => 'technology', 'icon' => 'laptop-outline'],
-            ['id' => 'education', 'name' => 'Education', 'slug' => 'education', 'icon' => 'school-outline'],
-            ['id' => 'business', 'name' => 'Business', 'slug' => 'business', 'icon' => 'briefcase-outline'],
-            ['id' => 'entertainment', 'name' => 'Entertainment', 'slug' => 'entertainment', 'icon' => 'film-outline'],
-            ['id' => 'sports', 'name' => 'Sports', 'slug' => 'sports', 'icon' => 'football-outline'],
-            ['id' => 'gaming', 'name' => 'Gaming', 'slug' => 'gaming', 'icon' => 'game-controller-outline'],
-            ['id' => 'photography', 'name' => 'Photography', 'slug' => 'photography', 'icon' => 'camera-outline'],
-            ['id' => 'travel', 'name' => 'Travel', 'slug' => 'travel', 'icon' => 'airplane-outline'],
-            ['id' => 'food', 'name' => 'Food', 'slug' => 'food', 'icon' => 'restaurant-outline'],
-            ['id' => 'health_fitness', 'name' => 'Health and Fitness', 'slug' => 'health-and-fitness', 'icon' => 'fitness-outline'],
-            ['id' => 'local_community', 'name' => 'Local Community', 'slug' => 'local-community', 'icon' => 'people-outline'],
-            ['id' => 'other', 'name' => 'Other', 'slug' => 'other', 'icon' => 'grid-outline'],
-        ];
+        $categories = GroupCategory::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
 
         return $this->successResponse(
-            data: $categories,
+            data: $categories->map(fn (GroupCategory $c) => $c->toResponseArray())->values(),
             message: 'Categories retrieved successfully.'
+        );
+    }
+
+    /**
+     * অ্যাডমিনিস্ট্রেটরদের জন্য নতুন ক্যাটাগরি তৈরি।
+     */
+    public function storeCategory(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user || ! method_exists($user, 'isAdmin') || ! $user->isAdmin()) {
+            return $this->errorResponse('Unauthorized. Administrator access required.', 403);
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100', 'unique:group_categories,name'],
+            'icon' => ['nullable', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'sort_order' => ['nullable', 'integer'],
+        ]);
+
+        $category = GroupCategory::create([
+            'name' => $validated['name'],
+            'slug' => Str::slug($validated['name']),
+            'icon' => $validated['icon'] ?? 'folder-outline',
+            'description' => $validated['description'] ?? null,
+            'sort_order' => $validated['sort_order'] ?? 0,
+            'is_active' => true,
+            'is_system' => false,
+            'groups_count' => 0,
+        ]);
+
+        return $this->successResponse(
+            data: $category->toResponseArray(),
+            message: 'Category created successfully.',
+            statusCode: 201
         );
     }
 

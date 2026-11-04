@@ -13,6 +13,7 @@ interface ProfileRepository {
     fun sendFriendRequest(userId: Long): Flow<Result<Unit>>
     fun acceptFriendRequest(userId: Long): Flow<Result<Unit>>
     fun rejectFriendRequest(userId: Long): Flow<Result<Unit>>
+    fun unfriendUser(userId: Long): Flow<Result<Unit>>
     fun followUser(userId: Long): Flow<Result<Boolean>>
     fun unfollowUser(userId: Long): Flow<Result<Boolean>>
     fun blockUser(userId: Long): Flow<Result<Unit>>

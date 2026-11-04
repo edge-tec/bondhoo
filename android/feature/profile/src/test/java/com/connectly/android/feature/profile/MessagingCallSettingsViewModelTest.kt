@@ -19,6 +19,8 @@ import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
 
+import androidx.core.content.ContextCompat
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class MessagingCallSettingsViewModelTest {
 
@@ -50,6 +52,9 @@ class MessagingCallSettingsViewModelTest {
 
     @Before
     fun setup() {
+        mockkStatic(ContextCompat::class)
+        every { ContextCompat.checkSelfPermission(any(), any()) } returns PackageManager.PERMISSION_GRANTED
+
         Dispatchers.setMain(testDispatcher)
         every { context.getSharedPreferences(any(), any()) } returns sharedPrefs
         every { sharedPrefs.edit() } returns prefsEditor
@@ -58,16 +63,17 @@ class MessagingCallSettingsViewModelTest {
 
         every { context.checkPermission(any(), any(), any()) } returns PackageManager.PERMISSION_DENIED
 
-        coEvery { api.getSettingsPrivacy() } returns Response.success(ApiResponse(success = true, data = dummyPrivacy))
-        coEvery { api.getMessengerSoundSettings() } returns Response.success(ApiResponse(success = true, data = dummySounds))
-        coEvery { api.updateSettingsPrivacy(any()) } returns Response.success(ApiResponse(success = true, data = dummyPrivacy))
-        coEvery { api.updateMessengerSoundSettings(any()) } returns Response.success(ApiResponse(success = true, data = dummySounds))
+        coEvery { api.getSettingsPrivacy() } returns Response.success(ApiResponse(data = dummyPrivacy))
+        coEvery { api.getMessengerSoundSettings() } returns Response.success(ApiResponse(data = dummySounds))
+        coEvery { api.updateSettingsPrivacy(any()) } returns Response.success(ApiResponse(data = dummyPrivacy))
+        coEvery { api.updateMessengerSoundSettings(any()) } returns Response.success(ApiResponse(data = dummySounds))
 
         viewModel = MessagingCallSettingsViewModel(api, context)
     }
 
     @After
     fun tearDown() {
+        unmockkStatic(ContextCompat::class)
         Dispatchers.resetMain()
     }
 

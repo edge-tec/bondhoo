@@ -9,6 +9,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -26,12 +27,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.MediaItem
@@ -55,6 +56,39 @@ fun ReelsScreen(
     viewModel: ReelsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    var feedMenuExpanded by remember { mutableStateOf(false) }
+    var selectedFeedType by remember { mutableStateOf("For You") }
+    var showSearchDialog by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    if (showSearchDialog) {
+        AlertDialog(
+            onDismissRequest = { showSearchDialog = false },
+            title = { Text("Search Reels", fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search hashtags, creators, sounds...") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showSearchDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue)
+                ) {
+                    Text("Search")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSearchDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     if (state.reels.isEmpty()) {
         Box(
@@ -134,7 +168,7 @@ fun ReelsScreen(
             )
         }
 
-        // Top Navigation Header (Matching Screen 3: "Reels v", Search, Camera)
+        // Top Navigation Header: "Reels v", Search, Camera
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -144,26 +178,50 @@ fun ReelsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { /* Select feed tab: For You, Following */ }
-            ) {
-                Text(
-                    text = "Reels",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = "Dropdown",
-                    tint = Color.White
-                )
+            Box {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { feedMenuExpanded = true }
+                ) {
+                    Text(
+                        text = selectedFeedType,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Dropdown",
+                        tint = Color.White
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = feedMenuExpanded,
+                    onDismissRequest = { feedMenuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("For You") },
+                        onClick = {
+                            selectedFeedType = "For You"
+                            feedMenuExpanded = false
+                            viewModel.handleIntent(ReelsIntent.LoadFeed)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Following") },
+                        onClick = {
+                            selectedFeedType = "Following"
+                            feedMenuExpanded = false
+                            viewModel.handleIntent(ReelsIntent.LoadFeed)
+                        }
+                    )
+                }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                IconButton(onClick = { /* Search Reels */ }) {
+                IconButton(onClick = { showSearchDialog = true }) {
                     Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
                 }
                 IconButton(onClick = onNavigateToCreateReel) {
@@ -251,14 +309,21 @@ private fun ReelPlayerItem(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable {
-                if (exoPlayer.isPlaying) {
-                    exoPlayer.pause()
-                    isPlaying = false
-                } else {
-                    exoPlayer.play()
-                    isPlaying = true
-                }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        onLikeClick()
+                    },
+                    onTap = {
+                        if (exoPlayer.isPlaying) {
+                            exoPlayer.pause()
+                            isPlaying = false
+                        } else {
+                            exoPlayer.play()
+                            isPlaying = true
+                        }
+                    }
+                )
             }
     ) {
         // Media3 Video Surface
@@ -306,7 +371,7 @@ private fun ReelPlayerItem(
             // Like
             ActionColumn(
                 icon = if (reel.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                count = "${reel.likesCount / 1000.0}K",
+                count = if (reel.likesCount >= 1000) String.format("%.1fK", reel.likesCount / 1000.0) else "${reel.likesCount}",
                 tint = if (reel.isLiked) ConnectlyRose else Color.White,
                 onClick = onLikeClick
             )
@@ -319,9 +384,10 @@ private fun ReelPlayerItem(
             )
 
             // Share
+            val sharesText = if (reel.sharesCount >= 1000) String.format("%.1fK", reel.sharesCount / 1000.0) else "${reel.sharesCount}"
             ActionColumn(
                 icon = Icons.AutoMirrored.Filled.Send,
-                count = "1.2K",
+                count = sharesText,
                 onClick = onShareClick
             )
 
@@ -535,4 +601,3 @@ private fun ReelsCommentsDrawerContent(
         }
     }
 }
-

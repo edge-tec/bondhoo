@@ -5,18 +5,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,8 +39,25 @@ fun ProfileScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val user = state.user
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showMoreMenu by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.userMessage) {
+        state.userMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.handleIntent(ProfileIntent.DismissMessage)
+        }
+    }
+
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.handleIntent(ProfileIntent.DismissMessage)
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -153,9 +167,9 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        MetricColumn(count = "2.5K", label = "Friends")
-                        MetricColumn(count = "865", label = "Followers")
-                        MetricColumn(count = "128", label = "Following")
+                        MetricColumn(count = "${user?.friendsCount ?: 2500}", label = "Friends")
+                        MetricColumn(count = "${user?.followersCount ?: 865}", label = "Followers")
+                        MetricColumn(count = "${user?.followingCount ?: 128}", label = "Following")
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -177,14 +191,71 @@ fun ProfileScreen(
                             Text("Edit Profile", fontWeight = FontWeight.SemiBold)
                         }
 
-                        IconButton(
-                            onClick = { /* More actions */ },
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFF1F5F9))
-                        ) {
-                            Icon(Icons.Default.MoreHoriz, contentDescription = "More")
+                        Box {
+                            IconButton(
+                                onClick = { showMoreMenu = true },
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFF1F5F9))
+                            ) {
+                                Icon(Icons.Default.MoreHoriz, contentDescription = "More")
+                            }
+
+                            DropdownMenu(
+                                expanded = showMoreMenu,
+                                onDismissRequest = { showMoreMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Share Profile") },
+                                    leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        viewModel.handleIntent(ProfileIntent.ShareProfile)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Copy Profile Link") },
+                                    leadingIcon = { Icon(Icons.Default.ContentCopy, contentDescription = null) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        viewModel.handleIntent(ProfileIntent.CopyProfileLink)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(if (state.isFollowing) "Unfollow" else "Follow") },
+                                    leadingIcon = { Icon(if (state.isFollowing) Icons.Default.PersonRemove else Icons.Default.PersonAdd, contentDescription = null) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        viewModel.handleIntent(ProfileIntent.ToggleFollow)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Add Friend") },
+                                    leadingIcon = { Icon(Icons.Default.GroupAdd, contentDescription = null) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        viewModel.handleIntent(ProfileIntent.SendFriendRequest)
+                                    }
+                                )
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = { Text("Block User", color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = { Icon(Icons.Default.Block, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        viewModel.handleIntent(ProfileIntent.BlockUser)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Report Profile", color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = { Icon(Icons.Default.Flag, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        viewModel.handleIntent(ProfileIntent.ReportProfile)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -214,51 +285,232 @@ fun ProfileScreen(
                 }
             }
 
-            item {
-                // Feed Card Sample
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.LightGray)
-                            ) {
-                                AsyncImage(
-                                    model = user?.avatar ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(user?.name ?: "Mizanur Rahman", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text("1h • Public", fontSize = 12.sp, color = TextSecondaryLight)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text("Life is a beautiful journey! ❤️", fontSize = 14.sp)
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        AsyncImage(
-                            model = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-                            contentDescription = "Post Image",
-                            contentScale = ContentScale.Crop,
+            // ========================================================
+            // TAB CONTENT: POSTS, PHOTOS, VIDEOS, REELS
+            // ========================================================
+            when (state.selectedTab) {
+                0 -> {
+                    // TAB 0: POSTS
+                    item {
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(180.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
+                                .padding(16.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.LightGray)
+                                    ) {
+                                        AsyncImage(
+                                            model = user?.avatar ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(user?.name ?: "Mizanur Rahman", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Text("1h • Public", fontSize = 12.sp, color = TextSecondaryLight)
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text("Life is a beautiful journey! ❤️", fontSize = 14.sp)
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                AsyncImage(
+                                    model = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+                                    contentDescription = "Post Image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(180.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                )
+                            }
+                        }
+                    }
+                }
+                1 -> {
+                    // TAB 1: PHOTOS (Grid gallery)
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                "Photos & Albums",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            val photos = state.photos
+                            for (i in photos.indices step 3) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 6.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    for (j in 0 until 3) {
+                                        val idx = i + j
+                                        if (idx < photos.size) {
+                                            AsyncImage(
+                                                model = photos[idx],
+                                                contentDescription = "Photo $idx",
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .aspectRatio(1f)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                            )
+                                        } else {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                2 -> {
+                    // TAB 2: VIDEOS
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                "Uploaded Videos",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            val videos = state.videos
+                            for (i in videos.indices step 2) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    for (j in 0 until 2) {
+                                        val idx = i + j
+                                        if (idx < videos.size) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(120.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(Color.Black),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                AsyncImage(
+                                                    model = videos[idx],
+                                                    contentDescription = "Video $idx",
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier.fillMaxSize()
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(36.dp)
+                                                        .clip(CircleShape)
+                                                        .background(Color.Black.copy(alpha = 0.6f)),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.PlayArrow,
+                                                        contentDescription = "Play",
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(24.dp)
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                3 -> {
+                    // TAB 3: REELS
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                "Reels & Shorts",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            val reels = state.reels
+                            for (i in reels.indices step 3) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 6.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    for (j in 0 until 3) {
+                                        val idx = i + j
+                                        if (idx < reels.size) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .aspectRatio(9f / 16f)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(Color.DarkGray)
+                                            ) {
+                                                AsyncImage(
+                                                    model = reels[idx],
+                                                    contentDescription = "Reel $idx",
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier.fillMaxSize()
+                                                )
+                                                Row(
+                                                    modifier = Modifier
+                                                        .align(Alignment.BottomStart)
+                                                        .padding(6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.PlayArrow,
+                                                        contentDescription = null,
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(14.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(2.dp))
+                                                    Text(
+                                                        text = "1.2K",
+                                                        color = Color.White,
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

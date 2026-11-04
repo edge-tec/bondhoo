@@ -1,7 +1,9 @@
 package com.connectly.android.feature.notifications.di
 
 import com.connectly.android.feature.notifications.data.repository.NotificationsRepositoryImpl
+import com.connectly.android.feature.notifications.data.repository.SearchRepositoryImpl
 import com.connectly.android.feature.notifications.domain.repository.NotificationsRepository
+import com.connectly.android.feature.notifications.domain.repository.SearchRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -17,5 +19,11 @@ abstract class NotificationsModule {
     abstract fun bindNotificationsRepository(
         impl: NotificationsRepositoryImpl
     ): NotificationsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSearchRepository(
+        impl: SearchRepositoryImpl
+    ): SearchRepository
 }
 

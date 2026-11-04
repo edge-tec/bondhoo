@@ -49,12 +49,14 @@ class NotificationSettingsViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         every { context.getSharedPreferences(any(), any()) } returns sharedPrefs
+        every { sharedPrefs.getBoolean(any(), any()) } answers { secondArg() as Boolean }
+        every { sharedPrefs.getString(any(), any()) } answers { secondArg() as String? }
         every { sharedPrefs.edit() } returns prefsEditor
         every { prefsEditor.putBoolean(any(), any()) } returns prefsEditor
         every { prefsEditor.putString(any(), any()) } returns prefsEditor
 
-        coEvery { api.getNotificationPreferences() } returns Response.success(ApiResponse(success = true, data = dummyRemotePrefs))
-        coEvery { api.updateNotificationPreferences(any()) } returns Response.success(ApiResponse(success = true, data = dummyRemotePrefs))
+        coEvery { api.getNotificationPreferences() } returns Response.success(ApiResponse(data = dummyRemotePrefs))
+        coEvery { api.updateNotificationPreferences(any()) } returns Response.success(ApiResponse(data = dummyRemotePrefs))
 
         viewModel = NotificationSettingsViewModel(api, context)
     }

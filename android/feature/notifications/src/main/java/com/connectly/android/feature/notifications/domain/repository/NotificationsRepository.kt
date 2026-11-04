@@ -13,6 +13,7 @@ interface NotificationsRepository {
     fun getUnreadCount(): Flow<Int>
     fun markAsRead(notificationId: String): Flow<Result<Unit>>
     fun markAllAsRead(): Flow<Result<Unit>>
+    fun deleteNotification(notificationId: String): Flow<Result<Unit>>
     fun respondToFriendRequest(userId: Long, accept: Boolean): Flow<Result<Unit>>
     fun search(query: String, type: String = "all"): Flow<Result<SearchResult>>
     fun getDiscoveryData(): Flow<Result<DiscoveryData>>

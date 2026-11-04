@@ -53,8 +53,8 @@ class FeedPreferencesViewModelTest {
         every { sharedPrefs.getInt("hidden_posts_count", any()) } returns 5
         every { sharedPrefs.getInt("favorites_count", any()) } returns 4
 
-        coEvery { api.getSettingsPrivacy() } returns Response.success(ApiResponse(success = true, data = dummyPrivacy))
-        coEvery { api.updateSettingsPrivacy(any()) } returns Response.success(ApiResponse(success = true, data = dummyPrivacy))
+        coEvery { api.getSettingsPrivacy() } returns Response.success(ApiResponse(data = dummyPrivacy))
+        coEvery { api.updateSettingsPrivacy(any()) } returns Response.success(ApiResponse(data = dummyPrivacy))
 
         viewModel = FeedPreferencesViewModel(api, context)
     }

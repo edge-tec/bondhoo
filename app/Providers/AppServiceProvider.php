@@ -241,5 +241,17 @@ class AppServiceProvider extends ServiceProvider
                 $request->user()?->id ?: $request->ip()
             );
         });
+
+        // ১১. গ্লোবাল সার্চ ও ডিসকভারি রেট লিমিট (স্বাভাবিক টাইপিং ও ৩০০ms ডিবাউন্স সমর্থন করে প্রতি মিনিটে ৬০ টি)
+        RateLimiter::for('search', function (Request $request) {
+            return Limit::perMinute(60)->by(
+                $request->user()?->id ?: $request->ip()
+            )->response(function () {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too many search requests. Please slow down and try again.',
+                ], 429);
+            });
+        });
     }
 }

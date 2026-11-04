@@ -3,6 +3,7 @@ package com.connectly.android.feature.groups
 import app.cash.turbine.test
 import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.Group
+import com.connectly.android.feature.groups.domain.usecase.CreateGroupUseCase
 import com.connectly.android.feature.groups.domain.usecase.GetFeaturedGroupUseCase
 import com.connectly.android.feature.groups.domain.usecase.GetGroupsUseCase
 import com.connectly.android.feature.groups.domain.usecase.ToggleJoinGroupUseCase
@@ -30,6 +31,7 @@ class GroupsViewModelTest {
     private val getGroupsUseCase: GetGroupsUseCase = mockk()
     private val getFeaturedGroupUseCase: GetFeaturedGroupUseCase = mockk()
     private val toggleJoinGroupUseCase: ToggleJoinGroupUseCase = mockk()
+    private val createGroupUseCase: CreateGroupUseCase = mockk()
 
     private lateinit var viewModel: GroupsViewModel
 
@@ -55,7 +57,7 @@ class GroupsViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { getFeaturedGroupUseCase() } returns flowOf(Result.Success(featuredGroup))
-        every { getGroupsUseCase("discover", 1) } returns flowOf(
+        every { getGroupsUseCase(any(), any(), any(), any(), any()) } returns flowOf(
             Result.Loading,
             Result.Success(listOf(popularGroup))
         )
@@ -68,7 +70,7 @@ class GroupsViewModelTest {
 
     @Test
     fun `when viewmodel initialized, loads featured and popular groups`() = runTest {
-        viewModel = GroupsViewModel(getGroupsUseCase, getFeaturedGroupUseCase, toggleJoinGroupUseCase)
+        viewModel = GroupsViewModel(getGroupsUseCase, getFeaturedGroupUseCase, toggleJoinGroupUseCase, createGroupUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiState.test {
@@ -83,7 +85,7 @@ class GroupsViewModelTest {
     fun `when toggle join dispatched, updates membership state optimistically`() = runTest {
         every { toggleJoinGroupUseCase(101L, false) } returns flowOf(Result.Success(true))
 
-        viewModel = GroupsViewModel(getGroupsUseCase, getFeaturedGroupUseCase, toggleJoinGroupUseCase)
+        viewModel = GroupsViewModel(getGroupsUseCase, getFeaturedGroupUseCase, toggleJoinGroupUseCase, createGroupUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.handleIntent(GroupsIntent.ToggleJoin(popularGroup))
@@ -92,7 +94,49 @@ class GroupsViewModelTest {
         viewModel.uiState.test {
             val state = awaitItem()
             assertTrue(state.popularGroups.first().isMember)
+            assertEquals(156001, state.popularGroups.first().membersCount)
+        }
+    }
+
+    @Test
+    fun `when tab switched to your_groups, tab state is updated`() = runTest {
+        viewModel = GroupsViewModel(getGroupsUseCase, getFeaturedGroupUseCase, toggleJoinGroupUseCase, createGroupUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.handleIntent(GroupsIntent.SelectTab("your_groups"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertEquals("your_groups", state.selectedTab)
+        }
+    }
+
+    @Test
+    fun `when tab switched to manage, tab state is updated`() = runTest {
+        viewModel = GroupsViewModel(getGroupsUseCase, getFeaturedGroupUseCase, toggleJoinGroupUseCase, createGroupUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.handleIntent(GroupsIntent.SelectTab("manage"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertEquals("manage", state.selectedTab)
+        }
+    }
+
+    @Test
+    fun `when search query changed, state is updated`() = runTest {
+        viewModel = GroupsViewModel(getGroupsUseCase, getFeaturedGroupUseCase, toggleJoinGroupUseCase, createGroupUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.handleIntent(GroupsIntent.SearchQueryChanged("Travel"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertEquals("Travel", state.searchQuery)
         }
     }
 }
-

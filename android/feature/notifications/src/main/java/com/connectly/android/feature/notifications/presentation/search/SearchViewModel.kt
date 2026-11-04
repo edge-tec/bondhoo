@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.DiscoveryData
 import com.connectly.android.core.model.SearchResult
+import com.connectly.android.feature.notifications.domain.usecase.ClearSearchHistoryUseCase
+import com.connectly.android.feature.notifications.domain.usecase.DeleteSearchHistoryItemUseCase
 import com.connectly.android.feature.notifications.domain.usecase.GetDiscoveryDataUseCase
+import com.connectly.android.feature.notifications.domain.usecase.GetSearchHistoryUseCase
 import com.connectly.android.feature.notifications.domain.usecase.SearchUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -38,7 +41,10 @@ sealed interface SearchIntent {
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchUseCase: SearchUseCase,
-    private val getDiscoveryDataUseCase: GetDiscoveryDataUseCase
+    private val getDiscoveryDataUseCase: GetDiscoveryDataUseCase,
+    private val getSearchHistoryUseCase: GetSearchHistoryUseCase,
+    private val deleteSearchHistoryItemUseCase: DeleteSearchHistoryItemUseCase,
+    private val clearSearchHistoryUseCase: ClearSearchHistoryUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -48,6 +54,7 @@ class SearchViewModel @Inject constructor(
 
     init {
         loadDiscovery()
+        loadSearchHistory()
     }
 
     fun handleIntent(intent: SearchIntent) {
@@ -55,12 +62,27 @@ class SearchViewModel @Inject constructor(
             is SearchIntent.QueryChanged -> onQueryChanged(intent.query)
             is SearchIntent.FilterSelected -> onFilterSelected(intent.filter)
             is SearchIntent.RemoveRecentItem -> {
-                _uiState.update { it.copy(recentSearches = it.recentSearches.filterNot { item -> item == intent.item }) }
+                viewModelScope.launch {
+                    deleteSearchHistoryItemUseCase(intent.item).collect { result ->
+                        if (result is Result.Success) {
+                            _uiState.update { it.copy(recentSearches = result.data) }
+                        }
+                    }
+                }
             }
             SearchIntent.ClearRecentSearches -> {
-                _uiState.update { it.copy(recentSearches = emptyList()) }
+                viewModelScope.launch {
+                    clearSearchHistoryUseCase().collect { result ->
+                        if (result is Result.Success) {
+                            _uiState.update { it.copy(recentSearches = emptyList()) }
+                        }
+                    }
+                }
             }
-            SearchIntent.RefreshDiscovery -> loadDiscovery()
+            SearchIntent.RefreshDiscovery -> {
+                loadDiscovery()
+                loadSearchHistory()
+            }
         }
     }
 
@@ -69,6 +91,16 @@ class SearchViewModel @Inject constructor(
             getDiscoveryDataUseCase().collect { result ->
                 if (result is Result.Success) {
                     _uiState.update { it.copy(discoveryData = result.data) }
+                }
+            }
+        }
+    }
+
+    private fun loadSearchHistory() {
+        viewModelScope.launch {
+            getSearchHistoryUseCase().collect { result ->
+                if (result is Result.Success) {
+                    _uiState.update { it.copy(recentSearches = result.data) }
                 }
             }
         }

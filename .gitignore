@@ -30,3 +30,5 @@ android/**/build/
 build/
 local.properties
 android/local.properties
+test-results/
+playwright-report/

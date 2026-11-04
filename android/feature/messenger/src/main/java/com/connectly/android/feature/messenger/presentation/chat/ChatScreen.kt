@@ -43,9 +43,67 @@ fun ChatScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var inputText by remember { mutableStateOf("") }
+    var showAttachmentMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(conversationId) {
         viewModel.handleIntent(ChatIntent.LoadChat(conversationId))
+    }
+
+    if (showAttachmentMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showAttachmentMenu = false }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Share Content",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = TextPrimaryLight
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    AttachmentOptionItem(
+                        icon = Icons.Default.PhotoLibrary,
+                        label = "Gallery",
+                        color = ConnectlyBlue,
+                        onClick = {
+                            viewModel.handleIntent(ChatIntent.SendTextMessage("📷 [Shared a photo]"))
+                            showAttachmentMenu = false
+                        }
+                    )
+
+                    AttachmentOptionItem(
+                        icon = Icons.Default.InsertDriveFile,
+                        label = "Document",
+                        color = Color(0xFF8B5CF6),
+                        onClick = {
+                            viewModel.handleIntent(ChatIntent.SendTextMessage("📄 [Shared document.pdf]"))
+                            showAttachmentMenu = false
+                        }
+                    )
+
+                    AttachmentOptionItem(
+                        icon = Icons.Default.LocationOn,
+                        label = "Location",
+                        color = Color(0xFF10B981),
+                        onClick = {
+                            viewModel.handleIntent(ChatIntent.SendTextMessage("📍 [Live Location: Dhaka, Bangladesh]"))
+                            showAttachmentMenu = false
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
     }
 
     Scaffold(
@@ -144,7 +202,7 @@ fun ChatScreen(
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { /* Pick attachment */ }) {
+                    IconButton(onClick = { showAttachmentMenu = true }) {
                         Icon(Icons.Default.AttachFile, contentDescription = "Attach", tint = ConnectlyBlue)
                     }
 
@@ -188,6 +246,31 @@ fun ChatScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AttachmentOptionItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(CircleShape)
+                .background(color.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(imageVector = icon, contentDescription = label, tint = color, modifier = Modifier.size(26.dp))
+        }
+        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = TextPrimaryLight)
     }
 }
 
@@ -272,4 +355,3 @@ private fun ChatMessageBubble(
         }
     }
 }
-

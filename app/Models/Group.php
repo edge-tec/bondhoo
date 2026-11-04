@@ -475,6 +475,14 @@ class Group extends Model
     public function toResponseArray(?User $viewer = null): array
     {
         $viewerMembership = null;
+        $isMember = false;
+        $isPending = false;
+        $isOwner = false;
+        $isAdmin = false;
+        $isModerator = false;
+        $hasPendingInvite = false;
+        $isFollowing = false;
+
         if ($viewer) {
             $member = $this->getMembership($viewer->id);
             if ($member) {
@@ -486,8 +494,29 @@ class Group extends Model
                     'is_restricted' => $member->isRestricted(),
                     'joined_at' => $member->joined_at?->toIso8601String(),
                 ];
+                $isMember = $member->isActive();
+                $isPending = $member->isPending();
             }
+            $isOwner = $this->isOwner($viewer->id);
+            $isAdmin = $this->isAdmin($viewer->id);
+            $isModerator = $this->isModerator($viewer->id);
+            $hasPendingInvite = GroupInvitation::where('group_id', $this->id)->where('invitee_id', $viewer->id)->where('status', 'pending')->exists();
+            $isFollowing = GroupSubscription::where('group_id', $this->id)->where('user_id', $viewer->id)->exists();
         }
+
+        $actions = [
+            'can_join' => ! $isMember && ! $isPending && $this->membership_approval_mode === 'anyone',
+            'can_request' => ! $isMember && ! $isPending && $this->membership_approval_mode !== 'anyone' && $this->membership_approval_mode !== 'invite_only',
+            'can_cancel_request' => $isPending,
+            'can_accept_invitation' => $hasPendingInvite,
+            'can_invite' => $isMember && ($isAdmin || ($this->settings['allow_member_invitations'] ?? true)),
+            'can_share' => true,
+            'can_follow' => true,
+            'is_following' => $isFollowing,
+            'can_leave' => $isMember && ! $isOwner,
+            'can_report' => ! $isOwner,
+            'can_manage' => $isAdmin || $isOwner || $isModerator,
+        ];
 
         return [
             'id' => $this->id,
@@ -504,6 +533,13 @@ class Group extends Model
             'location' => $this->location,
             'country' => $this->country,
             'privacy' => $this->privacy,
+            'website' => $this->settings['website'] ?? null,
+            'industry' => $this->settings['industry'] ?? $this->subcategory,
+            'contact_email' => $this->settings['contact_email'] ?? null,
+            'contact_phone' => $this->settings['contact_phone'] ?? null,
+            'settings' => $this->settings ?? [],
+            'url' => url('/groups/'.($this->username ?: ($this->slug ?: $this->id))),
+            'dashboard_url' => url('/groups/'.($this->username ?: ($this->slug ?: $this->id)).'/dashboard'),
             'membership_approval_mode' => $this->membership_approval_mode,
             'post_approval_mode' => $this->post_approval_mode,
             'cover_image_url' => $this->cover_image_url,
@@ -525,6 +561,16 @@ class Group extends Model
             ],
             'members_count' => $this->members_count,
             'active_members_count' => $this->active_members_count,
+            'online_members_count' => $this->active_members_count ?: max(1, (int) round($this->members_count * 0.2)),
+            'activity_status' => $this->posts_count > 20 ? 'Highly Active' : ($this->posts_count > 0 ? 'Active' : 'Growing'),
+            'is_owner' => $isOwner,
+            'is_admin' => $isAdmin,
+            'is_moderator' => $isModerator,
+            'is_member' => $isMember,
+            'is_pending' => $isPending,
+            'has_pending_invitation' => $hasPendingInvite,
+            'is_following' => $isFollowing,
+            'actions' => $actions,
             'posts_count' => $this->posts_count,
             'features' => $this->features ?? [
                 'posts' => true,

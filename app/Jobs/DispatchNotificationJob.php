@@ -10,9 +10,11 @@ use App\Services\Contracts\RealtimeServiceInterface;
 use App\Services\Email\EmailService;
 use App\Services\Notification\NotificationDto;
 use App\Services\Notification\NotificationTypeRegistry;
+use App\Services\Push\PushNotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -125,6 +127,32 @@ class DispatchNotificationJob implements ShouldQueue
                 'data' => $this->data,
                 'created_at' => now()->toIso8601String(),
             ]);
+
+            // Mobile Push Notification (FCM)
+            $settings = $recipient->notificationSettings;
+            $wantsPush = $settings ? $settings->push_notifications : true;
+
+            if ($wantsPush) {
+                try {
+                    $pushTitle = (string) ($this->data['title'] ?? 'নতুন নোটিফিকেশন');
+                    $pushBody = (string) ($this->data['message'] ?? 'আপনার জন্য একটি নতুন নোটিফিকেশন রয়েছে।');
+
+                    app(PushNotificationService::class)->sendToUser(
+                        user: $recipient,
+                        title: $pushTitle,
+                        body: $pushBody,
+                        data: [
+                            'type' => $this->type,
+                            'category' => (string) $category,
+                            'id' => (string) $notificationId,
+                            'action_url' => (string) ($this->data['action_url'] ?? ''),
+                            'entity_id' => (string) ($this->data['entity_id'] ?? $this->data['post_id'] ?? $this->data['group_id'] ?? $this->data['user_id'] ?? ''),
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning("FCM Push dispatch error: {$e->getMessage()}");
+                }
+            }
         }
 
         // 2. Email channel check

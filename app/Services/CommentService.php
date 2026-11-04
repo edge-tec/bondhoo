@@ -180,7 +180,15 @@ class CommentService
             }
         }
 
-        if (! $isAuthor && ! $isPostOwner && ! $isPageManager && ! $user->hasPermission('comments.moderate')) {
+        $isGroupManager = false;
+        if ($post && $post->group_id) {
+            $group = $post->group ?? Group::find($post->group_id);
+            if ($group && ($group->isOwner($user->id) || $group->isAdmin($user->id) || $group->isModerator($user->id) || $group->hasPermission($user->id, 'delete_posts'))) {
+                $isGroupManager = true;
+            }
+        }
+
+        if (! $isAuthor && ! $isPostOwner && ! $isPageManager && ! $isGroupManager && ! $user->hasPermission('comments.moderate')) {
             throw new AuthorizationException('Unauthorized to delete this comment.');
         }
 

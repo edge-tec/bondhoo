@@ -6,7 +6,10 @@ import com.connectly.android.core.model.DiscoveryData
 import com.connectly.android.core.model.Group
 import com.connectly.android.core.model.SearchResult
 import com.connectly.android.core.model.User
+import com.connectly.android.feature.notifications.domain.usecase.ClearSearchHistoryUseCase
+import com.connectly.android.feature.notifications.domain.usecase.DeleteSearchHistoryItemUseCase
 import com.connectly.android.feature.notifications.domain.usecase.GetDiscoveryDataUseCase
+import com.connectly.android.feature.notifications.domain.usecase.GetSearchHistoryUseCase
 import com.connectly.android.feature.notifications.domain.usecase.SearchUseCase
 import com.connectly.android.feature.notifications.presentation.search.SearchIntent
 import com.connectly.android.feature.notifications.presentation.search.SearchViewModel
@@ -32,6 +35,9 @@ class SearchViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val searchUseCase: SearchUseCase = mockk()
     private val getDiscoveryDataUseCase: GetDiscoveryDataUseCase = mockk()
+    private val getSearchHistoryUseCase: GetSearchHistoryUseCase = mockk()
+    private val deleteSearchHistoryItemUseCase: DeleteSearchHistoryItemUseCase = mockk()
+    private val clearSearchHistoryUseCase: ClearSearchHistoryUseCase = mockk()
 
     private lateinit var viewModel: SearchViewModel
 
@@ -47,12 +53,30 @@ class SearchViewModelTest {
         groups = listOf(sampleGroup)
     )
 
+    private fun createViewModel(): SearchViewModel {
+        return SearchViewModel(
+            searchUseCase,
+            getDiscoveryDataUseCase,
+            getSearchHistoryUseCase,
+            deleteSearchHistoryItemUseCase,
+            clearSearchHistoryUseCase
+        )
+    }
+
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { getDiscoveryDataUseCase() } returns flowOf(
             Result.Success(sampleDiscovery)
         )
+        every { getSearchHistoryUseCase() } returns flowOf(
+            Result.Success(listOf("Sadia Islam", "#MusicFestival", "Travel Lovers BD", "Tech World"))
+        )
+        every { deleteSearchHistoryItemUseCase(any()) } answers {
+            val term = firstArg<String>()
+            flowOf(Result.Success(listOf("Sadia Islam", "#MusicFestival", "Travel Lovers BD", "Tech World").filterNot { it == term }))
+        }
+        every { clearSearchHistoryUseCase() } returns flowOf(Result.Success(Unit))
     }
 
     @After
@@ -62,7 +86,7 @@ class SearchViewModelTest {
 
     @Test
     fun `when viewmodel initialized, discovery data loads successfully`() = runTest {
-        viewModel = SearchViewModel(searchUseCase, getDiscoveryDataUseCase)
+        viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiState.test {
@@ -81,7 +105,7 @@ class SearchViewModelTest {
             Result.Success(sampleSearchResult)
         )
 
-        viewModel = SearchViewModel(searchUseCase, getDiscoveryDataUseCase)
+        viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.handleIntent(SearchIntent.QueryChanged("Sadia"))
@@ -101,7 +125,7 @@ class SearchViewModelTest {
         every { searchUseCase("Sadia", "all") } returns flowOf(Result.Success(sampleSearchResult))
         every { searchUseCase("Sadia", "users") } returns flowOf(Result.Success(sampleSearchResult.copy(groups = emptyList())))
 
-        viewModel = SearchViewModel(searchUseCase, getDiscoveryDataUseCase)
+        viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.handleIntent(SearchIntent.QueryChanged("Sadia"))
@@ -122,16 +146,18 @@ class SearchViewModelTest {
 
     @Test
     fun `when clear recent searches or remove item, updates recent searches list`() = runTest {
-        viewModel = SearchViewModel(searchUseCase, getDiscoveryDataUseCase)
+        viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.handleIntent(SearchIntent.RemoveRecentItem("Sadia Islam"))
+        testDispatcher.scheduler.advanceUntilIdle()
         viewModel.uiState.test {
             val state = awaitItem()
             assertTrue(!state.recentSearches.contains("Sadia Islam"))
         }
 
         viewModel.handleIntent(SearchIntent.ClearRecentSearches)
+        testDispatcher.scheduler.advanceUntilIdle()
         viewModel.uiState.test {
             val state = awaitItem()
             assertTrue(state.recentSearches.isEmpty())

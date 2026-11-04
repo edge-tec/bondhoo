@@ -48,7 +48,12 @@ class EditProfileViewModelTest {
                 isVerified = true
             )
         )
-        viewModel = EditProfileViewModel(api, userDao, tokenStorageManager)
+        val getProfileUseCase = mockk<com.connectly.android.feature.profile.domain.usecase.GetProfileUseCase>(relaxed = true)
+        val updateProfileUseCase = mockk<com.connectly.android.feature.profile.domain.usecase.UpdateProfileUseCase>(relaxed = true)
+        val uploadAvatarUseCase = mockk<com.connectly.android.feature.profile.domain.usecase.UploadAvatarUseCase>(relaxed = true)
+        val uploadCoverUseCase = mockk<com.connectly.android.feature.profile.domain.usecase.UploadCoverUseCase>(relaxed = true)
+
+        viewModel = EditProfileViewModel(api, userDao, tokenStorageManager, getProfileUseCase, updateProfileUseCase, uploadAvatarUseCase, uploadCoverUseCase)
     }
 
     @After
@@ -97,19 +102,19 @@ class EditProfileViewModelTest {
         assertEquals("New passwords do not match.", viewModel.uiState.value.errorMessage)
 
         // Success call
-        coEvery { api.updatePassword(any()) } returns Response.success(ApiResponse(success = true, message = "Password updated"))
+        coEvery { api.updatePassword(any()) } returns Response.success(ApiResponse(data = Unit, message = "Password updated"))
 
         viewModel.handleIntent(EditProfileIntent.ChangePassword("oldpass", "newpass123", "newpass123"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertEquals("Password updated successfully.", state.successMessage)
+        assertEquals("Password changed successfully!", state.successMessage)
         assertNull(state.activeDialog)
     }
 
     @Test
     fun testDeactivateAccountSuccess() = runTest {
-        coEvery { api.deactivateAccount(any()) } returns Response.success(ApiResponse(success = true, message = "Deactivated"))
+        coEvery { api.deactivateAccount(any()) } returns Response.success(ApiResponse(data = Unit, message = "Deactivated"))
 
         viewModel.handleIntent(EditProfileIntent.DeactivateAccount("secretpassword", "Taking a break"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -126,7 +131,7 @@ class EditProfileViewModelTest {
         assertEquals("Please type DELETE to confirm permanent deletion.", viewModel.uiState.value.errorMessage)
 
         // Success
-        coEvery { api.deleteAccount(any()) } returns Response.success(ApiResponse(success = true, message = "Deleted"))
+        coEvery { api.deleteAccount(any()) } returns Response.success(ApiResponse(data = Unit, message = "Deleted"))
 
         viewModel.handleIntent(EditProfileIntent.DeleteAccount("secretpassword", "DELETE", "Goodbye"))
         testDispatcher.scheduler.advanceUntilIdle()

@@ -3,6 +3,8 @@
 use App\Models\Group;
 use App\Models\Page;
 use App\Models\PageConversation;
+use App\Models\Parental\ChildDevice;
+use App\Models\Parental\Family;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
 
@@ -197,4 +199,23 @@ Broadcast::channel('reels', function () {
 // ১১. স্টোরিজ চ্যানেল (স্টোরি ক্রিয়েশন ও এক্সপায়ারেশন ইভেন্ট)
 Broadcast::channel('stories', function () {
     return true;
+});
+
+// ১২. Connectly Parental Control Channels
+Broadcast::channel('family.{familyId}.guardians', function ($user, $familyId) {
+    if (! $user) {
+        return false;
+    }
+    $family = Family::find((int) $familyId);
+
+    return $family ? $family->hasGuardianAccess((int) $user->id) : false;
+});
+
+Broadcast::channel('device.{deviceId}.commands', function ($user, $deviceId) {
+    if (! $user) {
+        return false;
+    }
+    $device = ChildDevice::find((int) $deviceId);
+
+    return $device ? $device->family->hasGuardianAccess((int) $user->id) : false;
 });

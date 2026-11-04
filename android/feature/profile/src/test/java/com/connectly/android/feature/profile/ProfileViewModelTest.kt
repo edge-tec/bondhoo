@@ -120,5 +120,41 @@ class ProfileViewModelTest {
             assertEquals(true, state.isFollowing)
         }
     }
+
+    @Test
+    fun `when share profile clicked, userMessage is updated`() = runTest {
+        viewModel = ProfileViewModel(
+            getProfileUseCase,
+            followUserUseCase,
+            unfollowUserUseCase,
+            sendFriendRequestUseCase
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.handleIntent(ProfileIntent.ShareProfile)
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertEquals("Profile link ready to share.", state.userMessage)
+        }
+    }
+
+    @Test
+    fun `when block user clicked, userMessage is updated`() = runTest {
+        viewModel = ProfileViewModel(
+            getProfileUseCase,
+            followUserUseCase,
+            unfollowUserUseCase,
+            sendFriendRequestUseCase
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.handleIntent(ProfileIntent.BlockUser)
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertEquals("User has been blocked.", state.userMessage)
+        }
+    }
 }
 

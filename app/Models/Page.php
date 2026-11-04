@@ -104,6 +104,21 @@ class Page extends Model
         ];
     }
 
+    public function getSocialLinksAttribute($value): array
+    {
+        if (empty($value)) {
+            return [];
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+
+            return is_array($decoded) ? array_values($decoded) : [];
+        }
+
+        return is_array($value) ? array_values($value) : [];
+    }
+
     public function pageType(): BelongsTo
     {
         return $this->belongsTo(PageType::class);
@@ -428,7 +443,7 @@ class Page extends Model
             'country' => $country,
             'zip_code' => $zipCode,
             'business_hours' => $this->business_hours,
-            'social_links' => $this->social_links,
+            'social_links' => is_array($this->social_links) ? array_values($this->social_links) : [],
             'cta_type' => $this->cta_type,
             'cta_url' => $this->cta_url,
             'verification_status' => $this->verification_status,
