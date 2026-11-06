@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Bondhoo — বন্ধু সোশ্যাল নেটওয়ার্ক",
-  "short_name": "Bondhoo",
-  "description": "বন্ধু সোশ্যাল নেটওয়ার্ক — যুক্ত থাকুন, শেয়ার করুন এবং বন্ধু তৈরি করুন",
+  "name": "Bondoo — বন্ধু সোশ্যাল নেটওয়ার্ক",
+  "short_name": "Bondoo",
+  "description": "Bondoo — যুক্ত থাকুন, শেয়ার করুন এবং বন্ধু তৈরি করুন",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">বন্ধু</string>
+    <string name="app_name">Bondoo</string>
     <string name="nav_home">হোম</string>
     <string name="nav_friends">বন্ধুগণ</string>
     <string name="nav_videos">ভিডিও</string>

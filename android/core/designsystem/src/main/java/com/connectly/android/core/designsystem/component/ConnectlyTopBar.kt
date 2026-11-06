@@ -22,7 +22,7 @@ import com.connectly.android.core.designsystem.theme.ConnectlyRose
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConnectlyTopBar(
-    title: String = "Connectly",
+    title: String = "Bondoo",
     unreadNotificationsCount: Int = 0,
     avatarUrl: String? = null,
     onSearchClick: () -> Unit = {},
@@ -30,13 +30,14 @@ fun ConnectlyTopBar(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val displayTitle = if (title == "Connectly" || title.isBlank()) "Bondoo" else title
     TopAppBar(
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Connectly Brand Symbol
+                // Bondoo Brand Symbol
                 Box(
                     modifier = Modifier
                         .size(32.dp)
@@ -45,14 +46,14 @@ fun ConnectlyTopBar(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "C",
+                        text = "B",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
                 }
                 Text(
-                    text = title,
+                    text = displayTitle,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface

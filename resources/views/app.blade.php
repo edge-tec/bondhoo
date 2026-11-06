@@ -6,20 +6,20 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'BONDHOO (বন্ধু) - Professional Social Network') }}</title>
+    <title>{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Bondoo (বন্ধু) - Professional Social Network') }}</title>
     <link rel="icon" type="image/png" href="/images/bondhoo-icon.png">
 
     <!-- Canonical & Open Graph (OG) / Social Sharing Metadata -->
     <link rel="canonical" href="{{ url()->current() }}">
-    <meta property="og:site_name" content="BONDHOO (বন্ধু)">
+    <meta property="og:site_name" content="Bondoo (বন্ধু)">
     <meta property="og:type" content="{{ $ogType ?? 'website' }}">
-    <meta property="og:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'BONDHOO (বন্ধু) - Professional Social Network') }}">
-    <meta property="og:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant professional communities on BONDHOO.') }}">
+    <meta property="og:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Bondoo (বন্ধু) - Professional Social Network') }}">
+    <meta property="og:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant professional communities on Bondoo.') }}">
     <meta property="og:image" content="{{ $ogImage ?? ($page['props']['ogImage'] ?? asset('images/bondhoo-logo.png')) }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'BONDHOO (বন্ধু) - Professional Social Network') }}">
-    <meta name="twitter:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant professional communities on BONDHOO.') }}">
+    <meta name="twitter:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Bondoo (বন্ধু) - Professional Social Network') }}">
+    <meta name="twitter:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant professional communities on Bondoo.') }}">
     <meta name="twitter:image" content="{{ $ogImage ?? ($page['props']['ogImage'] ?? asset('images/bondhoo-logo.png')) }}">
 
     <!-- Google Fonts: Inter -->
