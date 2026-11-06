@@ -27,7 +27,9 @@ Thumbs.db
 .gradle/
 android/.gradle/
 android/**/build/
-build/
+/build/
+!/public/build/
+!/public/build/**
 local.properties
 android/local.properties
 test-results/
