@@ -19,7 +19,7 @@
         android:name=".ConnectlyApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Connectly"
+        android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.NoActionBar"
@@ -34,11 +34,13 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Deep Link Filter for Connectly Notifications & Discovery -->
+            <!-- Deep Link Filter for BONDHOO Notifications & Discovery -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="bondhoo" />
+                <data android:scheme="jugajug" />
                 <data android:scheme="connectly" />
             </intent-filter>
         </activity>

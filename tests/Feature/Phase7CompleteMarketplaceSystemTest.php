@@ -330,7 +330,7 @@ class Phase7CompleteMarketplaceSystemTest extends TestCase
         // 2. Seller deletes listing -> 200 OK
         $sellerRes = $this->actingAs($seller, 'sanctum')->deleteJson("/api/v1/marketplace/products/{$product->id}");
         $sellerRes->assertStatus(200);
-        $this->assertDatabaseMissing('marketplace_products', ['id' => $product->id]);
+        $this->assertSoftDeleted('marketplace_products', ['id' => $product->id]);
     }
 
     /**

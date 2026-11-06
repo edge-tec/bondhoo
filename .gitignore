@@ -32,3 +32,8 @@ local.properties
 android/local.properties
 test-results/
 playwright-report/
+*.jks
+*.keystore
+android/.idea/
+.idea/
+

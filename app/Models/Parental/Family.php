@@ -108,4 +108,3 @@ class Family extends Model
             ->exists();
     }
 }
-

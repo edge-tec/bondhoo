@@ -24,6 +24,8 @@ class Interview extends Model
 
     public const STATUS_RESCHEDULED = 'rescheduled';
 
+    public const STATUS_DECLINED = 'declined';
+
     public const STATUS_COMPLETED = 'completed';
 
     public const STATUS_CANCELLED = 'cancelled';

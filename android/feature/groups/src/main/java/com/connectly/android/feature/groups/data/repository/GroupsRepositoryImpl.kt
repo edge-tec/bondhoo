@@ -725,11 +725,31 @@ class GroupsRepositoryImpl @Inject constructor(
     override fun createPageDetailed(request: CreatePageRequest): Flow<Result<PageDto>> = flow {
         emit(Result.Loading)
         try {
-            val res = api.createPage(request)
+            val res = api.registerPage(request)
             if (res.isSuccessful && res.body()?.data != null) {
                 emit(Result.Success(res.body()!!.data))
             } else {
-                emit(Result.Error(Exception(res.message().ifBlank { "Failed to create page" })))
+                val fallbackRes = api.createPage(request)
+                if (fallbackRes.isSuccessful && fallbackRes.body()?.data != null) {
+                    emit(Result.Success(fallbackRes.body()!!.data))
+                } else {
+                    val errorMsg = res.message().ifBlank { fallbackRes.message().ifBlank { "Failed to create page" } }
+                    emit(Result.Error(Exception(errorMsg)))
+                }
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun checkPageUsername(username: String): Flow<Result<com.connectly.android.core.network.api.PageUsernameCheckDto>> = flow {
+        emit(Result.Loading)
+        try {
+            val res = api.checkPageUsername(username)
+            if (res.isSuccessful && res.body()?.data != null) {
+                emit(Result.Success(res.body()!!.data))
+            } else {
+                emit(Result.Error(Exception(res.message().ifBlank { "Unable to check username" })))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -954,6 +974,23 @@ class GroupsRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun requestPageVerification(
+        pageId: Long,
+        request: RequestPageVerificationRequest
+    ): Flow<Result<PageVerificationResponseDto>> = flow {
+        emit(Result.Loading)
+        try {
+            val res = api.requestPageVerification(pageId, request)
+            if (res.isSuccessful && res.body()?.data != null) {
+                emit(Result.Success(res.body()!!.data))
+            } else {
+                emit(Result.Error(Exception(res.message().ifBlank { "Failed to submit verification request" })))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
     override fun getPageMonetization(pageId: Long): Flow<Result<PageMonetizationStatusDto>> = flow {
         emit(Result.Loading)
         try {
@@ -962,6 +999,48 @@ class GroupsRepositoryImpl @Inject constructor(
                 emit(Result.Success(res.body()!!.data))
             } else {
                 emit(Result.Error(Exception(res.message().ifBlank { "Failed to fetch monetization status" })))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun updatePageMonetization(pageId: Long, request: com.connectly.android.core.network.api.UpdatePageMonetizationRequest): Flow<Result<PageMonetizationStatusDto>> = flow {
+        emit(Result.Loading)
+        try {
+            val res = api.updatePageMonetization(pageId, request)
+            if (res.isSuccessful && res.body()?.data != null) {
+                emit(Result.Success(res.body()!!.data))
+            } else {
+                emit(Result.Error(Exception(res.message().ifBlank { "Failed to update monetization settings" })))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun getPagePosts(pageId: Long): Flow<Result<List<PostDto>>> = flow {
+        emit(Result.Loading)
+        try {
+            val res = api.getPagePosts(pageId)
+            if (res.isSuccessful && res.body()?.data != null) {
+                emit(Result.Success(res.body()!!.data))
+            } else {
+                emit(Result.Error(Exception(res.message().ifBlank { "Failed to fetch page posts" })))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun createPagePost(pageId: Long, request: CreateGroupPostRequest): Flow<Result<PostDto>> = flow {
+        emit(Result.Loading)
+        try {
+            val res = api.createPagePost(pageId, request)
+            if (res.isSuccessful && res.body()?.data != null) {
+                emit(Result.Success(res.body()!!.data))
+            } else {
+                emit(Result.Error(Exception(res.message().ifBlank { "Failed to create page post" })))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))

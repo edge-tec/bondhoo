@@ -65,4 +65,3 @@ class ParentalMediaSession extends Model
         return $this->belongsTo(User::class, 'initiated_by');
     }
 }
-

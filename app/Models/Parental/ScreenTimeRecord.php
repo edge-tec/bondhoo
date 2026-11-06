@@ -53,4 +53,3 @@ class ScreenTimeRecord extends Model
         return $this->belongsTo(FamilyMember::class, 'child_member_id');
     }
 }
-

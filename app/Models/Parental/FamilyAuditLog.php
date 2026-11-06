@@ -56,4 +56,3 @@ class FamilyAuditLog extends Model
         return $this->belongsTo(User::class, 'actor_user_id');
     }
 }
-

@@ -16,7 +16,14 @@ data class PaginatedFeed(
 
 interface FeedRepository {
     fun getFeed(tab: String, cursor: String?, perPage: Int): Flow<Result<PaginatedFeed>>
-    fun createPost(content: String, audience: String, mediaFiles: List<File>, taggedUserIds: List<Long>): Flow<Result<Post>>
+    fun createPost(
+        content: String,
+        audience: String = "public",
+        mediaFiles: List<File> = emptyList(),
+        taggedUserIds: List<Long> = emptyList(),
+        feelingActivity: String? = null,
+        location: String? = null
+    ): Flow<Result<Post>>
     fun updatePost(postId: Long, content: String, audience: String): Flow<Result<Post>>
     fun deletePost(postId: Long): Flow<Result<Unit>>
     fun toggleSavePost(postId: Long): Flow<Result<Boolean>>

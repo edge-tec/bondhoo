@@ -259,7 +259,7 @@ class EnterpriseMarketplacePlatformTest extends TestCase
         $deleteRes->assertStatus(200)
             ->assertJsonPath('success', true);
 
-        $this->assertDatabaseMissing('marketplace_products', [
+        $this->assertSoftDeleted('marketplace_products', [
             'id' => $productId,
         ]);
     }

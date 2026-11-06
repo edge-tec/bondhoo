@@ -10,6 +10,7 @@ import com.connectly.android.feature.groups.domain.usecase.FollowPageUseCase
 import com.connectly.android.feature.groups.domain.usecase.GetPageDetailsUseCase
 import com.connectly.android.feature.groups.domain.usecase.GetPageProductsServicesUseCase
 import com.connectly.android.feature.groups.domain.usecase.GetPageReviewsUseCase
+import com.connectly.android.feature.groups.presentation.util.getStringOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +33,7 @@ class PageProfileViewModel @Inject constructor(
     val uiState: StateFlow<PageProfileUiState> = _uiState.asStateFlow()
 
     init {
-        val pageIdOrSlug: String? = savedStateHandle["pageId"] ?: savedStateHandle["slugOrId"]
+        val pageIdOrSlug: String? = savedStateHandle.getStringOrNull("pageId", "slugOrId", "slug")
         if (!pageIdOrSlug.isNullOrBlank()) {
             loadProfile(pageIdOrSlug)
         }

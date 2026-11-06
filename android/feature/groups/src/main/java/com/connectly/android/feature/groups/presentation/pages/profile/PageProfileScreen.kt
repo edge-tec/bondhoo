@@ -280,7 +280,7 @@ fun PageProfileScreen(
                         }
 
                         // Professional Dashboard / Manager Shortcut Button if owner/admin
-                        if (page.is_owner || page.is_admin || page.id == 1L) {
+                        if (page.is_owner || page.is_admin) {
                             Button(
                                 onClick = { onNavigateToDashboard(page.id) },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
@@ -297,7 +297,7 @@ fun PageProfileScreen(
 
                 // Page Navigation Tabs Bar
                 item {
-                    val tabs = listOf("Home", "Posts", "About", "Reels", "Videos", "Reviews", "Products", "Services", "Community")
+                    val tabs = listOf("Home", "About", "Reviews", "Products", "Services", "Media")
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -318,7 +318,7 @@ fun PageProfileScreen(
 
                 // Tab Specific Contents
                 when (state.selectedTab) {
-                    0, 1 -> { // Home / Posts Tab
+                    0 -> { // Home / Posts Tab
                         item {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text("Page About & Details", fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -339,19 +339,12 @@ fun PageProfileScreen(
                             }
                         }
                     }
-                    2 -> { // About Tab
+                    1 -> { // About Tab
                         item {
                             AboutTabSection(page = page)
                         }
                     }
-                    5 -> { // Photos / Videos
-                        item {
-                            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                                Text("No media uploaded yet.", color = TextSecondaryLight)
-                            }
-                        }
-                    }
-                    8 -> { // Reviews Tab
+                    2 -> { // Reviews Tab
                         item {
                             Row(
                                 modifier = Modifier
@@ -381,30 +374,7 @@ fun PageProfileScreen(
                             }
                         }
                     }
-                    10 -> { // Services Tab
-                        if (state.services.isEmpty()) {
-                            item {
-                                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                                    Text("No services listed yet.", color = TextSecondaryLight)
-                                }
-                            }
-                        } else {
-                            items(state.services, key = { it.id }) { service ->
-                                Card(
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)
-                                ) {
-                                    Column(modifier = Modifier.padding(14.dp)) {
-                                        Text(service.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                        Text(service.description, fontSize = 12.sp, color = TextSecondaryLight, modifier = Modifier.padding(vertical = 4.dp))
-                                        Text(service.price_info, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = ConnectlyElectricBlue)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    11 -> { // Products Tab
+                    3 -> { // Products Tab
                         if (state.products.isEmpty()) {
                             item {
                                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -433,6 +403,36 @@ fun PageProfileScreen(
                                         }
                                     }
                                 }
+                            }
+                        }
+                    }
+                    4 -> { // Services Tab
+                        if (state.services.isEmpty()) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                    Text("No services listed yet.", color = TextSecondaryLight)
+                                }
+                            }
+                        } else {
+                            items(state.services, key = { it.id }) { service ->
+                                Card(
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(14.dp)) {
+                                        Text(service.name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                        Text(service.description, fontSize = 12.sp, color = TextSecondaryLight, modifier = Modifier.padding(vertical = 4.dp))
+                                        Text(service.price_info, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = ConnectlyElectricBlue)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    5 -> { // Media / Photos Tab
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                                Text("No media uploaded yet.", color = TextSecondaryLight)
                             }
                         }
                     }

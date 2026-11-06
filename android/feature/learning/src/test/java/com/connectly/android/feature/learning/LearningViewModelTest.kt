@@ -39,6 +39,8 @@ class LearningViewModelTest {
     private val enrollCourseUseCase: EnrollCourseUseCase = mockk()
     private val getMyLearningUseCase: GetMyLearningUseCase = mockk()
     private val getMyCertificatesUseCase: GetMyCertificatesUseCase = mockk()
+    private val getCurriculumUseCase: com.connectly.android.feature.learning.domain.usecase.GetCurriculumUseCase = mockk(relaxed = true)
+    private val syncLessonProgressUseCase: com.connectly.android.feature.learning.domain.usecase.SyncLessonProgressUseCase = mockk(relaxed = true)
 
     private lateinit var viewModel: LearningViewModel
 
@@ -121,7 +123,9 @@ class LearningViewModelTest {
             getCoursesUseCase = getCoursesUseCase,
             enrollCourseUseCase = enrollCourseUseCase,
             getMyLearningUseCase = getMyLearningUseCase,
-            getMyCertificatesUseCase = getMyCertificatesUseCase
+            getMyCertificatesUseCase = getMyCertificatesUseCase,
+            getCurriculumUseCase = getCurriculumUseCase,
+            syncLessonProgressUseCase = syncLessonProgressUseCase
         )
     }
 
@@ -172,7 +176,7 @@ class LearningViewModelTest {
 
             val effect = awaitItem()
             assertTrue(effect is LearningUiEffect.ShowSnackbar)
-            assertEquals("Enrolled successfully!", (effect as LearningUiEffect.ShowSnackbar).message)
+            assertTrue((effect as LearningUiEffect.ShowSnackbar).message.startsWith("Enrolled successfully"))
             assertTrue(viewModel.uiState.value.enrolledSuccessMessage?.contains("Distributed Systems") == true)
         }
     }

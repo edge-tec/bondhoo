@@ -3,11 +3,7 @@ package com.connectly.android.feature.learning.presentation.learning
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.connectly.android.core.common.result.Result
-import com.connectly.android.feature.learning.domain.usecase.EnrollCourseUseCase
-import com.connectly.android.feature.learning.domain.usecase.GetLearningCategoriesUseCase
-import com.connectly.android.feature.learning.domain.usecase.GetLearningCoursesUseCase
-import com.connectly.android.feature.learning.domain.usecase.GetMyCertificatesUseCase
-import com.connectly.android.feature.learning.domain.usecase.GetMyLearningUseCase
+import com.connectly.android.feature.learning.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +21,9 @@ class LearningViewModel @Inject constructor(
     private val getCoursesUseCase: GetLearningCoursesUseCase,
     private val enrollCourseUseCase: EnrollCourseUseCase,
     private val getMyLearningUseCase: GetMyLearningUseCase,
-    private val getMyCertificatesUseCase: GetMyCertificatesUseCase
+    private val getMyCertificatesUseCase: GetMyCertificatesUseCase,
+    private val getCurriculumUseCase: GetCurriculumUseCase,
+    private val syncLessonProgressUseCase: SyncLessonProgressUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LearningUiState())
@@ -57,6 +55,8 @@ class LearningViewModel @Inject constructor(
                 loadCourses()
             }
             is LearningIntent.EnrollCourse -> enrollInCourse(intent.courseId)
+            is LearningIntent.LoadCurriculum -> loadCurriculum(intent.courseId)
+            is LearningIntent.CompleteLesson -> completeLesson(intent.lessonId, intent.courseId)
             is LearningIntent.Refresh -> loadData()
             is LearningIntent.ClearMessage -> _uiState.update { it.copy(enrolledSuccessMessage = null, errorMessage = null) }
         }
@@ -119,6 +119,35 @@ class LearningViewModel @Inject constructor(
         }
     }
 
+    private fun loadCurriculum(courseId: Long) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingCurriculum = true) }
+            getCurriculumUseCase(courseId).collect { res ->
+                when (res) {
+                    is Result.Success -> {
+                        _uiState.update { it.copy(isLoadingCurriculum = false, selectedCourseCurriculum = res.data) }
+                    }
+                    is Result.Error -> {
+                        _uiState.update { it.copy(isLoadingCurriculum = false) }
+                    }
+                    Result.Loading -> Unit
+                }
+            }
+        }
+    }
+
+    private fun completeLesson(lessonId: Long, courseId: Long) {
+        viewModelScope.launch {
+            syncLessonProgressUseCase(lessonId, 1800, true).collect { res ->
+                if (res is Result.Success) {
+                    loadMyLearning()
+                    loadCertificates()
+                    _effect.emit(LearningUiEffect.ShowSnackbar("Lesson completed! Progress updated 🎉"))
+                }
+            }
+        }
+    }
+
     private fun enrollInCourse(courseId: Long) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
@@ -132,7 +161,7 @@ class LearningViewModel @Inject constructor(
                             )
                         }
                         loadMyLearning()
-                        _effect.emit(LearningUiEffect.ShowSnackbar("Enrolled successfully!"))
+                        _effect.emit(LearningUiEffect.ShowSnackbar("Enrolled successfully! 🚀"))
                     }
                     is Result.Error -> {
                         _uiState.update { it.copy(isLoading = false, errorMessage = res.exception.message) }

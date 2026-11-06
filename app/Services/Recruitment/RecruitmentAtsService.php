@@ -37,7 +37,7 @@ class RecruitmentAtsService
 
         if ($job->hasApplied($user->id)) {
             throw ValidationException::withMessages([
-                'job' => ['আপনি ইতিমধ্যে এই পদে আবেদন করেছেন।'],
+                'job' => ['You have already applied for this position. / আপনি ইতিমধ্যে এই পদে আবেদন করেছেন।'],
             ]);
         }
 
@@ -130,6 +130,12 @@ class RecruitmentAtsService
      */
     public function updateApplicationStage(JobApplication $application, string $newStage, ?string $notes, User $actor): JobApplication
     {
+        if ($application->status === JobApplication::STATUS_WITHDRAWN) {
+            throw ValidationException::withMessages([
+                'stage' => ['Cannot change recruitment stage of a withdrawn application.'],
+            ]);
+        }
+
         $allowedStages = [
             JobApplication::STATUS_APPLIED,
             JobApplication::STATUS_UNDER_REVIEW,
@@ -150,14 +156,22 @@ class RecruitmentAtsService
         }
 
         return DB::transaction(function () use ($application, $newStage, $notes, $actor) {
-            $prevStage = $application->status;
-            $application->update([
+            $lockedApp = JobApplication::where('id', $application->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedApp->status === JobApplication::STATUS_WITHDRAWN) {
+                throw ValidationException::withMessages([
+                    'stage' => ['Cannot change recruitment stage of a withdrawn application.'],
+                ]);
+            }
+
+            $prevStage = $lockedApp->status;
+            $lockedApp->update([
                 'status' => $newStage,
-                'admin_notes' => $notes ?? $application->admin_notes,
+                'admin_notes' => $notes ?? $lockedApp->admin_notes,
             ]);
 
             ApplicationStageHistory::create([
-                'application_id' => $application->id,
+                'application_id' => $lockedApp->id,
                 'stage' => $newStage,
                 'previous_stage' => $prevStage,
                 'actor_user_id' => $actor->id,
@@ -165,7 +179,7 @@ class RecruitmentAtsService
                 'created_at' => now(),
             ]);
 
-            return $application->fresh();
+            return $lockedApp->fresh();
         });
     }
 
@@ -201,6 +215,26 @@ class RecruitmentAtsService
     public function scheduleInterview(JobApplication $application, User $scheduler, array $data): Interview
     {
         return DB::transaction(function () use ($application, $scheduler, $data) {
+            // Concurrency protection: lock application row
+            $lockedApp = JobApplication::where('id', $application->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedApp->status === JobApplication::STATUS_WITHDRAWN) {
+                throw ValidationException::withMessages([
+                    'application' => ['Cannot schedule an interview for a withdrawn application.'],
+                ]);
+            }
+
+            // Prevent duplicate active interviews on same application
+            $hasActiveInterview = Interview::where('application_id', $application->id)
+                ->whereIn('status', [Interview::STATUS_SCHEDULED, 'pending', Interview::STATUS_CONFIRMED, Interview::STATUS_RESCHEDULED])
+                ->exists();
+
+            if ($hasActiveInterview) {
+                throw ValidationException::withMessages([
+                    'interview' => ['An active interview is already scheduled for this application.'],
+                ]);
+            }
+
             $interview = Interview::create([
                 'application_id' => $application->id,
                 'company_id' => $application->company_id ?? $application->jobPosting?->company_id,
@@ -216,9 +250,9 @@ class RecruitmentAtsService
             ]);
 
             // Update application stage to interview if not already
-            if ($application->status !== JobApplication::STATUS_INTERVIEW) {
+            if ($lockedApp->status !== JobApplication::STATUS_INTERVIEW) {
                 $this->updateApplicationStage(
-                    $application,
+                    $lockedApp,
                     JobApplication::STATUS_INTERVIEW,
                     'সাক্ষাৎকার নির্ধারিত হয়েছে: '.$interview->scheduled_at->format('d M Y, h:i A'),
                     $scheduler
@@ -234,17 +268,27 @@ class RecruitmentAtsService
      */
     public function rescheduleInterview(Interview $interview, array $data, User $actor): Interview
     {
-        $interview->update([
-            'scheduled_at' => $data['scheduled_at'] ?? $interview->scheduled_at,
-            'duration_minutes' => isset($data['duration_minutes']) ? (int) $data['duration_minutes'] : $interview->duration_minutes,
-            'timezone' => $data['timezone'] ?? $interview->timezone,
-            'meeting_url' => array_key_exists('meeting_url', $data) ? $data['meeting_url'] : $interview->meeting_url,
-            'location' => array_key_exists('location', $data) ? $data['location'] : $interview->location,
-            'instructions' => array_key_exists('instructions', $data) ? $data['instructions'] : $interview->instructions,
-            'status' => Interview::STATUS_RESCHEDULED,
-        ]);
+        return DB::transaction(function () use ($interview, $data) {
+            $locked = Interview::where('id', $interview->id)->lockForUpdate()->firstOrFail();
 
-        return $interview->fresh();
+            if (! in_array($locked->status, [Interview::STATUS_SCHEDULED, 'pending', Interview::STATUS_CONFIRMED, Interview::STATUS_RESCHEDULED], true)) {
+                throw ValidationException::withMessages([
+                    'interview' => ['Cannot reschedule an interview with status: '.$locked->status],
+                ]);
+            }
+
+            $locked->update([
+                'scheduled_at' => $data['scheduled_at'] ?? $locked->scheduled_at,
+                'duration_minutes' => isset($data['duration_minutes']) ? (int) $data['duration_minutes'] : $locked->duration_minutes,
+                'timezone' => $data['timezone'] ?? $locked->timezone,
+                'meeting_url' => array_key_exists('meeting_url', $data) ? $data['meeting_url'] : $locked->meeting_url,
+                'location' => array_key_exists('location', $data) ? $data['location'] : $locked->location,
+                'instructions' => array_key_exists('instructions', $data) ? $data['instructions'] : $locked->instructions,
+                'status' => Interview::STATUS_RESCHEDULED,
+            ]);
+
+            return $locked->fresh();
+        });
     }
 
     /**
@@ -252,12 +296,22 @@ class RecruitmentAtsService
      */
     public function cancelInterview(Interview $interview, ?string $reason = null): Interview
     {
-        $interview->update([
-            'status' => Interview::STATUS_CANCELLED,
-            'feedback' => $reason ? 'বাতিলকরণের কারণ: '.$reason : $interview->feedback,
-        ]);
+        return DB::transaction(function () use ($interview, $reason) {
+            $locked = Interview::where('id', $interview->id)->lockForUpdate()->firstOrFail();
 
-        return $interview->fresh();
+            if (! in_array($locked->status, [Interview::STATUS_SCHEDULED, 'pending', Interview::STATUS_CONFIRMED, Interview::STATUS_RESCHEDULED], true)) {
+                throw ValidationException::withMessages([
+                    'interview' => ['Cannot cancel an interview with status: '.$locked->status],
+                ]);
+            }
+
+            $locked->update([
+                'status' => Interview::STATUS_CANCELLED,
+                'feedback' => $reason ? 'বাতিলকরণের কারণ: '.$reason : $locked->feedback,
+            ]);
+
+            return $locked->fresh();
+        });
     }
 
     /**
@@ -265,15 +319,25 @@ class RecruitmentAtsService
      */
     public function respondToInterview(Interview $interview, string $status): Interview
     {
-        $newStatus = match ($status) {
-            'accept', 'confirmed' => Interview::STATUS_CONFIRMED,
-            'decline', 'declined' => Interview::STATUS_CANCELLED,
-            default => throw ValidationException::withMessages(['status' => ['অবৈধ রেসপন্স স্ট্যাটাস।']]),
-        };
+        return DB::transaction(function () use ($interview, $status) {
+            $locked = Interview::where('id', $interview->id)->lockForUpdate()->firstOrFail();
 
-        $interview->update(['status' => $newStatus]);
+            if (! in_array($locked->status, [Interview::STATUS_SCHEDULED, 'pending', Interview::STATUS_RESCHEDULED], true)) {
+                throw ValidationException::withMessages([
+                    'interview' => ['Cannot respond to interview in status: '.$locked->status],
+                ]);
+            }
 
-        return $interview->fresh();
+            $newStatus = match ($status) {
+                'accept', 'confirmed' => Interview::STATUS_CONFIRMED,
+                'decline', 'declined' => Interview::STATUS_DECLINED,
+                default => throw ValidationException::withMessages(['status' => ['অবৈধ রেসপন্স স্ট্যাটাস।']]),
+            };
+
+            $locked->update(['status' => $newStatus]);
+
+            return $locked->fresh();
+        });
     }
 
     /**
@@ -281,12 +345,22 @@ class RecruitmentAtsService
      */
     public function recordInterviewFeedback(Interview $interview, string $feedback): Interview
     {
-        $interview->update([
-            'feedback' => $feedback,
-            'status' => Interview::STATUS_COMPLETED,
-        ]);
+        return DB::transaction(function () use ($interview, $feedback) {
+            $locked = Interview::where('id', $interview->id)->lockForUpdate()->firstOrFail();
 
-        return $interview->fresh();
+            if (! in_array($locked->status, [Interview::STATUS_CONFIRMED, Interview::STATUS_SCHEDULED, Interview::STATUS_RESCHEDULED], true)) {
+                throw ValidationException::withMessages([
+                    'interview' => ['Cannot record feedback for an interview with status: '.$locked->status],
+                ]);
+            }
+
+            $locked->update([
+                'feedback' => $feedback,
+                'status' => Interview::STATUS_COMPLETED,
+            ]);
+
+            return $locked->fresh();
+        });
     }
 
     /**

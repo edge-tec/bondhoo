@@ -162,7 +162,7 @@ class CandidateService
      */
     public function getSavedJobs(User $user, int $perPage = 15): LengthAwarePaginator
     {
-        return SavedJob::with(['job.company', 'job.user.profile'])
+        return SavedJob::with(['job.company', 'job.user.profile', 'job.skills', 'job.page', 'job.category'])
             ->where('user_id', $user->id)
             ->latest('id')
             ->paginate($perPage);

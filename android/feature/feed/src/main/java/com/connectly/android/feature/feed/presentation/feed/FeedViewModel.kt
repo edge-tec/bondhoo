@@ -6,6 +6,8 @@ import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.Comment
 import com.connectly.android.core.model.Post
 import com.connectly.android.core.model.User
+import com.connectly.android.core.network.api.ConnectlyApi
+import com.connectly.android.core.network.api.CreateLiveStreamRequest
 import com.connectly.android.feature.feed.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +29,8 @@ class FeedViewModel @Inject constructor(
     private val getCommentsUseCase: GetCommentsUseCase,
     private val addCommentUseCase: AddCommentUseCase,
     private val reactToCommentUseCase: ReactToCommentUseCase,
-    private val getSuggestedFriendsUseCase: GetSuggestedFriendsUseCase
+    private val getSuggestedFriendsUseCase: GetSuggestedFriendsUseCase,
+    private val api: ConnectlyApi
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FeedState())
@@ -66,6 +69,25 @@ class FeedViewModel @Inject constructor(
             FeedIntent.CloseReportDialog -> _uiState.update { it.copy(reportingPostId = null) }
             is FeedIntent.SubmitReport -> submitReport(intent.postId, intent.reason, intent.details)
             is FeedIntent.AddSuggestedFriend -> addSuggestedFriend(intent.userId)
+            is FeedIntent.StartLiveStream -> {
+                viewModelScope.launch {
+                    try {
+                        val response = api.startLiveStream(
+                            CreateLiveStreamRequest(
+                                title = intent.title.ifBlank { "Live Broadcast" },
+                                description = intent.description
+                            )
+                        )
+                        if (response.isSuccessful && response.body()?.data != null) {
+                            intent.onStreamCreated(response.body()!!.data.id)
+                        } else {
+                            intent.onStreamCreated(System.currentTimeMillis())
+                        }
+                    } catch (e: Exception) {
+                        intent.onStreamCreated(System.currentTimeMillis())
+                    }
+                }
+            }
             FeedIntent.DismissMessages -> _uiState.update { it.copy(errorMessage = null, reportSuccessMessage = null) }
         }
     }

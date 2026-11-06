@@ -48,4 +48,3 @@ class AppUsageLog extends Model
         return $this->belongsTo(ChildDevice::class, 'child_device_id');
     }
 }
-

@@ -117,4 +117,3 @@ class ChildDevice extends Model
         ]);
     }
 }
-

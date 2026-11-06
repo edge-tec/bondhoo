@@ -4,12 +4,14 @@ namespace App\Services\Marketplace;
 
 use App\Models\MarketplaceCategory;
 use App\Models\MarketplaceDispute;
+use App\Models\MarketplaceOffer;
 use App\Models\MarketplaceOrder;
 use App\Models\MarketplaceProduct;
 use App\Models\MarketplaceReview;
 use App\Models\Report;
 use App\Models\SavedItem;
 use App\Models\User;
+use App\Notifications\MarketplaceOfferNotification;
 use App\Services\Marketplace\Payments\PaymentGatewayManager;
 use App\Services\MessengerService;
 use App\Services\NotificationService;
@@ -38,11 +40,22 @@ class MarketplaceService
      */
     public function getTopCategoriesWithCounts(): Collection
     {
-        return MarketplaceCategory::withCount([
-            'products' => function ($q) {
-                $q->where('status', MarketplaceProduct::STATUS_ACTIVE);
-            },
-        ])->orderBy('display_order')->get();
+        return MarketplaceCategory::topLevel()
+            ->active()
+            ->with(['subcategories' => function ($q) {
+                $q->active()->withCount([
+                    'products' => function ($pq) {
+                        $pq->where('status', MarketplaceProduct::STATUS_ACTIVE);
+                    },
+                ]);
+            }])
+            ->withCount([
+                'products' => function ($q) {
+                    $q->where('status', MarketplaceProduct::STATUS_ACTIVE);
+                },
+            ])
+            ->orderBy('display_order')
+            ->get();
     }
 
     /**
@@ -74,13 +87,29 @@ class MarketplaceService
             ->where('status', MarketplaceProduct::STATUS_ACTIVE);
 
         // Filter by category slug or ID
-        if (! empty($filters['category']) && $filters['category'] !== 'all') {
-            $cat = $filters['category'];
+        if (! empty($filters['category']) && strtolower(trim($filters['category'])) !== 'all') {
+            $cat = trim($filters['category']);
             $query->whereHas('category', function ($q) use ($cat) {
                 if (is_numeric($cat)) {
                     $q->where('id', (int) $cat);
                 } else {
-                    $q->where('slug', $cat);
+                    $slug = strtolower($cat);
+                    $q->where('slug', $slug)
+                        ->orWhere('name', 'like', "%{$cat}%");
+                }
+            });
+        }
+
+        // Filter by subcategory slug or ID
+        if (! empty($filters['subcategory'])) {
+            $sub = trim((string) $filters['subcategory']);
+            $query->whereHas('subcategory', function ($q) use ($sub) {
+                if (is_numeric($sub)) {
+                    $q->where('id', (int) $sub);
+                } else {
+                    $slug = strtolower($sub);
+                    $q->where('slug', $slug)
+                        ->orWhere('name', 'like', "%{$sub}%");
                 }
             });
         }
@@ -147,12 +176,22 @@ class MarketplaceService
 
         $images = is_array($data['images'] ?? null) ? array_values(array_filter($data['images'])) : [];
 
+        $price = (float) $data['price'];
+        $originalPrice = isset($data['original_price']) && is_numeric($data['original_price']) ? (float) $data['original_price'] : null;
+        $discountPercent = null;
+        if ($originalPrice && $originalPrice > $price) {
+            $discountPercent = (int) round((($originalPrice - $price) / $originalPrice) * 100);
+        }
+
         return MarketplaceProduct::create([
             'seller_id' => $seller->id,
             'category_id' => $data['category_id'],
+            'subcategory_id' => $data['subcategory_id'] ?? null,
             'title' => $data['title'],
             'description' => $data['description'] ?? '',
-            'price' => $data['price'],
+            'price' => $price,
+            'original_price' => $originalPrice,
+            'discount_percent' => $discountPercent,
             'currency' => $data['currency'] ?? 'BDT',
             'condition' => $data['condition'] ?? 'used',
             'brand' => $data['brand'] ?? null,
@@ -842,9 +881,17 @@ class MarketplaceService
      */
     public function deleteListing(MarketplaceProduct $product, User $seller): bool
     {
-        if ($product->seller_id !== $seller->id && ! ($seller->is_admin ?? false)) {
+        if ((int) $product->seller_id !== (int) $seller->id && ! ($seller->is_admin ?? false) && ! $seller->hasRole('ADMIN') && ! $seller->hasRole('SUPER_ADMIN')) {
             throw new AuthorizationException('শুধুমাত্র বিক্রেতা লিস্টিং মুছে ফেলতে পারেন।');
         }
+
+        // Cancel any open offers for this product so buyers know the item was withdrawn
+        MarketplaceOffer::where('product_id', $product->id)
+            ->whereIn('status', [MarketplaceOffer::STATUS_PENDING, MarketplaceOffer::STATUS_COUNTERED])
+            ->update([
+                'status' => MarketplaceOffer::STATUS_CANCELLED,
+                'counter_message' => 'Listing was removed by seller.',
+            ]);
 
         return (bool) $product->delete();
     }
@@ -933,6 +980,187 @@ class MarketplaceService
         }
 
         return $result['order'];
+    }
+
+    /**
+     * Submit an offer on a marketplace product.
+     */
+    public function createOffer(User $buyer, MarketplaceProduct $product, float $amount, ?string $message = null): MarketplaceOffer
+    {
+        if ($buyer->id === $product->seller_id) {
+            throw new InvalidArgumentException('You cannot make an offer on your own listing.');
+        }
+
+        if ($product->status !== MarketplaceProduct::STATUS_ACTIVE) {
+            throw new InvalidArgumentException('This product is not currently active for offers.');
+        }
+
+        if ($amount <= 0) {
+            throw new InvalidArgumentException('Offer amount must be greater than zero.');
+        }
+
+        // Cancel any existing active offer by this buyer on this product
+        MarketplaceOffer::where('product_id', $product->id)
+            ->where('buyer_id', $buyer->id)
+            ->whereIn('status', [MarketplaceOffer::STATUS_PENDING, MarketplaceOffer::STATUS_COUNTERED])
+            ->update([
+                'status' => MarketplaceOffer::STATUS_CANCELLED,
+                'cancelled_at' => now(),
+            ]);
+
+        $offer = MarketplaceOffer::create([
+            'product_id' => $product->id,
+            'buyer_id' => $buyer->id,
+            'seller_id' => $product->seller_id,
+            'offer_amount' => $amount,
+            'original_price' => $product->price,
+            'currency' => $product->currency ?: 'BDT',
+            'status' => MarketplaceOffer::STATUS_PENDING,
+            'message' => $message ? trim($message) : null,
+            'expires_at' => now()->addDays(3),
+        ]);
+
+        if ($product->seller) {
+            $product->seller->notify(new MarketplaceOfferNotification($offer, 'created'));
+        }
+
+        return $offer;
+    }
+
+    /**
+     * Accept a buyer's offer.
+     */
+    public function acceptOffer(User $seller, MarketplaceOffer $offer): MarketplaceOffer
+    {
+        if ($offer->seller_id !== $seller->id && ! ($seller->is_admin ?? false)) {
+            throw new AuthorizationException('Only the listing owner can accept this offer.');
+        }
+
+        if (! in_array($offer->status, [MarketplaceOffer::STATUS_PENDING, MarketplaceOffer::STATUS_COUNTERED], true)) {
+            throw new InvalidArgumentException('Only pending or countered offers can be accepted.');
+        }
+
+        $offer->update([
+            'status' => MarketplaceOffer::STATUS_ACCEPTED,
+            'accepted_at' => now(),
+        ]);
+
+        if ($offer->buyer) {
+            $offer->buyer->notify(new MarketplaceOfferNotification($offer, 'accepted'));
+        }
+
+        return $offer;
+    }
+
+    /**
+     * Reject a buyer's offer.
+     */
+    public function rejectOffer(User $seller, MarketplaceOffer $offer): MarketplaceOffer
+    {
+        if ($offer->seller_id !== $seller->id && ! ($seller->is_admin ?? false)) {
+            throw new AuthorizationException('Only the listing owner can reject this offer.');
+        }
+
+        if (! in_array($offer->status, [MarketplaceOffer::STATUS_PENDING, MarketplaceOffer::STATUS_COUNTERED], true)) {
+            throw new InvalidArgumentException('Only pending or countered offers can be rejected.');
+        }
+
+        $offer->update([
+            'status' => MarketplaceOffer::STATUS_REJECTED,
+            'rejected_at' => now(),
+        ]);
+
+        if ($offer->buyer) {
+            $offer->buyer->notify(new MarketplaceOfferNotification($offer, 'rejected'));
+        }
+
+        return $offer;
+    }
+
+    /**
+     * Counter a buyer's offer with a new price.
+     */
+    public function counterOffer(User $seller, MarketplaceOffer $offer, float $counterAmount, ?string $counterMessage = null): MarketplaceOffer
+    {
+        if ($offer->seller_id !== $seller->id && ! ($seller->is_admin ?? false)) {
+            throw new AuthorizationException('Only the listing owner can counter this offer.');
+        }
+
+        if ($counterAmount <= 0) {
+            throw new InvalidArgumentException('Counter offer amount must be greater than zero.');
+        }
+
+        if (! in_array($offer->status, [MarketplaceOffer::STATUS_PENDING, MarketplaceOffer::STATUS_COUNTERED], true)) {
+            throw new InvalidArgumentException('Only pending offers can be countered.');
+        }
+
+        $offer->update([
+            'status' => MarketplaceOffer::STATUS_COUNTERED,
+            'counter_amount' => $counterAmount,
+            'counter_message' => $counterMessage ? trim($counterMessage) : null,
+            'countered_at' => now(),
+        ]);
+
+        if ($offer->buyer) {
+            $offer->buyer->notify(new MarketplaceOfferNotification($offer, 'countered'));
+        }
+
+        return $offer;
+    }
+
+    /**
+     * Cancel an offer made by a buyer.
+     */
+    public function cancelOffer(User $buyer, MarketplaceOffer $offer): MarketplaceOffer
+    {
+        if ($offer->buyer_id !== $buyer->id && ! ($buyer->is_admin ?? false)) {
+            throw new AuthorizationException('Only the buyer can cancel their own offer.');
+        }
+
+        if (! in_array($offer->status, [MarketplaceOffer::STATUS_PENDING, MarketplaceOffer::STATUS_COUNTERED], true)) {
+            throw new InvalidArgumentException('Only active offers can be cancelled.');
+        }
+
+        $offer->update([
+            'status' => MarketplaceOffer::STATUS_CANCELLED,
+            'cancelled_at' => now(),
+        ]);
+
+        if ($offer->seller) {
+            $offer->seller->notify(new MarketplaceOfferNotification($offer, 'cancelled'));
+        }
+
+        return $offer;
+    }
+
+    /**
+     * Get buyer's submitted offers.
+     */
+    public function getBuyerOffers(User $buyer, ?string $status = null, int $perPage = 15): LengthAwarePaginator
+    {
+        $query = MarketplaceOffer::where('buyer_id', $buyer->id)
+            ->with(['product.category', 'seller.profile']);
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        return $query->latest('id')->paginate($perPage);
+    }
+
+    /**
+     * Get seller's received offers.
+     */
+    public function getSellerReceivedOffers(User $seller, ?string $status = null, int $perPage = 15): LengthAwarePaginator
+    {
+        $query = MarketplaceOffer::where('seller_id', $seller->id)
+            ->with(['product.category', 'buyer.profile']);
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        return $query->latest('id')->paginate($perPage);
     }
 
     /**

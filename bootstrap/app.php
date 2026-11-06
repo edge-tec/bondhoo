@@ -7,6 +7,7 @@ use App\Http\Middleware\AdminPermissionMiddleware;
 use App\Http\Middleware\AdminSessionTimeoutMiddleware;
 use App\Http\Middleware\AdminWebMiddleware;
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\AuthenticateChildDevice;
 use App\Http\Middleware\CorrelationIdMiddleware;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\PermissionMiddleware;
@@ -53,7 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.web' => AdminWebMiddleware::class,
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
-            'auth.child_device' => \App\Http\Middleware\AuthenticateChildDevice::class,
+            'auth.child_device' => AuthenticateChildDevice::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

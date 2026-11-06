@@ -5,6 +5,7 @@ import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.Comment
 import com.connectly.android.core.model.Post
 import com.connectly.android.core.model.User
+import com.connectly.android.core.network.api.ConnectlyApi
 import com.connectly.android.core.network.api.ReactionResponse
 import com.connectly.android.feature.feed.domain.repository.PaginatedFeed
 import com.connectly.android.feature.feed.domain.usecase.*
@@ -40,6 +41,7 @@ class FeedViewModelTest {
     private val addCommentUseCase: AddCommentUseCase = mockk()
     private val reactToCommentUseCase: ReactToCommentUseCase = mockk()
     private val getSuggestedFriendsUseCase: GetSuggestedFriendsUseCase = mockk()
+    private val api: ConnectlyApi = mockk(relaxed = true)
 
     private lateinit var viewModel: FeedViewModel
 
@@ -91,7 +93,8 @@ class FeedViewModelTest {
             getCommentsUseCase,
             addCommentUseCase,
             reactToCommentUseCase,
-            getSuggestedFriendsUseCase
+            getSuggestedFriendsUseCase,
+            api
         )
     }
 

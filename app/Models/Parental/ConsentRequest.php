@@ -71,4 +71,3 @@ class ConsentRequest extends Model
         return $this->belongsTo(User::class, 'responded_by');
     }
 }
-

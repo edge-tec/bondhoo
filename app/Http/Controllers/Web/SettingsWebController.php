@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\BlockedUser;
 use App\Models\Friendship;
 use App\Models\User;
 use App\Services\Messenger\MessengerSoundService;
 use App\Services\ProfilePrivacyService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -168,5 +170,43 @@ class SettingsWebController extends Controller
     public function guidelines(): View
     {
         return view('legal.guidelines');
+    }
+
+    /**
+     * Public Account Deletion policy and request page (Google Play requirement).
+     */
+    public function accountDeletion(): View
+    {
+        return view('legal.account-deletion');
+    }
+
+    /**
+     * Handle public account deletion submission from unauthenticated users.
+     */
+    public function submitAccountDeletionRequest(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+            'reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+        if ($user) {
+            AuditLog::create([
+                'user_id' => $user->id,
+                'action' => 'account.deletion_request_public',
+                'entity_type' => User::class,
+                'entity_id' => $user->id,
+                'old_values' => ['email' => $validated['email']],
+                'new_values' => ['reason' => $validated['reason'] ?? null],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        }
+
+        return redirect()->back()->with(
+            'success',
+            'আপনার ডিলিট রিকোয়েস্ট সফলভাবে গৃহীত হয়েছে। আপনার অ্যাকাউন্ট যাচাই করে নির্দেশনাবলী পাঠানো হবে।'
+        );
     }
 }

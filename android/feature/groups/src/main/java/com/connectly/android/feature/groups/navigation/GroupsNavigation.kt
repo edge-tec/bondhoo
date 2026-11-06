@@ -17,6 +17,7 @@ import com.connectly.android.feature.groups.presentation.members.GroupMembersScr
 import com.connectly.android.feature.groups.presentation.pages.PagesScreen
 import com.connectly.android.feature.groups.presentation.pages.analytics.PageAnalyticsScreen
 import com.connectly.android.feature.groups.presentation.pages.content.PageContentManagerScreen
+import com.connectly.android.feature.groups.presentation.pages.create.PageCreationWizardScreen
 import com.connectly.android.feature.groups.presentation.pages.dashboard.PageDashboardScreen
 import com.connectly.android.feature.groups.presentation.pages.inbox.PageInboxScreen
 import com.connectly.android.feature.groups.presentation.pages.monetization.PageMonetizationScreen
@@ -39,6 +40,7 @@ const val GROUP_ANNOUNCEMENTS_ROUTE = "group_announcements_route/{groupId}"
 const val GROUP_CONTENT_MODERATION_ROUTE = "group_content_moderation_route/{groupId}"
 
 const val PAGE_PROFILE_ROUTE = "page_profile_route/{pageId}"
+const val PAGE_CREATE_ROUTE = "page_create_route"
 const val PAGE_DASHBOARD_ROUTE = "page_dashboard_route/{pageId}"
 const val PAGE_ANALYTICS_ROUTE = "page_analytics_route/{pageId}"
 const val PAGE_CONTENT_ROUTE = "page_content_route/{pageId}"
@@ -93,6 +95,10 @@ fun NavController.navigateToGroupContentModeration(groupId: Long, navOptions: Na
 
 fun NavController.navigateToPageProfile(pageId: Long, navOptions: NavOptions? = null) {
     navigate("page_profile_route/$pageId", navOptions)
+}
+
+fun NavController.navigateToPageCreate(navOptions: NavOptions? = null) {
+    navigate(PAGE_CREATE_ROUTE, navOptions)
 }
 
 fun NavController.navigateToPageDashboard(pageId: Long, navOptions: NavOptions? = null) {
@@ -262,7 +268,17 @@ fun NavGraphBuilder.groupsGraph(
         PagesScreen(
             onNavigateBack = { navController.popBackStack() },
             onPageClick = { pageId -> navController.navigateToPageProfile(pageId) },
-            onCreatePage = { }
+            onCreatePage = { navController.navigateToPageCreate() }
+        )
+    }
+
+    composable(PAGE_CREATE_ROUTE) {
+        PageCreationWizardScreen(
+            onNavigateBack = { navController.popBackStack() },
+            onPageCreated = { newPageId ->
+                navController.popBackStack()
+                navController.navigateToPageProfile(newPageId)
+            }
         )
     }
 

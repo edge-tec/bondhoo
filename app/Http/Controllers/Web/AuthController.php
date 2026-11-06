@@ -137,18 +137,20 @@ class AuthController extends Controller
                 'attempted_at' => now(),
             ]);
 
-            LoginHistory::create([
-                'user_id' => $user?->id,
-                'ip_address' => $ip,
-                'user_agent' => $request->userAgent(),
-                'browser' => $meta['browser'],
-                'os' => $meta['os'],
-                'device_type' => $meta['device_type'],
-                'country' => $meta['country'],
-                'city' => $request->header('CF-IPCity', null),
-                'status' => 'failed',
-                'failure_reason' => 'ভুল পাসওয়ার্ড বা ইউজারনেম',
-            ]);
+            if ($user) {
+                LoginHistory::create([
+                    'user_id' => $user->id,
+                    'ip_address' => $ip,
+                    'user_agent' => $request->userAgent(),
+                    'browser' => $meta['browser'],
+                    'os' => $meta['os'],
+                    'device_type' => $meta['device_type'],
+                    'country' => $meta['country'],
+                    'city' => $request->header('CF-IPCity', null),
+                    'status' => 'failed',
+                    'failure_reason' => 'ভুল পাসওয়ার্ড বা ইউজারনেম',
+                ]);
+            }
 
             $errorMessage = 'প্রদত্ত লগইন তথ্যাদি আমাদের রেকর্ডের সাথে মিলছে না।';
             if ($request->expectsJson()) {

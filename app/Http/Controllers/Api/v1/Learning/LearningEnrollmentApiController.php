@@ -33,7 +33,7 @@ class LearningEnrollmentApiController extends Controller
         try {
             $enrollment = $this->enrollmentService->enrollUser($user, $course, $couponCode);
 
-            return $this->successResponse($enrollment->load('course'), 'Enrolled successfully in course.');
+            return $this->successResponse($enrollment->load(['course.instructor', 'courseProgress']), 'Enrolled successfully in course.');
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 422);
         }

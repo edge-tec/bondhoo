@@ -5,6 +5,8 @@ import com.connectly.android.core.network.api.*
 import com.connectly.android.feature.jobs.domain.repository.JobRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import org.json.JSONObject
+import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,7 +41,7 @@ class JobRepositoryImpl @Inject constructor(
                 val items = dtos.map { it.toDomain() }
                 emit(Result.success(items))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load jobs" })))
+                emit(Result.failure(Exception(response.getErrorMessage("Failed to load jobs"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -53,7 +55,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful && jobDto != null) {
                 emit(Result.success(jobDto.toDomain()))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load job details" })))
+                emit(Result.failure(Exception(response.getErrorMessage("Failed to load job details"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -62,12 +64,43 @@ class JobRepositoryImpl @Inject constructor(
 
     override fun createJob(params: Map<String, Any?>): Flow<Result<Job>> = flow {
         try {
-            val response = api.createJob(params)
+            val req = CreateJobApiRequest(
+                title = params["title"]?.toString().orEmpty(),
+                company_id = (params["company_id"] as? Number)?.toLong() ?: params["company_id"]?.toString()?.toLongOrNull(),
+                category_id = (params["category_id"] as? Number)?.toLong() ?: params["category_id"]?.toString()?.toLongOrNull(),
+                workplace_type = params["workplace_type"]?.toString() ?: params["location_type"]?.toString(),
+                location_type = params["location_type"]?.toString(),
+                employment_type = params["employment_type"]?.toString(),
+                experience_level = params["experience_level"]?.toString(),
+                location = params["location"]?.toString(),
+                salary_min = (params["salary_min"] as? Number)?.toInt() ?: params["salary_min"]?.toString()?.toIntOrNull(),
+                salary_max = (params["salary_max"] as? Number)?.toInt() ?: params["salary_max"]?.toString()?.toIntOrNull(),
+                salary_currency = params["salary_currency"]?.toString() ?: "BDT",
+                vacancies = (params["vacancies"] as? Number)?.toInt() ?: params["vacancies"]?.toString()?.toIntOrNull() ?: 1,
+                description = params["description"]?.toString().orEmpty(),
+                requirements = params["requirements"]?.toString(),
+                skills = (params["skills"] as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList(),
+                deadline = params["deadline"]?.toString()
+            )
+            val response = api.createJob(req)
             val jobDto = response.body()?.data?.get("job")
             if (response.isSuccessful && jobDto != null) {
                 emit(Result.success(jobDto.toDomain()))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to create job" })))
+                emit(Result.failure(Exception(response.getErrorMessage("Failed to create job"))))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    override fun deleteJob(id: Long): Flow<Result<Unit>> = flow {
+        try {
+            val response = api.deleteJob(id)
+            if (response.isSuccessful) {
+                emit(Result.success(Unit))
+            } else {
+                emit(Result.failure(Exception(response.getErrorMessage("Failed to delete job"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -76,12 +109,22 @@ class JobRepositoryImpl @Inject constructor(
 
     override fun applyForJob(jobId: Long, params: Map<String, Any?>): Flow<Result<JobApplicationItem>> = flow {
         try {
-            val response = api.applyForJob(jobId, params)
+            val req = ApplyJobRequest(
+                full_name = params["full_name"]?.toString().orEmpty(),
+                email = params["email"]?.toString().orEmpty(),
+                phone = params["phone"]?.toString().orEmpty(),
+                resume_id = (params["resume_id"] as? Number)?.toLong() ?: params["resume_id"]?.toString()?.toLongOrNull(),
+                resume_url = params["resume_url"]?.toString(),
+                portfolio_url = params["portfolio_url"]?.toString(),
+                cover_letter = params["cover_letter"]?.toString(),
+                expected_salary = (params["expected_salary"] as? Number)?.toInt() ?: params["expected_salary"]?.toString()?.toIntOrNull()
+            )
+            val response = api.applyForJob(jobId, req)
             val appDto = response.body()?.data?.get("application")
             if (response.isSuccessful && appDto != null) {
                 emit(Result.success(appDto.toDomain()))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to apply for job" })))
+                emit(Result.failure(Exception(response.getErrorMessage("Failed to apply for job"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -95,7 +138,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.success(apps.map { it.toDomain() }))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load applications" })))
+                emit(Result.failure(Exception(response.getErrorMessage("Failed to load applications"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -108,7 +151,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.success(Unit))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to save job" })))
+                emit(Result.failure(Exception(response.getErrorMessage("Failed to save job"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -121,7 +164,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.success(Unit))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to unsave job" })))
+                emit(Result.failure(Exception(response.getErrorMessage("Failed to unsave job"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -135,7 +178,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.success(jobs.map { it.toDomain() }))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load saved jobs" })))
+                emit(Result.failure(Exception(response.getErrorMessage("Failed to load saved jobs"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -149,7 +192,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful && dto != null) {
                 emit(Result.success(dto.toDomain()))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load profile" })))
+                emit(Result.failure(Exception(response.getErrorMessage("Failed to load profile"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -158,12 +201,24 @@ class JobRepositoryImpl @Inject constructor(
 
     override fun updateCandidateProfile(params: Map<String, Any?>): Flow<Result<CandidateProfileItem>> = flow {
         try {
-            val response = api.updateCandidateProfile(params)
+            val req = UpdateCandidateProfileRequest(
+                headline = params["headline"]?.toString(),
+                summary = params["summary"]?.toString(),
+                years_of_experience = (params["years_of_experience"] as? Number)?.toInt() ?: params["years_of_experience"]?.toString()?.toIntOrNull(),
+                current_company = params["current_company"]?.toString(),
+                expected_salary_min = (params["expected_salary_min"] as? Number)?.toInt() ?: params["expected_salary_min"]?.toString()?.toIntOrNull(),
+                expected_salary_max = (params["expected_salary_max"] as? Number)?.toInt() ?: params["expected_salary_max"]?.toString()?.toIntOrNull(),
+                preferred_workplace_type = params["preferred_workplace_type"]?.toString(),
+                preferred_employment_type = params["preferred_employment_type"]?.toString(),
+                open_to_work = (params["open_to_work"] as? Boolean) ?: true,
+                skills = (params["skills"] as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
+            )
+            val response = api.updateCandidateProfile(req)
             val dto = response.body()?.data?.get("profile")
             if (response.isSuccessful && dto != null) {
                 emit(Result.success(dto.toDomain()))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to update profile" })))
+                emit(Result.failure(Exception(response.getErrorMessage( "Failed to update profile"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -177,7 +232,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.success(resumes.map { it.toDomain() }))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load resumes" })))
+                emit(Result.failure(Exception(response.getErrorMessage( "Failed to load resumes"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -191,7 +246,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.success(alerts.map { it.toDomain() }))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load alerts" })))
+                emit(Result.failure(Exception(response.getErrorMessage( "Failed to load alerts"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -200,12 +255,20 @@ class JobRepositoryImpl @Inject constructor(
 
     override fun createJobAlert(params: Map<String, Any?>): Flow<Result<JobAlertItem>> = flow {
         try {
-            val response = api.createJobAlert(params)
+            val req = CreateJobAlertRequest(
+                keyword = params["keyword"]?.toString() ?: params["keywords"]?.toString(),
+                category_id = (params["category_id"] as? Number)?.toLong() ?: params["category_id"]?.toString()?.toLongOrNull(),
+                location = params["location"]?.toString(),
+                workplace_type = params["workplace_type"]?.toString(),
+                min_salary = (params["min_salary"] as? Number)?.toInt() ?: params["min_salary"]?.toString()?.toIntOrNull(),
+                frequency = params["frequency"]?.toString() ?: "daily"
+            )
+            val response = api.createJobAlert(req)
             val dto = response.body()?.data?.get("alert")
             if (response.isSuccessful && dto != null) {
                 emit(Result.success(dto.toDomain()))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to create alert" })))
+                emit(Result.failure(Exception(response.getErrorMessage( "Failed to create alert"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -219,7 +282,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.success(list.map { it.toDomain() }))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load companies" })))
+                emit(Result.failure(Exception(response.getErrorMessage( "Failed to load companies"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -228,12 +291,22 @@ class JobRepositoryImpl @Inject constructor(
 
     override fun createCompany(params: Map<String, Any?>): Flow<Result<CompanyItem>> = flow {
         try {
-            val response = api.createCompany(params)
+            val req = CreateCompanyRequest(
+                name = params["name"]?.toString().orEmpty(),
+                legal_name = params["legal_name"]?.toString(),
+                industry = params["industry"]?.toString(),
+                website = params["website"]?.toString(),
+                description = params["description"]?.toString(),
+                location = params["location"]?.toString(),
+                company_size = params["company_size"]?.toString(),
+                logo_url = params["logo_url"]?.toString()
+            )
+            val response = api.createCompany(req)
             val dto = response.body()?.data?.get("company")
             if (response.isSuccessful && dto != null) {
                 emit(Result.success(dto.toDomain()))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to create company" })))
+                emit(Result.failure(Exception(response.getErrorMessage( "Failed to create company"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -247,7 +320,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful && dto != null) {
                 emit(Result.success(dto.metrics.toDomain()))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load dashboard" })))
+                emit(Result.failure(Exception(response.getErrorMessage( "Failed to load dashboard"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -261,7 +334,7 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful && pipeline != null) {
                 emit(Result.success(pipeline.columns.map { it.toDomain() }))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load ATS pipeline" })))
+                emit(Result.failure(Exception(response.getErrorMessage( "Failed to load ATS pipeline"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -274,12 +347,16 @@ class JobRepositoryImpl @Inject constructor(
         notes: String?
     ): Flow<Result<JobApplicationItem>> = flow {
         try {
-            val response = api.updateAtsStage(applicationId, mapOf("stage" to stage, "notes" to notes))
+            val body = mutableMapOf("stage" to stage)
+            if (!notes.isNullOrBlank()) {
+                body["notes"] = notes
+            }
+            val response = api.updateAtsStage(applicationId, body)
             val appDto = response.body()?.data?.get("application")
             if (response.isSuccessful && appDto != null) {
                 emit(Result.success(appDto.toDomain()))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to update stage" })))
+                emit(Result.failure(Exception(response.getErrorMessage( "Failed to update stage"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -293,7 +370,37 @@ class JobRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.success(list.map { it.toDomain() }))
             } else {
-                emit(Result.failure(Exception(response.message().ifEmpty { "Failed to load interviews" })))
+                emit(Result.failure(Exception(response.getErrorMessage( "Failed to load interviews"))))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    override fun scheduleInterview(
+        applicationId: Long,
+        scheduledAt: String,
+        interviewType: String,
+        meetingUrl: String?,
+        location: String?,
+        instructions: String?
+    ): Flow<Result<InterviewItem>> = flow {
+        try {
+            val request = ScheduleInterviewRequest(
+                scheduled_at = scheduledAt,
+                interview_type = interviewType,
+                meeting_url = meetingUrl,
+                meeting_link = meetingUrl,
+                location = location,
+                instructions = instructions,
+                interviewer_notes = instructions
+            )
+            val res = api.scheduleInterview(applicationId, request)
+            val dto = res.body()?.data?.get("interview")
+            if (res.isSuccessful && dto != null) {
+                emit(Result.success(dto.toDomain()))
+            } else {
+                emit(Result.failure(Exception(res.getErrorMessage("Failed to schedule interview"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -307,11 +414,69 @@ class JobRepositoryImpl @Inject constructor(
             if (res.isSuccessful && dto != null) {
                 emit(Result.success(dto.toDomain()))
             } else {
-                emit(Result.failure(Exception(res.message().ifEmpty { "Failed to respond to interview" })))
+                emit(Result.failure(Exception(res.getErrorMessage( "Failed to respond to interview"))))
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
         }
+    }
+}
+
+private fun <T> Response<T>.getErrorMessage(fallback: String): String {
+    val errorStr = try {
+        errorBody()?.string()
+    } catch (_: Exception) {
+        null
+    }
+    if (!errorStr.isNullOrBlank()) {
+        try {
+            val json = JSONObject(errorStr)
+            if (json.has("errors")) {
+                val errorsObj = json.optJSONObject("errors")
+                if (errorsObj != null) {
+                    val keys = errorsObj.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        val arr = errorsObj.optJSONArray(key)
+                        if (arr != null && arr.length() > 0) {
+                            val detail = arr.getString(0)
+                            if (detail.isNotBlank()) return detail
+                        }
+                        val strVal = errorsObj.optString(key, "")
+                        if (strVal.isNotBlank()) return strVal
+                    }
+                }
+                val errorsArr = json.optJSONArray("errors")
+                if (errorsArr != null && errorsArr.length() > 0) {
+                    val detail = errorsArr.getString(0)
+                    if (detail.isNotBlank()) return detail
+                }
+            }
+            if (json.has("message")) {
+                val msg = json.getString("message").trim()
+                if (msg.isNotBlank() &&
+                    !msg.equals("Unprocessable Content", ignoreCase = true) &&
+                    !msg.equals("Unprocessable Entity", ignoreCase = true) &&
+                    !msg.equals("The given data was invalid.", ignoreCase = true)
+                ) {
+                    return msg
+                }
+            }
+            if (json.has("error") && json.getString("error").isNotBlank()) {
+                return json.getString("error")
+            }
+        } catch (_: Exception) {
+            // ignore
+        }
+    }
+    val msg = message()
+    return if (!msg.isNullOrBlank() &&
+        !msg.equals("Unprocessable Content", ignoreCase = true) &&
+        !msg.equals("Unprocessable Entity", ignoreCase = true)
+    ) {
+        msg
+    } else {
+        fallback
     }
 }
 

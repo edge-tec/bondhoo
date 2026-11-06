@@ -47,6 +47,7 @@ interface GroupsRepository {
     fun followPage(pageId: Long): Flow<Result<Unit>>
     fun createPage(name: String, category: String, bio: String?): Flow<Result<PageDto>>
     fun createPageDetailed(request: com.connectly.android.core.network.api.CreatePageRequest): Flow<Result<PageDto>>
+    fun checkPageUsername(username: String): Flow<Result<com.connectly.android.core.network.api.PageUsernameCheckDto>>
     fun getPageDetails(pageIdOrSlug: String): Flow<Result<PageDto>>
     fun updatePage(pageId: Long, request: com.connectly.android.core.network.api.UpdatePageRequest): Flow<Result<PageDto>>
     fun deletePage(pageId: Long): Flow<Result<Unit>>
@@ -63,7 +64,11 @@ interface GroupsRepository {
     fun sendPageMessage(pageId: Long, request: com.connectly.android.core.network.api.SendPageMessageRequest): Flow<Result<com.connectly.android.core.network.api.PageInboxMessageDto>>
     fun getPageSettings(pageId: Long): Flow<Result<com.connectly.android.core.network.api.PageSettingsDto>>
     fun updatePageSettings(pageId: Long, settings: com.connectly.android.core.network.api.PageSettingsDto): Flow<Result<com.connectly.android.core.network.api.PageSettingsDto>>
+    fun requestPageVerification(pageId: Long, request: com.connectly.android.core.network.api.RequestPageVerificationRequest): Flow<Result<com.connectly.android.core.network.api.PageVerificationResponseDto>>
     fun getPageMonetization(pageId: Long): Flow<Result<com.connectly.android.core.network.api.PageMonetizationStatusDto>>
+    fun updatePageMonetization(pageId: Long, request: com.connectly.android.core.network.api.UpdatePageMonetizationRequest): Flow<Result<com.connectly.android.core.network.api.PageMonetizationStatusDto>>
+    fun getPagePosts(pageId: Long): Flow<Result<List<com.connectly.android.core.network.api.PostDto>>>
+    fun createPagePost(pageId: Long, request: com.connectly.android.core.network.api.CreateGroupPostRequest): Flow<Result<com.connectly.android.core.network.api.PostDto>>
     fun getGroupFeed(groupId: Long, filter: String? = null, type: String? = null, sort: String? = null, page: Int = 1): Flow<Result<List<com.connectly.android.core.network.api.PostDto>>>
     fun createGroupPost(groupId: Long, request: com.connectly.android.core.network.api.CreateGroupPostRequest): Flow<Result<com.connectly.android.core.network.api.PostDto>>
     fun getGroupPostDetails(groupId: Long, postId: Long): Flow<Result<com.connectly.android.core.network.api.PostDto>>

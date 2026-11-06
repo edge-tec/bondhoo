@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.network.api.*
 import com.connectly.android.feature.groups.domain.usecase.*
+import com.connectly.android.feature.groups.presentation.util.getLongOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,8 +31,7 @@ class GroupRolesViewModel @Inject constructor(
     val uiState: StateFlow<GroupRolesState> = _uiState.asStateFlow()
 
     init {
-        val initialId: String? = savedStateHandle["groupId"] ?: savedStateHandle["id"]
-        val parsedId = initialId?.toLongOrNull() ?: 0L
+        val parsedId = savedStateHandle.getLongOrNull("groupId", "id") ?: 0L
         if (parsedId > 0) {
             _uiState.update { it.copy(groupId = parsedId) }
             loadRoles(parsedId)

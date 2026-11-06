@@ -154,4 +154,3 @@ class Phase13Stage05WalletAndEnrollmentIntegrityTest extends TestCase
         $this->assertEquals(1, WalletTransaction::where('user_id', $this->student->id)->count());
     }
 }
-

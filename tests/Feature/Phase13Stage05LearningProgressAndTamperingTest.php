@@ -136,4 +136,3 @@ class Phase13Stage05LearningProgressAndTamperingTest extends TestCase
             ->assertJsonPath('data.is_completed', true);
     }
 }
-

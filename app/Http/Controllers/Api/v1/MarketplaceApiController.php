@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
+use App\Models\MarketplaceOffer;
+use App\Models\MarketplaceOrder;
 use App\Models\MarketplaceProduct;
+use App\Models\SavedItem;
 use App\Services\Marketplace\MarketplaceService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -128,9 +132,11 @@ class MarketplaceApiController extends Controller
 
         $validated = $request->validate([
             'category_id' => 'required|exists:marketplace_categories,id',
+            'subcategory_id' => 'nullable|exists:marketplace_categories,id',
             'title' => 'required|string|min:3|max:255',
             'description' => 'nullable|string|max:10000',
             'price' => 'required|numeric|min:0|max:100000000',
+            'original_price' => 'nullable|numeric|min:0|max:100000000',
             'currency' => 'nullable|string|max:5',
             'condition' => 'nullable|string|in:new,used,refurbished',
             'brand' => 'nullable|string|max:100',
@@ -166,9 +172,11 @@ class MarketplaceApiController extends Controller
 
         $validated = $request->validate([
             'category_id' => 'sometimes|exists:marketplace_categories,id',
+            'subcategory_id' => 'nullable|exists:marketplace_categories,id',
             'title' => 'sometimes|string|min:3|max:255',
             'description' => 'nullable|string|max:10000',
             'price' => 'sometimes|numeric|min:0',
+            'original_price' => 'nullable|numeric|min:0|max:100000000',
             'currency' => 'nullable|string|max:5',
             'condition' => 'nullable|string|in:new,used,refurbished',
             'brand' => 'nullable|string|max:100',
@@ -197,17 +205,32 @@ class MarketplaceApiController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $product = MarketplaceProduct::findOrFail($id);
+        $product = MarketplaceProduct::withTrashed()->find($id);
+
+        if (! $product || $product->trashed()) {
+            return response()->json([
+                'status' => 'success',
+                'success' => true,
+                'message' => 'Listing already removed.',
+                'data' => null,
+            ]);
+        }
 
         if (! Gate::forUser($user)->allows('delete', $product)) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'Unauthorized.',
+            ], 403);
         }
 
         $this->marketplaceService->deleteListing($product, $user);
 
         return response()->json([
+            'status' => 'success',
             'success' => true,
             'message' => 'Listing deleted successfully.',
+            'data' => null,
         ]);
     }
 
@@ -355,16 +378,29 @@ class MarketplaceApiController extends Controller
 
         $file = $request->file('image') ?? $request->file('file');
         if (! $file) {
-            return response()->json(['success' => false, 'message' => 'No image file uploaded.'], 422);
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'No image file uploaded.',
+            ], 422);
         }
 
         $path = $file->store('marketplace/products', 'public');
-        $url = '/storage/'.$path;
+        $relativeUrl = '/storage/'.$path;
+        $fullUrl = url($relativeUrl);
 
         return response()->json([
             'success' => true,
-            'url' => $url,
+            'status' => 'success',
+            'url' => $fullUrl,
+            'relative_url' => $relativeUrl,
             'path' => $path,
+            'data' => [
+                'url' => $fullUrl,
+                'path' => $path,
+                'preview_url' => $fullUrl,
+                'original_url' => $fullUrl,
+            ],
             'message' => 'Image uploaded successfully.',
         ]);
     }
@@ -394,6 +430,267 @@ class MarketplaceApiController extends Controller
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
                 'total' => $paginator->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Submit an offer on a product.
+     */
+    public function submitOffer(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $request->validate([
+            'offer_amount' => 'required|numeric|min:1',
+            'message' => 'nullable|string|max:500',
+        ]);
+
+        $product = MarketplaceProduct::findOrFail($id);
+
+        try {
+            $offer = $this->marketplaceService->createOffer(
+                $user,
+                $product,
+                (float) $request->input('offer_amount'),
+                $request->input('message')
+            );
+
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Offer submitted successfully.',
+                'data' => $offer->toResponseArray($user),
+            ], 201);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Get buyer's submitted offers.
+     */
+    public function myOffers(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $status = $request->query('status');
+        $perPage = min(50, max(1, (int) $request->query('per_page', 15)));
+        $paginator = $this->marketplaceService->getBuyerOffers($user, $status, $perPage);
+
+        $paginator->getCollection()->transform(function (MarketplaceOffer $offer) use ($user) {
+            return $offer->toResponseArray($user);
+        });
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Get seller's received offers.
+     */
+    public function receivedOffers(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $status = $request->query('status');
+        $perPage = min(50, max(1, (int) $request->query('per_page', 15)));
+        $paginator = $this->marketplaceService->getSellerReceivedOffers($user, $status, $perPage);
+
+        $paginator->getCollection()->transform(function (MarketplaceOffer $offer) use ($user) {
+            return $offer->toResponseArray($user);
+        });
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Accept an offer.
+     */
+    public function acceptOffer(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $offer = MarketplaceOffer::findOrFail($id);
+
+        try {
+            $updated = $this->marketplaceService->acceptOffer($user, $offer);
+
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Offer accepted successfully.',
+                'data' => $updated->toResponseArray($user),
+            ]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Reject an offer.
+     */
+    public function rejectOffer(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $offer = MarketplaceOffer::findOrFail($id);
+
+        try {
+            $updated = $this->marketplaceService->rejectOffer($user, $offer);
+
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Offer declined.',
+                'data' => $updated->toResponseArray($user),
+            ]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Counter an offer.
+     */
+    public function counterOffer(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $offer = MarketplaceOffer::findOrFail($id);
+
+        $request->validate([
+            'counter_amount' => 'required|numeric|min:1',
+            'counter_message' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $updated = $this->marketplaceService->counterOffer(
+                $user,
+                $offer,
+                (float) $request->input('counter_amount'),
+                $request->input('counter_message')
+            );
+
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Counteroffer sent.',
+                'data' => $updated->toResponseArray($user),
+            ]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Cancel an offer.
+     */
+    public function cancelOffer(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $offer = MarketplaceOffer::findOrFail($id);
+
+        try {
+            $updated = $this->marketplaceService->cancelOffer($user, $offer);
+
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Offer cancelled.',
+                'data' => $updated->toResponseArray($user),
+            ]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Get seller's comprehensive dashboard summary.
+     */
+    public function sellerDashboard(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $summary = $this->marketplaceService->getSellerSalesSummary($user);
+        $summary['total_listings'] = MarketplaceProduct::where('seller_id', $user->id)->count();
+        $summary['active_listings'] = MarketplaceProduct::where('seller_id', $user->id)->where('status', MarketplaceProduct::STATUS_ACTIVE)->count();
+        $summary['sold_listings'] = MarketplaceProduct::where('seller_id', $user->id)->where('status', MarketplaceProduct::STATUS_SOLD)->count();
+        $summary['pending_offers_count'] = MarketplaceOffer::where('seller_id', $user->id)->where('status', MarketplaceOffer::STATUS_PENDING)->count();
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => $summary,
+        ]);
+    }
+
+    /**
+     * Get buyer's dashboard summary.
+     */
+    public function buyerDashboard(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $orders = MarketplaceOrder::where('buyer_id', $user->id)->get();
+        $offers = MarketplaceOffer::where('buyer_id', $user->id)->get();
+        $savedCount = SavedItem::where('user_id', $user->id)
+            ->where(function ($q) {
+                $q->where('item_type', 'marketplace_product')
+                    ->orWhere('item_type', MarketplaceProduct::class);
+            })->count();
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => [
+                'total_orders' => $orders->count(),
+                'active_orders' => $orders->whereIn('status', [MarketplaceOrder::STATUS_PROCESSING, MarketplaceOrder::STATUS_CONFIRMED, MarketplaceOrder::STATUS_SHIPPED])->count(),
+                'completed_orders' => $orders->whereIn('status', [MarketplaceOrder::STATUS_DELIVERED, MarketplaceOrder::STATUS_COMPLETED])->count(),
+                'cancelled_orders' => $orders->where('status', MarketplaceOrder::STATUS_CANCELLED)->count(),
+                'active_offers_count' => $offers->whereIn('status', [MarketplaceOffer::STATUS_PENDING, MarketplaceOffer::STATUS_COUNTERED])->count(),
+                'saved_products_count' => $savedCount,
             ],
         ]);
     }

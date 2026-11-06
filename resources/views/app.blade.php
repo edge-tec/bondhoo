@@ -6,20 +6,21 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Jugajug (যোগাযোগ) - Enterprise Social Network') }}</title>
+    <title>{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'BONDHOO (বন্ধু) - Professional Social Network') }}</title>
+    <link rel="icon" type="image/png" href="/images/bondhoo-icon.png">
 
     <!-- Canonical & Open Graph (OG) / Social Sharing Metadata -->
     <link rel="canonical" href="{{ url()->current() }}">
-    <meta property="og:site_name" content="Jugajug (যোগাযোগ)">
+    <meta property="og:site_name" content="BONDHOO (বন্ধু)">
     <meta property="og:type" content="{{ $ogType ?? 'website' }}">
-    <meta property="og:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Jugajug (যোগাযোগ) - Enterprise Social Network') }}">
-    <meta property="og:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant communities on Jugajug Enterprise Platform.') }}">
-    <meta property="og:image" content="{{ $ogImage ?? ($page['props']['ogImage'] ?? asset('favicon.png')) }}">
+    <meta property="og:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'BONDHOO (বন্ধু) - Professional Social Network') }}">
+    <meta property="og:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant professional communities on BONDHOO.') }}">
+    <meta property="og:image" content="{{ $ogImage ?? ($page['props']['ogImage'] ?? asset('images/bondhoo-logo.png')) }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Jugajug (যোগাযোগ) - Enterprise Social Network') }}">
-    <meta name="twitter:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant communities on Jugajug Enterprise Platform.') }}">
-    <meta name="twitter:image" content="{{ $ogImage ?? ($page['props']['ogImage'] ?? asset('favicon.png')) }}">
+    <meta name="twitter:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'BONDHOO (বন্ধু) - Professional Social Network') }}">
+    <meta name="twitter:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant professional communities on BONDHOO.') }}">
+    <meta name="twitter:image" content="{{ $ogImage ?? ($page['props']['ogImage'] ?? asset('images/bondhoo-logo.png')) }}">
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -66,6 +67,11 @@
         <div class="sr-only" aria-hidden="true">
             <h1>{{ $page['props']['user']['name'] ?? '' }}</h1>
             <p>{{ $page['props']['user']['username'] ?? '' }}</p>
+            <p>{{ '@' . ($page['props']['user']['username'] ?? '') }}</p>
+            <p>{{ $page['props']['user']['bio'] ?? ($page['props']['user']['profile']['bio'] ?? '') }}</p>
+            <p>{{ $page['props']['profile_details']['city'] ?? '' }}, {{ $page['props']['profile_details']['country'] ?? 'Bangladesh' }}</p>
+            <p>প্রোফাইল ডেটা এক্সপোর্ট</p>
+            <p>নোটিফিকেশন সেটিংস</p>
         </div>
     @endif
     @if(isset($page['props']['page']) && is_array($page['props']['page']))

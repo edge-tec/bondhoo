@@ -192,5 +192,73 @@ class PageDtoSerializationTest {
         assertTrue(actionDto.success)
         assertEquals("Left the group successfully.", actionDto.message)
     }
+
+    @Test
+    fun `deserializes page analytics detail DTO with backend nested summary and string engagement rate`() {
+        val payload = """
+            {
+                "page_id": 1,
+                "slug": "techpulse",
+                "period_days": 7,
+                "summary": {
+                    "total_followers": 1540,
+                    "new_followers": 85,
+                    "unfollowers": 3,
+                    "net_follower_growth": 82,
+                    "total_posts": 45,
+                    "engagement_rate": "5.75%",
+                    "impressions": 12800,
+                    "reach": 9400,
+                    "reactions": 540,
+                    "comments": 120,
+                    "shares": 45
+                },
+                "top_content": [
+                    {
+                        "id": 101,
+                        "content": "Exciting updates coming soon!",
+                        "type": "post",
+                        "likes_count": 240,
+                        "reach": 4200
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val dto = json.decodeFromString<PageAnalyticsDetailDto>(payload)
+        assertEquals(1L, dto.page_id)
+        assertNotNull(dto.summary)
+        assertEquals(1540, dto.resolvedFollowers)
+        assertEquals(9400, dto.resolvedReach)
+        assertEquals(12800, dto.resolvedImpressions)
+        assertEquals(5.75, dto.resolvedEngagementRate, 0.001)
+        assertEquals(540, dto.resolvedReactions)
+        assertEquals(1, dto.top_content.size)
+        assertEquals(101L, dto.top_content.first().id)
+    }
+
+    @Test
+    fun `deserializes page monetization DTO`() {
+        val payload = """
+            {
+                "is_eligible": true,
+                "stars_enabled": true,
+                "in_stream_ads_enabled": false,
+                "subscriptions_enabled": true,
+                "current_followers": 12500,
+                "required_followers": 10000,
+                "current_watch_minutes": 650000,
+                "required_watch_minutes": 600000,
+                "payout_status": "Active",
+                "estimated_earnings": 142.50
+            }
+        """.trimIndent()
+
+        val dto = json.decodeFromString<PageMonetizationStatusDto>(payload)
+        assertTrue(dto.is_eligible)
+        assertTrue(dto.stars_enabled)
+        assertEquals(12500, dto.current_followers)
+        assertEquals(142.50, dto.estimated_earnings, 0.01)
+    }
 }
 

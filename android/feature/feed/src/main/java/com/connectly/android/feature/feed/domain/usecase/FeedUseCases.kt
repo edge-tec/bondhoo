@@ -25,9 +25,11 @@ class CreatePostUseCase @Inject constructor(
         content: String,
         audience: String = "public",
         mediaFiles: List<File> = emptyList(),
-        taggedUserIds: List<Long> = emptyList()
+        taggedUserIds: List<Long> = emptyList(),
+        feelingActivity: String? = null,
+        location: String? = null
     ): Flow<Result<Post>> =
-        repository.createPost(content, audience, mediaFiles, taggedUserIds)
+        repository.createPost(content, audience, mediaFiles, taggedUserIds, feelingActivity, location)
 }
 
 class UpdatePostUseCase @Inject constructor(

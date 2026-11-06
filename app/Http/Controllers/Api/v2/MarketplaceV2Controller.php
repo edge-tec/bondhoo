@@ -570,4 +570,43 @@ class MarketplaceV2Controller extends Controller
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 403);
         }
     }
+
+    /**
+     * Direct upload for listing photos.
+     */
+    public function uploadMedia(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:15360'],
+            'file' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:15360'],
+        ]);
+
+        $file = $request->file('image') ?? $request->file('file');
+        if (! $file) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'No image file uploaded.',
+            ], 422);
+        }
+
+        $path = $file->store('marketplace/products', 'public');
+        $relativeUrl = '/storage/'.$path;
+        $fullUrl = url($relativeUrl);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'url' => $fullUrl,
+            'relative_url' => $relativeUrl,
+            'path' => $path,
+            'data' => [
+                'url' => $fullUrl,
+                'path' => $path,
+                'preview_url' => $fullUrl,
+                'original_url' => $fullUrl,
+            ],
+            'message' => 'Image uploaded successfully.',
+        ]);
+    }
 }

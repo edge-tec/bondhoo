@@ -29,6 +29,7 @@ data class JobsUiState(
     val selectedJobDetails: Job? = null,
     val showApplyDialog: Boolean = false,
     val showCreateJobDialog: Boolean = false,
+    val schedulingCandidate: AtsCandidateItem? = null,
     val errorMessage: String? = null,
     val successMessage: String? = null
 )
@@ -40,6 +41,7 @@ sealed interface JobsUiEvent {
     data class FilterEmployment(val type: String?) : JobsUiEvent
     data object Search : JobsUiEvent
     data class SelectJob(val job: Job) : JobsUiEvent
+    data object DismissJobDetails : JobsUiEvent
     data class ToggleSaveJob(val job: Job) : JobsUiEvent
     data class OpenApplyDialog(val job: Job) : JobsUiEvent
     data object CloseApplyDialog : JobsUiEvent
@@ -55,8 +57,19 @@ sealed interface JobsUiEvent {
     data class WithdrawApplication(val applicationId: Long) : JobsUiEvent
     data class SelectCompany(val company: CompanyItem) : JobsUiEvent
     data class MoveCandidateStage(val applicationId: Long, val newStage: String) : JobsUiEvent
+    data class OpenScheduleInterviewDialog(val candidate: AtsCandidateItem?) : JobsUiEvent
+    data class ScheduleInterview(
+        val applicationId: Long,
+        val scheduledAt: String,
+        val interviewType: String,
+        val meetingUrl: String?,
+        val location: String?,
+        val instructions: String?
+    ) : JobsUiEvent
     data class RespondInterview(val interviewId: Long, val accept: Boolean) : JobsUiEvent
     data class CreateJob(val params: Map<String, Any?>) : JobsUiEvent
+    data class DeleteJob(val id: Long) : JobsUiEvent
+    data class OpenCreateJobDialog(val show: Boolean) : JobsUiEvent
     data object ClearMessages : JobsUiEvent
 }
 

@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MarketplaceProduct extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public const STATUS_ACTIVE = 'active';
 
@@ -24,9 +25,12 @@ class MarketplaceProduct extends Model
     protected $fillable = [
         'seller_id',
         'category_id',
+        'subcategory_id',
         'title',
         'description',
         'price',
+        'original_price',
+        'discount_percent',
         'currency',
         'condition',
         'brand',
@@ -43,10 +47,39 @@ class MarketplaceProduct extends Model
         'is_boosted',
     ];
 
+    protected $appends = [
+        'primary_image_url',
+        'seller_name',
+        'time_ago',
+    ];
+
+    public function getPrimaryImageUrlAttribute(): ?string
+    {
+        $images = is_array($this->images) ? array_values(array_filter($this->images)) : [];
+        $first = $images[0] ?? null;
+
+        if (! $first) {
+            return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80';
+        }
+
+        if (str_starts_with($first, 'http://') || str_starts_with($first, 'https://')) {
+            return $first;
+        }
+
+        return url($first);
+    }
+
+    public function getSellerNameAttribute(): string
+    {
+        return $this->seller?->name ?? 'Community Seller';
+    }
+
     protected function casts(): array
     {
         return [
             'price' => 'decimal:2',
+            'original_price' => 'decimal:2',
+            'discount_percent' => 'integer',
             'delivery_charge' => 'decimal:2',
             'is_negotiable' => 'boolean',
             'images' => 'array',
@@ -65,6 +98,16 @@ class MarketplaceProduct extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(MarketplaceCategory::class, 'category_id');
+    }
+
+    public function subcategory(): BelongsTo
+    {
+        return $this->belongsTo(MarketplaceCategory::class, 'subcategory_id');
+    }
+
+    public function offers(): HasMany
+    {
+        return $this->hasMany(MarketplaceOffer::class, 'product_id');
     }
 
     public function orders(): HasMany
@@ -166,11 +209,21 @@ class MarketplaceProduct extends Model
             $images = ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'];
         }
 
+        $formattedImages = array_map(function ($img) {
+            if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
+                return $img;
+            }
+
+            return url($img);
+        }, $images);
+
         return [
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description ?: '',
             'price' => (float) $this->price,
+            'original_price' => $this->original_price !== null ? (float) $this->original_price : null,
+            'discount_percent' => $this->discount_percent !== null ? (int) $this->discount_percent : null,
             'currency' => $currency,
             'currency_symbol' => $currencySymbol,
             'formatted_price' => $formattedPrice,
@@ -182,8 +235,10 @@ class MarketplaceProduct extends Model
             'delivery_charge' => (float) $this->delivery_charge,
             'location' => $this->location ?: 'Dhaka, Bangladesh',
             'status' => $this->status ?: 'active',
-            'images' => $images,
-            'primary_image' => $images[0] ?? null,
+            'images' => $formattedImages,
+            'primary_image' => $formattedImages[0] ?? null,
+            'primary_image_url' => $formattedImages[0] ?? null,
+            'seller_name' => $seller?->name ?? 'Community Seller',
             'is_boosted' => (bool) $this->is_boosted,
             'is_featured' => (bool) $this->is_boosted,
             'views_count' => (int) $this->views_count,
@@ -195,6 +250,11 @@ class MarketplaceProduct extends Model
                 'slug' => $this->category?->slug ?? 'general',
                 'icon' => $this->category?->icon ?? '📦',
             ],
+            'subcategory' => $this->subcategory ? [
+                'id' => $this->subcategory->id,
+                'name' => $this->subcategory->name,
+                'slug' => $this->subcategory->slug,
+            ] : null,
             'seller' => [
                 'id' => $seller?->id,
                 'name' => $seller?->name ?? 'Community Seller',
@@ -206,7 +266,7 @@ class MarketplaceProduct extends Model
                 'member_since' => $seller?->created_at ? $seller->created_at->format('M Y') : '2024',
             ],
             'is_favorited' => $this->isSavedBy($viewer),
-            'is_owner' => $viewer && $viewer->id === $this->seller_id,
+            'is_owner' => $viewer && (int) $viewer->id === (int) $this->seller_id,
         ];
     }
 }

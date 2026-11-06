@@ -5,6 +5,8 @@ import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.LiveComment
 import com.connectly.android.core.model.LiveStream
 import com.connectly.android.core.model.User
+import com.connectly.android.core.network.api.ConnectlyApi
+import com.connectly.android.core.webrtc.engine.WebRtcEngine
 import com.connectly.android.feature.live.domain.usecase.*
 import com.connectly.android.feature.live.presentation.player.LivePlayerIntent
 import com.connectly.android.feature.live.presentation.player.LivePlayerViewModel
@@ -12,6 +14,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -23,6 +26,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.webrtc.EglBase
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LivePlayerViewModelTest {
@@ -32,6 +36,8 @@ class LivePlayerViewModelTest {
     private val sendLiveCommentUseCase: SendLiveCommentUseCase = mockk()
     private val sendLiveReactionUseCase: SendLiveReactionUseCase = mockk()
     private val observeLiveCommentsUseCase: ObserveLiveCommentsUseCase = mockk()
+    private val webRtcEngine: WebRtcEngine = mockk(relaxed = true)
+    private val api: ConnectlyApi = mockk(relaxed = true)
 
     private lateinit var viewModel: LivePlayerViewModel
 
@@ -46,6 +52,7 @@ class LivePlayerViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        every { webRtcEngine.localVideoTrack } returns MutableStateFlow(null)
         every { getActiveLiveStreamUseCase(101L) } returns flowOf(
             Result.Loading,
             Result.Success(sampleLiveStream)
@@ -56,7 +63,9 @@ class LivePlayerViewModelTest {
             getActiveLiveStreamUseCase,
             sendLiveCommentUseCase,
             sendLiveReactionUseCase,
-            observeLiveCommentsUseCase
+            observeLiveCommentsUseCase,
+            webRtcEngine,
+            api
         )
     }
 

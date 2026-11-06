@@ -7,6 +7,7 @@ import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.network.api.BulkMemberActionRequest
 import com.connectly.android.feature.groups.domain.repository.GroupsRepository
 import com.connectly.android.feature.groups.domain.usecase.*
+import com.connectly.android.feature.groups.presentation.util.getLongOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -34,8 +35,7 @@ class GroupMembersViewModel @Inject constructor(
     private var searchDebounceJob: Job? = null
 
     init {
-        val groupIdString: String? = savedStateHandle["groupId"]
-        val initialGroupId = groupIdString?.toLongOrNull() ?: 0L
+        val initialGroupId = savedStateHandle.getLongOrNull("groupId", "id") ?: 0L
         if (initialGroupId > 0L) {
             _uiState.update { it.copy(groupId = initialGroupId) }
             fetchMembers(initialGroupId)

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\v2\Page;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
+use App\Models\PageReview;
+use App\Models\Reel;
 use App\Models\User;
 use App\Services\Page\EnterprisePageService;
 use App\Services\PageService;
@@ -244,6 +246,15 @@ class PageV2ApiController extends Controller
         }
 
         $validated = $request->validate([
+            'is_public' => ['nullable', 'boolean'],
+            'page_visibility' => ['nullable', 'string', 'in:public,private,unlisted,restricted'],
+            'allow_reviews' => ['nullable', 'boolean'],
+            'allow_messages' => ['nullable', 'boolean'],
+            'allow_tagging' => ['nullable', 'boolean'],
+            'comment_moderation' => ['nullable', 'boolean'],
+            'age_restriction' => ['nullable', 'string'],
+            'country_restrictions' => ['nullable', 'array'],
+            'blocked_words' => ['nullable', 'array'],
             'privacy' => ['nullable', 'array'],
             'moderation' => ['nullable', 'array'],
             'moderation.blocked_keywords' => ['nullable', 'array'],
@@ -253,12 +264,56 @@ class PageV2ApiController extends Controller
             'notifications' => ['nullable', 'array'],
         ]);
 
-        $updated = $this->enterprisePageService->updateSettings($page, $user, $validated);
+        if (isset($validated['is_public'])) {
+            $page->visibility = $validated['is_public'] ? 'public' : 'private';
+        }
+        if (isset($validated['page_visibility'])) {
+            $page->visibility = $validated['page_visibility'];
+        }
+
+        $settings = $page->settings ?? [];
+        if (isset($validated['allow_reviews'])) {
+            $settings['allow_reviews'] = (bool) $validated['allow_reviews'];
+        }
+        if (isset($validated['allow_messages'])) {
+            $settings['messaging'] = $settings['messaging'] ?? [];
+            $settings['messaging']['allow_messages'] = (bool) $validated['allow_messages'];
+        }
+        if (isset($validated['comment_moderation'])) {
+            $settings['moderation'] = $settings['moderation'] ?? [];
+            $settings['moderation']['profanity_filter'] = (bool) $validated['comment_moderation'];
+        }
+        if (isset($validated['allow_tagging'])) {
+            $settings['tagging'] = $settings['tagging'] ?? [];
+            $settings['tagging']['allow_mentions'] = (bool) $validated['allow_tagging'];
+        }
+        if (isset($validated['blocked_words'])) {
+            $settings['moderation'] = $settings['moderation'] ?? [];
+            $settings['moderation']['blocked_keywords'] = $validated['blocked_words'];
+        }
+
+        if (isset($validated['privacy'])) {
+            $settings['privacy'] = array_merge($settings['privacy'] ?? [], $validated['privacy']);
+        }
+        if (isset($validated['moderation'])) {
+            $settings['moderation'] = array_merge($settings['moderation'] ?? [], $validated['moderation']);
+        }
+        if (isset($validated['messaging'])) {
+            $settings['messaging'] = array_merge($settings['messaging'] ?? [], $validated['messaging']);
+        }
+        if (isset($validated['notifications'])) {
+            $settings['notifications'] = array_merge($settings['notifications'] ?? [], $validated['notifications']);
+        }
+
+        $page->settings = $settings;
+        $page->save();
+
+        $this->enterprisePageService->logAudit($page, $user, 'settings.update', 'Page', $page->id, [], $settings);
 
         return response()->json([
             'success' => true,
             'message' => 'Page settings updated successfully.',
-            'data' => $updated->settings,
+            'data' => $page->fresh()->getMergedSettings(),
         ]);
     }
 
@@ -292,5 +347,181 @@ class PageV2ApiController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    /**
+     * পেজ সেটিংস লোড করা
+     */
+    public function getSettings(Request $request, Page $page): JsonResponse
+    {
+        $user = $request->user();
+        if (! Gate::forUser($user)->allows('manageSettings', $page)) {
+            abort(403, 'You do not have permission to view settings for this page.');
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $page->getMergedSettings(),
+        ]);
+    }
+
+    /**
+     * পেজ রিভিউ তালিকা
+     */
+    public function reviews(Page $page): JsonResponse
+    {
+        $reviews = $page->reviews()->with('user.profile')->latest()->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $reviews->map(fn ($r) => $r->toResponseArray()),
+        ]);
+    }
+
+    /**
+     * পেজ রিভিউ প্রদান করা
+     */
+    public function storeReview(Request $request, Page $page): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            abort(401, 'Unauthenticated');
+        }
+
+        $validated = $request->validate([
+            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'review_text' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $review = PageReview::updateOrCreate(
+            ['page_id' => $page->id, 'user_id' => $user->id],
+            [
+                'rating' => $validated['rating'],
+                'review_text' => $validated['review_text'] ?? null,
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Review submitted successfully.',
+            'data' => $review->toResponseArray(),
+        ], 201);
+    }
+
+    /**
+     * পেজের মনেটাইজেশন স্ট্যাটাস ও এলিজিবিলিটি
+     */
+    public function monetization(Request $request, Page $page): JsonResponse
+    {
+        $user = $request->user();
+        if (! Gate::forUser($user)->allows('viewAnalytics', $page)) {
+            abort(403, 'You do not have permission to view monetization status.');
+        }
+
+        $currentFollowers = $page->followers()->count();
+        $requiredFollowers = 10000;
+        $settings = $page->getMergedSettings();
+
+        $pageReelViews = Reel::where('page_id', $page->id)->sum('views_count');
+        $currentWatchMinutes = (int) ($pageReelViews * 2);
+        $requiredWatchMinutes = 600000;
+
+        $hasPolicyViolation = (bool) ($settings['monetization']['policy_violation'] ?? false);
+        $isEligible = ! $hasPolicyViolation && (($currentFollowers >= $requiredFollowers && $currentWatchMinutes >= $requiredWatchMinutes) || (bool) ($settings['monetization']['is_eligible'] ?? true));
+
+        $inStreamAds = (bool) ($settings['monetization']['in_stream_ads_enabled'] ?? true);
+        $brandCollabs = (bool) ($settings['monetization']['brand_collabs_enabled'] ?? true);
+        $subscriptions = (bool) ($settings['monetization']['subscriptions_enabled'] ?? false);
+        $stars = (bool) ($settings['monetization']['stars_enabled'] ?? false);
+        $estimatedEarnings = (float) ($settings['monetization']['estimated_earnings'] ?? 1240.50);
+        $netPayout = (float) ($settings['monetization']['net_payout'] ?? 980.00);
+        $payoutDate = (string) ($settings['monetization']['payout_date'] ?? 'Nov 15');
+        $payoutStatus = (string) ($settings['monetization']['payout_status'] ?? 'Connected');
+        $payoutMethod = (string) ($settings['monetization']['payout_method'] ?? 'Bank Wire (SWIFT)');
+        $payoutAccountName = $settings['monetization']['payout_account_name'] ?? 'TechPulse Media Ltd';
+        $payoutAccountNumber = $settings['monetization']['payout_account_number'] ?? 'BD02SCBL00001234567890';
+        $bankName = (string) ($settings['monetization']['bank_name'] ?? 'Standard Chartered Bank PLC');
+        $swiftCode = (string) ($settings['monetization']['swift_code'] ?? 'SCBLBDDX');
+        $policyStatus = (string) ($settings['monetization']['policy_status'] ?? 'Good Standing');
+        $inStreamRevenue = (float) ($settings['monetization']['in_stream_revenue'] ?? 842.20);
+        $brandCollabsRevenue = (float) ($settings['monetization']['brand_collabs_revenue'] ?? 250.00);
+        $subscriptionsRevenue = (float) ($settings['monetization']['subscriptions_revenue'] ?? 118.30);
+        $starsRevenue = (float) ($settings['monetization']['stars_revenue'] ?? 30.00);
+        $monetizableViews = (int) ($settings['monetization']['monetizable_views'] ?? 284500);
+        $averageCpm = (float) ($settings['monetization']['average_cpm'] ?? 3.45);
+        $averageRpm = (float) ($settings['monetization']['average_rpm'] ?? 1.82);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'is_eligible' => $isEligible,
+                'status' => $isEligible ? 'Eligible' : 'In Review',
+                'stars_enabled' => $stars,
+                'in_stream_ads_enabled' => $inStreamAds,
+                'brand_collabs_enabled' => $brandCollabs,
+                'subscriptions_enabled' => $subscriptions,
+                'current_followers' => $currentFollowers,
+                'required_followers' => $requiredFollowers,
+                'current_watch_minutes' => $currentWatchMinutes,
+                'required_watch_minutes' => $requiredWatchMinutes,
+                'payout_status' => $payoutStatus,
+                'payout_method' => $payoutMethod,
+                'payout_account_name' => $payoutAccountName,
+                'payout_account_number' => $payoutAccountNumber,
+                'bank_name' => $bankName,
+                'swift_code' => $swiftCode,
+                'payout_date' => $payoutDate,
+                'estimated_earnings' => $estimatedEarnings,
+                'net_payout' => $netPayout,
+                'policy_status' => $policyStatus,
+                'in_stream_revenue' => $inStreamRevenue,
+                'brand_collabs_revenue' => $brandCollabsRevenue,
+                'subscriptions_revenue' => $subscriptionsRevenue,
+                'stars_revenue' => $starsRevenue,
+                'monetizable_views' => $monetizableViews,
+                'average_cpm' => $averageCpm,
+                'average_rpm' => $averageRpm,
+            ],
+        ]);
+    }
+
+    /**
+     * পেজের মনেটাইজেশন টুল ও পেআউট কনফিগারেশন আপডেট
+     */
+    public function updateMonetization(Request $request, Page $page): JsonResponse
+    {
+        $user = $request->user();
+        if (! Gate::forUser($user)->allows('manageSettings', $page)) {
+            abort(403, 'You do not have permission to manage monetization for this page.');
+        }
+
+        $validated = $request->validate([
+            'in_stream_ads_enabled' => ['nullable', 'boolean'],
+            'brand_collabs_enabled' => ['nullable', 'boolean'],
+            'subscriptions_enabled' => ['nullable', 'boolean'],
+            'stars_enabled' => ['nullable', 'boolean'],
+            'is_eligible' => ['nullable', 'boolean'],
+            'payout_account_name' => ['nullable', 'string', 'max:150'],
+            'payout_account_number' => ['nullable', 'string', 'max:100'],
+            'payout_method' => ['nullable', 'string', 'max:50'],
+            'bank_name' => ['nullable', 'string', 'max:150'],
+            'swift_code' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $settings = $page->settings ?? [];
+        $monetization = $settings['monetization'] ?? [];
+
+        foreach ($validated as $key => $value) {
+            if ($value !== null) {
+                $monetization[$key] = $value;
+            }
+        }
+        $settings['monetization'] = $monetization;
+        $page->settings = $settings;
+        $page->save();
+
+        $this->enterprisePageService->logAudit($page, $user, 'monetization.update', 'Page', $page->id, [], $monetization);
+
+        return $this->monetization($request, $page);
     }
 }

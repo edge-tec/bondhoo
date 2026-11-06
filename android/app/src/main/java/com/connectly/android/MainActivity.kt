@@ -138,6 +138,9 @@ class MainActivity : ComponentActivity() {
                         },
                         onNavigateToProfile = {
                             rootNavController.navigateToProfile()
+                        },
+                        onNavigateToLive = { streamId ->
+                            rootNavController.navigateToLive(streamId)
                         }
                     )
 
@@ -181,7 +184,14 @@ class MainActivity : ComponentActivity() {
                     )
 
                     jobsScreen(
-                        onNavigateBack = { rootNavController.popBackStack() }
+                        onNavigateBack = { rootNavController.popBackStack() },
+                        onJoinVideoCall = { interviewId ->
+                            rootNavController.navigateToCall(
+                                callId = interviewId,
+                                isIncoming = false,
+                                callType = CallType.VIDEO
+                            )
+                        }
                     )
 
                     learningScreen(
@@ -212,7 +222,7 @@ class MainActivity : ComponentActivity() {
                             when (selectedTab) {
                                 BottomBarDestination.HOME -> {
                                     FeedScreen(
-                                        onNavigateToCreatePost = { rootNavController.navigateToCreatePost() },
+                                        onNavigateToCreatePost = { action -> rootNavController.navigateToCreatePost(action) },
                                         onNavigateToStoryViewer = { storyId -> rootNavController.navigateToStoryViewer(storyId) },
                                         onNavigateToCreateStory = { rootNavController.navigateToCreateStory() },
                                         onNavigateToProfile = { rootNavController.navigateToProfile() },
@@ -220,6 +230,7 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToNotifications = { rootNavController.navigateToNotifications() },
                                         onNavigateToGroups = { rootNavController.navigateToGroups() },
                                         onNavigateToPages = { rootNavController.navigateToPages() },
+                                        onNavigateToLive = { streamId -> rootNavController.navigateToLive(streamId) },
                                         modifier = Modifier.padding(innerPadding)
                                     )
                                 }
@@ -273,7 +284,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 else -> {
                                     FeedScreen(
-                                        onNavigateToCreatePost = { rootNavController.navigateToCreatePost() },
+                                        onNavigateToCreatePost = { action -> rootNavController.navigateToCreatePost(action) },
                                         onNavigateToStoryViewer = { storyId -> rootNavController.navigateToStoryViewer(storyId) },
                                         onNavigateToCreateStory = { rootNavController.navigateToCreateStory() },
                                         onNavigateToProfile = { rootNavController.navigateToProfile() },

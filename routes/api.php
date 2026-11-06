@@ -165,6 +165,12 @@ Route::prefix('v1')->group(function () {
     Route::post('/marketplace/media/upload', [MarketplaceApiController::class, 'uploadMedia']);
     Route::post('/marketplace/upload-media', [MarketplaceApiController::class, 'uploadMedia']);
 
+    // Public Job Board & Career Discovery (Phase 12 Professional Recruitment Platform)
+    Route::get('/jobs/categories', [JobApiController::class, 'categories']);
+    Route::get('/jobs/skills', [JobApiController::class, 'skills']);
+    Route::get('/jobs', [JobApiController::class, 'index']);
+    Route::get('/jobs/{id}', [JobApiController::class, 'show'])->whereNumber('id');
+
     // Authenticated API endpoints
     Route::middleware(['auth:sanctum,web'])->group(function () {
 
@@ -332,14 +338,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/events', [EventApiController::class, 'store']);
         Route::post('/events/{id}/rsvp', [EventApiController::class, 'rsvp'])->whereNumber('id');
 
-        // Job Board & Career Portal (Phase 12 Professional Recruitment Platform)
-        Route::get('/jobs/categories', [JobApiController::class, 'categories']);
-        Route::get('/jobs/skills', [JobApiController::class, 'skills']);
-        Route::get('/jobs', [JobApiController::class, 'index']);
+        // Job Board & Career Portal - Authenticated Actions
         Route::get('/jobs/my/applications', [JobApiController::class, 'myApplications']);
-        Route::get('/jobs/{id}', [JobApiController::class, 'show'])->whereNumber('id');
         Route::post('/jobs', [JobApiController::class, 'store']);
         Route::put('/jobs/{id}', [JobApiController::class, 'update'])->whereNumber('id');
+        Route::delete('/jobs/{id}', [JobApiController::class, 'destroy'])->whereNumber('id');
         Route::post('/jobs/{id}/apply', [JobApiController::class, 'apply'])->whereNumber('id');
         Route::get('/jobs/{id}/applications', [JobApiController::class, 'applicantList'])->whereNumber('id');
         Route::put('/jobs/applications/{id}/status', [JobApiController::class, 'updateApplicationStatus'])->whereNumber('id');
@@ -855,6 +858,17 @@ Route::prefix('v1')->group(function () {
         Route::post('/marketplace/products/{id}/report', [MarketplaceApiController::class, 'report'])->whereNumber('id');
         Route::get('/marketplace/my-listings', [MarketplaceApiController::class, 'myListings']);
 
+        // Marketplace Offers
+        Route::post('/marketplace/products/{id}/offers', [MarketplaceApiController::class, 'submitOffer'])->whereNumber('id');
+        Route::get('/marketplace/offers/my-offers', [MarketplaceApiController::class, 'myOffers']);
+        Route::get('/marketplace/offers/received', [MarketplaceApiController::class, 'receivedOffers']);
+        Route::post('/marketplace/offers/{id}/accept', [MarketplaceApiController::class, 'acceptOffer'])->whereNumber('id');
+        Route::post('/marketplace/offers/{id}/reject', [MarketplaceApiController::class, 'rejectOffer'])->whereNumber('id');
+        Route::post('/marketplace/offers/{id}/counter', [MarketplaceApiController::class, 'counterOffer'])->whereNumber('id');
+        Route::post('/marketplace/offers/{id}/cancel', [MarketplaceApiController::class, 'cancelOffer'])->whereNumber('id');
+        Route::get('/marketplace/seller/dashboard', [MarketplaceApiController::class, 'sellerDashboard']);
+        Route::get('/marketplace/buyer/dashboard', [MarketplaceApiController::class, 'buyerDashboard']);
+
         // Orders & Escrow
         Route::get('/marketplace/orders', [MarketplaceV2Controller::class, 'orders']);
         Route::get('/marketplace/orders/{id}', [MarketplaceV2Controller::class, 'showOrder'])->whereNumber('id');
@@ -1364,6 +1378,8 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         Route::post('/live/streams/{id}/replay-upload', [LiveStreamingV2Controller::class, 'uploadReplay'])->whereNumber('id');
 
         // Marketplace actions
+        Route::post('/marketplace/media/upload', [MarketplaceV2Controller::class, 'uploadMedia']);
+        Route::post('/marketplace/upload-media', [MarketplaceV2Controller::class, 'uploadMedia']);
         Route::post('/marketplace/products', [MarketplaceV2Controller::class, 'store']);
         Route::get('/marketplace/my-listings', [MarketplaceV2Controller::class, 'myListings']);
         Route::patch('/marketplace/products/{id}/status', [MarketplaceV2Controller::class, 'updateListingStatus'])->whereNumber('id');
@@ -1581,6 +1597,7 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         Route::get('/{page}/events/{id}', [PageEventV2ApiController::class, 'show']);
         Route::get('/{page}/products', [PageProductV2ApiController::class, 'index']);
         Route::get('/{page}/products/{id}', [PageProductV2ApiController::class, 'show']);
+        Route::get('/{page}/reviews', [PageV2ApiController::class, 'reviews']);
 
         // Authenticated Page Management & Operations
         Route::middleware(['auth:sanctum,web'])->group(function () {
@@ -1595,16 +1612,23 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
             Route::put('/{page}', [PageV2ApiController::class, 'update']);
             Route::delete('/{page}', [PageV2ApiController::class, 'destroy']);
             Route::post('/{id}/restore', [PageV2ApiController::class, 'restore']);
+            Route::get('/{page}/settings', [PageV2ApiController::class, 'getSettings']);
             Route::put('/{page}/settings', [PageV2ApiController::class, 'updateSettings']);
             Route::post('/{page}/transfer-ownership', [PageV2ApiController::class, 'transferOwnership']);
+            Route::post('/{page}/reviews', [PageV2ApiController::class, 'storeReview']);
+            Route::get('/{page}/monetization', [PageV2ApiController::class, 'monetization']);
+            Route::put('/{page}/monetization', [PageV2ApiController::class, 'updateMonetization']);
 
             // Team Management & RBAC
             Route::get('/{page}/team', [PageTeamV2ApiController::class, 'index']);
+            Route::get('/{page}/roles', [PageTeamV2ApiController::class, 'index']);
             Route::post('/{page}/team/invite', [PageTeamV2ApiController::class, 'invite']);
+            Route::post('/{page}/roles', [PageTeamV2ApiController::class, 'invite']);
             Route::post('/team/accept', [PageTeamV2ApiController::class, 'accept']);
             Route::post('/team/decline', [PageTeamV2ApiController::class, 'decline']);
             Route::put('/{page}/team/{memberId}', [PageTeamV2ApiController::class, 'updateRole']);
             Route::delete('/{page}/team/{memberId}', [PageTeamV2ApiController::class, 'remove']);
+            Route::delete('/{page}/roles/{memberId}', [PageTeamV2ApiController::class, 'remove']);
             Route::delete('/{page}/team/{memberId}/revoke', [PageTeamV2ApiController::class, 'revoke']);
 
             // Content & Scheduling & Calendar
@@ -1628,6 +1652,8 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
             Route::get('/{page}/analytics/audience', [PageAnalyticsV2ApiController::class, 'audience']);
 
             // Page Inbox & Multi-agent Messaging
+            Route::get('/{page}/inbox', [PageInboxV2ApiController::class, 'index']);
+            Route::post('/{page}/inbox/send', [PageInboxV2ApiController::class, 'visitorSendMessage']);
             Route::get('/{page}/inbox/conversations', [PageInboxV2ApiController::class, 'index']);
             Route::get('/{page}/inbox/conversations/{id}', [PageInboxV2ApiController::class, 'show']);
             Route::post('/{page}/inbox/conversations/{id}/reply', [PageInboxV2ApiController::class, 'reply']);

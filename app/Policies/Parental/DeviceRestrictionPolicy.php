@@ -30,4 +30,3 @@ class DeviceRestrictionPolicy
         return $restriction->family->hasGuardianAccess($user->id);
     }
 }
-

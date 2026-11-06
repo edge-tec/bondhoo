@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.flowOn
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -98,27 +99,50 @@ class FeedRepositoryImpl @Inject constructor(
         content: String,
         audience: String,
         mediaFiles: List<File>,
-        taggedUserIds: List<Long>
+        taggedUserIds: List<Long>,
+        feelingActivity: String?,
+        location: String?
     ): Flow<Result<Post>> = flow {
         emit(Result.Loading)
         try {
             val uploadedMediaIds = mutableListOf<Long>()
             // Upload media files if any
             for (file in mediaFiles) {
-                val reqFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                val mimeType = when (file.extension.lowercase()) {
+                    "jpg", "jpeg" -> "image/jpeg"
+                    "png" -> "image/png"
+                    "webp" -> "image/webp"
+                    "gif" -> "image/gif"
+                    "mp4" -> "video/mp4"
+                    "mov" -> "video/quicktime"
+                    "webm" -> "video/webm"
+                    "m4v" -> "video/x-m4v"
+                    else -> "image/jpeg"
+                }
+                val reqFile = file.asRequestBody(mimeType.toMediaTypeOrNull())
                 val part = MultipartBody.Part.createFormData("file", file.name, reqFile)
-                val uploadRes = api.uploadCover(part) // Uses multipart endpoint
+                val collectionPart = "post".toRequestBody("text/plain".toMediaTypeOrNull())
+                val uploadRes = api.uploadMedia(part, collectionPart)
                 if (uploadRes.isSuccessful && uploadRes.body() != null) {
                     uploadRes.body()!!.data.id?.let { uploadedMediaIds.add(it) }
                 }
             }
 
+            val postType = when {
+                mediaFiles.any { it.extension.lowercase() in listOf("mp4", "mov", "webm", "m4v") } -> "media"
+                mediaFiles.isNotEmpty() -> "media"
+                else -> "text"
+            }
+
             val response = api.createPost(
                 CreatePostPayload(
-                    content = content,
+                    content = content.ifBlank { null },
                     audience = audience,
+                    type = postType,
                     media_ids = uploadedMediaIds,
-                    tagged_user_ids = taggedUserIds
+                    tagged_user_ids = taggedUserIds,
+                    feeling_activity = feelingActivity,
+                    location = location
                 )
             )
             if (response.isSuccessful && response.body() != null) {

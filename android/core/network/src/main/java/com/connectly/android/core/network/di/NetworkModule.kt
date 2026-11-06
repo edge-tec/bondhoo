@@ -20,7 +20,14 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://bondhoo.com/api/"
+    private const val PROD_BASE_URL = "https://bondhoo.com/api/"
+    private const val DEV_BASE_URL = "http://10.0.2.2:8000/api/"
+
+    val BASE_URL: String = if (com.connectly.android.core.network.BuildConfig.DEBUG) {
+        DEV_BASE_URL
+    } else {
+        PROD_BASE_URL
+    }
 
     @Provides
     @Singleton
@@ -28,6 +35,7 @@ object NetworkModule {
         ignoreUnknownKeys = true
         isLenient = true
         encodeDefaults = true
+        coerceInputValues = true
     }
 
     @Provides

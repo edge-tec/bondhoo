@@ -886,8 +886,8 @@ class ReverbWebSocketManager @Inject constructor(
             try {
                 api.presenceTyping(
                     mapOf(
-                        "conversation_id" to conversationId,
-                        "is_typing" to isTyping
+                        "conversation_id" to conversationId.toString(),
+                        "is_typing" to isTyping.toString()
                     )
                 )
             } catch (_: Exception) {

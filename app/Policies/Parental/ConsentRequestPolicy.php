@@ -25,4 +25,3 @@ class ConsentRequestPolicy
         return $request->family->hasGuardianAccess($user->id);
     }
 }
-

@@ -168,15 +168,15 @@ class AuthService
         if (! $user || ! Hash::check($password, $user->password)) {
             if ($user) {
                 $user->increment('failed_login_attempts');
-            }
 
-            LoginHistory::create([
-                'user_id' => $user?->id,
-                'ip_address' => $ip,
-                'user_agent' => $userAgent,
-                'status' => 'failed',
-                'failure_reason' => 'Invalid credentials',
-            ]);
+                LoginHistory::create([
+                    'user_id' => $user->id,
+                    'ip_address' => $ip,
+                    'user_agent' => $userAgent,
+                    'status' => 'failed',
+                    'failure_reason' => 'Invalid credentials',
+                ]);
+            }
 
             throw ValidationException::withMessages([
                 'identifier' => ['Invalid login credentials.'],

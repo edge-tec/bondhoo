@@ -40,7 +40,7 @@ import com.connectly.android.core.model.User
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
-    onNavigateToCreatePost: () -> Unit,
+    onNavigateToCreatePost: (String?) -> Unit = {},
     onNavigateToStoryViewer: (Long) -> Unit,
     onNavigateToCreateStory: () -> Unit,
     onNavigateToProfile: () -> Unit,
@@ -48,12 +48,14 @@ fun FeedScreen(
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToGroups: () -> Unit = {},
     onNavigateToPages: () -> Unit = {},
+    onNavigateToLive: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: FeedViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showCreateLiveDialog by remember { mutableStateOf(false) }
 
     // Pagination auto-load when reaching near end
     LaunchedEffect(listState) {
@@ -193,10 +195,11 @@ fun FeedScreen(
             // Composer Card ("What's on your mind?")
             item {
                 CreatePostCard(
-                    onCardClick = onNavigateToCreatePost,
-                    onPhotoClick = onNavigateToCreatePost,
-                    onVideoClick = onNavigateToCreatePost,
-                    onFeelingClick = onNavigateToCreatePost
+                    onCardClick = { onNavigateToCreatePost(null) },
+                    onLiveClick = { showCreateLiveDialog = true },
+                    onPhotoClick = { onNavigateToCreatePost("photo") },
+                    onVideoClick = { onNavigateToCreatePost("video") },
+                    onFeelingClick = { onNavigateToCreatePost("feeling") }
                 )
             }
 
@@ -278,6 +281,21 @@ fun FeedScreen(
             onDismiss = { viewModel.handleIntent(FeedIntent.CloseReportDialog) },
             onSubmit = { reason, details ->
                 viewModel.handleIntent(FeedIntent.SubmitReport(state.reportingPostId!!, reason, details))
+            }
+        )
+    }
+
+    // Create Live Stream Dialog
+    if (showCreateLiveDialog) {
+        CreateLiveDialog(
+            onDismiss = { showCreateLiveDialog = false },
+            onStartLive = { title, description ->
+                viewModel.handleIntent(
+                    FeedIntent.StartLiveStream(title = title, description = description) { streamId ->
+                        showCreateLiveDialog = false
+                        onNavigateToLive(streamId)
+                    }
+                )
             }
         )
     }
@@ -378,6 +396,7 @@ private fun StoriesTraySection(
 @Composable
 private fun CreatePostCard(
     onCardClick: () -> Unit,
+    onLiveClick: () -> Unit,
     onPhotoClick: () -> Unit,
     onVideoClick: () -> Unit,
     onFeelingClick: () -> Unit
@@ -419,35 +438,184 @@ private fun CreatePostCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
+                // Live 🔴
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { onPhotoClick() }
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onLiveClick() }
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Videocam,
+                        contentDescription = "Live",
+                        tint = Color(0xFFEF4444),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Live", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626))
+                }
+
+                // Photo 🖼️
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onPhotoClick() }
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
                 ) {
                     Icon(Icons.Default.PhotoLibrary, contentDescription = "Photo", tint = ConnectlyGreen, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text("Photo", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
 
+                // Video 📹
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { onVideoClick() }
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onVideoClick() }
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
                 ) {
                     Icon(Icons.Default.VideoCall, contentDescription = "Video", tint = ConnectlyRose, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text("Video", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
 
+                // Feeling 😀
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { onFeelingClick() }
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onFeelingClick() }
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
                 ) {
                     Icon(Icons.Default.EmojiEmotions, contentDescription = "Feeling", tint = ConnectlyAmber, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text("Feeling", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
     }
+}
+
+@Composable
+private fun CreateLiveDialog(
+    onDismiss: () -> Unit,
+    onStartLive: (String, String?) -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var privacy by remember { mutableStateOf("public") }
+    var isStarting by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = { if (!isStarting) onDismiss() },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFEF4444))
+                )
+                Text(
+                    text = "Go Live on BONDHOO",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "Broadcast video live to your friends, followers and community in real time.",
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
+
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Live Stream Title *") },
+                    placeholder = { Text("e.g. Chatting with friends, Q&A...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description (Optional)") },
+                    placeholder = { Text("Add more details about your broadcast...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    maxLines = 3
+                )
+
+                // Privacy Selector
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = privacy == "public",
+                        onClick = { privacy = "public" },
+                        label = { Text("Public 🌐") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = privacy == "friends",
+                        onClick = { privacy = "friends" },
+                        label = { Text("Friends 👥") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (title.isNotBlank()) {
+                        isStarting = true
+                        onStartLive(title.trim(), description.takeIf { it.isNotBlank() })
+                    }
+                },
+                enabled = title.isNotBlank() && !isStarting,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                if (isStarting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                } else {
+                    Icon(Icons.Default.Videocam, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+                Text(if (isStarting) "Starting Live..." else "Go Live Now", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isStarting
+            ) {
+                Text("Cancel")
+            }
+        },
+        shape = RoundedCornerShape(20.dp)
+    )
 }
 
 @Composable

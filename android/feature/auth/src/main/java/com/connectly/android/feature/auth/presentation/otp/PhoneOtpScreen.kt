@@ -123,8 +123,8 @@ fun PhoneOtpScreen(
         } else {
             OutlinedTextField(
                 value = otpInput,
-                onValueChange = { if (it.length <= 4) otpInput = it },
-                label = { Text("4-Digit OTP") },
+                onValueChange = { if (it.length <= 6) otpInput = it },
+                label = { Text("Enter OTP") },
                 textStyle = MaterialTheme.typography.headlineMedium.copy(
                     textAlign = TextAlign.Center,
                     letterSpacing = 12.sp

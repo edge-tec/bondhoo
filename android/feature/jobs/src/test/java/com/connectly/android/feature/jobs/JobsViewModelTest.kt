@@ -36,7 +36,9 @@ class JobsViewModelTest {
     private val getAtsPipelineUseCase: GetAtsPipelineUseCase = mockk()
     private val updateAtsStageUseCase: UpdateAtsStageUseCase = mockk()
     private val getInterviewsUseCase: GetInterviewsUseCase = mockk()
+    private val scheduleInterviewUseCase: ScheduleInterviewUseCase = mockk()
     private val respondInterviewUseCase: RespondInterviewUseCase = mockk()
+    private val deleteJobUseCase: DeleteJobUseCase = mockk()
 
     private lateinit var viewModel: JobsViewModel
 
@@ -120,6 +122,9 @@ class JobsViewModelTest {
         every { getCompanyDashboardUseCase(sampleCompany.id) } returns flowOf(Result.success(EmployerMetrics(totalJobs = 5, totalApplications = 42)))
         every { getAtsPipelineUseCase(sampleCompany.id, any()) } returns flowOf(Result.success(listOf(sampleAtsColumn)))
 
+        every { getInterviewsUseCase() } returns flowOf(Result.success(listOf(sampleInterview)))
+        every { deleteJobUseCase(any()) } returns flowOf(Result.success(Unit))
+
         viewModel = JobsViewModel(
             searchJobsUseCase,
             getJobDetailsUseCase,
@@ -136,7 +141,9 @@ class JobsViewModelTest {
             getAtsPipelineUseCase,
             updateAtsStageUseCase,
             getInterviewsUseCase,
-            respondInterviewUseCase
+            scheduleInterviewUseCase,
+            respondInterviewUseCase,
+            deleteJobUseCase
         )
     }
 
@@ -318,6 +325,25 @@ class JobsViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.showCreateJobDialog)
         assertTrue(state.successMessage?.contains("Job posted successfully") == true)
+    }
+
+    @Test
+    fun testOpenCreateJobDialog_togglesState() = runTest {
+        viewModel.onEvent(JobsUiEvent.OpenCreateJobDialog(true))
+        assertTrue(viewModel.uiState.value.showCreateJobDialog)
+
+        viewModel.onEvent(JobsUiEvent.OpenCreateJobDialog(false))
+        assertFalse(viewModel.uiState.value.showCreateJobDialog)
+    }
+
+    @Test
+    fun testDeleteJob_successRemovesJobFromList() = runTest {
+        viewModel.onEvent(JobsUiEvent.DeleteJob(sampleJob.id))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.jobs.any { it.id == sampleJob.id })
+        assertEquals("Job deleted successfully.", state.successMessage)
     }
 
     @Test

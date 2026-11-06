@@ -8,14 +8,14 @@
         
         <!-- Left: Logo & Search Bar -->
         <div class="flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 flex-1 sm:flex-initial">
-          <a href="/" class="flex items-center gap-2 shrink-0 group" aria-label="SocialHub Home">
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#1877F2] flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:bg-[#1666D8] transition-all">
-              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-              </svg>
-            </div>
-            <span class="text-lg sm:text-xl font-bold tracking-tight text-[#172033] dark:text-white hidden xs:inline">
-              Social<span class="text-[#1877F2]">Hub</span>
+          <a href="/" class="flex items-center gap-2.5 shrink-0 group" aria-label="BONDHOO Home">
+            <img
+              :src="'/images/bondhoo-icon.png'"
+              alt="BONDHOO"
+              class="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-sm group-hover:scale-105 transition-transform"
+            />
+            <span class="text-lg sm:text-xl font-black tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent hidden xs:inline">
+              BONDHOO
             </span>
           </a>
 

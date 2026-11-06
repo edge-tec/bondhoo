@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.connectly.android.core.common.result.Result
 import com.connectly.android.feature.groups.domain.usecase.GetGroupDashboardUseCase
+import com.connectly.android.feature.groups.presentation.util.getLongOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,8 +24,7 @@ class GroupDashboardViewModel @Inject constructor(
     val uiState: StateFlow<GroupDashboardState> = _uiState.asStateFlow()
 
     init {
-        val initialId: String? = savedStateHandle["groupId"] ?: savedStateHandle["id"]
-        val parsedId = initialId?.toLongOrNull() ?: 0L
+        val parsedId = savedStateHandle.getLongOrNull("groupId", "id") ?: 0L
         if (parsedId > 0) {
             _uiState.update { it.copy(groupId = parsedId) }
             loadDashboard(parsedId, "30d")

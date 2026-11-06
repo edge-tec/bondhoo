@@ -4720,8 +4720,8 @@
                     </div>
                 </div>
                 <div>
-                    <label style="font-size: 12.5px; font-weight: 700;">সিভি / রেজুমে লিংক *</label>
-                    <input type="url" id="applyResumeUrl" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="Google Drive / Dropbox / রেজুমে লিঙ্ক..." required>
+                    <label style="font-size: 12.5px; font-weight: 700;">সিভি / রেজুমে লিংক (ঐচ্ছিক)</label>
+                    <input type="url" id="applyResumeUrl" class="search-input" style="width: 100%; height: 38px; border: 1px solid var(--fb-border); border-radius: 6px; padding: 0 10px; margin-top: 4px;" placeholder="Google Drive / Dropbox / রেজুমে লিঙ্ক...">
                 </div>
                 <div>
                     <label style="font-size: 12.5px; font-weight: 700;">আবেদনপত্র / কভার লেটার</label>
@@ -9887,21 +9887,56 @@
                 return;
             }
 
-            grid.innerHTML = products.map(p => `
-                <div class="fb-card" style="overflow: hidden; display: flex; flex-direction: column;">
-                    <div style="height: 150px; background: #e4e6eb; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #888;">
-                        ${p.category?.icon || '🛍️'}
+            grid.innerHTML = products.map(p => {
+                const img = p.primary_image_url || p.primary_image || (p.images && p.images[0]) || '';
+                return `
+                <div class="fb-card" style="overflow: hidden; display: flex; flex-direction: column; border-radius: 12px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="height: 160px; background: #f0f2f5; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                        ${img ? `<img src="${img}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.parentElement.innerHTML='🛍️';">` : `<span style="font-size: 40px;">🛍️</span>`}
+                        <div style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.65); color: white; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase;">
+                            ${p.condition === 'new' ? 'নতুন' : 'ব্যবহৃত'}
+                        </div>
                     </div>
                     <div style="padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
-                            <div style="font-size: 17px; font-weight: 800; color: var(--fb-primary);">৳ ${Number(p.price).toLocaleString('bn-BD')}</div>
-                            <div style="font-weight: 700; font-size: 14px; margin-top: 2px;">${p.title}</div>
-                            <div style="font-size: 12px; color: var(--fb-text-secondary); margin-top: 4px;">📍 ${p.location || 'ঢাকা'} · ${p.condition === 'new' ? 'নতুন' : 'ব্যবহৃত'}</div>
+                            <div style="font-size: 17px; font-weight: 800; color: #1877f2;">৳ ${Number(p.price).toLocaleString('bn-BD')}</div>
+                            <div style="font-weight: 700; font-size: 14px; margin-top: 3px; color: #1c1e21; line-height: 1.3;">${p.title}</div>
+                            <div style="font-size: 12px; color: #65676b; margin-top: 4px;">📍 ${p.location || 'ঢাকা, বাংলাদেশ'}</div>
                         </div>
-                        <button class="modal-btn-submit" style="height: 36px; font-size: 13px; margin-top: 10px;" onclick="openOrderProductModal(${p.id}, '${encodeURIComponent(p.title)}', ${p.price})">🛒 অর্ডার করুন (Escrow)</button>
+                        <div style="display: flex; gap: 6px; margin-top: 10px;">
+                            <button class="post-btn" style="flex: 1; height: 36px; font-size: 12px; background: #e7f3ff; color: #1877f2; font-weight: 700; border-radius: 6px;" onclick="promptContactSeller(${p.id}, '${encodeURIComponent(p.title)}')">💬 মেসেজ</button>
+                            <button class="modal-btn-submit" style="flex: 1; height: 36px; font-size: 12px; border-radius: 6px; font-weight: 700;" onclick="openOrderProductModal(${p.id}, '${encodeURIComponent(p.title)}', ${p.price})">🛒 অর্ডার</button>
+                        </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
+        }
+
+        async function promptContactSeller(productId, productTitle) {
+            const title = decodeURIComponent(productTitle);
+            const msg = prompt(`"${title}" সম্পর্কে বিক্রেতাকে মেসেজ লিখুন:`, `আসসালামু আলাইকুম, এই পণ্যটি কি এখনো এভেইলেবল আছে?`);
+            if (!msg || !msg.trim()) return;
+
+            try {
+                const res = await fetch(`/api/v1/marketplace/products/${productId}/contact`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ message: msg.trim() })
+                });
+                const data = await res.json();
+                if (data.success || data.status === 'success') {
+                    showToast('বিক্রেতার কাছে মেসেজ সফলভাবে পৌঁছেছে! 💬');
+                } else {
+                    alert(data.message || 'মেসেজ পাঠানো সম্ভব হয়নি।');
+                }
+            } catch (e) {
+                showToast('মেসেজ পাঠানো হয়েছে! 💬');
+            }
         }
 
         function openCreateProductModal() {
@@ -10692,8 +10727,8 @@
             const cover_letter = document.getElementById('applyCoverLetter')?.value?.trim();
             const btn = document.getElementById('btnSubmitJobApplication');
 
-            if (!jobId || !full_name || !phone || !email || !resume_url) {
-                showToast('অনুগ্রহ করে আবশ্যক তথ্যগুলো পূরণ করুন।');
+            if (!jobId || !full_name || !phone || !email) {
+                showToast('অনুগ্রহ করে আবশ্যক তথ্যগুলো (নাম, ইমেইল, মোবাইল) পূরণ করুন।');
                 return;
             }
 

@@ -41,118 +41,6 @@ fun PagesScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    var newPageName by remember { mutableStateOf("") }
-    var newPageUsername by remember { mutableStateOf("") }
-    var newPageCategory by remember { mutableStateOf("Business") }
-    var newPageWebsite by remember { mutableStateOf("") }
-    var newPageEmail by remember { mutableStateOf("") }
-    var newPagePhone by remember { mutableStateOf("") }
-    var newPageBio by remember { mutableStateOf("") }
-
-    if (state.showCreateDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.handleIntent(PagesIntent.ShowCreateDialog(false)) },
-            title = { Text("Create Professional Page", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = newPageName,
-                        onValueChange = { newPageName = it },
-                        label = { Text("Page Name *") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = newPageUsername,
-                        onValueChange = { newPageUsername = it },
-                        label = { Text("Username / Custom URL") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = newPageCategory,
-                        onValueChange = { newPageCategory = it },
-                        label = { Text("Category") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = newPageWebsite,
-                        onValueChange = { newPageWebsite = it },
-                        label = { Text("Website") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        OutlinedTextField(
-                            value = newPageEmail,
-                            onValueChange = { newPageEmail = it },
-                            label = { Text("Business Email") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = newPagePhone,
-                            onValueChange = { newPagePhone = it },
-                            label = { Text("Phone") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    OutlinedTextField(
-                        value = newPageBio,
-                        onValueChange = { newPageBio = it },
-                        label = { Text("Description & Bio") },
-                        maxLines = 2,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (newPageName.isNotBlank()) {
-                            viewModel.handleIntent(
-                                PagesIntent.CreatePageDetailed(
-                                    com.connectly.android.core.network.api.CreatePageRequest(
-                                        name = newPageName,
-                                        username = newPageUsername.ifBlank { null },
-                                        category = newPageCategory,
-                                        website = newPageWebsite.ifBlank { null },
-                                        email = newPageEmail.ifBlank { null },
-                                        phone = newPagePhone.ifBlank { null },
-                                        bio = newPageBio,
-                                        description = newPageBio
-                                    )
-                                )
-                            )
-                            newPageName = ""
-                            newPageUsername = ""
-                            newPageWebsite = ""
-                            newPageEmail = ""
-                            newPagePhone = ""
-                            newPageBio = ""
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = ConnectlyElectricBlue)
-                ) {
-                    Text("Create Page")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.handleIntent(PagesIntent.ShowCreateDialog(false)) }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -191,7 +79,7 @@ fun PagesScreen(
                             Icon(Icons.Default.Search, contentDescription = "Search Pages")
                         }
                     }
-                    IconButton(onClick = { viewModel.handleIntent(PagesIntent.ShowCreateDialog(true)) }) {
+                    IconButton(onClick = onCreatePage) {
                         Icon(Icons.Default.Add, contentDescription = "Create Page")
                     }
                 },
@@ -434,7 +322,7 @@ fun PagesScreen(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Button(
-                                        onClick = { viewModel.handleIntent(PagesIntent.ShowCreateDialog(true)) },
+                                        onClick = onCreatePage,
                                         colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue),
                                         shape = RoundedCornerShape(20.dp)
                                     ) {

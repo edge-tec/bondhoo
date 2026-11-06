@@ -39,4 +39,3 @@ class ConsentRequestCreated implements ShouldBroadcast
         return 'consent.request.created';
     }
 }
-

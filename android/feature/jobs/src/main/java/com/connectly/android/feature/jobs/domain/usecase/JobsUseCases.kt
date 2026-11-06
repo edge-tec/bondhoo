@@ -34,6 +34,12 @@ class CreateJobUseCase @Inject constructor(
     operator fun invoke(params: Map<String, Any?>): Flow<Result<Job>> = repository.createJob(params)
 }
 
+class DeleteJobUseCase @Inject constructor(
+    private val repository: JobRepository
+) {
+    operator fun invoke(id: Long): Flow<Result<Unit>> = repository.deleteJob(id)
+}
+
 class ApplyForJobUseCase @Inject constructor(
     private val repository: JobRepository
 ) {
@@ -139,6 +145,27 @@ class GetInterviewsUseCase @Inject constructor(
     private val repository: JobRepository
 ) {
     operator fun invoke(): Flow<Result<List<InterviewItem>>> = repository.getInterviews()
+}
+
+class ScheduleInterviewUseCase @Inject constructor(
+    private val repository: JobRepository
+) {
+    operator fun invoke(
+        applicationId: Long,
+        scheduledAt: String,
+        interviewType: String = "video",
+        meetingUrl: String? = null,
+        location: String? = null,
+        instructions: String? = null
+    ): Flow<Result<InterviewItem>> =
+        repository.scheduleInterview(
+            applicationId,
+            scheduledAt,
+            interviewType,
+            meetingUrl,
+            location,
+            instructions
+        )
 }
 
 class RespondInterviewUseCase @Inject constructor(

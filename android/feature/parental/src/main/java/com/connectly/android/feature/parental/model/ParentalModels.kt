@@ -46,7 +46,7 @@ data class ScreenTimeSummary(
 )
 
 data class AppUsageStat(
-    val package: String,
+    val `package`: String,
     val durationSeconds: Long,
     val durationMinutes: Long
 )

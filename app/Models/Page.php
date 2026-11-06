@@ -113,10 +113,10 @@ class Page extends Model
         if (is_string($value)) {
             $decoded = json_decode($value, true);
 
-            return is_array($decoded) ? array_values($decoded) : [];
+            return is_array($decoded) ? $decoded : [];
         }
 
-        return is_array($value) ? array_values($value) : [];
+        return is_array($value) ? $value : [];
     }
 
     public function pageType(): BelongsTo
@@ -170,6 +170,11 @@ class Page extends Model
     {
         return $this->belongsToMany(User::class, 'page_followers')
             ->withPivot('created_at');
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(PageReview::class);
     }
 
     public function posts(): HasMany
@@ -359,6 +364,18 @@ class Page extends Model
         if (isset($current['moderation']['blocked_keywords']) && is_array($current['moderation']['blocked_keywords'])) {
             $merged['moderation']['blocked_keywords'] = array_values($current['moderation']['blocked_keywords']);
         }
+
+        $isPublic = ($this->visibility ?? 'public') === 'public';
+        $merged['is_public'] = $isPublic;
+        $merged['page_visibility'] = $this->visibility ?? 'public';
+        $merged['allow_reviews'] = (bool) ($merged['allow_reviews'] ?? ($this->settings['allow_reviews'] ?? true));
+        $merged['allow_messages'] = (bool) ($merged['messaging']['allow_messages'] ?? true);
+        $merged['allow_tagging'] = (bool) ($merged['tagging']['allow_mentions'] ?? true);
+        $merged['comment_moderation'] = (bool) ($merged['moderation']['profanity_filter'] ?? false);
+        $merged['age_restriction'] = $merged['privacy']['age_restriction'] ?? 'everyone';
+        $merged['country_restrictions'] = $merged['privacy']['country_restrictions'] ?? [];
+        $merged['blocked_words'] = $merged['moderation']['blocked_keywords'] ?? [];
+        $merged['verification_status'] = $this->verification_status ?? 'unverified';
 
         return $merged;
     }

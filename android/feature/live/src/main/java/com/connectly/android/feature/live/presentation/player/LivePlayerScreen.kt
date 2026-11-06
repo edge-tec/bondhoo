@@ -25,6 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.connectly.android.core.designsystem.theme.ConnectlyBlue
 import com.connectly.android.core.model.LiveComment
+import com.connectly.android.core.webrtc.ui.WebRtcVideoRenderer
 
 @Composable
 fun LivePlayerScreen(
@@ -35,9 +36,40 @@ fun LivePlayerScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var commentInput by remember { mutableStateOf("") }
+    var showEndStreamConfirmDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(streamId) {
         viewModel.handleIntent(LivePlayerIntent.LoadStream(streamId))
+    }
+
+    LaunchedEffect(state.streamEnded) {
+        if (state.streamEnded) {
+            onNavigateBack()
+        }
+    }
+
+    if (showEndStreamConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showEndStreamConfirmDialog = false },
+            title = { Text("End Live Broadcast?", fontWeight = FontWeight.Bold) },
+            text = { Text("Are you sure you want to end your live video stream? All viewers will be disconnected.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showEndStreamConfirmDialog = false
+                        viewModel.handleIntent(LivePlayerIntent.EndStream)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                ) {
+                    Text("End Broadcast", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndStreamConfirmDialog = false }) {
+                    Text("Keep Streaming")
+                }
+            }
+        )
     }
 
     Box(
@@ -45,13 +77,22 @@ fun LivePlayerScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // Fullscreen Live Video Stream Background (Matching Screen 8)
-        AsyncImage(
-            model = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1080&q=80",
-            contentDescription = "Live Video Stream",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+        // Hardware-accelerated real Camera WebRTC Video Stream or fallback
+        if (state.localVideoTrack != null && !state.isCameraOff) {
+            WebRtcVideoRenderer(
+                videoTrack = state.localVideoTrack,
+                eglBaseContext = viewModel.eglBaseContext,
+                isMirror = state.isFrontCamera,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            AsyncImage(
+                model = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1080&q=80",
+                contentDescription = "Live Video Stream",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
         // Gradient shadow over video for UI clarity
         Box(
@@ -70,7 +111,7 @@ fun LivePlayerScreen(
                 )
         )
 
-        // Top Bar: Red "LIVE" Badge + "👁 4.8K" Viewer Count + Close (X) (Matching Screen 8)
+        // Top Bar: Red "LIVE" Badge + "👁 4.8K" Viewer Count + Broadcaster controls + Close (X)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -114,7 +155,7 @@ fun LivePlayerScreen(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = state.liveStream?.formattedViewerCount ?: "4.8K",
+                            text = state.liveStream?.formattedViewerCount ?: "1",
                             color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
@@ -123,14 +164,54 @@ fun LivePlayerScreen(
                 }
             }
 
-            IconButton(
-                onClick = onNavigateBack,
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.4f))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White, modifier = Modifier.size(20.dp))
+                if (state.isBroadcaster) {
+                    // Switch Camera
+                    IconButton(
+                        onClick = { viewModel.handleIntent(LivePlayerIntent.SwitchCamera) },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Icon(Icons.Default.Cameraswitch, contentDescription = "Switch Camera", tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+
+                    // Mute Mic
+                    IconButton(
+                        onClick = { viewModel.handleIntent(LivePlayerIntent.ToggleMute) },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(if (state.isMuted) Color(0xFFEF4444).copy(alpha = 0.8f) else Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Icon(
+                            if (state.isMuted) Icons.Default.MicOff else Icons.Default.Mic,
+                            contentDescription = "Mute Mic",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = {
+                        if (state.isBroadcaster) {
+                            showEndStreamConfirmDialog = true
+                        } else {
+                            onNavigateBack()
+                        }
+                    },
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.4f))
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White, modifier = Modifier.size(20.dp))
+                }
             }
         }
 

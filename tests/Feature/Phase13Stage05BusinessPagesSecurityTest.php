@@ -151,4 +151,3 @@ class Phase13Stage05BusinessPagesSecurityTest extends TestCase
         $unauthPost->assertStatus(403);
     }
 }
-

@@ -8,6 +8,7 @@ import com.connectly.android.core.network.api.CreateGroupPostRequest
 import com.connectly.android.core.network.api.GroupPollInput
 import com.connectly.android.feature.groups.domain.repository.GroupsRepository
 import com.connectly.android.feature.groups.domain.usecase.*
+import com.connectly.android.feature.groups.presentation.util.getLongOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,8 +40,7 @@ class GroupContentViewModel @Inject constructor(
     val uiState: StateFlow<GroupContentState> = _uiState.asStateFlow()
 
     init {
-        val groupIdString: String? = savedStateHandle["groupId"]
-        val initialGroupId = groupIdString?.toLongOrNull() ?: 0L
+        val initialGroupId = savedStateHandle.getLongOrNull("groupId", "id") ?: 0L
         if (initialGroupId > 0L) {
             _uiState.update { it.copy(groupId = initialGroupId) }
             loadFeed(initialGroupId)

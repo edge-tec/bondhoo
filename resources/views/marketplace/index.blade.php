@@ -337,9 +337,16 @@
                 <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 4px;">লোকেশন (শহর বা এলাকা)</label>
                 <input type="text" id="prodLocation" class="search-input" style="border: 1px solid var(--fb-border);" placeholder="উদাঃ ধানমন্ডি, ঢাকা">
             </div>
-            <div style="margin-bottom: 12px;">
-                <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 4px;">পণ্যের ছবির লিংক (Image URL)</label>
-                <input type="url" id="prodImage" class="search-input" style="border: 1px solid var(--fb-border);" placeholder="https://example.com/product.jpg">
+            <div style="margin-bottom: 12px; background: var(--fb-bg, #f1f5f9); padding: 12px; border-radius: 8px;">
+                <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px;">📷 পণ্যের ছবি আপলোড করুন</label>
+                <input type="file" id="prodImageFile" accept="image/*" class="search-input" style="border: 1px solid var(--fb-border); padding: 6px; width: 100%; background: white;" onchange="previewProductImage(event)">
+                <div id="imagePreviewContainer" style="display: none; margin-top: 8px; position: relative;">
+                    <img id="imagePreview" src="" alt="Preview" style="max-height: 120px; border-radius: 6px; object-fit: cover; border: 1px solid var(--fb-border);">
+                </div>
+                <div style="margin-top: 6px;">
+                    <span style="font-size: 11px; color: var(--fb-text-secondary, #64748b);">অথবা অনলাইন ছবির লিঙ্ক ব্যবহার করুন:</span>
+                    <input type="url" id="prodImage" class="search-input" style="border: 1px solid var(--fb-border); margin-top: 4px; font-size: 12px;" placeholder="https://example.com/product.jpg">
+                </div>
             </div>
             <div style="margin-bottom: 16px;">
                 <label style="display: block; font-weight: 700; font-size: 13px; margin-bottom: 4px;">বিস্তারিত বিবরণ</label>
@@ -368,7 +375,23 @@
         document.getElementById('sellProductModal').style.display = 'none';
     }
 
-    function submitSellProduct(e) {
+    function previewProductImage(event) {
+        const file = event.target.files && event.target.files[0];
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const previewImg = document.getElementById('imagePreview');
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            previewContainer.style.display = 'none';
+        }
+    }
+
+    async function submitSellProduct(e) {
         e.preventDefault();
         const title = document.getElementById('prodTitle').value.trim();
         const price = document.getElementById('prodPrice').value;
@@ -377,11 +400,42 @@
         const location = document.getElementById('prodLocation').value.trim();
         const imageUrl = document.getElementById('prodImage').value.trim();
         const description = document.getElementById('prodDesc').value.trim();
+        const fileInput = document.getElementById('prodImageFile');
         const btn = document.getElementById('btnSellSubmit');
         btn.disabled = true;
         btn.textContent = 'পোস্ট হচ্ছে...';
 
-        const images = imageUrl ? [imageUrl] : [];
+        const images = [];
+
+        // If user picked a file, upload it first
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            try {
+                btn.textContent = 'ছবি আপলোড হচ্ছে...';
+                const formData = new FormData();
+                formData.append('image', fileInput.files[0]);
+
+                const uploadRes = await fetch('/api/v1/marketplace/media/upload', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+                const uploadData = await uploadRes.json();
+                if (uploadData.url || (uploadData.data && uploadData.data.url)) {
+                    images.push(uploadData.url || uploadData.data.url);
+                }
+            } catch (err) {
+                console.warn('Image upload error:', err);
+            }
+        }
+
+        if (imageUrl) {
+            images.push(imageUrl);
+        }
+
+        btn.textContent = 'লিস্টিং তৈরি হচ্ছে...';
 
         fetch('/api/v2/marketplace/products', {
             method: 'POST',

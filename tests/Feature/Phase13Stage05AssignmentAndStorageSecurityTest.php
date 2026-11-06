@@ -171,4 +171,3 @@ class Phase13Stage05AssignmentAndStorageSecurityTest extends TestCase
         $this->assertEquals(95, $this->submissionA->fresh()->score);
     }
 }
-

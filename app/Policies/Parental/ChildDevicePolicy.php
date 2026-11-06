@@ -41,4 +41,3 @@ class ChildDevicePolicy
         return $device->family->hasGuardianAccess($user->id);
     }
 }
-

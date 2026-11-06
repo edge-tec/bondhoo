@@ -277,7 +277,7 @@ class Phase5MarketplaceAndEscrowCommerceTest extends TestCase
         $deleteRes->assertStatus(200)
             ->assertJsonPath('status', 'success');
 
-        $this->assertDatabaseMissing('marketplace_products', [
+        $this->assertSoftDeleted('marketplace_products', [
             'id' => $product->id,
         ]);
     }

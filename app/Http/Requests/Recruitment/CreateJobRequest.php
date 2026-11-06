@@ -30,7 +30,7 @@ class CreateJobRequest extends FormRequest
             'employment_type' => 'required|string|in:full_time,part_time,contract,internship,freelance,temporary',
             'experience_level' => 'nullable|string|in:entry,mid,senior,lead,any',
             'salary_min' => 'nullable|integer|min:0',
-            'salary_max' => 'nullable|integer|gte:salary_min',
+            'salary_max' => 'nullable|integer|min:0|gte:salary_min',
             'salary_currency' => 'nullable|string|max:10',
             'salary_negotiable' => 'nullable|boolean',
             'salary_visibility' => 'nullable|string|in:visible,hidden,range_only',

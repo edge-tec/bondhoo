@@ -201,4 +201,3 @@ class Phase13Stage05CertificateAuthenticityTest extends TestCase
         $this->assertEquals(0, CandidateCertification::where('credential_id', 'CERT-2026-TEST-ABCD')->count());
     }
 }
-

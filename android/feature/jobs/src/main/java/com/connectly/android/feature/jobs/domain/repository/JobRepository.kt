@@ -17,6 +17,7 @@ interface JobRepository {
 
     fun getJobDetails(id: Long): Flow<Result<Job>>
     fun createJob(params: Map<String, Any?>): Flow<Result<Job>>
+    fun deleteJob(id: Long): Flow<Result<Unit>>
     fun applyForJob(jobId: Long, params: Map<String, Any?>): Flow<Result<JobApplicationItem>>
     fun getMyApplications(): Flow<Result<List<JobApplicationItem>>>
     fun saveJob(id: Long): Flow<Result<Unit>>
@@ -33,6 +34,14 @@ interface JobRepository {
     fun getAtsPipeline(companyId: Long, jobId: Long? = null): Flow<Result<List<AtsColumn>>>
     fun updateAtsStage(applicationId: Long, stage: String, notes: String? = null): Flow<Result<JobApplicationItem>>
     fun getInterviews(): Flow<Result<List<InterviewItem>>>
+    fun scheduleInterview(
+        applicationId: Long,
+        scheduledAt: String,
+        interviewType: String = "video",
+        meetingUrl: String? = null,
+        location: String? = null,
+        instructions: String? = null
+    ): Flow<Result<InterviewItem>>
     fun respondInterview(interviewId: Long, response: String): Flow<Result<InterviewItem>>
 }
 

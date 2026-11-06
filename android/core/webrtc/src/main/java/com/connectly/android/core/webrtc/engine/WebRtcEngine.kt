@@ -337,6 +337,40 @@ class WebRtcEngine @Inject constructor(
         }
     }
 
+    /**
+     * Start local camera and audio media for Live Streaming broadcast.
+     */
+    fun startBroadcastMedia() {
+        if (peerConnectionFactory == null) {
+            initializePeerConnectionFactory()
+        }
+        setupMediaTracks(CallType.VIDEO)
+    }
+
+    /**
+     * Stop and dispose broadcast camera and audio resources.
+     */
+    fun stopBroadcastMedia() {
+        try { videoCapturer?.stopCapture() } catch (_: Exception) {}
+        try { videoCapturer?.dispose() } catch (_: Exception) {}
+        videoCapturer = null
+
+        try { surfaceTextureHelper?.dispose() } catch (_: Exception) {}
+        surfaceTextureHelper = null
+
+        try { _localVideoTrack.value?.dispose() } catch (_: Exception) {}
+        _localVideoTrack.value = null
+
+        try { videoSource?.dispose() } catch (_: Exception) {}
+        videoSource = null
+
+        try { localAudioTrack?.dispose() } catch (_: Exception) {}
+        localAudioTrack = null
+
+        try { audioSource?.dispose() } catch (_: Exception) {}
+        audioSource = null
+    }
+
     private fun createPeerConnection(
         iceServers: List<PeerConnection.IceServer>,
         callId: Long,

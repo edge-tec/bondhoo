@@ -30,7 +30,9 @@ class JobsViewModel @Inject constructor(
     private val getAtsPipelineUseCase: GetAtsPipelineUseCase,
     private val updateAtsStageUseCase: UpdateAtsStageUseCase,
     private val getInterviewsUseCase: GetInterviewsUseCase,
-    private val respondInterviewUseCase: RespondInterviewUseCase
+    private val scheduleInterviewUseCase: ScheduleInterviewUseCase,
+    private val respondInterviewUseCase: RespondInterviewUseCase,
+    private val deleteJobUseCase: DeleteJobUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(JobsUiState())
@@ -69,11 +71,14 @@ class JobsViewModel @Inject constructor(
             is JobsUiEvent.SelectJob -> {
                 loadJobDetails(event.job.id)
             }
+            is JobsUiEvent.DismissJobDetails -> {
+                _uiState.update { it.copy(selectedJobDetails = null) }
+            }
             is JobsUiEvent.ToggleSaveJob -> {
                 toggleSaveJob(event.job)
             }
             is JobsUiEvent.OpenApplyDialog -> {
-                _uiState.update { it.copy(selectedJobDetails = event.job, showApplyDialog = true) }
+                _uiState.update { it.copy(selectedJobDetails = event.job, showApplyDialog = true, errorMessage = null) }
             }
             is JobsUiEvent.CloseApplyDialog -> {
                 _uiState.update { it.copy(showApplyDialog = false) }
@@ -90,11 +95,30 @@ class JobsViewModel @Inject constructor(
             is JobsUiEvent.MoveCandidateStage -> {
                 moveStage(event.applicationId, event.newStage)
             }
+            is JobsUiEvent.OpenScheduleInterviewDialog -> {
+                _uiState.update { it.copy(schedulingCandidate = event.candidate) }
+            }
+            is JobsUiEvent.ScheduleInterview -> {
+                scheduleInterview(
+                    event.applicationId,
+                    event.scheduledAt,
+                    event.interviewType,
+                    event.meetingUrl,
+                    event.location,
+                    event.instructions
+                )
+            }
             is JobsUiEvent.RespondInterview -> {
                 respondInterview(event.interviewId, event.accept)
             }
             is JobsUiEvent.CreateJob -> {
                 createJob(event.params)
+            }
+            is JobsUiEvent.DeleteJob -> {
+                deleteJob(event.id)
+            }
+            is JobsUiEvent.OpenCreateJobDialog -> {
+                _uiState.update { it.copy(showCreateJobDialog = event.show) }
             }
             is JobsUiEvent.ClearMessages -> {
                 _uiState.update { it.copy(errorMessage = null, successMessage = null) }
@@ -138,7 +162,13 @@ class JobsViewModel @Inject constructor(
                 employmentType = _uiState.value.selectedEmploymentType
             ).collect { result ->
                 result.onSuccess { list ->
-                    _uiState.update { it.copy(isLoading = false, jobs = list) }
+                    _uiState.update { state ->
+                        val appliedJobIds = state.applications.map { it.jobPostingId }.toSet()
+                        val synchronized = list.map { job ->
+                            if (appliedJobIds.contains(job.id)) job.copy(hasApplied = true) else job
+                        }
+                        state.copy(isLoading = false, jobs = synchronized)
+                    }
                 }.onFailure { err ->
                     _uiState.update { it.copy(isLoading = false, errorMessage = err.message) }
                 }
@@ -147,11 +177,16 @@ class JobsViewModel @Inject constructor(
     }
 
     private fun loadJobDetails(id: Long) {
+        if (id <= 0) {
+            _uiState.update { it.copy(selectedJobDetails = null) }
+            return
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             getJobDetailsUseCase(id).collect { result ->
                 result.onSuccess { job ->
-                    _uiState.update { it.copy(isLoading = false, selectedJobDetails = job) }
+                    val hasApplied = job.hasApplied || _uiState.value.applications.any { it.jobPostingId == job.id }
+                    _uiState.update { it.copy(isLoading = false, selectedJobDetails = job.copy(hasApplied = hasApplied)) }
                 }.onFailure { err ->
                     _uiState.update { it.copy(isLoading = false, errorMessage = err.message) }
                 }
@@ -192,10 +227,22 @@ class JobsViewModel @Inject constructor(
             )
             applyForJobUseCase(event.jobId, params).collect { result ->
                 result.onSuccess { app ->
-                    _uiState.update {
-                        it.copy(
+                    _uiState.update { state ->
+                        val updatedJobs = state.jobs.map { j ->
+                            if (j.id == event.jobId) j.copy(hasApplied = true) else j
+                        }
+                        val updatedSavedJobs = state.savedJobs.map { j ->
+                            if (j.id == event.jobId) j.copy(hasApplied = true) else j
+                        }
+                        state.copy(
                             isLoading = false,
                             showApplyDialog = false,
+                            errorMessage = null,
+                            jobs = updatedJobs,
+                            savedJobs = updatedSavedJobs,
+                            selectedJobDetails = state.selectedJobDetails?.let {
+                                if (it.id == event.jobId) it.copy(hasApplied = true) else it
+                            },
                             successMessage = "Application submitted successfully! 🎯"
                         )
                     }
@@ -212,7 +259,24 @@ class JobsViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             getMyApplicationsUseCase().collect { result ->
                 result.onSuccess { list ->
-                    _uiState.update { it.copy(isLoading = false, applications = list) }
+                    _uiState.update { state ->
+                        val appliedJobIds = list.map { it.jobPostingId }.toSet()
+                        val updatedJobs = state.jobs.map { job ->
+                            if (appliedJobIds.contains(job.id)) job.copy(hasApplied = true) else job
+                        }
+                        val updatedSavedJobs = state.savedJobs.map { job ->
+                            if (appliedJobIds.contains(job.id)) job.copy(hasApplied = true) else job
+                        }
+                        state.copy(
+                            isLoading = false,
+                            applications = list,
+                            jobs = updatedJobs,
+                            savedJobs = updatedSavedJobs,
+                            selectedJobDetails = state.selectedJobDetails?.let {
+                                if (appliedJobIds.contains(it.id)) it.copy(hasApplied = true) else it
+                            }
+                        )
+                    }
                 }.onFailure { err ->
                     _uiState.update { it.copy(isLoading = false, errorMessage = err.message) }
                 }
@@ -297,6 +361,46 @@ class JobsViewModel @Inject constructor(
                 result.onSuccess {
                     loadInterviews()
                     _uiState.update { it.copy(successMessage = if (accept) "Interview confirmed!" else "Interview declined.") }
+                }.onFailure { err ->
+                    _uiState.update { it.copy(errorMessage = err.message) }
+                }
+            }
+        }
+    }
+
+    private fun scheduleInterview(
+        applicationId: Long,
+        scheduledAt: String,
+        interviewType: String,
+        meetingUrl: String?,
+        location: String?,
+        instructions: String?
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            scheduleInterviewUseCase(
+                applicationId,
+                scheduledAt,
+                interviewType,
+                meetingUrl,
+                location,
+                instructions
+            ).collect { result ->
+                result.onSuccess {
+                    _uiState.update { state ->
+                        state.copy(
+                            isLoading = false,
+                            schedulingCandidate = null,
+                            successMessage = "Interview scheduled successfully! 📅"
+                        )
+                    }
+                    loadInterviews()
+                    _uiState.value.selectedCompany?.id?.let {
+                        loadAtsPipeline(it)
+                        loadCompanyDashboard(it)
+                    }
+                }.onFailure { err ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = err.message) }
                 }
             }
         }
@@ -315,6 +419,7 @@ class JobsViewModel @Inject constructor(
                         )
                     }
                     searchJobs()
+                    loadEmployerData()
                 }.onFailure { err ->
                     _uiState.update { it.copy(isLoading = false, errorMessage = err.message) }
                 }
@@ -326,6 +431,26 @@ class JobsViewModel @Inject constructor(
         viewModelScope.launch {
             loadApplications()
             _uiState.update { it.copy(successMessage = "Application withdrawn.") }
+        }
+    }
+
+    private fun deleteJob(id: Long) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            deleteJobUseCase(id).collect { result ->
+                result.onSuccess {
+                    _uiState.update { state ->
+                        state.copy(
+                            isLoading = false,
+                            jobs = state.jobs.filter { it.id != id },
+                            savedJobs = state.savedJobs.filter { it.id != id },
+                            successMessage = "Job deleted successfully."
+                        )
+                    }
+                }.onFailure { err ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = err.message) }
+                }
+            }
         }
     }
 }

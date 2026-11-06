@@ -934,6 +934,10 @@ Route::middleware(['web'])->group(function () use ($resolveWebUser) {
 // Public Legal, Compliance and Policy Pages (Unrestricted Guest Access)
 Route::get('/terms', [SettingsWebController::class, 'terms'])->name('terms');
 Route::get('/privacy', [SettingsWebController::class, 'privacyPolicy'])->name('privacy');
+Route::redirect('/privacy-policy', '/privacy');
+Route::get('/account/delete', [SettingsWebController::class, 'accountDeletion'])->name('account.delete');
+Route::post('/account/delete/request', [SettingsWebController::class, 'submitAccountDeletionRequest'])->name('account.delete.request')->middleware('throttle:5,1');
+
 Route::get('/cookies', [SettingsWebController::class, 'cookies'])->name('cookies');
 Route::get('/community-guidelines', [SettingsWebController::class, 'guidelines'])->name('community.guidelines');
 Route::get('/help', [SettingsWebController::class, 'guidelines'])->name('help');

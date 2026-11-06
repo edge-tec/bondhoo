@@ -9,6 +9,7 @@ import com.connectly.android.feature.groups.domain.usecase.GetGroupProfileUseCas
 import com.connectly.android.feature.groups.domain.usecase.InviteGroupMembersUseCase
 import com.connectly.android.feature.groups.domain.usecase.ToggleFollowGroupUseCase
 import com.connectly.android.feature.groups.domain.usecase.ToggleJoinGroupUseCase
+import com.connectly.android.feature.groups.presentation.util.getStringOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,7 +32,7 @@ class GroupProfileViewModel @Inject constructor(
     val uiState: StateFlow<GroupProfileState> = _uiState.asStateFlow()
 
     init {
-        val initialSlug: String? = savedStateHandle["slugOrId"] ?: savedStateHandle["slug"] ?: savedStateHandle["id"]
+        val initialSlug: String? = savedStateHandle.getStringOrNull("slugOrId", "slug", "id")
         if (!initialSlug.isNullOrBlank()) {
             loadProfile(initialSlug)
         }

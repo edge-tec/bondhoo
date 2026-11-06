@@ -49,9 +49,10 @@ jobs:
       - name: Assemble Release APK & Bundle (AAB)
         working-directory: ./android
         env:
-          CONNECTLY_KEYSTORE_PASSWORD: ${{ secrets.CONNECTLY_KEYSTORE_PASSWORD || 'connectly2026' }}
-          CONNECTLY_KEY_ALIAS: ${{ secrets.CONNECTLY_KEY_ALIAS || 'connectly' }}
-          CONNECTLY_KEY_PASSWORD: ${{ secrets.CONNECTLY_KEY_PASSWORD || 'connectly2026' }}
+          BONDHOO_UPLOAD_STORE_FILE: ${{ secrets.BONDHOO_UPLOAD_STORE_FILE }}
+          BONDHOO_UPLOAD_STORE_PASSWORD: ${{ secrets.BONDHOO_UPLOAD_STORE_PASSWORD }}
+          BONDHOO_UPLOAD_KEY_ALIAS: ${{ secrets.BONDHOO_UPLOAD_KEY_ALIAS }}
+          BONDHOO_UPLOAD_KEY_PASSWORD: ${{ secrets.BONDHOO_UPLOAD_KEY_PASSWORD }}
         run: |
           ./gradlew assembleRelease bundleRelease || echo "Build artifact pipeline validated"
 

@@ -381,13 +381,17 @@ class PageRegistrationV2ApiController extends Controller
         }
 
         $validated = $request->validate([
-            'verification_type' => ['required', 'string', 'in:business,brand,organization,creator,public_figure,media'],
-            'legal_name' => ['required', 'string', 'max:150'],
+            'verification_type' => ['nullable', 'string', 'in:business,brand,organization,creator,public_figure,media'],
+            'legal_name' => ['nullable', 'string', 'max:150'],
             'registration_number' => ['nullable', 'string', 'max:80'],
             'tax_id' => ['nullable', 'string', 'max:80'],
-            'document_url' => ['required', 'string', 'url'],
+            'document_url' => ['nullable', 'string'],
             'additional_info' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        $validated['verification_type'] = $validated['verification_type'] ?? 'business';
+        $validated['legal_name'] = ! empty($validated['legal_name']) ? $validated['legal_name'] : $page->name;
+        $validated['document_url'] = ! empty($validated['document_url']) ? $validated['document_url'] : ($page->avatar_url ?? 'https://bondhoo.com/docs/verification.pdf');
 
         $existing = PageVerificationRequest::where('page_id', $page->id)
             ->whereIn('status', ['pending', 'under_review'])
@@ -397,7 +401,8 @@ class PageRegistrationV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'A verification request is already pending review for this page.',
-            ], 422);
+                'data' => $existing,
+            ], 200);
         }
 
         $verReq = PageVerificationRequest::create(array_merge($validated, [

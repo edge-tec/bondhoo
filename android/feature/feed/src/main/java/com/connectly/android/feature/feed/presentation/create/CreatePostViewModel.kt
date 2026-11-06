@@ -24,21 +24,51 @@ class CreatePostViewModel @Inject constructor(
         when (intent) {
             is CreatePostIntent.ContentChanged -> _uiState.update { it.copy(content = intent.content) }
             is CreatePostIntent.AudienceChanged -> _uiState.update { it.copy(audience = intent.audience) }
-            is CreatePostIntent.MediaAdded -> _uiState.update { it.copy(mediaFiles = it.mediaFiles + intent.file) }
-            is CreatePostIntent.MediaRemoved -> _uiState.update { it.copy(mediaFiles = it.mediaFiles.filter { f -> f != intent.file }) }
+            is CreatePostIntent.MediaAdded -> _uiState.update {
+                it.copy(
+                    mediaFiles = it.mediaFiles + intent.file,
+                    mediaUris = if (intent.uri != null) it.mediaUris + intent.uri else it.mediaUris
+                )
+            }
+            is CreatePostIntent.MediaRemoved -> _uiState.update {
+                val index = it.mediaFiles.indexOf(intent.file)
+                val newUris = if (index >= 0 && index < it.mediaUris.size) {
+                    it.mediaUris.filterIndexed { i, _ -> i != index }
+                } else it.mediaUris
+                it.copy(
+                    mediaFiles = it.mediaFiles.filter { f -> f != intent.file },
+                    mediaUris = newUris
+                )
+            }
+            is CreatePostIntent.FeelingSelected -> _uiState.update {
+                it.copy(
+                    feelingActivity = intent.feeling,
+                    feelingEmoji = intent.emoji
+                )
+            }
+            is CreatePostIntent.TaggedUsersChanged -> _uiState.update { it.copy(taggedUsers = intent.users) }
+            is CreatePostIntent.LocationChanged -> _uiState.update { it.copy(location = intent.location) }
             CreatePostIntent.SubmitPost -> submitPost()
         }
     }
 
     private fun submitPost() {
         val s = _uiState.value
-        if (s.content.isBlank() && s.mediaFiles.isEmpty()) return
+        if (s.content.isBlank() && s.mediaFiles.isEmpty() && s.feelingActivity.isNullOrBlank()) return
+
+        val formattedFeeling = if (!s.feelingActivity.isNullOrBlank()) {
+            val emojiStr = if (!s.feelingEmoji.isNullOrBlank()) " ${s.feelingEmoji}" else ""
+            "${s.feelingActivity}$emojiStr"
+        } else null
 
         viewModelScope.launch {
             createPostUseCase(
                 content = s.content,
                 audience = s.audience,
-                mediaFiles = s.mediaFiles
+                mediaFiles = s.mediaFiles,
+                taggedUserIds = s.taggedUsers.map { it.id },
+                feelingActivity = formattedFeeling,
+                location = s.location
             ).collect { result ->
                 when (result) {
                     is Result.Loading -> _uiState.update { it.copy(isLoading = true, errorMessage = null) }

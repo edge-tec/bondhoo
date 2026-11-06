@@ -39,4 +39,3 @@ class RemoteCommandQueued implements ShouldBroadcast
         return 'remote.command.queued';
     }
 }
-

@@ -20,10 +20,10 @@
         </div>
         <div>
           <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Create a Page
+            Create a Professional Page
           </h1>
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Build your brand, business or community on SocialHub
+            Build your brand, business or community on BONDHOO (বন্ধু)
           </p>
         </div>
       </div>
@@ -233,7 +233,7 @@
                 <div class="flex items-center justify-between text-xs">
                   <span v-if="errors.username" class="text-rose-500 font-medium">{{ errors.username }}</span>
                   <span v-else class="text-slate-400 dark:text-slate-500 truncate">
-                    socialhub.com/pages/@{{ previewSlug }}
+                    bondhoo.com/pages/@{{ previewSlug }}
                   </span>
                   <span class="text-slate-400 font-medium ml-auto">{{ form.username.length }}/50</span>
                 </div>
@@ -616,6 +616,17 @@
                   />
                 </div>
 
+                <!-- WhatsApp -->
+                <div class="space-y-1">
+                  <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">WhatsApp Business</label>
+                  <input
+                    v-model="form.whatsapp"
+                    type="tel"
+                    placeholder="+880 1800 000000"
+                    class="w-full px-3.5 py-2.2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2] dark:text-white"
+                  />
+                </div>
+
                 <!-- City -->
                 <div class="space-y-1">
                   <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">City / Location</label>
@@ -625,6 +636,72 @@
                     placeholder="Dhaka, Bangladesh"
                     class="w-full px-3.5 py-2.2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2] dark:text-white"
                   />
+                </div>
+
+                <!-- Street Address -->
+                <div class="space-y-1 sm:col-span-2">
+                  <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Street Address</label>
+                  <input
+                    v-model="form.address"
+                    type="text"
+                    placeholder="House 12, Road 4, Gulshan-1"
+                    class="w-full px-3.5 py-2.2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm focus:outline-none focus:ring-2 focus:ring-[#1877F2]/20 focus:border-[#1877F2] dark:text-white"
+                  />
+                </div>
+
+                <!-- Action Button (CTA) Selector -->
+                <div class="space-y-1 sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Action Button (CTA)</label>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <button
+                      v-for="cta in [
+                        { key: 'send_message', label: 'Send Message' },
+                        { key: 'whatsapp', label: 'WhatsApp' },
+                        { key: 'call_now', label: 'Call Now' },
+                        { key: 'visit_website', label: 'Visit Website' },
+                        { key: 'book_now', label: 'Book Now' },
+                        { key: 'contact_us', label: 'Contact Us' }
+                      ]"
+                      :key="cta.key"
+                      type="button"
+                      @click="form.cta_type = cta.key"
+                      :class="[
+                        'px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-left flex items-center justify-between',
+                        form.cta_type === cta.key
+                          ? 'border-[#1877F2] bg-blue-50/60 dark:bg-blue-950/40 text-[#1877F2] font-bold shadow-sm'
+                          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      ]"
+                    >
+                      <span>{{ cta.label }}</span>
+                      <span v-if="form.cta_type === cta.key" class="w-1.5 h-1.5 rounded-full bg-[#1877F2]"></span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Operating Hours -->
+                <div class="space-y-1 sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Operating Hours</label>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      v-for="hours in [
+                        { key: 'always_open', label: 'Always Open (24/7)' },
+                        { key: 'selected_hours', label: 'Selected Hours' },
+                        { key: 'no_hours', label: 'No Hours Available' }
+                      ]"
+                      :key="hours.key"
+                      type="button"
+                      @click="form.business_hours = hours.key"
+                      :class="[
+                        'px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-left flex items-center justify-between',
+                        form.business_hours === hours.key
+                          ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold shadow-sm'
+                          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      ]"
+                    >
+                      <span>{{ hours.label }}</span>
+                      <span v-if="form.business_hours === hours.key" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1150,8 +1227,11 @@ const form = reactive({
   website: '',
   email: '',
   phone: '',
+  whatsapp: '',
   address: '',
   city: '',
+  cta_type: 'send_message',
+  business_hours: 'always_open',
 });
 
 // Validation Errors
@@ -1524,6 +1604,16 @@ const submitCreatePage = async () => {
   }
   if (form.phone && form.phone.trim()) {
     payload.phone = form.phone.trim();
+  }
+  if (form.whatsapp && form.whatsapp.trim()) {
+    payload.whatsapp = form.whatsapp.trim();
+  }
+  if (form.cta_type) {
+    payload.cta_type = form.cta_type;
+  }
+  if (form.business_hours) {
+    payload.business_hours = { type: form.business_hours };
+    payload.opening_hours = form.business_hours;
   }
   if (form.city && form.city.trim()) {
     payload.city = form.city.trim();

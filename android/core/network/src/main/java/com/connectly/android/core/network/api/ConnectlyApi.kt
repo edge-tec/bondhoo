@@ -10,6 +10,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -52,6 +53,13 @@ interface ConnectlyApi {
     @Multipart
     @POST("v1/profile/cover")
     suspend fun uploadCover(@Part file: MultipartBody.Part): Response<ApiResponse<MediaUploadResponse>>
+
+    @Multipart
+    @POST("v1/media/upload")
+    suspend fun uploadMedia(
+        @Part file: MultipartBody.Part,
+        @Part("collection") collection: RequestBody? = null
+    ): Response<ApiResponse<MediaUploadResponse>>
 
     // -------------------------------------------------------------
     // Friends, Following & Moderation
@@ -177,12 +185,104 @@ interface ConnectlyApi {
     @POST("v1/profile/saved-items/toggle")
     suspend fun toggleSavePost(@Body body: ToggleSaveItemPayload): Response<ApiResponse<Unit>>
 
+    @GET("v1/marketplace/categories")
+    suspend fun getMarketplaceCategories(): Response<ApiResponse<List<MarketplaceCategoryDto>>>
+
     @GET("v1/marketplace/products")
     suspend fun getMarketplaceProducts(
         @Query("category") category: String? = null,
+        @Query("subcategory") subcategory: String? = null,
         @Query("q") query: String? = null,
+        @Query("min_price") minPrice: Double? = null,
+        @Query("max_price") maxPrice: Double? = null,
+        @Query("condition") condition: String? = null,
+        @Query("sort") sort: String? = null,
         @Query("page") page: Int = 1
     ): Response<ApiResponse<List<MarketplaceProductDto>>>
+
+    @Multipart
+    @POST("v1/marketplace/media/upload")
+    suspend fun uploadMarketplaceMedia(
+        @Part file: MultipartBody.Part
+    ): Response<ApiResponse<MediaUploadResponse>>
+
+    @POST("v1/marketplace/products")
+    suspend fun createMarketplaceProduct(
+        @Body body: CreateMarketplaceProductRequest
+    ): Response<ApiResponse<MarketplaceProductDto>>
+
+    @POST("v1/marketplace/products/{id}/favorite")
+    suspend fun toggleFavoriteMarketplaceProduct(
+        @Path("id") id: Long
+    ): Response<ToggleFavoriteResponse>
+
+    @POST("v1/marketplace/products/{id}/contact")
+    suspend fun contactMarketplaceSeller(
+        @Path("id") id: Long,
+        @Body body: ContactSellerRequest
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v1/marketplace/products/{id}/order")
+    suspend fun orderMarketplaceProduct(
+        @Path("id") id: Long,
+        @Body body: OrderMarketplaceProductRequest
+    ): Response<ApiResponse<Unit>>
+
+    @GET("v1/marketplace/my-listings")
+    suspend fun getMyMarketplaceListings(): Response<ApiResponse<List<MarketplaceProductDto>>>
+
+    @DELETE("v1/marketplace/products/{id}")
+    suspend fun deleteMarketplaceProduct(
+        @Path("id") id: Long
+    ): Response<MarketplaceDeleteResponse>
+
+    @POST("v1/marketplace/products/{id}/offers")
+    suspend fun submitMarketplaceOffer(
+        @Path("id") id: Long,
+        @Body body: CreateOfferRequest
+    ): Response<ApiResponse<MarketplaceOfferDto>>
+
+    @GET("v1/marketplace/offers/my-offers")
+    suspend fun getMyMarketplaceOffers(): Response<ApiResponse<List<MarketplaceOfferDto>>>
+
+    @GET("v1/marketplace/offers/received")
+    suspend fun getReceivedMarketplaceOffers(): Response<ApiResponse<List<MarketplaceOfferDto>>>
+
+    @POST("v1/marketplace/offers/{id}/accept")
+    suspend fun acceptMarketplaceOffer(
+        @Path("id") id: Long
+    ): Response<ApiResponse<MarketplaceOfferDto>>
+
+    @POST("v1/marketplace/offers/{id}/reject")
+    suspend fun rejectMarketplaceOffer(
+        @Path("id") id: Long
+    ): Response<ApiResponse<MarketplaceOfferDto>>
+
+    @POST("v1/marketplace/offers/{id}/counter")
+    suspend fun counterMarketplaceOffer(
+        @Path("id") id: Long,
+        @Body body: CounterOfferRequest
+    ): Response<ApiResponse<MarketplaceOfferDto>>
+
+    @POST("v1/marketplace/offers/{id}/cancel")
+    suspend fun cancelMarketplaceOffer(
+        @Path("id") id: Long
+    ): Response<ApiResponse<MarketplaceOfferDto>>
+
+    @GET("v1/marketplace/orders")
+    suspend fun getMarketplaceOrders(): Response<ApiResponse<List<MarketplaceOrderDto>>>
+
+    @GET("v1/marketplace/seller/dashboard")
+    suspend fun getMarketplaceSellerDashboard(): Response<ApiResponse<MarketplaceSellerSummaryDto>>
+
+    @GET("v1/marketplace/buyer/dashboard")
+    suspend fun getMarketplaceBuyerDashboard(): Response<ApiResponse<MarketplaceBuyerSummaryDto>>
+
+    @POST("v1/marketplace/products/{id}/report")
+    suspend fun reportMarketplaceProduct(
+        @Path("id") id: Long,
+        @Body body: ReportMarketplaceRequest
+    ): Response<MarketplaceDeleteResponse>
 
     @GET("v1/profile/saved-items")
     suspend fun getSavedItems(
@@ -444,7 +544,7 @@ interface ConnectlyApi {
     suspend fun muteConversation(
         @Path("id") conversationId: Long,
         @Body body: Map<String, String> = emptyMap()
-    ): Response<ApiResponse<Map<String, Any>>>
+    ): Response<ApiResponse<Map<String, String>>>
 
     @POST("v1/conversations/{id}/clear")
     suspend fun clearConversation(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
@@ -462,19 +562,19 @@ interface ConnectlyApi {
     suspend fun addGroupMembers(
         @Path("id") conversationId: Long,
         @Body body: Map<String, List<Long>>
-    ): Response<ApiResponse<Map<String, Any>>>
+    ): Response<ApiResponse<Map<String, String>>>
 
     @DELETE("v1/conversations/{id}/members/{userId}")
     suspend fun removeConversationGroupMember(
         @Path("id") conversationId: Long,
         @Path("userId") userId: Long
-    ): Response<ApiResponse<Map<String, Any>>>
+    ): Response<ApiResponse<Map<String, String>>>
 
     @POST("v1/conversations/{id}/draft")
     suspend fun saveDraft(
         @Path("id") conversationId: Long,
         @Body body: Map<String, String>
-    ): Response<ApiResponse<Map<String, Any>>>
+    ): Response<ApiResponse<Map<String, String>>>
 
     @POST("v1/conversations/{id}/unread")
     suspend fun markConversationUnread(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
@@ -505,17 +605,17 @@ interface ConnectlyApi {
     @POST("v1/presence/heartbeat")
     suspend fun presenceHeartbeat(
         @Body body: Map<String, String> = emptyMap()
-    ): Response<ApiResponse<Map<String, Any>>>
+    ): Response<ApiResponse<Map<String, String>>>
 
     @POST("v1/presence/offline")
     suspend fun presenceOffline(
         @Body body: Map<String, String> = emptyMap()
-    ): Response<ApiResponse<Map<String, Any>>>
+    ): Response<ApiResponse<Map<String, String>>>
 
     @POST("v1/presence/typing")
     suspend fun presenceTyping(
-        @Body body: Map<String, Any>
-    ): Response<ApiResponse<Map<String, Any>>>
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<Map<String, String>>>
 
     @GET("v1/presence/friends/active")
     suspend fun getActiveFriends(): Response<ApiResponse<List<ActivePresenceFriendDto>>>
@@ -840,6 +940,12 @@ interface ConnectlyApi {
     @POST("v1/pages")
     suspend fun createPage(@Body body: CreatePageRequest): Response<ApiResponse<PageDto>>
 
+    @POST("v2/pages/register")
+    suspend fun registerPage(@Body body: CreatePageRequest): Response<ApiResponse<PageDto>>
+
+    @GET("v2/pages/username/check")
+    suspend fun checkPageUsername(@Query("username") username: String): Response<ApiResponse<PageUsernameCheckDto>>
+
     @GET("v1/pages/{slug}")
     suspend fun getPageDetails(@Path("slug") slug: String): Response<ApiResponse<PageDto>>
 
@@ -921,8 +1027,20 @@ interface ConnectlyApi {
         @Body body: PageSettingsDto
     ): Response<ApiResponse<PageSettingsDto>>
 
+    @POST("v2/pages/{pageId}/verification-request")
+    suspend fun requestPageVerification(
+        @Path("pageId") pageId: Long,
+        @Body body: RequestPageVerificationRequest
+    ): Response<ApiResponse<PageVerificationResponseDto>>
+
     @GET("v2/pages/{pageId}/monetization")
     suspend fun getPageMonetization(@Path("pageId") pageId: Long): Response<ApiResponse<PageMonetizationStatusDto>>
+
+    @PUT("v2/pages/{pageId}/monetization")
+    suspend fun updatePageMonetization(
+        @Path("pageId") pageId: Long,
+        @Body body: UpdatePageMonetizationRequest
+    ): Response<ApiResponse<PageMonetizationStatusDto>>
 
     // -------------------------------------------------------------
     // Events & RSVP (Screen 7)
@@ -1110,13 +1228,13 @@ interface ConnectlyApi {
 
     @POST("v1/jobs")
     suspend fun createJob(
-        @Body body: Map<String, Any?>
+        @Body body: CreateJobApiRequest
     ): Response<ApiResponse<Map<String, JobDto>>>
 
     @PUT("v1/jobs/{id}")
     suspend fun updateJob(
         @Path("id") id: Long,
-        @Body body: Map<String, Any?>
+        @Body body: CreateJobApiRequest
     ): Response<ApiResponse<Map<String, JobDto>>>
 
     @POST("v1/jobs/{id}/publish")
@@ -1142,11 +1260,16 @@ interface ConnectlyApi {
     @POST("v1/jobs/{id}/apply")
     suspend fun applyForJob(
         @Path("id") id: Long,
-        @Body body: Map<String, Any?>
+        @Body body: ApplyJobRequest
     ): Response<ApiResponse<Map<String, JobApplicationDto>>>
 
     @GET("v1/jobs/my/applications")
     suspend fun getMyApplications(): Response<ApiResponse<List<JobApplicationDto>>>
+
+    @DELETE("v1/jobs/{id}")
+    suspend fun deleteJob(
+        @Path("id") id: Long
+    ): Response<ApiResponse<Unit>>
 
     @POST("v1/jobs/{id}/save")
     suspend fun saveJob(
@@ -1166,7 +1289,7 @@ interface ConnectlyApi {
 
     @PUT("v1/candidate/profile")
     suspend fun updateCandidateProfile(
-        @Body body: Map<String, Any?>
+        @Body body: UpdateCandidateProfileRequest
     ): Response<ApiResponse<Map<String, CandidateProfileDto>>>
 
     @GET("v1/candidate/resumes")
@@ -1182,7 +1305,7 @@ interface ConnectlyApi {
 
     @POST("v1/candidate/job-alerts")
     suspend fun createJobAlert(
-        @Body body: Map<String, Any?>
+        @Body body: CreateJobAlertRequest
     ): Response<ApiResponse<Map<String, JobAlertDto>>>
 
     @DELETE("v1/candidate/job-alerts/{id}")
@@ -1197,7 +1320,7 @@ interface ConnectlyApi {
 
     @POST("v1/companies")
     suspend fun createCompany(
-        @Body body: Map<String, Any?>
+        @Body body: CreateCompanyRequest
     ): Response<ApiResponse<Map<String, CompanyDto>>>
 
     @GET("v1/companies/{id}")
@@ -1219,7 +1342,7 @@ interface ConnectlyApi {
     @PATCH("v1/applications/{id}/stage")
     suspend fun updateAtsStage(
         @Path("id") id: Long,
-        @Body body: Map<String, String?>
+        @Body body: Map<String, String>
     ): Response<ApiResponse<Map<String, JobApplicationDto>>>
 
     @POST("v1/applications/{id}/notes")
@@ -1234,7 +1357,7 @@ interface ConnectlyApi {
     @POST("v1/applications/{id}/interviews")
     suspend fun scheduleInterview(
         @Path("id") applicationId: Long,
-        @Body body: Map<String, Any?>
+        @Body body: ScheduleInterviewRequest
     ): Response<ApiResponse<Map<String, InterviewDto>>>
 
     @POST("v1/interviews/{id}/response")
@@ -1279,7 +1402,7 @@ interface ConnectlyApi {
     @POST("v1/learning/courses/{id}/enroll")
     suspend fun enrollInCourse(
         @Path("id") courseId: Long,
-        @Body body: Map<String, String>? = null
+        @Body body: EnrollCourseRequest
     ): Response<ApiResponse<LearningEnrollmentDto>>
 
     @GET("v1/learning/my-learning")
@@ -1443,6 +1566,8 @@ data class PostDto(
             else -> null
         }
     }
+    val type: String get() = if (resolvedMediaUrls.isNotEmpty()) "Media" else "Post"
+    val likes_count: Int get() = resolvedReactionsCount
 }
 
 @Serializable
@@ -2415,7 +2540,9 @@ data class CreatePostPayload(
     val audience: String = "public",
     val type: String = "text",
     val media_ids: List<Long> = emptyList(),
-    val tagged_user_ids: List<Long> = emptyList()
+    val tagged_user_ids: List<Long> = emptyList(),
+    val feeling_activity: String? = null,
+    val location: String? = null
 )
 
 @Serializable
@@ -2841,12 +2968,21 @@ data class PageDto(
 }
 
 @Serializable
+data class PageUsernameCheckDto(
+    val available: Boolean = false,
+    val normalized: String? = null,
+    val message: String? = null,
+    val suggestions: List<String> = emptyList()
+)
+
+@Serializable
 data class CreatePageRequest(
     val name: String,
     val username: String? = null,
     val category: String = "Business",
     val business_category: String? = null,
     val bio: String? = null,
+    val short_description: String? = null,
     val description: String? = null,
     val website: String? = null,
     val email: String? = null,
@@ -2855,7 +2991,14 @@ data class CreatePageRequest(
     val address: String? = null,
     val country: String? = null,
     val city: String? = null,
+    val state: String? = null,
+    val zip_code: String? = null,
     val opening_hours: String? = null,
+    val cta_type: String? = null,
+    val cta_url: String? = null,
+    val avatar_url: String? = null,
+    val cover_image_url: String? = null,
+    val visibility: String = "public",
     val publishing_status: String = "published"
 )
 
@@ -2899,8 +3042,99 @@ data class AssignPageRoleRequest(
     val permissions: List<String> = emptyList()
 )
 
+object StringOrDoubleSerializer : KSerializer<Double> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("StringOrDoubleSerializer", PrimitiveKind.DOUBLE)
+
+    override fun deserialize(decoder: Decoder): Double {
+        if (decoder is JsonDecoder) {
+            val element = decoder.decodeJsonElement()
+            if (element is JsonPrimitive) {
+                element.doubleOrNull?.let { return it }
+                val content = element.content.replace("%", "").trim()
+                return content.toDoubleOrNull() ?: 0.0
+            }
+        }
+        return try {
+            decoder.decodeDouble()
+        } catch (_: Exception) {
+            0.0
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: Double) {
+        encoder.encodeDouble(value)
+    }
+}
+
+@Serializable
+data class PageAnalyticsSummaryDto(
+    val total_followers: Int = 0,
+    val new_followers: Int = 0,
+    val unfollowers: Int = 0,
+    val net_follower_growth: Int = 0,
+    val total_posts: Int = 0,
+    val posts_in_period: Int = 0,
+    val scheduled_posts: Int = 0,
+    val draft_posts: Int = 0,
+    val total_likes: Int = 0,
+    val total_comments: Int = 0,
+    val total_shares: Int = 0,
+    val total_engagements: Int = 0,
+    @Serializable(with = StringOrDoubleSerializer::class)
+    val engagement_rate: Double = 0.0,
+    val impressions: Int = 0,
+    val reach: Int = 0,
+    val clicks: Int = 0,
+    val link_clicks: Int = 0,
+    val reactions: Int = 0,
+    val comments: Int = 0,
+    val shares: Int = 0,
+    val video_views: Int = 0,
+    val reel_views: Int = 0,
+    val story_views: Int = 0
+)
+
+@Serializable
+data class PageTopContentDto(
+    val id: Long = 0L,
+    val content: String? = null,
+    val type: String = "text",
+    val likes_count: Int = 0,
+    val comments_count: Int = 0,
+    val shares_count: Int = 0,
+    val impressions: Int = 0,
+    val reach: Int = 0,
+    val clicks: Int = 0,
+    val created_at: String? = null
+)
+
+@Serializable
+data class PageAuditActivityActorDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val username: String? = null,
+    val avatar_url: String? = null
+)
+
+@Serializable
+data class PageAuditActivityDto(
+    val id: Long = 0L,
+    val action: String = "",
+    val category: String = "activity",
+    val actor: PageAuditActivityActorDto? = null,
+    val description: String = "",
+    val time_ago: String = "Recently",
+    val timestamp: String = "",
+    val icon: String = "activity"
+)
+
 @Serializable
 data class PageAnalyticsDetailDto(
+    val page_id: Long = 0L,
+    val slug: String? = null,
+    val period_days: Int = 7,
+    val summary: PageAnalyticsSummaryDto? = null,
     val total_followers: Int = 0,
     val new_followers: Int = 0,
     val unfollowers: Int = 0,
@@ -2917,9 +3151,20 @@ data class PageAnalyticsDetailDto(
     val story_views: Int = 0,
     val live_views: Int = 0,
     val link_clicks: Int = 0,
+    @Serializable(with = StringOrDoubleSerializer::class)
     val engagement_rate: Double = 0.0,
-    val growth_rate: Double = 0.0
-)
+    val growth_rate: Double = 0.0,
+    val top_content: List<PageTopContentDto> = emptyList(),
+    val recent_activity: List<PageAuditActivityDto> = emptyList()
+) {
+    val resolvedReach: Int get() = summary?.reach ?: if (total_reach > 0) total_reach else summary?.impressions ?: 0
+    val resolvedImpressions: Int get() = summary?.impressions ?: total_impressions
+    val resolvedFollowers: Int get() = summary?.total_followers ?: total_followers
+    val resolvedNewFollowers: Int get() = summary?.new_followers ?: new_followers
+    val resolvedEngagementRate: Double get() = summary?.engagement_rate ?: engagement_rate
+    val resolvedReactions: Int get() = summary?.reactions ?: summary?.total_likes ?: total_reactions
+    val resolvedPageViews: Int get() = summary?.impressions ?: total_page_views
+}
 
 @Serializable
 data class PageReviewDto(
@@ -2974,7 +3219,10 @@ data class PageInboxMessageDto(
     val timestamp: String = "",
     val is_read: Boolean = false,
     val assigned_team_member: String? = null
-)
+) {
+    val last_message_preview: String get() = text
+    val last_message_at: String get() = timestamp
+}
 
 @Serializable
 data class SendPageMessageRequest(
@@ -2984,6 +3232,7 @@ data class SendPageMessageRequest(
 
 @Serializable
 data class PageSettingsDto(
+    val is_public: Boolean = true,
     val page_visibility: String = "public",
     val allow_reviews: Boolean = true,
     val allow_messages: Boolean = true,
@@ -2991,16 +3240,74 @@ data class PageSettingsDto(
     val comment_moderation: Boolean = false,
     val age_restriction: String = "everyone",
     val country_restrictions: List<String> = emptyList(),
-    val blocked_words: List<String> = emptyList()
+    val blocked_words: List<String> = emptyList(),
+    val verification_status: String = "unverified"
+)
+
+@Serializable
+data class RequestPageVerificationRequest(
+    val verification_type: String = "business",
+    val legal_name: String? = null,
+    val registration_number: String? = null,
+    val tax_id: String? = null,
+    val document_url: String? = null,
+    val additional_info: String? = null
+)
+
+@Serializable
+data class PageVerificationResponseDto(
+    val id: Long = 0L,
+    val page_id: Long = 0L,
+    val status: String = "pending",
+    val verification_type: String = "business",
+    val legal_name: String? = null,
+    val document_url: String? = null,
+    val additional_info: String? = null
 )
 
 @Serializable
 data class PageMonetizationStatusDto(
     val is_eligible: Boolean = false,
     val status: String = "In Review",
+    val stars_enabled: Boolean = false,
+    val in_stream_ads_enabled: Boolean = false,
+    val subscriptions_enabled: Boolean = false,
+    val brand_collabs_enabled: Boolean = false,
+    val current_followers: Int = 0,
+    val required_followers: Int = 10000,
+    val current_watch_minutes: Long = 0L,
+    val required_watch_minutes: Long = 600000L,
+    val payout_status: String = "Connected",
+    val payout_date: String = "Nov 15",
+    val payout_account_name: String? = null,
+    val payout_account_number: String? = null,
+    val payout_method: String? = null,
+    val bank_name: String? = null,
+    val swift_code: String? = null,
     val estimated_earnings: Double = 0.0,
     val net_payout: Double = 0.0,
-    val policy_status: String = "Good Standing"
+    val policy_status: String = "Good Standing",
+    val in_stream_revenue: Double = 842.20,
+    val brand_collabs_revenue: Double = 250.00,
+    val subscriptions_revenue: Double = 118.30,
+    val stars_revenue: Double = 30.00,
+    val monetizable_views: Long = 284500L,
+    val average_cpm: Double = 3.45,
+    val average_rpm: Double = 1.82
+)
+
+@Serializable
+data class UpdatePageMonetizationRequest(
+    val in_stream_ads_enabled: Boolean? = null,
+    val brand_collabs_enabled: Boolean? = null,
+    val subscriptions_enabled: Boolean? = null,
+    val stars_enabled: Boolean? = null,
+    val is_eligible: Boolean? = null,
+    val payout_account_name: String? = null,
+    val payout_account_number: String? = null,
+    val payout_method: String? = null,
+    val bank_name: String? = null,
+    val swift_code: String? = null
 )
 
 @Serializable
@@ -3352,17 +3659,204 @@ data class NotificationPreferencesRequest(
 )
 
 @Serializable
+data class MarketplaceCategoryDto(
+    val id: Long,
+    val name: String,
+    val slug: String,
+    val icon: String? = null,
+    val display_order: Int? = null,
+    val products_count: Int? = null,
+    val subcategories: List<MarketplaceSubcategoryDto> = emptyList()
+)
+
+@Serializable
+data class MarketplaceSubcategoryDto(
+    val id: Long,
+    val name: String,
+    val slug: String,
+    val icon: String? = null,
+    val products_count: Int? = null
+)
+
+@Serializable
+data class MarketplaceSellerDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val username: String? = null,
+    val avatar_url: String? = null,
+    val is_verified: Boolean = false,
+    val rating: Double = 0.0,
+    val reviews_count: Int = 0,
+    val member_since: String? = null
+)
+
+@Serializable
 data class MarketplaceProductDto(
     val id: Long,
     val title: String,
     val price: Double = 0.0,
+    val original_price: Double? = null,
+    val discount_percent: Int? = null,
     val currency: String = "BDT",
     val description: String? = null,
     val location: String? = null,
     val condition: String = "used",
+    val brand: String? = null,
+    val is_negotiable: Boolean = false,
+    val delivery_type: String = "pickup",
+    val delivery_charge: Double = 0.0,
     val primary_image_url: String? = null,
+    val primary_image: String? = null,
     val status: String = "active",
-    val seller_name: String? = null
+    val seller_name: String? = null,
+    val images: List<String> = emptyList(),
+    val is_favorited: Boolean = false,
+    val is_owner: Boolean = false,
+    val views_count: Int = 0,
+    val created_at: String? = null,
+    val category: MarketplaceCategoryDto? = null,
+    val subcategory: MarketplaceSubcategoryDto? = null,
+    val seller: MarketplaceSellerDto? = null
+)
+
+@Serializable
+data class CreateMarketplaceProductRequest(
+    val category_id: Long,
+    val subcategory_id: Long? = null,
+    val title: String,
+    val description: String? = null,
+    val price: Double,
+    val original_price: Double? = null,
+    val currency: String = "BDT",
+    val condition: String = "used",
+    val brand: String? = null,
+    val location: String? = null,
+    val delivery_type: String = "pickup",
+    val delivery_charge: Double = 0.0,
+    val is_negotiable: Boolean = false,
+    val images: List<String> = emptyList()
+)
+
+@Serializable
+data class MarketplaceOfferDto(
+    val id: Long,
+    val product_id: Long,
+    val product_title: String? = null,
+    val product_primary_image: String? = null,
+    val product_price: Double = 0.0,
+    val buyer_id: Long? = null,
+    val buyer_name: String? = null,
+    val buyer_avatar: String? = null,
+    val seller_id: Long? = null,
+    val seller_name: String? = null,
+    val offer_amount: Double,
+    val original_price: Double = 0.0,
+    val counter_amount: Double? = null,
+    val currency: String = "BDT",
+    val currency_symbol: String = "৳",
+    val status: String = "pending", // pending, accepted, rejected, countered, cancelled, expired
+    val message: String? = null,
+    val counter_message: String? = null,
+    val is_buyer: Boolean = false,
+    val is_seller: Boolean = false,
+    val created_at: String? = null,
+    val updated_at: String? = null
+)
+
+@Serializable
+data class CreateOfferRequest(
+    val offer_amount: Double,
+    val message: String? = null
+)
+
+@Serializable
+data class CounterOfferRequest(
+    val counter_amount: Double,
+    val counter_message: String? = null
+)
+
+@Serializable
+data class ReportMarketplaceRequest(
+    val reason: String,
+    val details: String? = null
+)
+
+@Serializable
+data class MarketplaceOrderDto(
+    val id: Long,
+    val order_number: String? = null,
+    val product_id: Long? = null,
+    val product_title: String? = null,
+    val product_image: String? = null,
+    val buyer_id: Long? = null,
+    val seller_id: Long? = null,
+    val amount: Double = 0.0,
+    val currency: String = "BDT",
+    val status: String = "pending", // pending, confirmed, processing, shipped, delivered, completed, cancelled, disputed, refunded
+    val escrow_status: String = "pending",
+    val payment_method: String = "sandbox",
+    val shipping_name: String? = null,
+    val shipping_address: String? = null,
+    val shipping_phone: String? = null,
+    val tracking_carrier: String? = null,
+    val tracking_number: String? = null,
+    val created_at: String? = null
+)
+
+@Serializable
+data class MarketplaceSellerSummaryDto(
+    val total_listings: Int = 0,
+    val active_listings: Int = 0,
+    val sold_listings: Int = 0,
+    val pending_offers_count: Int = 0,
+    val total_orders: Int = 0,
+    val active_orders: Int = 0,
+    val completed_orders: Int = 0,
+    val cancelled_orders: Int = 0,
+    val disputed_orders: Int = 0,
+    val gross_sales: Double = 0.0,
+    val net_earnings: Double = 0.0,
+    val pending_settlements: Double = 0.0,
+    val currency: String = "BDT"
+)
+
+@Serializable
+data class MarketplaceBuyerSummaryDto(
+    val total_orders: Int = 0,
+    val active_orders: Int = 0,
+    val completed_orders: Int = 0,
+    val cancelled_orders: Int = 0,
+    val active_offers_count: Int = 0,
+    val saved_products_count: Int = 0
+)
+
+@Serializable
+data class ContactSellerRequest(
+    val message: String
+)
+
+@Serializable
+data class OrderMarketplaceProductRequest(
+    val shipping_address: String,
+    val shipping_name: String,
+    val shipping_phone: String,
+    val quantity: Int = 1,
+    val payment_method: String = "sandbox"
+)
+
+@Serializable
+data class ToggleFavoriteResponse(
+    val success: Boolean = true,
+    val is_favorited: Boolean = false,
+    val message: String? = null
+)
+
+@Serializable
+data class MarketplaceDeleteResponse(
+    val success: Boolean = true,
+    val status: String? = null,
+    val message: String? = null,
+    val data: kotlinx.serialization.json.JsonElement? = null
 )
 
 @Serializable
@@ -3565,6 +4059,87 @@ data class JobAlertDto(
 )
 
 @Serializable
+data class ApplyJobRequest(
+    val full_name: String,
+    val email: String,
+    val phone: String,
+    val resume_id: Long? = null,
+    val resume_url: String? = null,
+    val portfolio_url: String? = null,
+    val cover_letter: String? = null,
+    val expected_salary: Int? = null
+)
+
+@Serializable
+data class CreateJobApiRequest(
+    val title: String,
+    val company_id: Long? = null,
+    val category_id: Long? = null,
+    val workplace_type: String? = null,
+    val location_type: String? = null,
+    val employment_type: String? = null,
+    val experience_level: String? = null,
+    val location: String? = null,
+    val salary_min: Int? = null,
+    val salary_max: Int? = null,
+    val salary_currency: String? = "BDT",
+    val vacancies: Int? = 1,
+    val description: String = "",
+    val requirements: String? = null,
+    val skills: List<String> = emptyList(),
+    val deadline: String? = null
+)
+
+@Serializable
+data class UpdateCandidateProfileRequest(
+    val headline: String? = null,
+    val summary: String? = null,
+    val years_of_experience: Int? = null,
+    val current_company: String? = null,
+    val expected_salary_min: Int? = null,
+    val expected_salary_max: Int? = null,
+    val preferred_workplace_type: String? = null,
+    val preferred_employment_type: String? = null,
+    val open_to_work: Boolean = true,
+    val skills: List<String> = emptyList()
+)
+
+@Serializable
+data class CreateJobAlertRequest(
+    val keyword: String? = null,
+    val category_id: Long? = null,
+    val location: String? = null,
+    val workplace_type: String? = null,
+    val min_salary: Int? = null,
+    val frequency: String = "daily"
+)
+
+@Serializable
+data class CreateCompanyRequest(
+    val name: String,
+    val legal_name: String? = null,
+    val industry: String? = null,
+    val website: String? = null,
+    val description: String? = null,
+    val location: String? = null,
+    val company_size: String? = null,
+    val logo_url: String? = null
+)
+
+@Serializable
+data class ScheduleInterviewRequest(
+    val scheduled_at: String,
+    val interview_type: String = "video",
+    val meeting_url: String? = null,
+    val meeting_link: String? = null,
+    val location: String? = null,
+    val instructions: String? = null,
+    val interviewer_notes: String? = null,
+    val duration_minutes: Int = 45,
+    val timezone: String = "Asia/Dhaka"
+)
+
+@Serializable
 data class AtsColumnDto(
     val stage_key: String,
     val title: String,
@@ -3686,6 +4261,11 @@ data class LearningLessonDto(
     val is_preview: Boolean = false,
     val is_mandatory: Boolean = true,
     val is_published: Boolean = true
+)
+
+@Serializable
+data class EnrollCourseRequest(
+    val coupon_code: String? = null
 )
 
 @Serializable

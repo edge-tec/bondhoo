@@ -9,24 +9,43 @@ plugins {
 
 android {
     namespace = "com.connectly.android"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.connectly.android"
+        applicationId = "com.jugajug.android"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 36
+        versionCode = 2
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
         create("release") {
-            storeFile = file("keystore/connectly-release.jks")
-            storePassword = System.getenv("CONNECTLY_KEYSTORE_PASSWORD") ?: "connectly2026"
-            keyAlias = System.getenv("CONNECTLY_KEY_ALIAS") ?: "connectly"
-            keyPassword = System.getenv("CONNECTLY_KEY_PASSWORD") ?: "connectly2026"
+            val storeFilePath = System.getenv("BONDHOO_UPLOAD_STORE_FILE")
+            val storePass = System.getenv("BONDHOO_UPLOAD_STORE_PASSWORD")
+            val kAlias = System.getenv("BONDHOO_UPLOAD_KEY_ALIAS")
+            val kPass = System.getenv("BONDHOO_UPLOAD_KEY_PASSWORD")
+
+            if (!storeFilePath.isNullOrBlank() && File(storeFilePath).exists() &&
+                !storePass.isNullOrBlank() && !kAlias.isNullOrBlank() && !kPass.isNullOrBlank()) {
+                storeFile = File(storeFilePath)
+                storePassword = storePass
+                keyAlias = kAlias
+                keyPassword = kPass
+            } else {
+                val isReleaseTask = gradle.startParameter.taskNames.any {
+                    it.contains("Release", ignoreCase = true)
+                }
+                if (isReleaseTask) {
+                    throw GradleException(
+                        "BONDHOO Security Enforcement: Release builds require secure signing credentials. " +
+                        "Set BONDHOO_UPLOAD_STORE_FILE, BONDHOO_UPLOAD_STORE_PASSWORD, " +
+                        "BONDHOO_UPLOAD_KEY_ALIAS, and BONDHOO_UPLOAD_KEY_PASSWORD environment variables."
+                    )
+                }
+            }
         }
     }
 

@@ -22,7 +22,11 @@ class JobPortalService
     {
         $query = JobPosting::with(['user.profile', 'company', 'category', 'skills', 'page'])
             ->where('status', JobPosting::STATUS_ACTIVE)
-            ->where('visibility', 'public');
+            ->where('visibility', 'public')
+            ->where(function ($dq): void {
+                $dq->whereNull('deadline')
+                    ->orWhereDate('deadline', '>=', now()->toDateString());
+            });
 
         if (! empty($filters['q'])) {
             $q = trim((string) $filters['q']);

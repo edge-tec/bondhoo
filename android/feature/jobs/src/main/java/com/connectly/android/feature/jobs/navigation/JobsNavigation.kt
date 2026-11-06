@@ -13,11 +13,13 @@ fun NavController.navigateToJobs(navOptions: NavOptions? = null) {
 }
 
 fun NavGraphBuilder.jobsScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onJoinVideoCall: (Long) -> Unit = {}
 ) {
     composable(route = JOBS_ROUTE) {
         JobsHomeScreen(
-            onNavigateBack = onNavigateBack
+            onNavigateBack = onNavigateBack,
+            onJoinVideoCall = onJoinVideoCall
         )
     }
 }

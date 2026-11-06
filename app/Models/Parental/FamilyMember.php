@@ -82,4 +82,3 @@ class FamilyMember extends Model
         return $this->hasMany(ConsentRequest::class, 'child_member_id');
     }
 }
-

@@ -194,7 +194,7 @@ class LearningRepositoryImpl @Inject constructor(
     override fun enrollCourse(courseId: Long, couponCode: String?): Flow<Result<LearningEnrollment>> = flow {
         emit(Result.Loading)
         try {
-            val body = if (couponCode != null) mapOf("coupon_code" to couponCode) else null
+            val body = com.connectly.android.core.network.api.EnrollCourseRequest(coupon_code = couponCode)
             val response = api.enrollInCourse(courseId, body)
             if (response.isSuccessful && response.body() != null) {
                 val dto = response.body()?.data

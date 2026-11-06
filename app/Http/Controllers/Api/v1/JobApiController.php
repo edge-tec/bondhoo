@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Recruitment\CreateJobRequest;
 use App\Http\Requests\Recruitment\SubmitJobApplicationRequest;
+use App\Models\Company;
 use App\Models\CompanyMember;
 use App\Models\JobApplication;
 use App\Models\JobCategory;
@@ -17,6 +18,7 @@ use App\Services\Recruitment\JobPortalService;
 use App\Services\Recruitment\RecruitmentAtsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class JobApiController extends Controller
@@ -34,7 +36,7 @@ class JobApiController extends Controller
     public function index(Request $request): JsonResponse
     {
         /** @var ?User $viewer */
-        $viewer = $request->user();
+        $viewer = Auth::guard('sanctum')->user() ?? $request->user('web') ?? $request->user();
 
         $filters = [
             'q' => $request->query('q') ?? $request->query('search'),
@@ -84,8 +86,18 @@ class JobApiController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         /** @var ?User $viewer */
-        $viewer = $request->user();
+        $viewer = Auth::guard('sanctum')->user() ?? $request->user('web') ?? $request->user();
         $job = JobPosting::with(['user.profile', 'page', 'company', 'category', 'skills', 'questions'])->findOrFail($id);
+
+        if ($job->status !== JobPosting::STATUS_ACTIVE || $job->visibility !== 'public') {
+            if (! $viewer || ! $this->canManageJob($viewer, $job)) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'error',
+                    'message' => 'চাকরির বিজ্ঞপ্তিটি বর্তমানে অনুপলব্ধ বা প্রকাশের অপেক্ষায় রয়েছে।',
+                ], 404);
+            }
+        }
 
         $this->jobPortalService->recordView(
             $job,
@@ -113,8 +125,27 @@ class JobApiController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
+        $validated = $request->validated();
 
-        $job = $this->jobPortalService->createJob($user, $request->validated());
+        if (! empty($validated['company_id'])) {
+            $company = Company::findOrFail((int) $validated['company_id']);
+            if (! $user->hasRole('ADMIN') && ! $user->hasRole('SUPER_ADMIN')) {
+                $role = $company->getMemberRole($user->id);
+                if (! in_array($role, [
+                    CompanyMember::ROLE_OWNER,
+                    CompanyMember::ROLE_ADMIN,
+                    CompanyMember::ROLE_RECRUITER,
+                ], true)) {
+                    return response()->json([
+                        'success' => false,
+                        'status' => 'error',
+                        'message' => 'আপনি এই কোম্পানির পক্ষ থেকে চাকরির বিজ্ঞপ্তি প্রকাশের অনুমতিপ্রাপ্ত নন।',
+                    ], 403);
+                }
+            }
+        }
+
+        $job = $this->jobPortalService->createJob($user, $validated);
 
         return response()->json([
             'success' => true,
@@ -179,6 +210,34 @@ class JobApiController extends Controller
                 'job' => $updated->toResponseArray($user),
             ],
             'message' => 'চাকরির বিজ্ঞপ্তি সফলভাবে আপডেট হয়েছে!',
+        ]);
+    }
+
+    /**
+     * DELETE /api/v1/jobs/{id}
+     *
+     * Soft delete an existing job posting (creator or company admin only).
+     */
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $job = JobPosting::findOrFail($id);
+
+        if (! $this->canManageJob($user, $job)) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'চাকরির বিজ্ঞপ্তি মুছে ফেলার অনুমতি নেই।',
+            ], 403);
+        }
+
+        $job->delete();
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'message' => 'চাকরির বিজ্ঞপ্তি সফলভাবে অপসারণ করা হয়েছে।',
         ]);
     }
 

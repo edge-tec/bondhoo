@@ -6,10 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -66,6 +62,8 @@ fun PageAnalyticsScreen(
             }
         } else {
             val analytics = state.analytics
+            val summary = analytics?.summary
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -87,39 +85,46 @@ fun PageAnalyticsScreen(
                     0 -> { // Overview
                         item {
                             AnalyticsSectionCard("Reach & Impressions") {
-                                ProgressMetricRow("Organic Reach", 380000, 450000, ConnectlyElectricBlue)
-                                ProgressMetricRow("Total Impressions", 890000, 1000000, Color(0xFF10B981))
-                                ProgressMetricRow("Page Views", 32000, 50000, Color(0xFF8B5CF6))
+                                val reach = analytics?.resolvedReach ?: 0
+                                val impressions = analytics?.resolvedImpressions ?: 0
+                                val maxReach = maxOf(reach, impressions, 1)
+
+                                ProgressMetricRow("Unique Reach", reach, maxReach, ConnectlyElectricBlue)
+                                ProgressMetricRow("Total Impressions", impressions, maxReach, Color(0xFF10B981))
+                                ProgressMetricRow("Engagement Rate", ((analytics?.resolvedEngagementRate ?: 0.0) * 10).toInt(), 1000, Color(0xFF8B5CF6))
                             }
                         }
                     }
                     1 -> { // Audience
                         item {
-                            AnalyticsSectionCard("Audience Demographics & Growth") {
-                                Text("Net Follower Growth: +${analytics?.new_followers ?: 2450}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text("Top Locations: Dhaka (45%), Chittagong (22%), Sylhet (12%)", fontSize = 12.sp, color = TextSecondaryLight)
-                                ProgressMetricRow("Active Audience Ratio", 72, 100, ConnectlyElectricBlue)
+                            AnalyticsSectionCard("Audience & Follower Growth") {
+                                Text("Total Followers: ${analytics?.resolvedFollowers ?: state.page?.followers_count ?: 0}", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text("New Followers in Period: +${analytics?.resolvedNewFollowers ?: 0}", fontSize = 13.sp, color = Color(0xFF10B981))
+                                Text("Unfollowers: ${summary?.unfollowers ?: 0}", fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
+                                Text("Net Growth: +${summary?.net_follower_growth ?: analytics?.resolvedNewFollowers ?: 0}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
                     2 -> { // Content
                         item {
                             AnalyticsSectionCard("Post Engagement Breakdown") {
-                                StatRow("Post Engagement", "${analytics?.post_engagement ?: 68000}")
-                                StatRow("Reactions", "${analytics?.total_reactions ?: 42000}")
-                                StatRow("Comments", "${analytics?.total_comments ?: 18000}")
-                                StatRow("Shares", "${analytics?.total_shares ?: 8000}")
-                                StatRow("Link Clicks", "${analytics?.link_clicks ?: 9400}")
+                                StatRow("Total Posts in Period", "${summary?.posts_in_period ?: summary?.total_posts ?: 0}")
+                                StatRow("Total Engagements", "${summary?.total_engagements ?: 0}")
+                                StatRow("Reactions", "${analytics?.resolvedReactions ?: 0}")
+                                StatRow("Comments", "${summary?.comments ?: summary?.total_comments ?: 0}")
+                                StatRow("Shares", "${summary?.shares ?: summary?.total_shares ?: 0}")
+                                StatRow("Link Clicks", "${summary?.clicks ?: summary?.link_clicks ?: 0}")
                             }
                         }
                     }
                     else -> { // Video & Reels
                         item {
                             AnalyticsSectionCard("Video & Reels Performance") {
-                                StatRow("Video Views", "${analytics?.video_views ?: 125000}")
-                                StatRow("Reels Plays", "${analytics?.reels_views ?: 310000}")
-                                StatRow("Story Views", "${analytics?.story_views ?: 45000}")
-                                StatRow("Live Stream Views", "${analytics?.live_views ?: 12000}")
+                                StatRow("Video Views", "${summary?.video_views ?: analytics?.video_views ?: 0}")
+                                StatRow("Reels Plays", "${summary?.reel_views ?: analytics?.reels_views ?: 0}")
+                                StatRow("Story Views", "${summary?.story_views ?: analytics?.story_views ?: 0}")
+                                StatRow("Scheduled Posts", "${summary?.scheduled_posts ?: 0}")
+                                StatRow("Draft Posts", "${summary?.draft_posts ?: 0}")
                             }
                         }
                     }
@@ -134,36 +139,37 @@ private fun AnalyticsSectionCard(title: String, content: @Composable ColumnScope
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextPrimaryLight)
+            Text(title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
             content()
         }
     }
 }
 
 @Composable
-private fun ProgressMetricRow(label: String, current: Int, max: Int, color: Color) {
-    Column {
+private fun ProgressMetricRow(label: String, value: Int, total: Int, color: Color) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, fontSize = 12.sp, color = TextSecondaryLight)
-            Text("$current", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("$value", fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        val progress = if (total > 0) (value.toFloat() / total.toFloat()).coerceIn(0f, 1f) else 0f
         LinearProgressIndicator(
-            progress = { (current.toFloat() / max.toFloat()).coerceIn(0f, 1f) },
+            progress = { progress },
             modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
             color = color,
-            trackColor = color.copy(alpha = 0.15f)
+            trackColor = color.copy(alpha = 0.2f)
         )
     }
 }
 
 @Composable
-private fun StatRow(label: String, value: String) {
+private fun StatRow(title: String, count: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, fontSize = 13.sp, color = TextSecondaryLight)
-        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimaryLight)
+        Text(title, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(count, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }

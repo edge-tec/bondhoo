@@ -227,6 +227,14 @@ class UpdatePageUseCase @Inject constructor(
     }
 }
 
+class CheckPageUsernameUseCase @Inject constructor(
+    private val repository: GroupsRepository
+) {
+    operator fun invoke(username: String): Flow<Result<com.connectly.android.core.network.api.PageUsernameCheckDto>> {
+        return repository.checkPageUsername(username)
+    }
+}
+
 class GetPageAnalyticsUseCase @Inject constructor(
     private val repository: GroupsRepository
 ) {
@@ -314,11 +322,57 @@ class UpdatePageSettingsUseCase @Inject constructor(
     }
 }
 
+class DeletePageUseCase @Inject constructor(
+    private val repository: GroupsRepository
+) {
+    operator fun invoke(pageId: Long): Flow<Result<Unit>> {
+        return repository.deletePage(pageId)
+    }
+}
+
+class RequestPageVerificationUseCase @Inject constructor(
+    private val repository: GroupsRepository
+) {
+    operator fun invoke(
+        pageId: Long,
+        request: com.connectly.android.core.network.api.RequestPageVerificationRequest
+    ): Flow<Result<com.connectly.android.core.network.api.PageVerificationResponseDto>> {
+        return repository.requestPageVerification(pageId, request)
+    }
+}
+
 class GetPageMonetizationUseCase @Inject constructor(
     private val repository: GroupsRepository
 ) {
     operator fun invoke(pageId: Long): Flow<Result<com.connectly.android.core.network.api.PageMonetizationStatusDto>> {
         return repository.getPageMonetization(pageId)
+    }
+}
+
+class UpdatePageMonetizationUseCase @Inject constructor(
+    private val repository: GroupsRepository
+) {
+    operator fun invoke(
+        pageId: Long,
+        request: com.connectly.android.core.network.api.UpdatePageMonetizationRequest
+    ): Flow<Result<com.connectly.android.core.network.api.PageMonetizationStatusDto>> {
+        return repository.updatePageMonetization(pageId, request)
+    }
+}
+
+class GetPagePostsUseCase @Inject constructor(
+    private val repository: GroupsRepository
+) {
+    operator fun invoke(pageId: Long): Flow<Result<List<com.connectly.android.core.network.api.PostDto>>> {
+        return repository.getPagePosts(pageId)
+    }
+}
+
+class CreatePagePostUseCase @Inject constructor(
+    private val repository: GroupsRepository
+) {
+    operator fun invoke(pageId: Long, request: com.connectly.android.core.network.api.CreateGroupPostRequest): Flow<Result<com.connectly.android.core.network.api.PostDto>> {
+        return repository.createPagePost(pageId, request)
     }
 }
 

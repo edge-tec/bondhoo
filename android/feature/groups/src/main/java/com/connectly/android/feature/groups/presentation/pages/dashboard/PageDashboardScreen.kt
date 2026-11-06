@@ -85,6 +85,56 @@ fun PageDashboardScreen(
             ) {
                 CircularProgressIndicator(color = ConnectlyElectricBlue)
             }
+        } else if (state.page == null && state.errorMessage != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.ErrorOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text(
+                            text = "Dashboard Unavailable",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Text(
+                            text = state.errorMessage ?: "Could not load the Professional Dashboard for this page.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            OutlinedButton(onClick = onNavigateBack) {
+                                Text("Go Back")
+                            }
+                            Button(
+                                onClick = { viewModel.handleIntent(PageDashboardIntent.Refresh) },
+                                colors = ButtonDefaults.buttonColors(containerColor = ConnectlyElectricBlue)
+                            ) {
+                                Text("Retry")
+                            }
+                        }
+                    }
+                }
+            }
         } else {
             val page = state.page
             val analytics = state.analytics
@@ -95,6 +145,29 @@ fun PageDashboardScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                if (state.errorMessage != null) {
+                    item {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = state.errorMessage ?: "Failed to refresh analytics",
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(onClick = { viewModel.handleIntent(PageDashboardIntent.Refresh) }) {
+                                    Text("Retry", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
+                                }
+                            }
+                        }
+                    }
+                }
                 // Page Overview Header
                 item {
                     Card(
@@ -176,18 +249,22 @@ fun PageDashboardScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
+                            val reach = analytics?.resolvedReach ?: 0
+                            val reachStr = if (reach >= 1000) "${reach / 1000}K" else "$reach"
                             MetricCard(
                                 title = "Total Reach",
-                                value = "${(analytics?.total_reach ?: 450000) / 1000}K",
-                                subtitle = "+${analytics?.growth_rate ?: 4.2}% this period",
+                                value = reachStr,
+                                subtitle = "Impressions: ${analytics?.resolvedImpressions ?: 0}",
                                 icon = Icons.Outlined.Visibility,
                                 color = ConnectlyElectricBlue,
                                 modifier = Modifier.weight(1f)
                             )
+                            val views = analytics?.resolvedPageViews ?: 0
+                            val viewsStr = if (views >= 1000) "${views / 1000}K" else "$views"
                             MetricCard(
                                 title = "Page Views",
-                                value = "${(analytics?.total_page_views ?: 32000) / 1000}K",
-                                subtitle = "Profile Visits: ${analytics?.profile_visits ?: 14500}",
+                                value = viewsStr,
+                                subtitle = "Reactions: ${analytics?.resolvedReactions ?: 0}",
                                 icon = Icons.Outlined.TrendingUp,
                                 color = Color(0xFF10B981),
                                 modifier = Modifier.weight(1f)
@@ -200,16 +277,16 @@ fun PageDashboardScreen(
                         ) {
                             MetricCard(
                                 title = "New Followers",
-                                value = "+${analytics?.new_followers ?: 2450}",
-                                subtitle = "Total: ${page?.followers_count ?: 186000}",
+                                value = "+${analytics?.resolvedNewFollowers ?: 0}",
+                                subtitle = "Total: ${page?.followers_count ?: analytics?.resolvedFollowers ?: 0}",
                                 icon = Icons.Outlined.People,
                                 color = Color(0xFF8B5CF6),
                                 modifier = Modifier.weight(1f)
                             )
                             MetricCard(
                                 title = "Engagement Rate",
-                                value = "${analytics?.engagement_rate ?: 7.6}%",
-                                subtitle = "${analytics?.total_reactions ?: 42000} reactions",
+                                value = "${analytics?.resolvedEngagementRate ?: 0.0}%",
+                                subtitle = "Period: ${state.selectedRange}",
                                 icon = Icons.Outlined.Favorite,
                                 color = Color(0xFFEC4899),
                                 modifier = Modifier.weight(1f)

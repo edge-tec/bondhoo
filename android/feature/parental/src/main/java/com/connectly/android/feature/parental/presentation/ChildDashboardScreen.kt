@@ -67,7 +67,7 @@ fun ChildDashboardScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertifally,
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {

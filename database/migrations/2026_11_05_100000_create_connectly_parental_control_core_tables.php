@@ -245,4 +245,3 @@ return new class extends Migration
         Schema::dropIfExists('families');
     }
 };
-

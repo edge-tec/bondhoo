@@ -44,5 +44,6 @@ sealed interface FeedIntent {
     object CloseReportDialog : FeedIntent
     data class SubmitReport(val postId: Long, val reason: String, val details: String? = null) : FeedIntent
     data class AddSuggestedFriend(val userId: Long) : FeedIntent
+    data class StartLiveStream(val title: String, val description: String? = null, val onStreamCreated: (Long) -> Unit) : FeedIntent
     object DismissMessages : FeedIntent
 }

@@ -179,4 +179,3 @@ class Phase13Stage05QuizAndAssessmentSecurityTest extends TestCase
             ->assertJsonPath('success', false);
     }
 }
-

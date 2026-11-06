@@ -73,4 +73,3 @@ class DevicePairingCode extends Model
             && $this->expires_at->isFuture();
     }
 }
-

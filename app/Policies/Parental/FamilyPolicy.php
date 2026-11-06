@@ -49,4 +49,3 @@ class FamilyPolicy
         return $family->hasGuardianAccess($user->id);
     }
 }
-

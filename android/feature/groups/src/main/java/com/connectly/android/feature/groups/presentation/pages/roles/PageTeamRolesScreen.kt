@@ -10,8 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,26 +20,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.connectly.android.core.network.api.PageRoleDto
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.connectly.android.core.designsystem.theme.ConnectlyElectricBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageTeamRolesScreen(
     pageId: Long,
     onNavigateBack: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: PageTeamRolesViewModel = hiltViewModel()
 ) {
+    val state by viewModel.uiState.collectAsState()
     var showAssignDialog by remember { mutableStateOf(false) }
-    var newMemberName by remember { mutableStateOf("") }
+    var newUserId by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("editor") }
 
-    val rolesList = remember {
-        mutableStateListOf(
-            PageRoleDto(id = 1, user_id = 101, user_name = "Page Owner", user_username = "owner_admin", role = "owner"),
-            PageRoleDto(id = 2, user_id = 102, user_name = "Rahim Ahmed", user_username = "rahim_a", role = "editor"),
-            PageRoleDto(id = 3, user_id = 103, user_name = "Nusrat Jahan", user_username = "nusrat_j", role = "moderator"),
-            PageRoleDto(id = 4, user_id = 104, user_name = "Tanvir Hasan", user_username = "tanvir_h", role = "content_manager")
-        )
+    LaunchedEffect(pageId) {
+        if (state.pageId != pageId) {
+            viewModel.loadRoles(pageId)
+        }
     }
 
     if (showAssignDialog) {
@@ -50,9 +49,9 @@ fun PageTeamRolesScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
-                        value = newMemberName,
-                        onValueChange = { newMemberName = it },
-                        label = { Text("User Name or @username") },
+                        value = newUserId,
+                        onValueChange = { newUserId = it },
+                        label = { Text("User ID (e.g. 2)") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -68,7 +67,9 @@ fun PageTeamRolesScreen(
                     roles.forEach { (roleKey, roleLabel) ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth().clickable { selectedRole = roleKey }
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedRole = roleKey }
                         ) {
                             RadioButton(
                                 selected = selectedRole == roleKey,
@@ -83,20 +84,14 @@ fun PageTeamRolesScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (newMemberName.isNotBlank()) {
-                            rolesList.add(
-                                PageRoleDto(
-                                    id = System.currentTimeMillis(),
-                                    user_id = System.currentTimeMillis(),
-                                    user_name = newMemberName,
-                                    user_username = newMemberName.lowercase().replace(" ", "_"),
-                                    role = selectedRole
-                                )
-                            )
-                            newMemberName = ""
+                        val parsedId = newUserId.trim().toLongOrNull()
+                        if (parsedId != null && parsedId > 0L) {
+                            viewModel.assignRole(parsedId, selectedRole)
+                            newUserId = ""
                             showAssignDialog = false
                         }
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = ConnectlyElectricBlue)
                 ) {
                     Text("Add Member")
                 }
@@ -123,73 +118,123 @@ fun PageTeamRolesScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAssignDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = ConnectlyElectricBlue,
+                contentColor = Color.White
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Assign Role")
             }
         },
         modifier = modifier
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            item {
-                Text("Manage authorized page administrators, editors, and moderators.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = ConnectlyElectricBlue)
             }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    Text(
+                        "Manage authorized page administrators, editors, and moderators with granular RBAC permissions.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
-            items(rolesList, key = { it.id }) { teamMember ->
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                if (state.roles.isEmpty()) {
+                    item {
                         Box(
-                            modifier = Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 40.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = teamMember.user_name.take(1).uppercase(),
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                text = "No team members assigned yet.",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
+                } else {
+                    items(state.roles, key = { it.id }) { teamMember ->
+                        val displayName = if (teamMember.user_name.isNotBlank()) teamMember.user_name else "Team Member"
+                        val displayUsername = if (teamMember.user_username.isNotBlank()) teamMember.user_username else "member_${teamMember.user_id}"
 
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(teamMember.user_name, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                            Text("@${teamMember.user_username}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-
-                        Surface(
-                            color = when (teamMember.role) {
-                                "owner" -> Color(0xFFFEF3C7)
-                                "admin" -> Color(0xFFDBEAFE)
-                                "editor" -> Color(0xFFDCFCE7)
-                                else -> Color(0xFFF3E8FF)
-                            },
-                            shape = RoundedCornerShape(6.dp)
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = teamMember.role.uppercase().replace("_", " "),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = when (teamMember.role) {
-                                    "owner" -> Color(0xFFB45309)
-                                    "admin" -> Color(0xFF1D4ED8)
-                                    "editor" -> Color(0xFF15803D)
-                                    else -> Color(0xFF6B21A8)
-                                },
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
+                            Row(
+                                modifier = Modifier.padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(CircleShape)
+                                        .background(ConnectlyElectricBlue.copy(alpha = 0.12f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = displayName.take(1).uppercase(),
+                                        fontWeight = FontWeight.Bold,
+                                        color = ConnectlyElectricBlue
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(displayName, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Text("@$displayUsername", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+
+                                Surface(
+                                    color = when (teamMember.role.lowercase()) {
+                                        "owner" -> Color(0xFFFEF3C7)
+                                        "admin" -> Color(0xFFDBEAFE)
+                                        "editor" -> Color(0xFFDCFCE7)
+                                        else -> Color(0xFFF3E8FF)
+                                    },
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = teamMember.role.uppercase().replace("_", " "),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = when (teamMember.role.lowercase()) {
+                                            "owner" -> Color(0xFFB45309)
+                                            "admin" -> Color(0xFF1D4ED8)
+                                            "editor" -> Color(0xFF15803D)
+                                            else -> Color(0xFF6B21A8)
+                                        },
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+
+                                if (teamMember.role.lowercase() != "owner") {
+                                    IconButton(onClick = { viewModel.removeRole(teamMember.id) }) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = "Remove",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -2,6 +2,7 @@ package com.connectly.android.feature.live.presentation.player
 
 import com.connectly.android.core.model.LiveComment
 import com.connectly.android.core.model.LiveStream
+import org.webrtc.VideoTrack
 
 data class LivePlayerState(
     val liveStream: LiveStream? = null,
@@ -9,7 +10,13 @@ data class LivePlayerState(
     val floatingReactions: List<String> = emptyList(),
     val isGiftSheetOpen: Boolean = false,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isBroadcaster: Boolean = false,
+    val localVideoTrack: VideoTrack? = null,
+    val isFrontCamera: Boolean = true,
+    val isMuted: Boolean = false,
+    val isCameraOff: Boolean = false,
+    val streamEnded: Boolean = false
 )
 
 sealed interface LivePlayerIntent {
@@ -18,5 +25,10 @@ sealed interface LivePlayerIntent {
     data class SendReaction(val type: String) : LivePlayerIntent
     data object ToggleGiftSheet : LivePlayerIntent
     data object ShareStream : LivePlayerIntent
+    data object ToggleMute : LivePlayerIntent
+    data object SwitchCamera : LivePlayerIntent
+    data object ToggleCamera : LivePlayerIntent
+    data object EndStream : LivePlayerIntent
 }
+
 

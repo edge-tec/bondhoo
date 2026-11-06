@@ -28,7 +28,7 @@ class MarketplaceProductPolicy
             return false;
         }
 
-        return $user->id === $product->seller_id || (bool) ($user->is_admin ?? false);
+        return (int) $user->id === (int) $product->seller_id || (bool) ($user->is_admin ?? false) || $user->hasRole('ADMIN') || $user->hasRole('SUPER_ADMIN');
     }
 
     /**
@@ -44,7 +44,7 @@ class MarketplaceProductPolicy
      */
     public function update(User $user, MarketplaceProduct $product): bool
     {
-        return $user->id === $product->seller_id || (bool) ($user->is_admin ?? false);
+        return (int) $user->id === (int) $product->seller_id || (bool) ($user->is_admin ?? false) || $user->hasRole('ADMIN') || $user->hasRole('SUPER_ADMIN');
     }
 
     /**
@@ -52,7 +52,7 @@ class MarketplaceProductPolicy
      */
     public function delete(User $user, MarketplaceProduct $product): bool
     {
-        return $user->id === $product->seller_id || (bool) ($user->is_admin ?? false);
+        return (int) $user->id === (int) $product->seller_id || (bool) ($user->is_admin ?? false) || $user->hasRole('ADMIN') || $user->hasRole('SUPER_ADMIN');
     }
 
     /**
@@ -60,6 +60,6 @@ class MarketplaceProductPolicy
      */
     public function changeStatus(User $user, MarketplaceProduct $product): bool
     {
-        return $user->id === $product->seller_id || (bool) ($user->is_admin ?? false);
+        return (int) $user->id === (int) $product->seller_id || (bool) ($user->is_admin ?? false) || $user->hasRole('ADMIN') || $user->hasRole('SUPER_ADMIN');
     }
 }

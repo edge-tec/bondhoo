@@ -39,4 +39,3 @@ class ChildSecurityAlertRaised implements ShouldBroadcast
         return 'child.security.alert';
     }
 }
-
