@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Group;
+use App\Models\GroupMember;
 use App\Models\User;
 use App\Services\GroupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,7 +42,7 @@ class GroupTest extends TestCase
 
         $this->assertDatabaseHas('group_members', [
             'user_id' => $user->id,
-            'role' => 'admin',
+            'role' => GroupMember::ROLE_OWNER,
             'status' => 'active',
         ]);
     }

@@ -84,7 +84,7 @@ class GroupMember extends Model
 
     public function isActive(): bool
     {
-        return $this->status === self::STATUS_ACTIVE && ! $this->isBanned();
+        return in_array($this->status, [self::STATUS_ACTIVE, 'approved'], true) && ! $this->isBanned();
     }
 
     public function isPending(): bool

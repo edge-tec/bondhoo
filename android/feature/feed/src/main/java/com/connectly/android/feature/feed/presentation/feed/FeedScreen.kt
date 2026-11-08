@@ -279,7 +279,11 @@ fun FeedScreen(
                                     val isSelected = state.selectedTab == key
                                     Button(
                                         onClick = {
-                                            viewModel.handleIntent(FeedIntent.SelectTab(key))
+                                            when (key) {
+                                                "groups" -> onNavigateToGroups()
+                                                "pages" -> onNavigateToPages()
+                                                else -> viewModel.handleIntent(FeedIntent.SelectTab(key))
+                                            }
                                         },
                                         shape = RoundedCornerShape(20.dp),
                                         colors = ButtonDefaults.buttonColors(

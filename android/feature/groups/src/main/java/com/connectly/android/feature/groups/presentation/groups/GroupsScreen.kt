@@ -612,14 +612,25 @@ private fun FeaturedGroupHeroCard(
             .fillMaxWidth()
             .height(210.dp)
             .clip(RoundedCornerShape(16.dp))
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF1E3A8A),
+                        Color(0xFF2563EB),
+                        Color(0xFF3B82F6)
+                    )
+                )
+            )
             .clickable(onClick = onClick)
     ) {
-        AsyncImage(
-            model = group.coverImage,
-            contentDescription = group.name,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+        if (!group.coverImage.isNullOrBlank()) {
+            AsyncImage(
+                model = group.coverImage,
+                contentDescription = group.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
         // Gradient overlay
         Box(
@@ -690,14 +701,36 @@ private fun PopularGroupCard(
             .clickable(onClick = onClick)
     ) {
         Column {
-            AsyncImage(
-                model = group.coverImage,
-                contentDescription = group.name,
-                contentScale = ContentScale.Crop,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(90.dp)
-            )
+                    .height(95.dp)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFFE2E8F0),
+                                Color(0xFFCBD5E1)
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!group.coverImage.isNullOrBlank()) {
+                    AsyncImage(
+                        model = group.coverImage,
+                        contentDescription = group.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        Icons.Outlined.Group,
+                        contentDescription = null,
+                        tint = ConnectlyBlue.copy(alpha = 0.5f),
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            }
 
             Column(modifier = Modifier.padding(10.dp)) {
                 Text(
@@ -754,14 +787,36 @@ private fun StandardGroupCard(
             .clickable(onClick = onClick)
     ) {
         Column {
-            AsyncImage(
-                model = group.coverImage,
-                contentDescription = group.name,
-                contentScale = ContentScale.Crop,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
-            )
+                    .height(85.dp)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFFE2E8F0),
+                                Color(0xFFCBD5E1)
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!group.coverImage.isNullOrBlank()) {
+                    AsyncImage(
+                        model = group.coverImage,
+                        contentDescription = group.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        Icons.Outlined.Group,
+                        contentDescription = null,
+                        tint = ConnectlyBlue.copy(alpha = 0.5f),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
                     text = group.name,

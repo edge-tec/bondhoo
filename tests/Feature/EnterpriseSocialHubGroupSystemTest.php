@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Group;
+use App\Models\GroupCategory;
 use App\Models\GroupInvitation;
 use App\Models\GroupMember;
 use App\Models\User;
@@ -25,7 +26,7 @@ class EnterpriseSocialHubGroupSystemTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonCount(12, 'data');
+            ->assertJsonCount(GroupCategory::where('is_active', true)->count(), 'data');
     }
 
     public function test_group_media_upload_endpoint_handles_avatar_and_cover(): void
@@ -83,7 +84,7 @@ class EnterpriseSocialHubGroupSystemTest extends TestCase
         $this->assertDatabaseHas('group_members', [
             'group_id' => $groupId,
             'user_id' => $creator->id,
-            'role' => GroupMember::ROLE_ADMIN,
+            'role' => GroupMember::ROLE_OWNER,
             'status' => GroupMember::STATUS_ACTIVE,
         ]);
         $this->assertDatabaseHas('groups', [

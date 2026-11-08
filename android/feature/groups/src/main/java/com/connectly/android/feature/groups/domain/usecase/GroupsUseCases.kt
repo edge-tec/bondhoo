@@ -121,6 +121,22 @@ class InviteGroupMembersUseCase @Inject constructor(
     }
 }
 
+class AcceptGroupInvitationUseCase @Inject constructor(
+    private val repository: GroupsRepository
+) {
+    operator fun invoke(invitationId: Long): Flow<Result<Unit>> {
+        return repository.acceptGroupInvitation(invitationId)
+    }
+}
+
+class DeclineGroupInvitationUseCase @Inject constructor(
+    private val repository: GroupsRepository
+) {
+    operator fun invoke(invitationId: Long): Flow<Result<Unit>> {
+        return repository.declineGroupInvitation(invitationId)
+    }
+}
+
 class GetGroupsHomeUseCase @Inject constructor(
     private val repository: GroupsRepository
 ) {

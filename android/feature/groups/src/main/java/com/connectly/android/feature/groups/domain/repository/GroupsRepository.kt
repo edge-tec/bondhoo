@@ -41,6 +41,8 @@ interface GroupsRepository {
     fun removeGroupMember(groupId: Long, userId: Long): Flow<Result<Unit>>
     fun createGroupAnnouncement(groupId: Long, body: String): Flow<Result<Unit>>
     fun inviteGroupMembers(groupId: Long, userIds: List<Long>): Flow<Result<Unit>>
+    fun acceptGroupInvitation(invitationId: Long): Flow<Result<Unit>>
+    fun declineGroupInvitation(invitationId: Long): Flow<Result<Unit>>
     fun getGroupRequests(groupId: Long): Flow<Result<List<User>>>
     fun moderateGroupRequest(groupId: Long, userId: Long, approve: Boolean): Flow<Result<Unit>>
     fun getPages(filter: String = "discover", page: Int = 1): Flow<Result<List<PageDto>>>

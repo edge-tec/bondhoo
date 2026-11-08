@@ -310,7 +310,7 @@ class Group extends Model
     {
         return $this->members()
             ->where('user_id', $userId)
-            ->where('status', GroupMember::STATUS_ACTIVE)
+            ->whereIn('status', [GroupMember::STATUS_ACTIVE, 'approved'])
             ->exists();
     }
 

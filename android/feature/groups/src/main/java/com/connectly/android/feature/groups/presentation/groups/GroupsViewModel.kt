@@ -11,7 +11,9 @@ import com.connectly.android.core.network.api.GroupCategoryDto
 import com.connectly.android.core.network.api.GroupDto
 import com.connectly.android.core.network.api.GroupFeedItemDto
 import com.connectly.android.core.network.api.GroupInvitationDto
+import com.connectly.android.feature.groups.domain.usecase.AcceptGroupInvitationUseCase
 import com.connectly.android.feature.groups.domain.usecase.CreateGroupUseCase
+import com.connectly.android.feature.groups.domain.usecase.DeclineGroupInvitationUseCase
 import com.connectly.android.feature.groups.domain.usecase.GetFeaturedGroupUseCase
 import com.connectly.android.feature.groups.domain.usecase.GetGroupCategoriesUseCase
 import com.connectly.android.feature.groups.domain.usecase.GetGroupsHomeUseCase
@@ -33,7 +35,9 @@ class GroupsViewModel @Inject constructor(
     private val toggleJoinGroupUseCase: ToggleJoinGroupUseCase,
     private val createGroupUseCase: CreateGroupUseCase,
     private val getGroupsHomeUseCase: GetGroupsHomeUseCase? = null,
-    private val getGroupCategoriesUseCase: GetGroupCategoriesUseCase? = null
+    private val getGroupCategoriesUseCase: GetGroupCategoriesUseCase? = null,
+    private val acceptGroupInvitationUseCase: AcceptGroupInvitationUseCase? = null,
+    private val declineGroupInvitationUseCase: DeclineGroupInvitationUseCase? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GroupsState())
@@ -46,11 +50,13 @@ class GroupsViewModel @Inject constructor(
     fun handleIntent(intent: GroupsIntent) {
         when (intent) {
             is GroupsIntent.SelectTab -> {
-                _uiState.update { it.copy(selectedTab = intent.tab) }
+                _uiState.update { it.copy(selectedTab = intent.tab, selectedCategory = null) }
                 performFilteredSearch()
             }
             is GroupsIntent.SelectCategory -> {
-                _uiState.update { it.copy(selectedCategory = intent.category) }
+                val currentCategory = _uiState.value.selectedCategory
+                val newCategory = if (currentCategory == intent.category) null else intent.category
+                _uiState.update { it.copy(selectedCategory = newCategory) }
                 performFilteredSearch()
             }
             is GroupsIntent.SelectSort -> {
@@ -90,10 +96,27 @@ class GroupsViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(pendingInvitations = state.pendingInvitations.filter { it.id != intent.invitationId })
                 }
+                acceptGroupInvitationUseCase?.let { useCase ->
+                    viewModelScope.launch {
+                        useCase(intent.invitationId).collect { result ->
+                            if (result is Result.Success) {
+                                loadHomeFeed()
+                                performFilteredSearch()
+                            }
+                        }
+                    }
+                }
             }
             is GroupsIntent.DeclineInvitation -> {
                 _uiState.update { state ->
                     state.copy(pendingInvitations = state.pendingInvitations.filter { it.id != intent.invitationId })
+                }
+                declineGroupInvitationUseCase?.let { useCase ->
+                    viewModelScope.launch {
+                        useCase(intent.invitationId).collect {
+                            // Invitation declined successfully
+                        }
+                    }
                 }
             }
             GroupsIntent.Refresh -> loadData()

@@ -1078,6 +1078,16 @@ interface ConnectlyApi {
         @Body body: InviteGroupMembersRequest
     ): Response<ApiResponse<Unit>>
 
+    @POST("v1/groups/invitations/{invitationId}/accept")
+    suspend fun acceptGroupInvitation(
+        @Path("invitationId") invitationId: Long
+    ): Response<ApiResponse<Unit>>
+
+    @POST("v1/groups/invitations/{invitationId}/decline")
+    suspend fun declineGroupInvitation(
+        @Path("invitationId") invitationId: Long
+    ): Response<ApiResponse<Unit>>
+
     @GET("v1/groups/{id}/requests")
     suspend fun getGroupRequests(@Path("id") groupId: Long): Response<ApiResponse<List<UserDto>>>
 

@@ -489,7 +489,7 @@ class GroupService
         if ($user) {
             $query->where(function ($q) use ($user) {
                 $q->where('privacy', '!=', Group::PRIVACY_HIDDEN)
-                    ->orWhereHas('members', fn ($mq) => $mq->where('user_id', $user->id)->where('status', GroupMember::STATUS_ACTIVE));
+                    ->orWhereHas('members', fn ($mq) => $mq->where('user_id', $user->id)->whereIn('status', [GroupMember::STATUS_ACTIVE, 'approved']));
             });
         } else {
             $query->where('privacy', Group::PRIVACY_PUBLIC);
@@ -583,11 +583,11 @@ class GroupService
         // বিশেষ ফিল্টার মোড (my_groups, your_groups, manage)
         if (! empty($filters['filter'])) {
             if (($filters['filter'] === 'my_groups' || $filters['filter'] === 'your_groups') && $user) {
-                $query->whereHas('members', fn ($mq) => $mq->where('user_id', $user->id)->where('status', GroupMember::STATUS_ACTIVE));
+                $query->whereHas('members', fn ($mq) => $mq->where('user_id', $user->id)->whereIn('status', [GroupMember::STATUS_ACTIVE, 'approved']));
             } elseif ($filters['filter'] === 'manage' && $user) {
                 $query->whereHas('members', fn ($mq) => $mq->where('user_id', $user->id)
                     ->whereIn('role', [GroupMember::ROLE_OWNER, GroupMember::ROLE_ADMIN, GroupMember::ROLE_MODERATOR])
-                    ->where('status', GroupMember::STATUS_ACTIVE));
+                    ->whereIn('status', [GroupMember::STATUS_ACTIVE, 'approved']));
             }
         }
 
@@ -629,13 +629,13 @@ class GroupService
         if ($user) {
             $myGroups = Group::whereHas('members', function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                    ->where('status', GroupMember::STATUS_ACTIVE);
+                    ->whereIn('status', [GroupMember::STATUS_ACTIVE, 'approved']);
             })->with('creator')->latest('id')->take(12)->get();
 
             $manageGroups = Group::whereHas('members', function ($q) use ($user) {
                 $q->where('user_id', $user->id)
                     ->whereIn('role', [GroupMember::ROLE_OWNER, GroupMember::ROLE_ADMIN, GroupMember::ROLE_MODERATOR])
-                    ->where('status', GroupMember::STATUS_ACTIVE);
+                    ->whereIn('status', [GroupMember::STATUS_ACTIVE, 'approved']);
             })->with('creator')->latest('id')->take(10)->get();
 
             $pendingInvitations = GroupInvitation::where('invitee_id', $user->id)
@@ -758,7 +758,7 @@ class GroupService
     {
         return Group::whereHas('members', function ($q) use ($user) {
             $q->where('user_id', $user->id)
-                ->where('status', GroupMember::STATUS_ACTIVE);
+                ->whereIn('status', [GroupMember::STATUS_ACTIVE, 'approved']);
         })
             ->with(['creator'])
             ->latest('id')
@@ -3045,7 +3045,12 @@ class GroupService
 
                 // ওনারের রোল কেউ পরিবর্তন করতে পারবে না
                 if ($member->isOwner() && $actor->id !== $member->user_id) {
-                    continue;
+                    throw new AuthorizationException('Cannot modify the role of the group owner.');
+                }
+
+                // এডমিনদের রোল শুধুমাত্র ওনার পরিবর্তন করতে পারবে
+                if ($member->isAdmin() && ! $group->isOwner($actor->id)) {
+                    throw new AuthorizationException('Only the group owner can modify an administrator role.');
                 }
 
                 $oldRole = $member->role;

@@ -390,7 +390,7 @@ class GroupsRepositoryImpl @Inject constructor(
                             id = dto.id,
                             name = dto.name,
                             slug = dto.slug,
-                            coverImage = dto.cover_image,
+                            coverImage = dto.resolvedCoverImage,
                             membersCount = dto.members_count,
                             formattedMembersCount = formatMemberCount(dto.members_count),
                             isMember = dto.is_member
@@ -398,10 +398,10 @@ class GroupsRepositoryImpl @Inject constructor(
                     )
                 )
             } else {
-                emit(Result.Success(getSamplePopularGroups().first()))
+                emit(Result.Error(Exception(response.message() ?: "Failed to load group details")))
             }
         } catch (e: Exception) {
-            emit(Result.Success(getSamplePopularGroups().first()))
+            emit(Result.Error(e))
         }
     }
 
@@ -649,6 +649,32 @@ class GroupsRepositoryImpl @Inject constructor(
             emit(Result.Success(Unit))
         } catch (e: Exception) {
             emit(Result.Success(Unit))
+        }
+    }
+
+    override fun acceptGroupInvitation(invitationId: Long): Flow<Result<Unit>> = flow {
+        try {
+            val response = api.acceptGroupInvitation(invitationId)
+            if (response.isSuccessful) {
+                emit(Result.Success(Unit))
+            } else {
+                emit(Result.Error(Exception(response.message() ?: "Failed to accept invitation")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun declineGroupInvitation(invitationId: Long): Flow<Result<Unit>> = flow {
+        try {
+            val response = api.declineGroupInvitation(invitationId)
+            if (response.isSuccessful) {
+                emit(Result.Success(Unit))
+            } else {
+                emit(Result.Error(Exception(response.message() ?: "Failed to decline invitation")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }
 
@@ -1053,49 +1079,6 @@ class GroupsRepositoryImpl @Inject constructor(
             count >= 1_000 -> "${count / 1_000}K members"
             else -> "$count members"
         }
-    }
-
-
-
-    private fun getSamplePopularGroups(): List<Group> {
-        return listOf(
-            Group(
-                id = 101L,
-                name = "Tech World",
-                slug = "tech-world",
-                coverImage = "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=600&q=80",
-                membersCount = 156000,
-                formattedMembersCount = "156K members",
-                isMember = false
-            ),
-            Group(
-                id = 102L,
-                name = "Foodies BD",
-                slug = "foodies-bd",
-                coverImage = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80",
-                membersCount = 312000,
-                formattedMembersCount = "312K members",
-                isMember = false
-            ),
-            Group(
-                id = 103L,
-                name = "Dhaka Living",
-                slug = "dhaka-living",
-                coverImage = "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=600&q=80",
-                membersCount = 220000,
-                formattedMembersCount = "220K members",
-                isMember = true
-            ),
-            Group(
-                id = 104L,
-                name = "Business Growth",
-                slug = "business-growth",
-                coverImage = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80",
-                membersCount = 175000,
-                formattedMembersCount = "175K members",
-                isMember = false
-            )
-        )
     }
 
     override fun getGroupFeed(
