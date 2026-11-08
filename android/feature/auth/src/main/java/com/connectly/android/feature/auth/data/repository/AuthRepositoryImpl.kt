@@ -13,6 +13,8 @@ import com.connectly.android.core.network.api.LoginRequest
 import com.connectly.android.core.network.api.RegisterRequest
 import com.connectly.android.core.network.api.SendPhoneOtpRequest
 import com.connectly.android.core.network.api.VerifyPhoneOtpRequest
+import com.connectly.android.core.network.api.VerifyEmailRequest
+import com.connectly.android.core.network.api.ResendEmailRequest
 import com.connectly.android.feature.auth.domain.repository.AuthRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -106,31 +108,95 @@ class AuthRepositoryImpl @Inject constructor(
                 val authResponse = response.body()!!
                 val token = authResponse.resolvedToken
                 val userDto = authResponse.resolvedUser
+                val requiresVerification = authResponse.resolvedRequiresEmailVerification
 
-                tokenStorageManager.saveAccessToken(token)
-                tokenStorageManager.saveUserId(userDto.id)
+                if (token.isNotBlank()) {
+                    tokenStorageManager.saveAccessToken(token)
+                }
+                if (userDto.id > 0) {
+                    tokenStorageManager.saveUserId(userDto.id)
+                    val userEntity = UserEntity(
+                        id = userDto.id,
+                        name = userDto.name,
+                        username = userDto.username,
+                        email = userDto.email,
+                        avatar = userDto.avatar,
+                        bio = userDto.bio,
+                        isVerified = userDto.is_verified,
+                        isOnline = true
+                    )
+                    userDao.insertUser(userEntity)
+                }
 
-                val userEntity = UserEntity(
+                emit(Result.Success(User(
                     id = userDto.id,
                     name = userDto.name,
                     username = userDto.username,
-                    email = userDto.email,
+                    email = userDto.email ?: email,
                     avatar = userDto.avatar,
-                    bio = userDto.bio,
-                    isVerified = userDto.is_verified,
-                    isOnline = true
-                )
-                userDao.insertUser(userEntity)
-
-                emit(Result.Success(User(
-                    id = userEntity.id,
-                    name = userEntity.name,
-                    username = userEntity.username,
-                    email = userEntity.email,
-                    avatar = userEntity.avatar
+                    requiresEmailVerification = requiresVerification
                 )))
             } else {
                 val errorMsg = parseErrorMessage(response.errorBody()?.string(), "Registration failed.")
+                emit(Result.Error(Exception(errorMsg), errorMsg))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e, e.localizedMessage ?: "Network error occurred."))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun verifyEmailOtp(email: String, otp: String): Flow<Result<User>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.verifyEmail(VerifyEmailRequest(identifier = email, otp = otp))
+            if (response.isSuccessful && response.body() != null) {
+                val authResponse = response.body()!!
+                val token = authResponse.resolvedToken
+                val userDto = authResponse.resolvedUser
+
+                if (token.isNotBlank()) {
+                    tokenStorageManager.saveAccessToken(token)
+                }
+                if (userDto.id > 0) {
+                    tokenStorageManager.saveUserId(userDto.id)
+                    val userEntity = UserEntity(
+                        id = userDto.id,
+                        name = userDto.name,
+                        username = userDto.username,
+                        email = userDto.email,
+                        avatar = userDto.avatar,
+                        bio = userDto.bio,
+                        isVerified = true,
+                        isOnline = true
+                    )
+                    userDao.insertUser(userEntity)
+                }
+                emit(Result.Success(User(
+                    id = userDto.id,
+                    name = userDto.name,
+                    username = userDto.username,
+                    email = userDto.email ?: email,
+                    avatar = userDto.avatar,
+                    isVerified = true
+                )))
+            } else {
+                val errorMsg = parseErrorMessage(response.errorBody()?.string(), "Email verification failed.")
+                emit(Result.Error(Exception(errorMsg), errorMsg))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e, e.localizedMessage ?: "Network error occurred."))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun resendEmailOtp(email: String): Flow<Result<String>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.resendEmail(ResendEmailRequest(email = email))
+            if (response.isSuccessful) {
+                val msg = response.body()?.message ?: "Verification OTP sent to your email."
+                emit(Result.Success(msg))
+            } else {
+                val errorMsg = parseErrorMessage(response.errorBody()?.string(), "Failed to resend verification OTP.")
                 emit(Result.Error(Exception(errorMsg), errorMsg))
             }
         } catch (e: Exception) {

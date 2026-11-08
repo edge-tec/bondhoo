@@ -5,7 +5,11 @@ import com.connectly.android.core.model.User
 sealed interface RegisterUiState {
     data object Idle : RegisterUiState
     data object Loading : RegisterUiState
-    data class Success(val user: User) : RegisterUiState
+    data class Success(
+        val user: User,
+        val requiresEmailVerification: Boolean = false,
+        val email: String = ""
+    ) : RegisterUiState
     data class Error(val message: String) : RegisterUiState
 }
 
@@ -25,6 +29,6 @@ sealed interface RegisterUiIntent {
 
 sealed interface RegisterUiEffect {
     data object NavigateToHome : RegisterUiEffect
+    data class NavigateToEmailVerification(val email: String) : RegisterUiEffect
     data object NavigateToLogin : RegisterUiEffect
 }
-

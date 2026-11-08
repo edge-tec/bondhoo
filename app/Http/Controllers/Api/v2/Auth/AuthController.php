@@ -116,9 +116,17 @@ class AuthController extends Controller
             $request->input('token')
         );
 
+        $user = User::where('email', strtolower($request->input('identifier')))->first();
+        $token = $user ? $user->createToken('auth-token')->plainTextToken : null;
+
         return $this->successResponse(
-            data: ['verified' => true],
-            message: 'আপনার ইমেইল ঠিকানা সফলভাবে ভেরিফাই হয়েছে।'
+            data: [
+                'verified' => true,
+                'user' => $user,
+                'token' => $token,
+                'token_type' => 'Bearer',
+            ],
+            message: 'Your email address has been successfully verified.'
         );
     }
 

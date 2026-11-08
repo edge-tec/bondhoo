@@ -133,4 +133,3 @@ return new class extends Migration
         Schema::dropIfExists('moderation_requests');
     }
 };
-

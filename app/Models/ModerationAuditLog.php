@@ -60,4 +60,3 @@ class ModerationAuditLog extends Model
         ]);
     }
 }
-

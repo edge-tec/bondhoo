@@ -50,4 +50,3 @@ return [
         'illicit' => 0.70,
     ],
 ];
-

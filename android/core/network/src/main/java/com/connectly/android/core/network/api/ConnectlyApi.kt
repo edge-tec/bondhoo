@@ -25,6 +25,12 @@ interface ConnectlyApi {
     @POST("v1/auth/register")
     suspend fun register(@Body body: RegisterRequest): Response<AuthResponse>
 
+    @POST("v1/auth/verify-email")
+    suspend fun verifyEmail(@Body body: VerifyEmailRequest): Response<AuthResponse>
+
+    @POST("v1/auth/resend-email")
+    suspend fun resendEmail(@Body body: ResendEmailRequest): Response<ApiResponse<Unit>>
+
     @POST("v1/auth/send-phone-otp")
     suspend fun sendPhoneOtp(@Body body: SendPhoneOtpRequest): Response<ApiResponse<OtpResponse>>
 
@@ -1683,9 +1689,13 @@ data class MetaDto(
 
 @Serializable
 data class AuthData(
-    val user: UserDto,
-    val token: String,
-    val token_type: String = "Bearer"
+    val user: UserDto? = null,
+    val token: String? = null,
+    val token_type: String = "Bearer",
+    val requires_email_verification: Boolean = false,
+    val requires_verification: Boolean = false,
+    val email_sent: Boolean = false,
+    val email: String? = null
 )
 
 @Serializable
@@ -1694,11 +1704,29 @@ data class AuthResponse(
     val user: UserDto? = null,
     val token: String? = null,
     val message: String? = null,
-    val success: Boolean = true
+    val success: Boolean = true,
+    val requires_email_verification: Boolean = false,
+    val requires_verification: Boolean = false,
+    val email_sent: Boolean = false,
+    val email: String? = null
 ) {
     val resolvedUser: UserDto get() = data?.user ?: user ?: UserDto(id = 0L, name = "", username = "")
     val resolvedToken: String get() = data?.token ?: token ?: ""
+    val resolvedRequiresEmailVerification: Boolean get() = requires_email_verification || requires_verification || (data?.requires_email_verification ?: false) || (data?.requires_verification ?: false)
+    val resolvedEmail: String? get() = email ?: data?.email ?: resolvedUser.email
 }
+
+@Serializable
+data class VerifyEmailRequest(
+    val identifier: String,
+    val otp: String,
+    val token: String? = null
+)
+
+@Serializable
+data class ResendEmailRequest(
+    val email: String
+)
 
 
 @Serializable
@@ -1738,14 +1766,7 @@ data class UserDto(
 ) {
     val resolvedAvatar: String? get() {
         val raw = avatar_url ?: avatar ?: profile?.avatar_url
-        return if (raw.isNullOrBlank()) null
-        else if (raw.startsWith("http://") || raw.startsWith("https://")) {
-            raw.replace("localhost:8000", "10.0.2.2:8000").replace("127.0.0.1:8000", "10.0.2.2:8000")
-        } else if (raw.startsWith("/")) {
-            "http://10.0.2.2:8000$raw"
-        } else {
-            "http://10.0.2.2:8000/$raw"
-        }
+        return com.connectly.android.core.network.di.NetworkModule.resolveMediaUrl(raw)
     }
 }
 
@@ -1788,14 +1809,7 @@ data class PostDto(
                 ?: element["preview_url"]?.jsonPrimitive?.contentOrNull
             else -> null
         }
-        if (raw.isNullOrBlank()) null
-        else if (raw.startsWith("http://") || raw.startsWith("https://")) {
-            raw.replace("localhost:8000", "10.0.2.2:8000").replace("127.0.0.1:8000", "10.0.2.2:8000")
-        } else if (raw.startsWith("/")) {
-            "http://10.0.2.2:8000$raw"
-        } else {
-            "http://10.0.2.2:8000/$raw"
-        }
+        com.connectly.android.core.network.di.NetworkModule.resolveMediaUrl(raw)
     }
     val type: String get() = if (resolvedMediaUrls.isNotEmpty()) "Media" else "Post"
     val likes_count: Int get() = resolvedReactionsCount

@@ -3,7 +3,10 @@ package com.connectly.android.feature.auth.navigation
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.connectly.android.feature.auth.presentation.emailverification.EmailVerificationRoute
 import com.connectly.android.feature.auth.presentation.forgot.ForgotPasswordRoute
 import com.connectly.android.feature.auth.presentation.login.LoginRoute
 import com.connectly.android.feature.auth.presentation.onboarding.OnboardingScreen
@@ -19,6 +22,7 @@ const val REGISTER_ROUTE = "auth_register"
 const val FORGOT_PASSWORD_ROUTE = "auth_forgot_password"
 const val TWO_FACTOR_ROUTE = "auth_two_factor/{sessionToken}"
 const val PHONE_OTP_ROUTE = "auth_phone_otp"
+const val EMAIL_VERIFICATION_ROUTE = "auth_verify_email/{email}"
 
 fun NavController.navigateToSplash(navOptions: NavOptions? = null) {
     navigate(SPLASH_ROUTE, navOptions)
@@ -27,7 +31,6 @@ fun NavController.navigateToSplash(navOptions: NavOptions? = null) {
 fun NavController.navigateToOnboarding(navOptions: NavOptions? = null) {
     navigate(ONBOARDING_ROUTE, navOptions)
 }
-
 
 fun NavController.navigateToLogin(navOptions: NavOptions? = null) {
     navigate(LOGIN_ROUTE, navOptions)
@@ -43,6 +46,11 @@ fun NavController.navigateToPhoneOtp(navOptions: NavOptions? = null) {
 
 fun NavController.navigateToForgotPassword(navOptions: NavOptions? = null) {
     navigate(FORGOT_PASSWORD_ROUTE, navOptions)
+}
+
+fun NavController.navigateToEmailVerification(email: String, navOptions: NavOptions? = null) {
+    val encoded = try { java.net.URLEncoder.encode(email, "UTF-8") } catch (e: Exception) { email }
+    navigate("auth_verify_email/$encoded", navOptions)
 }
 
 fun NavGraphBuilder.authGraph(
@@ -93,7 +101,27 @@ fun NavGraphBuilder.authGraph(
     composable(REGISTER_ROUTE) {
         RegisterRoute(
             onNavigateToHome = onNavigateToHome,
-            onNavigateToLogin = { navController.popBackStack() }
+            onNavigateToLogin = { navController.popBackStack() },
+            onNavigateToEmailVerification = { email ->
+                navController.navigateToEmailVerification(email)
+            }
+        )
+    }
+
+    composable(
+        route = EMAIL_VERIFICATION_ROUTE,
+        arguments = listOf(navArgument("email") { type = NavType.StringType })
+    ) { backStackEntry ->
+        val encodedEmail = backStackEntry.arguments?.getString("email") ?: ""
+        val email = try { java.net.URLDecoder.decode(encodedEmail, "UTF-8") } catch (e: Exception) { encodedEmail }
+        EmailVerificationRoute(
+            email = email,
+            onNavigateToHome = onNavigateToHome,
+            onBackToLogin = {
+                navController.navigate(LOGIN_ROUTE) {
+                    popUpTo(REGISTER_ROUTE) { inclusive = true }
+                }
+            }
         )
     }
 
@@ -113,4 +141,3 @@ fun NavGraphBuilder.authGraph(
         )
     }
 }
-

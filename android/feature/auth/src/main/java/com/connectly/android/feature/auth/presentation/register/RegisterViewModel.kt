@@ -67,8 +67,19 @@ class RegisterViewModel @Inject constructor(
                 when (result) {
                     is Result.Loading -> _uiState.value = RegisterUiState.Loading
                     is Result.Success -> {
-                        _uiState.value = RegisterUiState.Success(result.data)
-                        _effect.send(RegisterUiEffect.NavigateToHome)
+                        val user = result.data
+                        val requiresVerification = user.requiresEmailVerification
+                        val userEmail = user.email ?: email
+                        _uiState.value = RegisterUiState.Success(
+                            user = user,
+                            requiresEmailVerification = requiresVerification,
+                            email = userEmail
+                        )
+                        if (requiresVerification && userEmail.isNotBlank()) {
+                            _effect.send(RegisterUiEffect.NavigateToEmailVerification(userEmail))
+                        } else {
+                            _effect.send(RegisterUiEffect.NavigateToHome)
+                        }
                     }
                     is Result.Error -> {
                         _uiState.value = RegisterUiState.Error(result.message ?: "Registration failed.")

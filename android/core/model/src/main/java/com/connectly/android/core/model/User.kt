@@ -19,7 +19,8 @@ data class User(
     val followingCount: Int = 0,
     val isOnline: Boolean = false,
     val isFollowing: Boolean = false,
-    val friendshipStatus: FriendshipStatus = FriendshipStatus.NONE
+    val friendshipStatus: FriendshipStatus = FriendshipStatus.NONE,
+    val requiresEmailVerification: Boolean = false
 )
 
 enum class FriendshipStatus {

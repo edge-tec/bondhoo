@@ -54,6 +54,22 @@ class VerifyPhoneOtpUseCase @Inject constructor(
     }
 }
 
+class VerifyEmailOtpUseCase @Inject constructor(
+    private val repository: AuthRepository
+) {
+    operator fun invoke(email: String, otp: String): Flow<Result<User>> {
+        return repository.verifyEmailOtp(email.trim(), otp.trim())
+    }
+}
+
+class ResendEmailOtpUseCase @Inject constructor(
+    private val repository: AuthRepository
+) {
+    operator fun invoke(email: String): Flow<Result<String>> {
+        return repository.resendEmailOtp(email.trim())
+    }
+}
+
 class Verify2FaUseCase @Inject constructor(
     private val repository: AuthRepository
 ) {
