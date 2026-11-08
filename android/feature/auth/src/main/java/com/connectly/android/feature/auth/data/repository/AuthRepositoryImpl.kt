@@ -128,13 +128,20 @@ class AuthRepositoryImpl @Inject constructor(
                     userDao.insertUser(userEntity)
                 }
 
+                val fallbackOtp = authResponse.data?.otp ?: authResponse.data?.dev_otp
+                val emailSent = authResponse.data?.email_sent ?: true
+                val emailError = authResponse.data?.email_error
+
                 emit(Result.Success(User(
                     id = userDto.id,
                     name = userDto.name,
                     username = userDto.username,
                     email = userDto.email ?: email,
                     avatar = userDto.avatar,
-                    requiresEmailVerification = requiresVerification
+                    requiresEmailVerification = requiresVerification,
+                    fallbackOtp = fallbackOtp,
+                    emailSent = emailSent,
+                    emailError = emailError
                 )))
             } else {
                 val errorMsg = parseErrorMessage(response.errorBody()?.string(), "Registration failed.")

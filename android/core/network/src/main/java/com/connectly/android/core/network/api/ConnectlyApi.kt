@@ -1695,6 +1695,9 @@ data class AuthData(
     val requires_email_verification: Boolean = false,
     val requires_verification: Boolean = false,
     val email_sent: Boolean = false,
+    val email_error: String? = null,
+    val otp: String? = null,
+    val dev_otp: String? = null,
     val email: String? = null
 )
 

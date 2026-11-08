@@ -22,7 +22,7 @@ const val REGISTER_ROUTE = "auth_register"
 const val FORGOT_PASSWORD_ROUTE = "auth_forgot_password"
 const val TWO_FACTOR_ROUTE = "auth_two_factor/{sessionToken}"
 const val PHONE_OTP_ROUTE = "auth_phone_otp"
-const val EMAIL_VERIFICATION_ROUTE = "auth_verify_email/{email}"
+const val EMAIL_VERIFICATION_ROUTE = "auth_verify_email/{email}?otp={otp}"
 
 fun NavController.navigateToSplash(navOptions: NavOptions? = null) {
     navigate(SPLASH_ROUTE, navOptions)
@@ -48,9 +48,10 @@ fun NavController.navigateToForgotPassword(navOptions: NavOptions? = null) {
     navigate(FORGOT_PASSWORD_ROUTE, navOptions)
 }
 
-fun NavController.navigateToEmailVerification(email: String, navOptions: NavOptions? = null) {
+fun NavController.navigateToEmailVerification(email: String, initialOtp: String? = null, navOptions: NavOptions? = null) {
     val encoded = try { java.net.URLEncoder.encode(email, "UTF-8") } catch (e: Exception) { email }
-    navigate("auth_verify_email/$encoded", navOptions)
+    val otpParam = if (!initialOtp.isNullOrBlank()) "?otp=$initialOtp" else ""
+    navigate("auth_verify_email/$encoded$otpParam", navOptions)
 }
 
 fun NavGraphBuilder.authGraph(
@@ -102,20 +103,29 @@ fun NavGraphBuilder.authGraph(
         RegisterRoute(
             onNavigateToHome = onNavigateToHome,
             onNavigateToLogin = { navController.popBackStack() },
-            onNavigateToEmailVerification = { email ->
-                navController.navigateToEmailVerification(email)
+            onNavigateToEmailVerification = { email, otp ->
+                navController.navigateToEmailVerification(email, otp)
             }
         )
     }
 
     composable(
         route = EMAIL_VERIFICATION_ROUTE,
-        arguments = listOf(navArgument("email") { type = NavType.StringType })
+        arguments = listOf(
+            navArgument("email") { type = NavType.StringType },
+            navArgument("otp") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
     ) { backStackEntry ->
         val encodedEmail = backStackEntry.arguments?.getString("email") ?: ""
         val email = try { java.net.URLDecoder.decode(encodedEmail, "UTF-8") } catch (e: Exception) { encodedEmail }
+        val initialOtp = backStackEntry.arguments?.getString("otp")
         EmailVerificationRoute(
             email = email,
+            initialOtp = initialOtp,
             onNavigateToHome = onNavigateToHome,
             onBackToLogin = {
                 navController.navigate(LOGIN_ROUTE) {

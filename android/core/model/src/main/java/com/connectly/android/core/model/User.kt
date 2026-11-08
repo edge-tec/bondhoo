@@ -20,7 +20,10 @@ data class User(
     val isOnline: Boolean = false,
     val isFollowing: Boolean = false,
     val friendshipStatus: FriendshipStatus = FriendshipStatus.NONE,
-    val requiresEmailVerification: Boolean = false
+    val requiresEmailVerification: Boolean = false,
+    val fallbackOtp: String? = null,
+    val emailSent: Boolean = true,
+    val emailError: String? = null
 )
 
 enum class FriendshipStatus {

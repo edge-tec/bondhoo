@@ -32,7 +32,7 @@ import java.util.Locale
 fun RegisterRoute(
     onNavigateToHome: () -> Unit,
     onNavigateToLogin: () -> Unit,
-    onNavigateToEmailVerification: (String) -> Unit = {},
+    onNavigateToEmailVerification: (String, String?) -> Unit = { _, _ -> },
     viewModel: RegisterViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -41,7 +41,7 @@ fun RegisterRoute(
         viewModel.effect.collect { effect ->
             when (effect) {
                 is RegisterUiEffect.NavigateToHome -> onNavigateToHome()
-                is RegisterUiEffect.NavigateToEmailVerification -> onNavigateToEmailVerification(effect.email)
+                is RegisterUiEffect.NavigateToEmailVerification -> onNavigateToEmailVerification(effect.email, effect.fallbackOtp)
                 is RegisterUiEffect.NavigateToLogin -> onNavigateToLogin()
             }
         }

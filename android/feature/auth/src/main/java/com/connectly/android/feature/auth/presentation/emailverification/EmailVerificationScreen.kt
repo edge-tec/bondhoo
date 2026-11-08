@@ -34,6 +34,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun EmailVerificationRoute(
     email: String,
+    initialOtp: String? = null,
     onNavigateToHome: () -> Unit,
     onBackToLogin: () -> Unit,
     viewModel: EmailVerificationViewModel = hiltViewModel()
@@ -54,6 +55,7 @@ fun EmailVerificationRoute(
 
     EmailVerificationScreen(
         email = email,
+        initialOtp = initialOtp,
         uiState = uiState,
         onVerifyOtp = { otp ->
             viewModel.handleIntent(EmailVerificationUiIntent.VerifyOtp(email, otp))
@@ -71,13 +73,14 @@ fun EmailVerificationRoute(
 @Composable
 fun EmailVerificationScreen(
     email: String,
+    initialOtp: String? = null,
     uiState: EmailVerificationUiState,
     onVerifyOtp: (String) -> Unit,
     onResendOtp: () -> Unit,
     onBackToLogin: () -> Unit,
     onClearError: () -> Unit
 ) {
-    var otpInput by remember { mutableStateOf("") }
+    var otpInput by remember { mutableStateOf(initialOtp ?: "") }
     var resendCooldown by remember { mutableIntStateOf(60) }
     var canResend by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -157,7 +160,32 @@ fun EmailVerificationScreen(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        if (!initialOtp.isNullOrBlank()) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = ConnectlyBlue.copy(alpha = 0.10f)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .clickable { otpInput = initialOtp }
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Verification code: $initialOtp (Tap to auto-fill)",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = ConnectlyBlue
+                    )
+                }
+            }
+        }
 
         if (uiState is EmailVerificationUiState.Error) {
             Card(

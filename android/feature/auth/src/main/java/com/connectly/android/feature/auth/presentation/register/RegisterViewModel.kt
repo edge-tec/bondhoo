@@ -76,7 +76,7 @@ class RegisterViewModel @Inject constructor(
                             email = userEmail
                         )
                         if (requiresVerification && userEmail.isNotBlank()) {
-                            _effect.send(RegisterUiEffect.NavigateToEmailVerification(userEmail))
+                            _effect.send(RegisterUiEffect.NavigateToEmailVerification(userEmail, user.fallbackOtp))
                         } else {
                             _effect.send(RegisterUiEffect.NavigateToHome)
                         }

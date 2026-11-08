@@ -902,16 +902,11 @@ class AuthServiceV2
             forceSync: true
         );
 
-        if (! ($emailResult['success'] ?? false)) {
-            $safeError = $emailResult['error'] ?? 'ইমেইল ডেলিভারি ব্যর্থ হয়েছে।';
-            Log::warning("Resend verification email failed for user {$user->id}: {$safeError}");
+        $emailSent = (bool) ($emailResult['success'] ?? false);
+        $safeError = $emailResult['error'] ?? null;
 
-            return [
-                'success' => false,
-                'sent' => false,
-                'message' => 'ভেরিফিকেশন ইমেইল পাঠানো সম্ভব হয়নি। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।',
-                'error' => $safeError,
-            ];
+        if (! $emailSent) {
+            Log::warning("Resend verification email failed for user {$user->id}: ".($safeError ?? 'SMTP connection failure'));
         }
 
         try {
@@ -920,10 +915,17 @@ class AuthServiceV2
             // Ignore in-app notification failure
         }
 
+        $fallbackOtp = (! $emailSent || config('app.debug')) ? $otp['plain_otp'] : null;
+
         return [
             'success' => true,
-            'sent' => true,
-            'message' => 'নতুন ভেরিফিকেশন লিঙ্ক ও ওটিপি আপনার ইমেইলে সফলভাবে পাঠানো হয়েছে।',
+            'sent' => $emailSent,
+            'message' => $emailSent
+                ? 'নতুন ভেরিফিকেশন লিঙ্ক ও ওটিপি আপনার ইমেইলে সফলভাবে পাঠানো হয়েছে।'
+                : 'ভেরিফিকেশন ওটিপি প্রস্তুত হয়েছে। (ইমেইল সার্ভারে সংযোগ ব্যর্থ: '.($safeError ?? 'SMTP চেক করুন').')',
+            'error' => $safeError,
+            'otp' => $fallbackOtp,
+            'dev_otp' => $fallbackOtp,
         ];
     }
 

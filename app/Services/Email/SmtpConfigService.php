@@ -5,6 +5,7 @@ namespace App\Services\Email;
 use App\Mail\SmtpTestMail;
 use App\Models\EmailLog;
 use App\Models\SmtpSetting;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
@@ -94,12 +95,18 @@ class SmtpConfigService
         $this->applyToMailer($setting);
         $this->syncToEnvFile($setting);
 
+        try {
+            Artisan::call('config:clear');
+        } catch (\Throwable) {
+        }
+
         return $setting;
     }
 
     /**
      * Apply active database SMTP configuration dynamically into Laravel's runtime mail config.
-     * Sets verify_peer to false to handle self-signed/mismatched certificates (e.g. Contabo VPS).
+     * Sets verify_peer to false and stream SSL context to handle self-signed/mismatched certificates.
+     * Purges MailManager caches so newly saved SMTP credentials take effect instantly without restarting.
      */
     public function applyToMailer(?SmtpSetting $setting = null): void
     {
@@ -110,18 +117,28 @@ class SmtpConfigService
         }
 
         $encryption = $this->normalizeEncryption($setting->mail_encryption);
+        $port = (int) ($setting->mail_port ?? 587);
+        $scheme = ($port === 465 || strtolower((string) $encryption) === 'ssl') ? 'smtps' : 'smtp';
 
         if (! app()->environment('testing')) {
             Config::set('mail.default', $setting->is_enabled ? 'smtp' : 'log');
         }
         Config::set('mail.mailers.smtp.transport', 'smtp');
+        Config::set('mail.mailers.smtp.scheme', $scheme);
         Config::set('mail.mailers.smtp.host', $setting->mail_host);
-        Config::set('mail.mailers.smtp.port', $setting->mail_port);
+        Config::set('mail.mailers.smtp.port', $port);
         Config::set('mail.mailers.smtp.encryption', $encryption);
         Config::set('mail.mailers.smtp.username', $setting->mail_username);
         Config::set('mail.mailers.smtp.password', $setting->getDecryptedPassword());
-        Config::set('mail.mailers.smtp.timeout', $setting->timeout);
+        Config::set('mail.mailers.smtp.timeout', $setting->timeout ?? 30);
         Config::set('mail.mailers.smtp.verify_peer', false);
+        Config::set('mail.mailers.smtp.stream', [
+            'ssl' => [
+                'allow_self_signed' => true,
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ],
+        ]);
 
         $ehloDomain = $this->extractDomain($setting->mail_from_address);
         Config::set('mail.mailers.smtp.local_domain', $ehloDomain);
@@ -131,6 +148,14 @@ class SmtpConfigService
         }
         if (! empty($setting->mail_from_name)) {
             Config::set('mail.from.name', $setting->mail_from_name);
+        }
+
+        // Purge MailManager instances so any subsequent Mail::to() re-binds to the updated transport
+        try {
+            Mail::purge('smtp');
+            Mail::purge('test_smtp');
+            Mail::purge();
+        } catch (\Throwable) {
         }
     }
 
@@ -583,10 +608,14 @@ class SmtpConfigService
 
             $decryptedPassword = $setting->getDecryptedPassword();
 
+            $port = (int) ($setting->mail_port ?? 587);
+            $scheme = ($port === 465 || strtolower((string) $encryption) === 'ssl') ? 'smtps' : 'smtp';
+
             $envUpdates = [
                 'MAIL_MAILER' => $setting->is_enabled ? 'smtp' : 'log',
+                'MAIL_SCHEME' => $scheme,
                 'MAIL_HOST' => $setting->mail_host ?? '127.0.0.1',
-                'MAIL_PORT' => (string) ($setting->mail_port ?? 587),
+                'MAIL_PORT' => (string) $port,
                 'MAIL_USERNAME' => $setting->mail_username ?: 'null',
                 'MAIL_ENCRYPTION' => $encryption ?: 'null',
                 'MAIL_FROM_ADDRESS' => '"'.($setting->mail_from_address ?: 'noreply@bondhoo.com').'"',

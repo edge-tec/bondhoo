@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Api\v1\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\PasswordResetMail;
 use App\Models\User;
 use App\Notifications\PasswordResetOtpNotification;
+use App\Services\Email\EmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ForgotPasswordController extends Controller
@@ -49,9 +52,32 @@ class ForgotPasswordController extends Controller
 
         $resetUrl = url("/reset-password?token={$token}&email=".urlencode($user->email));
 
+        $plainOtp = (string) random_int(100000, 999999);
+
         try {
+            $mailable = new PasswordResetMail(
+                user: $user,
+                resetUrl: $resetUrl,
+                otp: $plainOtp,
+                expiresMinutes: 15
+            );
+
+            app(EmailService::class)->sendWithResult(
+                to: $user->email,
+                mailable: $mailable,
+                emailType: 'password_reset',
+                user: $user,
+                idempotencyKey: "password_reset:{$user->id}:{$token}",
+                metadata: [
+                    'user_id' => $user->id,
+                    'action' => 'forgot_password',
+                    'ip' => $request->ip(),
+                ],
+                forceSync: true
+            );
+
             $user->notify(new PasswordResetOtpNotification(
-                otp: (string) random_int(100000, 999999),
+                otp: $plainOtp,
                 resetUrl: $resetUrl,
                 meta: [
                     'ip' => $request->ip(),
@@ -59,7 +85,7 @@ class ForgotPasswordController extends Controller
                 ]
             ));
         } catch (\Throwable $e) {
-            // Ignore notification failure in tests
+            Log::warning('Password reset email dispatch issue: '.$e->getMessage());
         }
 
         if (! $request->expectsJson()) {

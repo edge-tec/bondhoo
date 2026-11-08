@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Mail\VerifyEmailMail;
 use App\Models\EmailVerification;
+use App\Notifications\VerifyEmailNotification;
 use App\Services\AuthService;
 use App\Services\Email\EmailService;
 use App\Services\OtpService;
@@ -91,11 +92,28 @@ class RegisterController extends Controller
 
                 $emailSent = (bool) ($emailResult['success'] ?? false);
                 $emailError = $emailResult['error'] ?? null;
+
+                try {
+                    $user->notify(new VerifyEmailNotification(
+                        $emailOtp['plain_otp'],
+                        $tokenString,
+                        $request->ip(),
+                        $request->userAgent()
+                    ));
+                } catch (\Throwable) {
+                }
             } catch (\Throwable $e) {
                 Log::error('Registration OTP email dispatch failed: '.$e->getMessage());
                 $emailError = $e->getMessage();
             }
         }
+
+        $plainOtp = isset($emailOtp['plain_otp']) ? $emailOtp['plain_otp'] : null;
+        $fallbackOtp = (! $emailSent || config('app.debug')) ? $plainOtp : null;
+
+        $message = $emailSent
+            ? 'Registration successful. We have sent a 6-digit verification code to your email.'
+            : 'Registration successful. Email delivery could not be completed via current SMTP ('.($emailError ?? 'Check SMTP in Admin').').';
 
         return $this->successResponse(
             data: [
@@ -105,8 +123,10 @@ class RegisterController extends Controller
                 'requires_email_verification' => $requiresEmailVerification,
                 'email_sent' => $emailSent,
                 'email_error' => $emailError,
+                'otp' => $fallbackOtp,
+                'dev_otp' => $fallbackOtp,
             ],
-            message: 'Registration successful.',
+            message: $message,
             statusCode: 201
         );
     }

@@ -890,6 +890,20 @@ Route::prefix('v1')->group(function () {
                 Route::post('/{id}/escalate', [AdminModerationController::class, 'escalate'])->whereNumber('id');
                 Route::post('/{id}/suspend-user', [AdminModerationController::class, 'suspendUser'])->whereNumber('id');
             });
+
+            // Enterprise SMTP Email Management (v1 API)
+            Route::prefix('smtp')->group(function () {
+                Route::get('/settings', [EmailManagementController::class, 'getSettings']);
+                Route::post('/settings', [EmailManagementController::class, 'updateSettings']);
+                Route::post('/test', [EmailManagementController::class, 'testConnection'])->middleware('throttle:smtp-test');
+                Route::post('/verify-connection', [EmailManagementController::class, 'verifyConnection'])->middleware('throttle:smtp-test');
+                Route::get('/dns-check', [EmailManagementController::class, 'checkDns']);
+                Route::get('/logs', [EmailManagementController::class, 'getLogs']);
+                Route::post('/logs/{id}/retry', [EmailManagementController::class, 'retryLog'])->whereNumber('id');
+                Route::get('/stats', [EmailManagementController::class, 'getStats']);
+                Route::get('/templates', [EmailManagementController::class, 'getTemplates']);
+                Route::get('/templates/{key}/preview', [EmailManagementController::class, 'previewTemplate']);
+            });
         });
 
         // Marketplace v1 (Authenticated + Rate Limited)

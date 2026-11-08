@@ -29,6 +29,6 @@ sealed interface RegisterUiIntent {
 
 sealed interface RegisterUiEffect {
     data object NavigateToHome : RegisterUiEffect
-    data class NavigateToEmailVerification(val email: String) : RegisterUiEffect
+    data class NavigateToEmailVerification(val email: String, val fallbackOtp: String? = null) : RegisterUiEffect
     data object NavigateToLogin : RegisterUiEffect
 }
