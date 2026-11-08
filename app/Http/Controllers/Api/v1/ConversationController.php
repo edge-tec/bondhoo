@@ -55,17 +55,26 @@ class ConversationController extends Controller
             $request->merge(['recipient_id' => $request->input('participant_id')]);
         }
 
+        // If direct chat or recipient_id is present, empty participant_ids should not cause validation failure
+        $isDirect = ($request->input('type') === Conversation::TYPE_DIRECT) || ($request->has('recipient_id') && ! empty($request->input('recipient_id')));
+        if ($isDirect && empty($request->input('participant_ids'))) {
+            $request->request->remove('participant_ids');
+        }
+
         $validated = $request->validate([
             'type' => ['nullable', 'string', 'in:direct,group,saved'],
             'recipient_id' => ['nullable', 'integer', 'exists:users,id'],
             'title' => ['required_if:type,group', 'nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:500'],
             'avatar_url' => ['nullable', 'string', 'url'],
-            'participant_ids' => ['required_if:type,group', 'nullable', 'array', 'min:1'],
+            'participant_ids' => ['required_if:type,group', 'nullable', 'array'],
             'participant_ids.*' => ['integer', 'exists:users,id'],
         ]);
 
         $type = $validated['type'] ?? (isset($validated['recipient_id']) ? Conversation::TYPE_DIRECT : Conversation::TYPE_GROUP);
+        if ($type === Conversation::TYPE_GROUP && empty($validated['participant_ids'])) {
+            return $this->errorResponse('At least one participant is required to create a group conversation.', 422);
+        }
 
         if ($type === Conversation::TYPE_SAVED || ($type === Conversation::TYPE_DIRECT && (int) ($validated['recipient_id'] ?? 0) === $user->id)) {
             $conversation = $this->messengerService->getOrCreateSavedConversation($user);

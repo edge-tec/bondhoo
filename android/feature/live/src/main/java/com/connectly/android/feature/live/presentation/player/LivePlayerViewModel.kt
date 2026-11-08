@@ -30,11 +30,7 @@ class LivePlayerViewModel @Inject constructor(
 
     val eglBaseContext: EglBase.Context get() = webRtcEngine.eglBaseContext
 
-    private val _uiState = MutableStateFlow(
-        LivePlayerState(
-            comments = getInitialScreen8Comments()
-        )
-    )
+    private val _uiState = MutableStateFlow(LivePlayerState())
     val uiState: StateFlow<LivePlayerState> = _uiState.asStateFlow()
 
     init {
@@ -138,28 +134,7 @@ class LivePlayerViewModel @Inject constructor(
         }
     }
 
-    private fun getInitialScreen8Comments(): List<LiveComment> {
-        return listOf(
-            LiveComment(
-                id = 1L,
-                streamId = 1L,
-                user = User(id = 81L, name = "Rahat Khan", username = "rahat_khan"),
-                comment = "So beautiful! ❤️"
-            ),
-            LiveComment(
-                id = 2L,
-                streamId = 1L,
-                user = User(id = 82L, name = "Tania Akter", username = "tania_akter"),
-                comment = "Amazing! 👏"
-            ),
-            LiveComment(
-                id = 3L,
-                streamId = 1L,
-                user = User(id = 83L, name = "Imran Hasan", username = "imran_hasan"),
-                comment = "Great session!"
-            )
-        )
-    }
+
 }
 
 

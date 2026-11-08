@@ -137,6 +137,18 @@ class MessengerRepositoryImpl @Inject constructor(
         }
     }.flowOn(ioDispatcher)
 
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+
+    private fun extractErrorMessage(errorBodyString: String?, fallback: String): String {
+        if (errorBodyString.isNullOrBlank()) return fallback
+        return try {
+            val obj = Json.parseToJsonElement(errorBodyString).jsonObject
+            obj["message"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() } ?: fallback
+        } catch (_: Exception) {
+            fallback
+        }
+    }
+
     override fun createConversation(
         recipientId: Long?,
         title: String?,
@@ -153,13 +165,14 @@ class MessengerRepositoryImpl @Inject constructor(
                     type = resolvedType,
                     title = title,
                     description = description,
-                    participant_ids = participantIds ?: emptyList()
+                    participant_ids = if (resolvedType == "group") (participantIds ?: emptyList()) else null
                 )
             )
             if (response.isSuccessful && response.body() != null) {
                 emit(Result.Success(mapDtoToConversation(response.body()!!.data)))
             } else {
-                emit(Result.Error(Exception("Failed to start conversation.")))
+                val errMsg = extractErrorMessage(response.errorBody()?.string(), response.body()?.message ?: "Failed to start conversation.")
+                emit(Result.Error(Exception(errMsg)))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))

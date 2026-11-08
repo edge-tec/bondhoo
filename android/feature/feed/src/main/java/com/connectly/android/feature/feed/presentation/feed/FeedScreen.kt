@@ -105,6 +105,16 @@ fun FeedScreen(
         }
     }
 
+    // Periodic silent sync for real-time newsfeed updates
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(20_000L)
+            if (searchQuery.isBlank() && !state.isLoading && !state.isPaginating) {
+                viewModel.handleIntent(FeedIntent.RefreshFeed)
+            }
+        }
+    }
+
     // Pagination auto-load when reaching near end
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }

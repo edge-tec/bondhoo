@@ -76,7 +76,7 @@ class LearningRepositoryImpl @Inject constructor(
         isFeatured = is_featured,
         instructorName = instructor?.name,
         categoryName = category?.name,
-        isEnrolled = overrideEnrolled ?: is_enrolled
+        isEnrolled = overrideEnrolled ?: (is_enrolled ?: false)
     )
 
     override fun getCategories(): Flow<Result<List<LearningCategory>>> = flow {

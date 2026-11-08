@@ -53,7 +53,7 @@ class ReelMedia extends Model
             return null;
         }
 
-        return Storage::url($this->video_path);
+        return url(Storage::url($this->video_path));
     }
 
     public function getThumbnailUrlAttribute(): ?string
@@ -62,6 +62,6 @@ class ReelMedia extends Model
             return null;
         }
 
-        return Storage::url($this->thumbnail_path);
+        return url(Storage::url($this->thumbnail_path));
     }
 }

@@ -1159,7 +1159,7 @@ class ChatViewModel @Inject constructor(
 
     private fun messageMemberDirectly(userId: Long) {
         val myId = tokenStorageManager.getUserId()
-        if (myId != null && myId == userId) return
+        if (myId > 0L && myId == userId) return
         viewModelScope.launch {
             createConversationUseCase(recipientId = userId).collect { res ->
                 if (res is Result.Success) {

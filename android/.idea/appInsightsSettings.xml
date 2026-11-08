@@ -8,8 +8,8 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.connectly.android.debug" />
-                  <option name="mobileSdkAppId" value="1:000000000000:android:0000000000000000000001" />
+                  <option name="appId" value="com.jugajug.android.debug" />
+                  <option name="mobileSdkAppId" value="1:000000000000:android:0000000000000000000011" />
                   <option name="projectId" value="connectly-placeholder-dev" />
                   <option name="projectNumber" value="000000000000" />
                 </ConnectionSetting>

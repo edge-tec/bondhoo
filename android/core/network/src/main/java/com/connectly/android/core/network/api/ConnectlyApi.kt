@@ -1886,18 +1886,18 @@ data class ReelDto(
     val comments_count: Int = 0,
     val shares_count: Int = 0,
     val saves_count: Int = 0,
-    val has_liked: Boolean = false,
-    val is_liked: Boolean = false,
-    val has_saved: Boolean = false,
-    val is_saved: Boolean = false,
+    val has_liked: Boolean? = false,
+    val is_liked: Boolean? = false,
+    val has_saved: Boolean? = false,
+    val is_saved: Boolean? = false,
     val my_reaction: String? = null
 ) {
     val resolvedCreator: UserDto get() = creator ?: user ?: UserDto(id = 0L, name = "Creator", username = "creator")
     val resolvedCaption: String get() = caption ?: ""
     val resolvedVideoUrl: String get() = com.connectly.android.core.network.di.NetworkModule.resolveMediaUrl(video_url) ?: (video_url ?: "")
     val resolvedThumbnailUrl: String? get() = com.connectly.android.core.network.di.NetworkModule.resolveMediaUrl(thumbnail_url ?: cover_url)
-    val resolvedLiked: Boolean get() = is_liked || has_liked
-    val resolvedSaved: Boolean get() = is_saved || has_saved
+    val resolvedLiked: Boolean get() = (is_liked == true) || (has_liked == true)
+    val resolvedSaved: Boolean get() = (is_saved == true) || (has_saved == true)
 }
 
 @Serializable
@@ -2981,7 +2981,7 @@ data class CreateConversationRequest(
     val title: String? = null,
     val description: String? = null,
     val avatar_url: String? = null,
-    val participant_ids: List<Long> = emptyList()
+    val participant_ids: List<Long>? = null
 )
 
 @Serializable
@@ -4060,9 +4060,9 @@ data class MarketplaceSellerDto(
     val name: String? = null,
     val username: String? = null,
     val avatar_url: String? = null,
-    val is_verified: Boolean = false,
-    val rating: Double = 0.0,
-    val reviews_count: Int = 0,
+    val is_verified: Boolean? = false,
+    val rating: Double? = 0.0,
+    val reviews_count: Int? = 0,
     val member_since: String? = null
 )
 
@@ -4071,7 +4071,7 @@ data class MarketplaceProductDto(
     val id: Long,
     val title: String,
     val price: Double = 0.0,
-    val stock: Int = 1,
+    val stock: Int? = 1,
     val original_price: Double? = null,
     val discount_percent: Int? = null,
     val currency: String = "BDT",
@@ -4693,7 +4693,7 @@ data class LearningCourseDto(
     val rating_avg: Double = 0.0,
     val rating_count: Int = 0,
     val is_featured: Boolean = false,
-    val is_enrolled: Boolean = false,
+    val is_enrolled: Boolean? = false,
     val published_at: String? = null,
     val instructor: UserDto? = null,
     val category: LearningCategoryDto? = null

@@ -1,5 +1,9 @@
 package com.connectly.android.feature.live.presentation.player
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,9 +22,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.connectly.android.core.designsystem.theme.ConnectlyBlue
@@ -34,12 +40,32 @@ fun LivePlayerScreen(
     modifier: Modifier = Modifier,
     viewModel: LivePlayerViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
     var commentInput by remember { mutableStateOf("") }
     var showEndStreamConfirmDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(streamId) {
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasCameraPermission = permissions[Manifest.permission.CAMERA] ?: false
         viewModel.handleIntent(LivePlayerIntent.LoadStream(streamId))
+    }
+
+    LaunchedEffect(streamId) {
+        if (!hasCameraPermission) {
+            permissionLauncher.launch(
+                arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+            )
+        } else {
+            viewModel.handleIntent(LivePlayerIntent.LoadStream(streamId))
+        }
     }
 
     LaunchedEffect(state.streamEnded) {

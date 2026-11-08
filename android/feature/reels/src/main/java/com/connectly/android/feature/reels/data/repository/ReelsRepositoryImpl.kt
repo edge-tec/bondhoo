@@ -82,13 +82,76 @@ class ReelsRepositoryImpl @Inject constructor(
                 if (reels.isNotEmpty()) {
                     emit(Result.Success(reels))
                 } else {
-                    emit(Result.Success(getDefaultMockReels()))
+                    val cached = reelDao.getReelsFeed().firstOrNull() ?: emptyList()
+                    if (cached.isNotEmpty()) {
+                        emit(Result.Success(cached.map { entity ->
+                            Reel(
+                                id = entity.id,
+                                creator = User(
+                                    id = entity.creatorId,
+                                    name = entity.creatorName,
+                                    username = "creator",
+                                    avatar = entity.creatorAvatar
+                                ),
+                                caption = entity.caption,
+                                videoUrl = entity.videoUrl,
+                                thumbnailUrl = entity.thumbnailUrl,
+                                likesCount = entity.likesCount,
+                                commentsCount = entity.commentsCount,
+                                isLiked = entity.isLiked
+                            )
+                        }))
+                    } else {
+                        emit(Result.Success(emptyList()))
+                    }
                 }
             } else {
-                emit(Result.Success(getDefaultMockReels()))
+                val cached = reelDao.getReelsFeed().firstOrNull() ?: emptyList()
+                if (cached.isNotEmpty()) {
+                    emit(Result.Success(cached.map { entity ->
+                        Reel(
+                            id = entity.id,
+                            creator = User(
+                                id = entity.creatorId,
+                                name = entity.creatorName,
+                                username = "creator",
+                                avatar = entity.creatorAvatar
+                            ),
+                            caption = entity.caption,
+                            videoUrl = entity.videoUrl,
+                            thumbnailUrl = entity.thumbnailUrl,
+                            likesCount = entity.likesCount,
+                            commentsCount = entity.commentsCount,
+                            isLiked = entity.isLiked
+                        )
+                    }))
+                } else {
+                    emit(Result.Error(Exception("Failed to load reels (${response.code()})")))
+                }
             }
-        } catch (_: Exception) {
-            emit(Result.Success(getDefaultMockReels()))
+        } catch (e: Exception) {
+            val cached = reelDao.getReelsFeed().firstOrNull() ?: emptyList()
+            if (cached.isNotEmpty()) {
+                emit(Result.Success(cached.map { entity ->
+                    Reel(
+                        id = entity.id,
+                        creator = User(
+                            id = entity.creatorId,
+                            name = entity.creatorName,
+                            username = "creator",
+                            avatar = entity.creatorAvatar
+                        ),
+                        caption = entity.caption,
+                        videoUrl = entity.videoUrl,
+                        thumbnailUrl = entity.thumbnailUrl,
+                        likesCount = entity.likesCount,
+                        commentsCount = entity.commentsCount,
+                        isLiked = entity.isLiked
+                    )
+                }))
+            } else {
+                emit(Result.Error(e))
+            }
         }
     }.flowOn(ioDispatcher)
 
