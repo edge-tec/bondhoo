@@ -1842,9 +1842,9 @@ data class StoryDto(
     val resolvedSeen: Boolean get() = is_seen || has_viewed
     val resolvedReaction: String? get() = my_reaction ?: user_reaction
     val resolvedMediaUrl: String get() {
-        if (!media_url.isNullOrBlank()) return media_url
+        if (!media_url.isNullOrBlank()) return com.connectly.android.core.network.di.NetworkModule.resolveMediaUrl(media_url) ?: media_url
         val firstMedia = media.firstOrNull()
-        return when (firstMedia) {
+        val raw = when (firstMedia) {
             is JsonPrimitive -> if (firstMedia.isString) firstMedia.content else ""
             is JsonObject -> firstMedia["url"]?.jsonPrimitive?.contentOrNull
                 ?: firstMedia["original_url"]?.jsonPrimitive?.contentOrNull
@@ -1852,6 +1852,7 @@ data class StoryDto(
                 ?: ""
             else -> ""
         }
+        return com.connectly.android.core.network.di.NetworkModule.resolveMediaUrl(raw) ?: raw
     }
     val resolvedMediaType: String get() = media_type ?: if (type == "video" || resolvedMediaUrl.contains(".mp4")) "video" else "image"
 }
@@ -1893,8 +1894,8 @@ data class ReelDto(
 ) {
     val resolvedCreator: UserDto get() = creator ?: user ?: UserDto(id = 0L, name = "Creator", username = "creator")
     val resolvedCaption: String get() = caption ?: ""
-    val resolvedVideoUrl: String get() = video_url ?: ""
-    val resolvedThumbnailUrl: String? get() = thumbnail_url ?: cover_url
+    val resolvedVideoUrl: String get() = com.connectly.android.core.network.di.NetworkModule.resolveMediaUrl(video_url) ?: (video_url ?: "")
+    val resolvedThumbnailUrl: String? get() = com.connectly.android.core.network.di.NetworkModule.resolveMediaUrl(thumbnail_url ?: cover_url)
     val resolvedLiked: Boolean get() = is_liked || has_liked
     val resolvedSaved: Boolean get() = is_saved || has_saved
 }
@@ -2583,7 +2584,10 @@ data class MediaUploadResponse(
     val duration: Double? = null,
     val metadata: JsonElement? = null
 ) {
-    val resolvedUrl: String get() = preview_url ?: original_url ?: url ?: ""
+    val resolvedUrl: String get() {
+        val raw = preview_url ?: original_url ?: url ?: ""
+        return com.connectly.android.core.network.di.NetworkModule.resolveMediaUrl(raw) ?: raw
+    }
     val resolvedFileName: String get() = filename ?: name ?: "attachment"
 }
 

@@ -439,14 +439,7 @@ class CallingRepositoryImpl @Inject constructor(
     }
 
     private fun normalizeUrl(rawUrl: String?): String? {
-        val trimmed = rawUrl?.trim()?.takeIf { it.isNotBlank() } ?: return null
-        val baseOrigin = NetworkModule.BASE_URL.substringBefore("/api").trimEnd('/')
-        return when {
-            trimmed.startsWith("http://localhost:8000") -> baseOrigin + trimmed.removePrefix("http://localhost:8000")
-            trimmed.startsWith("http://127.0.0.1:8000") -> baseOrigin + trimmed.removePrefix("http://127.0.0.1:8000")
-            trimmed.startsWith("/") -> "$baseOrigin$trimmed"
-            else -> trimmed
-        }
+        return NetworkModule.resolveMediaUrl(rawUrl)
     }
 
     private fun formatCallTimestamp(isoString: String?): String {
