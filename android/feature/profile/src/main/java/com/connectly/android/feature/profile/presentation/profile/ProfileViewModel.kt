@@ -211,39 +211,32 @@ class ProfileViewModel @Inject constructor(
                         }
                     }
                     is Result.Error -> {
-                        // Fallback default enterprise profile matching screen mockup
-                        val defaultProfile = User(
-                            id = if (myUserId > 0L) myUserId else 1L,
-                            name = "Aileen Schaden",
-                            username = "dixie.mann",
-                            avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                            coverPhoto = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-                            bio = "Dream Big • Work Hard • Be Happy",
-                            occupation = "Software Engineer",
-                            location = "Dhaka, Bangladesh",
-                            isVerified = true,
-                            friendsCount = 2500,
-                            followersCount = 865,
-                            followingCount = 128,
-                            friendshipStatus = FriendshipStatus.NONE
-                        )
+                        val myName = tokenStorageManager.getUserName()
+                        val myId = tokenStorageManager.getUserId()
+                        val fallbackProfile = if (!myName.isNullOrBlank() && myId > 0L) {
+                            User(
+                                id = myId,
+                                name = myName,
+                                username = myName.lowercase().replace(" ", "_"),
+                                avatar = tokenStorageManager.getProfileImage(),
+                                isVerified = false
+                            )
+                        } else null
+
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                user = defaultProfile,
+                                user = fallbackProfile ?: it.user,
                                 isFollowing = false,
                                 isFriend = false,
                                 friendshipStatus = FriendshipStatus.NONE,
-                                isOwner = true,
-                                errorMessage = null,
+                                isOwner = (username.isBlank() || username == "me" || (myId > 0L && username == myId.toString())),
+                                errorMessage = if (fallbackProfile == null && it.user == null) (result.exception.message ?: "Failed to load profile") else null,
                                 photos = emptyList(),
                                 videos = emptyList(),
                                 reels = emptyList()
                             )
                         }
-                        loadUserPosts("dixie.mann")
-                        loadProfileAnalytics()
-                        loadProfileAbout()
                     }
                 }
             }
@@ -281,9 +274,9 @@ class ProfileViewModel @Inject constructor(
                     val data = result.data
                     _uiState.update {
                         it.copy(
-                            analyticsTotalViews = if (data.total_views > 0) data.total_views else 5840L,
-                            analyticsViewsToday = if (data.views_today > 0) data.views_today else 142L,
-                            analyticsViewsWeek = if (data.views_this_week > 0) data.views_this_week else 1290L
+                            analyticsTotalViews = data.total_views,
+                            analyticsViewsToday = data.views_today,
+                            analyticsViewsWeek = data.views_this_week
                         )
                     }
                 }

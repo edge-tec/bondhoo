@@ -46,6 +46,8 @@ class ProfileRepositoryImpl @Inject constructor(
                 val dto = response.body()!!.data
                 if (username.isBlank() || username == "me") {
                     tokenStorageManager.saveUserId(dto.id)
+                    tokenStorageManager.saveUserName(dto.name)
+                    tokenStorageManager.saveProfileImage(dto.avatar)
                 }
                 val user = User(
                     id = dto.id,

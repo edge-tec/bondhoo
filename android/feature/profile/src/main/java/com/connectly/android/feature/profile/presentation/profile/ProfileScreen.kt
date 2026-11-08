@@ -140,7 +140,7 @@ fun ProfileScreen(
             item {
                 Box(modifier = Modifier.fillMaxWidth().height(220.dp)) {
                     AsyncImage(
-                        model = user?.coverPhoto ?: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+                        model = resolveMediaUrl(user?.coverPhoto),
                         contentDescription = "Cover Photo",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -181,7 +181,7 @@ fun ProfileScreen(
                             .clickable(onClick = onNavigateToEditProfile)
                     ) {
                         AsyncImage(
-                            model = user?.avatar ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                            model = resolveMediaUrl(user?.avatar),
                             contentDescription = "Avatar",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
@@ -590,7 +590,7 @@ fun ProfileScreen(
                                             .background(Color.LightGray)
                                     ) {
                                         AsyncImage(
-                                            model = resolveMediaUrl(friend.avatar) ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                                            model = resolveMediaUrl(friend.avatar),
                                             contentDescription = friend.name,
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier.fillMaxSize()
@@ -678,7 +678,7 @@ fun ProfileScreen(
                                         .background(Color.LightGray)
                                 ) {
                                     AsyncImage(
-                                        model = user?.avatar ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                                        model = resolveMediaUrl(user?.avatar),
                                         contentDescription = null,
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier.fillMaxSize()
@@ -904,7 +904,7 @@ fun ProfileScreen(
                                                 .background(Color.LightGray)
                                         ) {
                                             AsyncImage(
-                                                model = post.author.avatar ?: user?.avatar ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                                                model = resolveMediaUrl(post.author.avatar ?: user?.avatar),
                                                 contentDescription = null,
                                                 contentScale = ContentScale.Crop,
                                                 modifier = Modifier.fillMaxSize()
@@ -1822,7 +1822,7 @@ fun ProfileScreen(
                                         .background(Color.LightGray)
                                 ) {
                                     AsyncImage(
-                                        model = commentAuthor?.avatar ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                                        model = resolveMediaUrl(commentAuthor?.avatar),
                                         contentDescription = null,
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier.fillMaxSize()

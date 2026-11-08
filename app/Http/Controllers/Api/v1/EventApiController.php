@@ -48,13 +48,15 @@ class EventApiController extends Controller
                 'id' => $event->id,
                 'title' => $event->title,
                 'description' => $event->description,
-                'start_time' => $event->start_time?->toIso8601String(),
+                'banner' => $event->cover_image,
+                'cover_image' => $event->cover_image,
+                'location' => $event->address ?? $event->location_type ?? '',
+                'address' => $event->address,
+                'start_time' => $event->start_time?->toIso8601String() ?? '',
                 'start_time_formatted' => $event->start_time?->locale('bn')->translatedFormat('l, d F, Y • h:i A'),
                 'end_time' => $event->end_time?->toIso8601String(),
                 'location_type' => $event->location_type,
-                'address' => $event->address,
                 'online_link' => $event->online_link,
-                'cover_image' => $event->cover_image,
                 'going_count' => (int) ($event->going_count ?? $event->attendees->where('status', 'going')->count()),
                 'interested_count' => (int) ($event->interested_count ?? $event->attendees->where('status', 'interested')->count()),
                 'user_rsvp' => $userRsvp,
@@ -69,9 +71,7 @@ class EventApiController extends Controller
         return response()->json([
             'success' => true,
             'status' => 'success',
-            'data' => [
-                'events' => $items,
-            ],
+            'data' => $items,
             'events' => $items,
             'meta' => [
                 'total' => $events->total(),
@@ -79,6 +79,52 @@ class EventApiController extends Controller
                 'last_page' => $events->lastPage(),
             ],
             'message' => 'ইভেন্ট তালিকা সফলভাবে লোড হয়েছে।',
+        ]);
+    }
+
+    /**
+     * GET /api/v1/events/{id}
+     *
+     * Show event details.
+     */
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $event = Event::with(['creator.profile', 'attendees.user.profile'])->findOrFail($id);
+        $user = $request->user();
+        $userId = $user?->id;
+        $userRsvp = $userId
+            ? $event->attendees->firstWhere('user_id', $userId)?->status
+            : null;
+
+        $data = [
+            'id' => $event->id,
+            'title' => $event->title,
+            'description' => $event->description,
+            'banner' => $event->cover_image,
+            'cover_image' => $event->cover_image,
+            'location' => $event->address ?? $event->location_type ?? '',
+            'address' => $event->address,
+            'start_time' => $event->start_time?->toIso8601String() ?? '',
+            'start_time_formatted' => $event->start_time?->locale('bn')->translatedFormat('l, d F, Y • h:i A'),
+            'end_time' => $event->end_time?->toIso8601String(),
+            'location_type' => $event->location_type,
+            'online_link' => $event->online_link,
+            'going_count' => (int) ($event->going_count ?? $event->attendees->where('status', 'going')->count()),
+            'interested_count' => (int) ($event->interested_count ?? $event->attendees->where('status', 'interested')->count()),
+            'user_rsvp' => $userRsvp,
+            'creator' => [
+                'id' => $event->creator?->id,
+                'name' => $event->creator?->name,
+                'avatar' => $event->creator?->avatar_url ?? $event->creator?->profile?->avatar_url,
+            ],
+        ];
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => $data,
+            'event' => $data,
+            'message' => 'ইভেন্ট বিস্তারিত সফলভাবে লোড হয়েছে।',
         ]);
     }
 

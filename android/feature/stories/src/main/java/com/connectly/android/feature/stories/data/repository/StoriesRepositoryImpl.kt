@@ -98,10 +98,41 @@ class StoriesRepositoryImpl @Inject constructor(
 
                 emit(Result.Success(trays))
             } else {
-                emit(Result.Success(getDefaultMockStoryTrays()))
+                emit(Result.Error(Exception("Failed to load stories (${response.code()})")))
             }
-        } catch (_: Exception) {
-            emit(Result.Success(getDefaultMockStoryTrays()))
+        } catch (e: Exception) {
+            val cached = storyDao.getActiveStories(System.currentTimeMillis()).firstOrNull() ?: emptyList()
+            if (cached.isNotEmpty()) {
+                val trays = cached.groupBy { it.userId }.map { (userId, stories) ->
+                    val first = stories.first()
+                    StoryUserTray(
+                        user = User(
+                            id = userId,
+                            name = first.userName,
+                            username = "user_$userId",
+                            avatar = first.userAvatar
+                        ),
+                        hasUnseenStories = stories.any { !it.isSeen },
+                        stories = stories.map { s ->
+                            Story(
+                                id = s.id,
+                                userId = s.userId,
+                                author = User(
+                                    id = s.userId,
+                                    name = s.userName,
+                                    username = "user_${s.userId}",
+                                    avatar = s.userAvatar
+                                ),
+                                mediaUrl = s.mediaUrl,
+                                mediaType = s.mediaType
+                            )
+                        }
+                    )
+                }
+                emit(Result.Success(trays))
+            } else {
+                emit(Result.Error(e))
+            }
         }
     }.flowOn(ioDispatcher)
 
@@ -254,51 +285,4 @@ class StoriesRepositoryImpl @Inject constructor(
             emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
-
-    private fun getDefaultMockStoryTrays(): List<StoryUserTray> {
-        val sadia = User(
-            id = 21L,
-            name = "Sadia Islam",
-            username = "sadia_islam",
-            avatar = "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-            isVerified = true
-        )
-        val rahat = User(
-            id = 22L,
-            name = "Rahat Chowdhury",
-            username = "rahat_c",
-            avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-            isVerified = false
-        )
-        return listOf(
-            StoryUserTray(
-                user = sadia,
-                hasUnseenStories = true,
-                stories = listOf(
-                    Story(
-                        id = 301L,
-                        userId = sadia.id,
-                        author = sadia,
-                        mediaUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                        mediaType = "image",
-                        viewsCount = 142
-                    )
-                )
-            ),
-            StoryUserTray(
-                user = rahat,
-                hasUnseenStories = false,
-                stories = listOf(
-                    Story(
-                        id = 302L,
-                        userId = rahat.id,
-                        author = rahat,
-                        mediaUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-                        mediaType = "image",
-                        viewsCount = 89
-                    )
-                )
-            )
-        )
-    }
 }

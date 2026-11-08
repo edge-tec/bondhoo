@@ -41,6 +41,7 @@ class FeedViewModelTest {
     private val addCommentUseCase: AddCommentUseCase = mockk()
     private val reactToCommentUseCase: ReactToCommentUseCase = mockk()
     private val getSuggestedFriendsUseCase: GetSuggestedFriendsUseCase = mockk()
+    private val tokenStorageManager: com.connectly.android.core.datastore.TokenStorageManager = mockk(relaxed = true)
     private val api: ConnectlyApi = mockk(relaxed = true)
 
     private lateinit var viewModel: FeedViewModel
@@ -94,6 +95,7 @@ class FeedViewModelTest {
             addCommentUseCase,
             reactToCommentUseCase,
             getSuggestedFriendsUseCase,
+            tokenStorageManager,
             api
         )
     }

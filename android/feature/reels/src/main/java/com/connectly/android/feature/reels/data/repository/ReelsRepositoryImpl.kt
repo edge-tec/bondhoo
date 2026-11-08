@@ -295,10 +295,10 @@ class ReelsRepositoryImpl @Inject constructor(
                 }
                 emit(Result.Success(comments))
             } else {
-                emit(Result.Success(getDefaultMockReelComments(reelId)))
+                emit(Result.Error(Exception("Failed to load comments (${response.code()})")))
             }
-        } catch (_: Exception) {
-            emit(Result.Success(getDefaultMockReelComments(reelId)))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
@@ -350,73 +350,4 @@ class ReelsRepositoryImpl @Inject constructor(
             emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
-
-    private fun getDefaultMockReels(): List<Reel> {
-        return listOf(
-            Reel(
-                id = 501L,
-                creator = User(
-                    id = 14L,
-                    name = "Mizanur Rahman",
-                    username = "mizan_coder",
-                    avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-                    isVerified = true
-                ),
-                caption = "Sunset over Cox's Bazar sea beach. Amazing beauty! 🌊🌅 #bangladesh #reels",
-                videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-                thumbnailUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
-                music = MusicTrack(
-                    id = 1L,
-                    title = "Acoustic Sunset Beats",
-                    artist = "Mizanur Rahman"
-                ),
-                likesCount = 12500,
-                commentsCount = 380,
-                sharesCount = 920,
-                isLiked = true,
-                isFollowingCreator = false
-            ),
-            Reel(
-                id = 502L,
-                creator = User(
-                    id = 18L,
-                    name = "Tania Sultana",
-                    username = "tania_s",
-                    avatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
-                    isVerified = true
-                ),
-                caption = "Traditional Jamdani weaving craft in Narayanganj. Pure heritage! 🇧🇩",
-                videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-                thumbnailUrl = "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-                music = MusicTrack(
-                    id = 2L,
-                    title = "Bengali Folk Fusion",
-                    artist = "Tania Sultana"
-                ),
-                likesCount = 8900,
-                commentsCount = 210,
-                sharesCount = 430,
-                isLiked = false,
-                isFollowingCreator = true
-            )
-        )
-    }
-
-    private fun getDefaultMockReelComments(reelId: Long): List<Comment> {
-        return listOf(
-            Comment(
-                id = 601L,
-                postId = reelId,
-                author = User(
-                    id = 15L,
-                    name = "Sadia Islam",
-                    username = "sadia_islam",
-                    avatar = "https://images.unsplash.com/photo-1517841905240-472988babdf9"
-                ),
-                body = "This video is breathtaking! MashAllah ❤️",
-                reactionsCount = 42,
-                createdAt = "1h ago"
-            )
-        )
-    }
 }

@@ -429,8 +429,8 @@ fun FeedScreen(
                             }
                             IconButton(onClick = onNavigateToProfile) {
                                 ConnectlyAvatar(
-                                    imageUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                                    name = "My Profile",
+                                    imageUrl = state.currentUserAvatar,
+                                    name = state.currentUserName ?: "My Profile",
                                     size = 34.dp
                                 )
                             }
@@ -461,6 +461,8 @@ fun FeedScreen(
             // Composer Card ("What's on your mind?")
             item {
                 CreatePostCard(
+                    userAvatar = state.currentUserAvatar,
+                    userName = state.currentUserName,
                     onCardClick = { onNavigateToCreatePost(null) },
                     onLiveClick = { onNavigateToLive(1L) },
                     onPhotoClick = { onNavigateToCreatePost("photo") },
@@ -1315,6 +1317,8 @@ private fun StoriesTraySection(
 
 @Composable
 private fun CreatePostCard(
+    userAvatar: String? = null,
+    userName: String? = null,
     onCardClick: () -> Unit,
     onLiveClick: () -> Unit,
     onPhotoClick: () -> Unit,
@@ -1331,8 +1335,8 @@ private fun CreatePostCard(
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ConnectlyAvatar(
-                    imageUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                    name = "You",
+                    imageUrl = userAvatar,
+                    name = userName ?: "You",
                     size = 40.dp
                 )
 

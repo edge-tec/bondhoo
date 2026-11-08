@@ -36,6 +36,7 @@ class FeedViewModel @Inject constructor(
     private val addCommentUseCase: AddCommentUseCase,
     private val reactToCommentUseCase: ReactToCommentUseCase,
     private val getSuggestedFriendsUseCase: GetSuggestedFriendsUseCase,
+    private val tokenStorageManager: com.connectly.android.core.datastore.TokenStorageManager,
     private val api: ConnectlyApi
 ) : ViewModel() {
 
@@ -43,6 +44,9 @@ class FeedViewModel @Inject constructor(
     val uiState: StateFlow<FeedState> = _uiState.asStateFlow()
 
     init {
+        val avatar = tokenStorageManager.getProfileImage()
+        val name = tokenStorageManager.getUserName()
+        _uiState.update { it.copy(currentUserAvatar = avatar, currentUserName = name) }
         loadFeed("for_you")
         loadSuggestedFriends()
         loadStoriesFeed()

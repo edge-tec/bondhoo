@@ -42,6 +42,8 @@ class AuthRepositoryImpl @Inject constructor(
 
                 tokenStorageManager.saveAccessToken(token)
                 tokenStorageManager.saveUserId(userDto.id)
+                tokenStorageManager.saveUserName(userDto.name)
+                tokenStorageManager.saveProfileImage(userDto.avatar)
 
                 val userEntity = UserEntity(
                     id = userDto.id,
@@ -115,6 +117,8 @@ class AuthRepositoryImpl @Inject constructor(
                 }
                 if (userDto.id > 0) {
                     tokenStorageManager.saveUserId(userDto.id)
+                    tokenStorageManager.saveUserName(userDto.name)
+                    tokenStorageManager.saveProfileImage(userDto.avatar)
                     val userEntity = UserEntity(
                         id = userDto.id,
                         name = userDto.name,
@@ -166,6 +170,8 @@ class AuthRepositoryImpl @Inject constructor(
                 }
                 if (userDto.id > 0) {
                     tokenStorageManager.saveUserId(userDto.id)
+                    tokenStorageManager.saveUserName(userDto.name)
+                    tokenStorageManager.saveProfileImage(userDto.avatar)
                     val userEntity = UserEntity(
                         id = userDto.id,
                         name = userDto.name,

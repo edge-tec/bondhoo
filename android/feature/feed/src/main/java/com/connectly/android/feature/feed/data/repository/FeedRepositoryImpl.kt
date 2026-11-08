@@ -14,6 +14,7 @@ import com.connectly.android.feature.feed.domain.repository.FeedRepository
 import com.connectly.android.feature.feed.domain.repository.PaginatedFeed
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -88,10 +89,22 @@ class FeedRepositoryImpl @Inject constructor(
                 )
                 emit(Result.Success(paginatedFeed))
             } else {
-                emit(Result.Success(PaginatedFeed(posts = getDefaultMockFeed(tab), hasMore = false)))
+                val cached = postDao.getPostsByTab(tab).firstOrNull() ?: emptyList()
+                if (cached.isNotEmpty()) {
+                    val posts = cached.map { mapEntityToPost(it) }
+                    emit(Result.Success(PaginatedFeed(posts = posts, hasMore = false)))
+                } else {
+                    emit(Result.Error(Exception("Failed to load feed (${response.code()})")))
+                }
             }
-        } catch (_: Exception) {
-            emit(Result.Success(PaginatedFeed(posts = getDefaultMockFeed(tab), hasMore = false)))
+        } catch (e: Exception) {
+            val cached = postDao.getPostsByTab(tab).firstOrNull() ?: emptyList()
+            if (cached.isNotEmpty()) {
+                val posts = cached.map { mapEntityToPost(it) }
+                emit(Result.Success(PaginatedFeed(posts = posts, hasMore = false)))
+            } else {
+                emit(Result.Error(e))
+            }
         }
     }.flowOn(ioDispatcher)
 
@@ -329,10 +342,10 @@ class FeedRepositoryImpl @Inject constructor(
                 }
                 emit(Result.Success(comments))
             } else {
-                emit(Result.Success(getDefaultMockComments(postId)))
+                emit(Result.Error(Exception("Failed to load comments (${response.code()})")))
             }
-        } catch (_: Exception) {
-            emit(Result.Success(getDefaultMockComments(postId)))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
@@ -457,78 +470,23 @@ class FeedRepositoryImpl @Inject constructor(
         }
     }.flowOn(ioDispatcher)
 
-    private fun getDefaultMockFeed(tab: String): List<Post> {
-        return listOf(
-            Post(
-                id = 101L,
-                author = User(
-                    id = 12L,
-                    name = "Afrin Akter",
-                    username = "afrin_akter",
-                    avatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
-                    isVerified = true
-                ),
-                content = "Life is better when you're surrounded by good people. ❤️ #friendship #dhaka",
-                mediaUrls = listOf("https://images.unsplash.com/photo-1534528741775-53994a69daeb"),
-                reactionsCount = 2400,
-                commentsCount = 248,
-                sharesCount = 35,
-                userReaction = "love",
-                feedTab = tab
+    private fun mapEntityToPost(entity: PostEntity): Post {
+        return Post(
+            id = entity.id,
+            author = User(
+                id = entity.authorId,
+                name = entity.authorName,
+                username = entity.authorUsername,
+                avatar = entity.authorAvatar,
+                isVerified = entity.authorVerified
             ),
-            Post(
-                id = 102L,
-                author = User(
-                    id = 14L,
-                    name = "Rahim Ahmed",
-                    username = "rahim_ahmed",
-                    avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-                    isVerified = false
-                ),
-                content = "Beautiful sunset over the Padma Bridge today. SubhanAllah! 🌅 #bangladesh #travel",
-                mediaUrls = listOf("https://images.unsplash.com/photo-1506744038136-46273834b3fb"),
-                reactionsCount = 850,
-                commentsCount = 92,
-                sharesCount = 18,
-                userReaction = "like",
-                feedTab = tab
-            )
-        )
-    }
-
-    private fun getDefaultMockComments(postId: Long): List<Comment> {
-        return listOf(
-            Comment(
-                id = 201L,
-                postId = postId,
-                author = User(
-                    id = 15L,
-                    name = "Sadia Islam",
-                    username = "sadia_islam",
-                    avatar = "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-                    isVerified = true
-                ),
-                body = "Absolutely beautiful picture! So proud of you sister ❤️",
-                reactionsCount = 14,
-                userReaction = "love",
-                repliesCount = 2,
-                createdAt = "12m ago"
-            ),
-            Comment(
-                id = 202L,
-                postId = postId,
-                author = User(
-                    id = 16L,
-                    name = "Tanvir Hasan",
-                    username = "tanvir_h",
-                    avatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e"
-                ),
-                body = "Keep inspiring everyone! @afrin_akter",
-                reactionsCount = 5,
-                userReaction = "like",
-                repliesCount = 0,
-                createdAt = "5m ago"
-            )
+            content = entity.content,
+            mediaUrls = entity.mediaUrls,
+            reactionsCount = entity.reactionsCount,
+            commentsCount = entity.commentsCount,
+            sharesCount = entity.sharesCount,
+            userReaction = entity.userReaction,
+            feedTab = entity.feedTab
         )
     }
 }

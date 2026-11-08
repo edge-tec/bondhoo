@@ -21,8 +21,9 @@ class EventsRepositoryImpl @Inject constructor(
         emit(Result.Loading)
         try {
             val response = api.getEvents(filter = filter, page = page)
-            if (response.isSuccessful && !response.body()?.data.isNullOrEmpty()) {
-                val events = response.body()!!.data.map { dto ->
+            if (response.isSuccessful && response.body() != null) {
+                val dtos = response.body()!!.data ?: emptyList()
+                val events = dtos.map { dto ->
                     Event(
                         id = dto.id,
                         title = dto.title,
@@ -35,10 +36,10 @@ class EventsRepositoryImpl @Inject constructor(
                 }
                 emit(Result.Success(events))
             } else {
-                emit(Result.Success(getSampleEvents()))
+                emit(Result.Error(Exception("Failed to load events (${response.code()})")))
             }
         } catch (e: Exception) {
-            emit(Result.Success(getSampleEvents()))
+            emit(Result.Error(e))
         }
     }
 
@@ -62,10 +63,10 @@ class EventsRepositoryImpl @Inject constructor(
                     )
                 )
             } else {
-                emit(Result.Success(getSampleEvents().first()))
+                emit(Result.Error(Exception("Event not found (${response.code()})")))
             }
         } catch (e: Exception) {
-            emit(Result.Success(getSampleEvents().first()))
+            emit(Result.Error(e))
         }
     }
 
@@ -97,60 +98,10 @@ class EventsRepositoryImpl @Inject constructor(
                     )
                 )
             } else {
-                emit(
-                    Result.Success(
-                        Event(
-                            id = System.currentTimeMillis(),
-                            title = title,
-                            location = location,
-                            startTime = System.currentTimeMillis()
-                        )
-                    )
-                )
+                emit(Result.Error(Exception("Failed to create event (${res.code()})")))
             }
         } catch (e: Exception) {
-            emit(
-                Result.Success(
-                    Event(
-                        id = System.currentTimeMillis(),
-                        title = title,
-                        location = location,
-                        startTime = System.currentTimeMillis()
-                    )
-                )
-            )
+            emit(Result.Error(e))
         }
     }
-
-    private fun getSampleEvents(): List<Event> {
-        return listOf(
-            Event(
-                id = 201L,
-                title = "Music Festival 2026",
-                description = "Experience the biggest open-air music festival of the year.",
-                bannerUrl = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1200&q=80",
-                dateDay = "15",
-                dateMonth = "NOV",
-                timeFormatted = "Sat, 6:00 PM - 11:00 PM",
-                location = "Dhaka Arena, Dhaka",
-                interestedCount = 865,
-                goingCount = 1420,
-                myRsvp = RsvpStatus.GOING
-            ),
-            Event(
-                id = 202L,
-                title = "Startup Meetup Dhaka",
-                description = "Connect with tech entrepreneurs, angel investors, and engineers.",
-                bannerUrl = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80",
-                dateDay = "20",
-                dateMonth = "NOV",
-                timeFormatted = "Thu, 5:00 PM - 8:00 PM",
-                location = "Innovation Hub, Dhaka",
-                interestedCount = 320,
-                goingCount = 195,
-                myRsvp = RsvpStatus.NONE
-            )
-        )
-    }
 }
-

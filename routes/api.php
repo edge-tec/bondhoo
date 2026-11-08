@@ -361,6 +361,7 @@ Route::prefix('v1')->group(function () {
 
         // Community Events
         Route::get('/events', [EventApiController::class, 'index']);
+        Route::get('/events/{id}', [EventApiController::class, 'show'])->whereNumber('id');
         Route::post('/events', [EventApiController::class, 'store']);
         Route::post('/events/{id}/rsvp', [EventApiController::class, 'rsvp'])->whereNumber('id');
 

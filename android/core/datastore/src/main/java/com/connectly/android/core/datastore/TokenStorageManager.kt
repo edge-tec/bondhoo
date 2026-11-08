@@ -48,6 +48,18 @@ class TokenStorageManager @Inject constructor(
         securePrefs.edit().putLong(KEY_USER_ID, id).apply()
     }
 
+    fun getUserName(): String? = securePrefs.getString(KEY_USER_NAME, null)
+
+    fun saveUserName(name: String?) {
+        securePrefs.edit().putString(KEY_USER_NAME, name).apply()
+    }
+
+    fun getProfileImage(): String? = securePrefs.getString(KEY_PROFILE_IMAGE, null)
+
+    fun saveProfileImage(url: String?) {
+        securePrefs.edit().putString(KEY_PROFILE_IMAGE, url).apply()
+    }
+
     fun clearAll() {
         securePrefs.edit().clear().apply()
     }
@@ -57,6 +69,8 @@ class TokenStorageManager @Inject constructor(
         private const val KEY_REFRESH_TOKEN = "jwt_refresh_token"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_auth_enabled"
         private const val KEY_USER_ID = "authenticated_user_id"
+        private const val KEY_USER_NAME = "authenticated_user_name"
+        private const val KEY_PROFILE_IMAGE = "authenticated_profile_image"
     }
 }
 

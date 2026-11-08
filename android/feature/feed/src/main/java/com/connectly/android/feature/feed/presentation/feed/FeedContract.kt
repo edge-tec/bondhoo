@@ -45,6 +45,8 @@ data class FeedState(
     val eligiblePages: List<EligiblePageDto> = emptyList(),
     val selectedPageId: Long? = null,
     val pageSearchQuery: String = "",
+    val currentUserAvatar: String? = null,
+    val currentUserName: String? = null,
     val isFetchingShareTargets: Boolean = false,
     val isSharing: Boolean = false,
     val myGroups: List<com.connectly.android.core.network.api.GroupDto> = emptyList(),

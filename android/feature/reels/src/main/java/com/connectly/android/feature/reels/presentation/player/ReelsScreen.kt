@@ -341,9 +341,9 @@ private fun ReelPlayerItem(
         )
 
         // Fallback Poster thumbnail
-        if (!isPlaying) {
+        if (!isPlaying && !reel.thumbnailUrl.isNullOrBlank()) {
             AsyncImage(
-                model = reel.thumbnailUrl ?: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+                model = reel.thumbnailUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -405,7 +405,7 @@ private fun ReelPlayerItem(
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = reel.creator.avatar ?: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
+                    model = reel.creator.avatar,
                     contentDescription = "Music Disc",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.size(28.dp).clip(CircleShape)
