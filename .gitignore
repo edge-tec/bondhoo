@@ -39,3 +39,6 @@ playwright-report/
 android/.idea/
 .idea/
 
+
+*.apk
+/public/bondhoo.apk
