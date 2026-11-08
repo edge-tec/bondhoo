@@ -47,13 +47,18 @@ fun NavController.navigateToForgotPassword(navOptions: NavOptions? = null) {
 
 fun NavGraphBuilder.authGraph(
     onNavigateToHome: () -> Unit,
-    navController: NavController
+    navController: NavController,
+    isUserLoggedIn: () -> Boolean = { false }
 ) {
     composable(SPLASH_ROUTE) {
         SplashScreen(
             onSplashFinished = {
-                navController.navigate(ONBOARDING_ROUTE) {
-                    popUpTo(SPLASH_ROUTE) { inclusive = true }
+                if (isUserLoggedIn()) {
+                    onNavigateToHome()
+                } else {
+                    navController.navigate(ONBOARDING_ROUTE) {
+                        popUpTo(SPLASH_ROUTE) { inclusive = true }
+                    }
                 }
             }
         )

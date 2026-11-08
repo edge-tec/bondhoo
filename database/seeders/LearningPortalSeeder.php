@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Models\LearningCategory;
 use App\Models\LearningCertificate;
 use App\Models\LearningCourse;
+use App\Models\LearningCourseCoupon;
 use App\Models\LearningCourseLesson;
 use App\Models\LearningCourseProgress;
 use App\Models\LearningCourseSection;
@@ -88,8 +89,45 @@ class LearningPortalSeeder extends Seeder
 
         $categories = [];
         foreach ($categoriesData as $data) {
+            $data['is_active'] = true;
             $cat = LearningCategory::updateOrCreate(['slug' => $data['slug']], $data);
             $categories[$data['slug']] = $cat;
+        }
+
+        // 2b. Subcategories (idempotent)
+        $subcategoriesData = [
+            [
+                'parent_id' => $categories['software-engineering']->id,
+                'name' => 'Mobile & Android Compose',
+                'slug' => 'mobile-android-compose',
+                'icon' => 'smartphone',
+                'description' => 'Kotlin, Jetpack Compose, Hilt, and multi-module mobile engineering.',
+                'sort_order' => 1,
+                'is_active' => true,
+            ],
+            [
+                'parent_id' => $categories['software-engineering']->id,
+                'name' => 'Backend & Distributed APIs',
+                'slug' => 'backend-distributed-apis',
+                'icon' => 'dns',
+                'description' => 'Laravel 12, MySQL locking, WebSockets, and API security.',
+                'sort_order' => 2,
+                'is_active' => true,
+            ],
+            [
+                'parent_id' => $categories['artificial-intelligence']->id,
+                'name' => 'LLM Agents & RAG',
+                'slug' => 'llm-agents-rag',
+                'icon' => 'auto_awesome',
+                'description' => 'Production Retrieval-Augmented Generation and agent orchestration.',
+                'sort_order' => 1,
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($subcategoriesData as $subData) {
+            $subCat = LearningCategory::updateOrCreate(['slug' => $subData['slug']], $subData);
+            $categories[$subData['slug']] = $subCat;
         }
 
         // 3. Courses
@@ -307,12 +345,61 @@ class LearningPortalSeeder extends Seeder
                     ],
                 ],
             ],
+            [
+                'instructor_id' => $instructorUser->id,
+                'category_id' => $categories['backend-distributed-apis']->id,
+                'title' => 'Enterprise API Security, Escrow & Database Concurrency',
+                'slug' => 'enterprise-api-security-database-concurrency',
+                'subtitle' => 'Master row-level locking, idempotency keys, wallet ledgers, and OWASP API security.',
+                'description' => 'Production-grade training on preventing IDOR, race conditions, double-spending, and privilege escalation in Laravel 12 and mobile backends.',
+                'level' => 'expert',
+                'language' => 'en',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=800&q=80',
+                'type' => 'paid',
+                'price' => 40.00,
+                'discounted_price' => 30.00,
+                'currency' => 'USD',
+                'status' => LearningCourse::STATUS_PUBLISHED,
+                'duration_minutes' => 360,
+                'total_sections' => 2,
+                'total_lessons' => 4,
+                'enrollments_count' => 320,
+                'rating_avg' => 4.97,
+                'rating_count' => 64,
+                'is_featured' => true,
+                'published_at' => now(),
+                'sections' => [
+                    [
+                        'title' => 'Module 1: Authorization, Policies & IDOR Defense',
+                        'lessons' => [
+                            ['title' => '1.1 Strict Ownership Policies & Guard Isolation', 'duration' => 2100],
+                            ['title' => '1.2 Rate Limiting & Abuse Throttling Strategies', 'duration' => 1800],
+                        ],
+                    ],
+                    [
+                        'title' => 'Module 2: Transactional Ledgers & Pessimistic Locking',
+                        'lessons' => [
+                            ['title' => '2.1 SELECT FOR UPDATE & Deadlock Prevention', 'duration' => 2400],
+                            ['title' => '2.2 Idempotency Keys & Webhook Signature Verification', 'duration' => 2700],
+                        ],
+                    ],
+                ],
+            ],
         ];
 
         $createdCourses = [];
         foreach ($coursesData as $courseItem) {
             $sectionsData = $courseItem['sections'];
             unset($courseItem['sections']);
+
+            $existingCourse = LearningCourse::where('slug', $courseItem['slug'])->first();
+            if ($existingCourse) {
+                // Preserve live enrollments_count if students have already enrolled
+                $realEnrollments = LearningEnrollment::where('course_id', $existingCourse->id)
+                    ->whereIn('status', [LearningEnrollment::STATUS_ACTIVE, LearningEnrollment::STATUS_COMPLETED])
+                    ->count();
+                $courseItem['enrollments_count'] = max((int) $existingCourse->enrollments_count, $realEnrollments);
+            }
 
             $course = LearningCourse::updateOrCreate(['slug' => $courseItem['slug']], $courseItem);
             $createdCourses[$courseItem['slug']] = $course;
@@ -342,19 +429,47 @@ class LearningPortalSeeder extends Seeder
                         [
                             'slug' => Str::slug($lesItem['title']),
                             'type' => 'video',
+                            'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
                             'video_duration_seconds' => $lesItem['duration'],
                             'sort_order' => $lesOrder++,
                             'is_preview' => ($secOrder === 2 && $lesOrder === 2),
                             'is_mandatory' => true,
                             'is_published' => true,
-                            'content' => 'Comprehensive technical walkthrough and code examples for ' . $lesItem['title'] . '.',
+                            'content' => 'Comprehensive technical walkthrough and code examples for '.$lesItem['title'].'.',
                         ]
                     );
                 }
             }
 
-            // Update category courses count
-            LearningCategory::where('id', $course->category_id)->increment('courses_count');
+            $course->update([
+                'total_sections' => $course->sections()->where('is_published', true)->count(),
+                'total_lessons' => $course->lessons()->where('is_published', true)->count(),
+            ]);
+        }
+
+        // Seed active course coupon for the paid security course
+        if (isset($createdCourses['enterprise-api-security-database-concurrency'])) {
+            LearningCourseCoupon::updateOrCreate(
+                ['code' => 'BONDHOO50'],
+                [
+                    'course_id' => $createdCourses['enterprise-api-security-database-concurrency']->id,
+                    'discount_type' => LearningCourseCoupon::TYPE_PERCENTAGE,
+                    'discount_amount' => 50.00,
+                    'max_uses' => 500,
+                    'is_active' => true,
+                    'expires_at' => now()->addYear(),
+                ]
+            );
+        }
+
+        // Recompute exact published courses_count per category (idempotent)
+        foreach (LearningCategory::all() as $cat) {
+            $childIds = LearningCategory::where('parent_id', $cat->id)->pluck('id')->all();
+            $catIds = array_merge([$cat->id], $childIds);
+            $publishedCount = LearningCourse::whereIn('category_id', $catIds)
+                ->where('status', LearningCourse::STATUS_PUBLISHED)
+                ->count();
+            $cat->update(['courses_count' => $publishedCount]);
         }
 
         // 4. Seed user enrollments and certificates for User 1 (Mizanur Rahman)

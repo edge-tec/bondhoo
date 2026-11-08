@@ -44,6 +44,10 @@ class NagadGatewayDriver extends AbstractPaymentGateway
     public function initiatePayment(MarketplaceOrder $order, array $options = []): array
     {
         if (! $this->isConfigured()) {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('Nagad payment gateway is not configured in production environment.');
+            }
+
             return $this->fallbackDriver->initiatePayment($order, $options);
         }
 
@@ -82,9 +86,17 @@ class NagadGatewayDriver extends AbstractPaymentGateway
 
             Log::error('Nagad Init Error', ['body' => $response->body()]);
 
+            if (app()->environment('production')) {
+                throw new \RuntimeException('Nagad checkout initiation failed via provider API.');
+            }
+
             return $this->fallbackDriver->initiatePayment($order, $options);
         } catch (\Throwable $e) {
             Log::error('Nagad Exception: '.$e->getMessage());
+
+            if (app()->environment('production')) {
+                throw $e;
+            }
 
             return $this->fallbackDriver->initiatePayment($order, $options);
         }
@@ -93,6 +105,10 @@ class NagadGatewayDriver extends AbstractPaymentGateway
     public function verifyPayment(MarketplaceOrder $order, array $payload): array
     {
         if (! $this->isConfigured()) {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('Nagad payment gateway is not configured in production environment.');
+            }
+
             return $this->fallbackDriver->verifyPayment($order, $payload);
         }
 
@@ -110,6 +126,7 @@ class NagadGatewayDriver extends AbstractPaymentGateway
             if ($response->successful()) {
                 $status = strtoupper((string) $response->json('status'));
                 $paidAmount = (float) $response->json('amount', 0);
+                $issuerRef = (string) $response->json('issuerPaymentRefNo');
 
                 if (in_array($status, ['SUCCESS', 'COMPLETED', 'PAID'], true)) {
                     if (! $this->amountsMatch($order->amount, $paidAmount)) {
@@ -117,35 +134,65 @@ class NagadGatewayDriver extends AbstractPaymentGateway
                     }
 
                     return [
+                        'verified' => true,
                         'order_id' => $order->id,
                         'gateway' => 'nagad',
                         'transaction_id' => $paymentRefId,
-                        'issuer_payment_ref' => (string) $response->json('issuerPaymentRefNo'),
-                        'status' => 'COMPLETED',
+                        'provider_reference' => $issuerRef ?: $paymentRefId,
+                        'issuer_payment_ref' => $issuerRef,
+                        'status' => 'completed',
                         'amount' => $paidAmount,
                         'currency' => 'BDT',
                         'verified_at' => now()->toIso8601String(),
+                        'metadata' => $this->sanitizePayload($response->json()),
                         'raw_response' => $this->sanitizePayload($response->json()),
                     ];
                 }
 
                 return [
+                    'verified' => false,
                     'order_id' => $order->id,
                     'gateway' => 'nagad',
                     'transaction_id' => $paymentRefId,
-                    'status' => 'FAILED',
+                    'provider_reference' => $issuerRef ?: null,
+                    'status' => 'failed',
                     'amount' => $paidAmount,
                     'currency' => 'BDT',
                     'verified_at' => now()->toIso8601String(),
+                    'metadata' => $this->sanitizePayload($response->json()),
                     'raw_response' => $this->sanitizePayload($response->json()),
                 ];
             }
 
             Log::error('Nagad Verification API Error', ['body' => $response->body()]);
 
+            if (app()->environment('production')) {
+                return [
+                    'verified' => false,
+                    'status' => 'failed',
+                    'transaction_id' => $paymentRefId,
+                    'amount' => (float) $order->amount,
+                    'currency' => 'BDT',
+                    'provider_reference' => null,
+                    'metadata' => ['error' => 'Nagad verification failed via provider API.'],
+                ];
+            }
+
             return $this->fallbackDriver->verifyPayment($order, $payload);
         } catch (\Throwable $e) {
             Log::error('Nagad Verify Exception: '.$e->getMessage());
+
+            if (app()->environment('production')) {
+                return [
+                    'verified' => false,
+                    'status' => 'failed',
+                    'transaction_id' => $paymentRefId,
+                    'amount' => (float) $order->amount,
+                    'currency' => 'BDT',
+                    'provider_reference' => null,
+                    'metadata' => ['error' => 'Nagad verify exception: '.$e->getMessage()],
+                ];
+            }
 
             return $this->fallbackDriver->verifyPayment($order, $payload);
         }
@@ -153,6 +200,10 @@ class NagadGatewayDriver extends AbstractPaymentGateway
 
     public function processRefund(MarketplaceOrder $order, float $amount, string $reason): array
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Nagad automated refund API is not supported. Please initiate manual merchant refund.');
+        }
+
         return $this->fallbackDriver->processRefund($order, $amount, $reason);
     }
 }

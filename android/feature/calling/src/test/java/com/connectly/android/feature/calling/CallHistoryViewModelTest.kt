@@ -31,12 +31,13 @@ class CallHistoryViewModelTest {
 
     private val sampleItem = CallHistoryItem(
         id = 101L,
-        otherUser = User(id = 51L, name = "Sadia Islam", username = "sadia_islam"),
+        conversationId = 501L,
+        otherUser = User(id = 51L, name = "Tanvir Hasan", username = "tanvir"),
         callType = CallType.VIDEO,
         isIncoming = true,
         isMissed = false,
         durationSeconds = 345,
-        formattedTime = "Today, 11:30 AM"
+        formattedTime = "Nov 7, 3:15 PM"
     )
 
     @Before
@@ -61,9 +62,8 @@ class CallHistoryViewModelTest {
         viewModel.uiState.test {
             val state = awaitItem()
             assertEquals(1, state.callLogs.size)
-            assertEquals("Sadia Islam", state.callLogs.first().otherUser.name)
+            assertEquals("Tanvir Hasan", state.callLogs.first().otherUser.name)
             assertEquals(CallType.VIDEO, state.callLogs.first().callType)
         }
     }
 }
-

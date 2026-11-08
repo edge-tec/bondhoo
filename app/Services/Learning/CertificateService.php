@@ -10,7 +10,9 @@ use App\Models\LearningCourse;
 use App\Models\LearningEnrollment;
 use App\Models\LearningLessonProgress;
 use App\Models\User;
+use App\Services\Contracts\NotificationServiceInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CertificateService
@@ -21,48 +23,59 @@ class CertificateService
     public function issueCertificate(User $user, LearningCourse $course): LearningCertificate
     {
         return DB::transaction(function () use ($user, $course) {
-            $existing = LearningCertificate::where('course_id', $course->id)
-                ->where('user_id', $user->id)
-                ->first();
-
-            if ($existing) {
-                return $existing;
-            }
-
-            // Server-authoritative eligibility verification
+            // Server-authoritative eligibility verification under row lock
             $enrollment = LearningEnrollment::where('course_id', $course->id)
                 ->where('user_id', $user->id)
+                ->whereIn('status', [LearningEnrollment::STATUS_ACTIVE, LearningEnrollment::STATUS_COMPLETED])
+                ->lockForUpdate()
                 ->first();
 
             if (! $enrollment) {
                 throw new \Exception('Student is not enrolled in this course.');
             }
 
-            $totalPublished = $course->lessons()->where('is_published', true)->count();
-            if ($totalPublished > 0) {
-                $completedCount = LearningLessonProgress::where('course_id', $course->id)
-                    ->where('user_id', $user->id)
-                    ->where('is_completed', true)
-                    ->count();
+            $existing = LearningCertificate::where('course_id', $course->id)
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->first();
 
-                if ($completedCount < $totalPublished) {
-                    throw new \Exception('Course requirements not satisfied: All lessons must be completed.');
-                }
+            if ($existing) {
+                return $existing;
+            }
+
+            $publishedLessonIds = $course->lessons()
+                ->where('is_published', true)
+                ->pluck('id')
+                ->all();
+
+            $totalPublished = count($publishedLessonIds);
+            if ($totalPublished === 0) {
+                throw new \Exception('Course requirements not satisfied: Course has no published lessons.');
+            }
+
+            $completedCount = LearningLessonProgress::where('course_id', $course->id)
+                ->where('user_id', $user->id)
+                ->whereIn('lesson_id', $publishedLessonIds)
+                ->where('is_completed', true)
+                ->count();
+
+            if ($completedCount < $totalPublished) {
+                throw new \Exception('Course requirements not satisfied: All lessons must be completed.');
             }
 
             $year = date('Y');
             $code = 'CERT-'.$year.'-'.strtoupper(Str::random(4)).'-'.strtoupper(Str::random(4));
             $token = Str::random(64);
 
-            $instructorName = $course->instructor?->name ?? 'Connectly Academy';
-            $studentName = $user->name ?: ($user->first_name.' '.$user->last_name);
+            $instructorName = $course->instructor?->name ?? 'Bondoo LMS Academy';
+            $studentName = $user->name ?: trim(($user->first_name ?? '').' '.($user->last_name ?? ''));
 
             $certificate = LearningCertificate::create([
                 'course_id' => $course->id,
                 'user_id' => $user->id,
                 'certificate_code' => $code,
                 'verification_token' => $token,
-                'student_name' => $studentName,
+                'student_name' => $studentName ?: 'Bondoo Learner',
                 'course_title' => $course->title,
                 'instructor_name' => $instructorName,
                 'pdf_url' => url("/api/v1/learning/certificates/{$code}/download"),
@@ -70,6 +83,13 @@ class CertificateService
                 'issued_at' => now(),
                 'is_revoked' => false,
             ]);
+
+            if ($enrollment->status !== LearningEnrollment::STATUS_COMPLETED) {
+                $enrollment->update([
+                    'status' => LearningEnrollment::STATUS_COMPLETED,
+                    'completed_at' => $enrollment->completed_at ?? now(),
+                ]);
+            }
 
             // Sync with Phase 12 CandidateCertification for professional resume display
             CandidateCertification::updateOrCreate(
@@ -85,6 +105,24 @@ class CertificateService
                 ]
             );
 
+            DB::afterCommit(function () use ($user, $course, $certificate): void {
+                try {
+                    app(NotificationServiceInterface::class)->send(
+                        recipientId: (int) $user->id,
+                        type: 'learning.certificate_issued',
+                        data: [
+                            'title' => 'Certificate Issued',
+                            'message' => "Your verified certificate ({$certificate->certificate_code}) for {$course->title} is ready.",
+                            'course_id' => (int) $course->id,
+                            'certificate_id' => (int) $certificate->id,
+                            'certificate_code' => $certificate->certificate_code,
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to dispatch certificate notification', ['error' => $e->getMessage()]);
+                }
+            });
+
             return $certificate;
         });
     }
@@ -95,7 +133,7 @@ class CertificateService
     public function revokeCertificate(User $instructor, LearningCertificate $certificate, string $reason): LearningCertificate
     {
         $course = $certificate->course;
-        if ($course->instructor_id !== $instructor->id && ! $instructor->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (! $course || ((int) $course->instructor_id !== (int) $instructor->id && ! $instructor->isAdmin())) {
             throw new \Exception('Unauthorized to revoke this certificate.');
         }
 

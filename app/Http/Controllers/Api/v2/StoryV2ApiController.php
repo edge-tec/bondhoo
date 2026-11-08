@@ -74,7 +74,7 @@ class StoryV2ApiController extends Controller
             if (! $canManage) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'এই পেইজের পক্ষে স্টোরি পোস্ট করার অনুমতি আপনার নেই।',
+                    'message' => 'You are not authorized to post a story for this page.',
                 ], 403);
             }
         }
@@ -116,6 +116,7 @@ class StoryV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
+                'error_code' => 'STORY_EXPIRED',
                 'message' => $e->getMessage(),
             ], 410);
         }
@@ -130,7 +131,7 @@ class StoryV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
-                'message' => 'এই স্টোরিটির মেয়াদ শেষ হয়ে গেছে।',
+                'message' => 'This story has expired and is no longer accessible.',
             ], 410);
         }
 
@@ -154,7 +155,7 @@ class StoryV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
-                'message' => 'এই স্টোরিটির মেয়াদ শেষ হয়ে গেছে।',
+                'message' => 'This story has expired.',
             ], 410);
         }
 
@@ -173,6 +174,7 @@ class StoryV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
+                'error_code' => 'STORY_EXPIRED',
                 'message' => $e->getMessage(),
             ], 410);
         }
@@ -187,7 +189,7 @@ class StoryV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
-                'message' => 'এই স্টোরিটির মেয়াদ শেষ হয়ে গেছে। রিপ্লাই পাঠানো সম্ভব নয়।',
+                'message' => 'This story has expired. Replies are no longer accepted.',
             ], 410);
         }
 
@@ -225,7 +227,7 @@ class StoryV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
-                'message' => 'এই স্টোরিটির মেয়াদ শেষ হয়ে গেছে।',
+                'message' => 'This story has expired.',
             ], 410);
         }
 
@@ -319,14 +321,14 @@ class StoryV2ApiController extends Controller
         if (! $reported) {
             return response()->json([
                 'success' => true,
-                'message' => 'আপনি ইতিমধ্যে এই স্টোরিটির বিরুদ্ধে রিপোর্ট জমা দিয়েছেন। এটি পর্যালোচনায় রয়েছে।',
+                'message' => 'You have already submitted a report for this story. It is currently under review.',
                 'already_reported' => true,
             ]);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'রিপোর্ট সফলভাবে জমা হয়েছে। আমাদের প্ল্যাটফর্ম নিরাপদ রাখতে সহায়তার জন্য ধন্যবাদ।',
+            'message' => 'Report submitted successfully. Thank you for helping keep our community safe.',
         ]);
     }
 
@@ -339,7 +341,7 @@ class StoryV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
-                'message' => 'এই স্টোরিটির মেয়াদ শেষ হয়ে গেছে।',
+                'message' => 'This story has expired.',
             ], 410);
         }
 
@@ -355,6 +357,7 @@ class StoryV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
+                'error_code' => 'STORY_EXPIRED',
                 'message' => $e->getMessage(),
             ], 410);
         }

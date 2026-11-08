@@ -28,7 +28,7 @@ class ConnectlyPhase2UiArchitectureTest {
     @Test
     fun verify_main_screens_routes() {
         assertEquals("main_home", MAIN_HOME_ROUTE)
-        assertEquals("profile_route", PROFILE_ROUTE)
+        assertEquals("profile_route?username={username}", PROFILE_ROUTE)
         assertEquals("friends_route", FRIENDS_ROUTE)
         assertEquals("settings_route", SETTINGS_ROUTE)
         assertEquals("groups_route", GROUPS_ROUTE)

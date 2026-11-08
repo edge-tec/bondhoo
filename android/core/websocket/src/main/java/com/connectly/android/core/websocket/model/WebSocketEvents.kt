@@ -207,3 +207,12 @@ data class GroupEvent(
     val action: String, // "post.created", "announcement.published", "poll.voted", "member.joined"
     val title: String? = null
 )
+
+data class ProfileUpdatedEvent(
+    val userId: Long,
+    val username: String,
+    val avatarUrl: String? = null,
+    val coverUrl: String? = null,
+    val name: String? = null
+)
+

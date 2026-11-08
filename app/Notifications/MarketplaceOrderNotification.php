@@ -48,4 +48,3 @@ class MarketplaceOrderNotification extends Notification
         ];
     }
 }
-

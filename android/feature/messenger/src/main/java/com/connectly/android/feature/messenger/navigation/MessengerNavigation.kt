@@ -6,6 +6,7 @@ import androidx.navigation.NavOptions
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.connectly.android.core.model.CallType
 import com.connectly.android.feature.messenger.presentation.chat.ChatScreen
 import com.connectly.android.feature.messenger.presentation.conversations.ConversationListScreen
 
@@ -23,14 +24,29 @@ fun NavController.navigateToChat(conversationId: Long, navOptions: NavOptions? =
 fun NavGraphBuilder.messengerGraph(
     navController: NavController,
     onStartAudioCall: (Long) -> Unit = {},
-    onStartVideoCall: (Long) -> Unit = {}
+    onStartVideoCall: (Long) -> Unit = {},
+    onStartCall: ((conversationId: Long?, receiverId: Long?, receiverIds: List<Long>, callType: CallType) -> Unit)? = null
 ) {
+    val unifiedStartCall: (Long?, Long?, List<Long>, CallType) -> Unit = { convId, recId, recIds, callType ->
+        if (onStartCall != null) {
+            onStartCall(convId, recId, recIds, callType)
+        } else {
+            val fallbackId = convId ?: recId ?: recIds.firstOrNull() ?: 0L
+            if (callType.isVideo) {
+                onStartVideoCall(fallbackId)
+            } else {
+                onStartAudioCall(fallbackId)
+            }
+        }
+    }
+
     composable(CONVERSATIONS_ROUTE) {
         ConversationListScreen(
             onNavigateToChat = { conversationId ->
                 navController.navigateToChat(conversationId)
             },
-            onNavigateBack = { navController.popBackStack() }
+            onNavigateBack = { navController.popBackStack() },
+            onStartCall = unifiedStartCall
         )
     }
 
@@ -38,13 +54,16 @@ fun NavGraphBuilder.messengerGraph(
         route = "$CHAT_ROUTE/{conversationId}",
         arguments = listOf(navArgument("conversationId") { type = NavType.LongType })
     ) { backStackEntry ->
-        val conversationId = backStackEntry.arguments?.getLong("conversationId") ?: 501L
+        val conversationId = backStackEntry.arguments?.getLong("conversationId") ?: 0L
         ChatScreen(
             conversationId = conversationId,
             onNavigateBack = { navController.popBackStack() },
+            onNavigateToChat = { otherConversationId ->
+                navController.navigateToChat(otherConversationId)
+            },
+            onStartCall = unifiedStartCall,
             onStartAudioCall = onStartAudioCall,
             onStartVideoCall = onStartVideoCall
         )
     }
 }
-

@@ -65,8 +65,12 @@ class VectorSearchService
         $vectorResults = $this->semanticSearch($queryText, null, $limit);
 
         // Keyword lookup on posts & products
-        $posts = Post::where('content', 'like', "%{$queryText}%")->limit($limit)->get();
-        $products = MarketplaceProduct::where('title', 'like', "%{$queryText}%")->limit($limit)->get();
+        $escapedQuery = addcslashes($queryText, '%_\\');
+        $posts = Post::where('content', 'like', "%{$escapedQuery}%")->limit($limit)->get();
+        $products = MarketplaceProduct::where('status', MarketplaceProduct::STATUS_ACTIVE)
+            ->where('title', 'like', "%{$escapedQuery}%")
+            ->limit($limit)
+            ->get();
 
         $combined = [];
         foreach ($vectorResults as $res) {
@@ -117,7 +121,7 @@ class VectorSearchService
         return match ($type) {
             'post' => Post::with('user')->find($id),
             'user' => User::find($id),
-            'product' => MarketplaceProduct::find($id),
+            'product' => MarketplaceProduct::where('status', MarketplaceProduct::STATUS_ACTIVE)->find($id),
             default => null,
         };
     }

@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Media;
+use App\Models\ModerationRequest;
 use App\Models\Story;
 use App\Services\Contracts\MediaStorageServiceInterface;
+use App\Services\Moderation\ContentModerationService;
 use App\Services\StoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -67,6 +69,27 @@ class StoryController extends Controller
 
         // Direct file upload support
         $uploadedFile = $request->file('media') ?? $request->file('file');
+
+        // Phase 16.9: OpenAI AI Content Moderation for Stories
+        $moderationService = app(ContentModerationService::class);
+        $modRequest = $moderationService->moderateStory($user, $validated, $uploadedFile);
+
+        if ($modRequest->status === ModerationRequest::STATUS_REJECTED) {
+            $reason = $modRequest->rejection_reason ?: 'Story violates community safety standards.';
+
+            return response()->json([
+                'success' => false,
+                'message' => "Your story could not be published because it violates our safety standards: {$reason}",
+            ], 422);
+        }
+
+        if ($modRequest->status === ModerationRequest::STATUS_QUARANTINED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Story was blocked due to critical safety violations.',
+            ], 422);
+        }
+
         if ($uploadedFile && $uploadedFile->isValid()) {
             $disk = $this->storageService->getDisk();
             $path = $this->storageService->generatePath($user->id, 'story', $uploadedFile->getClientOriginalExtension());

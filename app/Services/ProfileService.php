@@ -35,7 +35,12 @@ class ProfileService
     {
         $cleanUsername = ltrim(trim($username), '@');
         $targetUser = User::with(['profile', 'settings', 'roles'])
-            ->where('username', strtolower($cleanUsername))
+            ->where(function ($query) use ($cleanUsername) {
+                $query->where('username', strtolower($cleanUsername));
+                if (is_numeric($cleanUsername)) {
+                    $query->orWhere('id', (int) $cleanUsername);
+                }
+            })
             ->first();
 
         $redirectedFrom = null;

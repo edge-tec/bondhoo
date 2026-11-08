@@ -82,7 +82,7 @@ class LearningInstructorApiController extends Controller
     public function verify(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        if (! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (! $user || ! $user->isAdmin()) {
             return $this->errorResponse('Unauthorized admin access.', 403);
         }
 

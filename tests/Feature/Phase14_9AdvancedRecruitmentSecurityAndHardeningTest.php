@@ -421,4 +421,3 @@ class Phase14_9AdvancedRecruitmentSecurityAndHardeningTest extends TestCase
         $this->assertLessThanOrEqual(10, $queryCount);
     }
 }
-

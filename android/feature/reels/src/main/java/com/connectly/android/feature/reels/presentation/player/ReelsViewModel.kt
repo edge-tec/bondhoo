@@ -32,12 +32,12 @@ class ReelsViewModel @Inject constructor(
     val uiState: StateFlow<ReelsState> = _uiState.asStateFlow()
 
     init {
-        loadReels()
+        loadReels("for_you")
     }
 
     fun handleIntent(intent: ReelsIntent) {
         when (intent) {
-            ReelsIntent.LoadFeed -> loadReels()
+            is ReelsIntent.LoadFeed -> loadReels(intent.tab)
             is ReelsIntent.PageChanged -> onPageChanged(intent.index)
             is ReelsIntent.ToggleLike -> toggleLike(intent.reelId)
             is ReelsIntent.ToggleSave -> toggleSave(intent.reelId)
@@ -49,9 +49,10 @@ class ReelsViewModel @Inject constructor(
         }
     }
 
-    private fun loadReels() {
+    private fun loadReels(tab: String = _uiState.value.selectedTab) {
+        _uiState.update { it.copy(selectedTab = tab) }
         viewModelScope.launch {
-            getReelsFeedUseCase().collect { result ->
+            getReelsFeedUseCase(tab = tab).collect { result ->
                 when (result) {
                     is Result.Loading -> _uiState.update { it.copy(isLoading = true) }
                     is Result.Success -> _uiState.update { it.copy(isLoading = false, reels = result.data) }

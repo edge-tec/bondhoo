@@ -43,8 +43,8 @@ fun RegisterRoute(
 
     RegisterScreen(
         uiState = uiState,
-        onRegisterClick = { name, email, pass, confirm, terms ->
-            viewModel.handleIntent(RegisterUiIntent.Register(name, email, pass, confirm, terms))
+        onRegisterClick = { name, email, phone, birthDate, gender, pass, confirm, terms ->
+            viewModel.handleIntent(RegisterUiIntent.Register(name, email, phone, birthDate, gender, pass, confirm, terms))
         },
         onLoginClick = onNavigateToLogin,
         onClearError = { viewModel.handleIntent(RegisterUiIntent.ClearError) }
@@ -54,12 +54,15 @@ fun RegisterRoute(
 @Composable
 fun RegisterScreen(
     uiState: RegisterUiState,
-    onRegisterClick: (String, String, String, String, Boolean) -> Unit,
+    onRegisterClick: (String, String, String, String, String, String, String, Boolean) -> Unit,
     onLoginClick: () -> Unit,
     onClearError: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var birthDate by remember { mutableStateOf("") }
+    var gender by remember { mutableStateOf("Male") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var termsAccepted by remember { mutableStateOf(false) }
@@ -144,6 +147,73 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(14.dp))
 
         OutlinedTextField(
+            value = phone,
+            onValueChange = { phone = it },
+            label = { Text("Mobile Number") },
+            placeholder = { Text("e.g. +8801700000000") },
+            leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = ConnectlyBlue) },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        OutlinedTextField(
+            value = birthDate,
+            onValueChange = { birthDate = it },
+            label = { Text("Birth Date (YYYY-MM-DD)") },
+            placeholder = { Text("e.g. 1998-05-20") },
+            leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, tint = ConnectlyBlue) },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = "Gender",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("Male", "Female", "Other").forEach { option ->
+                    val isSelected = gender.equals(option, ignoreCase = true)
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { gender = option },
+                        label = {
+                            Text(
+                                text = option,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = ConnectlyBlue,
+                            selectedLabelColor = MaterialTheme.colorScheme.surface
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
@@ -197,7 +267,7 @@ fun RegisterScreen(
 
         ConnectlyButton(
             text = "Create Account",
-            onClick = { onRegisterClick(name, email, password, confirmPassword, termsAccepted) },
+            onClick = { onRegisterClick(name, email, phone, birthDate, gender, password, confirmPassword, termsAccepted) },
             isLoading = isLoading
         )
 

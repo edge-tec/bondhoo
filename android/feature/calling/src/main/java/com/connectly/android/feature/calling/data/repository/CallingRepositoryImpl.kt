@@ -1,71 +1,184 @@
 package com.connectly.android.feature.calling.data.repository
 
 import com.connectly.android.core.common.result.Result
-import com.connectly.android.core.model.*
-import com.connectly.android.core.network.api.*
+import com.connectly.android.core.datastore.TokenStorageManager
+import com.connectly.android.core.model.ActivePresenceFriend
+import com.connectly.android.core.model.CallHistoryItem
+import com.connectly.android.core.model.CallParticipant
+import com.connectly.android.core.model.CallSession
+import com.connectly.android.core.model.CallStatus
+import com.connectly.android.core.model.CallType
+import com.connectly.android.core.model.IceServer
+import com.connectly.android.core.model.User
+import com.connectly.android.core.model.WebRtcSignal
+import com.connectly.android.core.network.api.CallParticipantDto
+import com.connectly.android.core.network.api.CallSessionDto
+import com.connectly.android.core.network.api.CallSignalRequest
+import com.connectly.android.core.network.api.ConnectlyApi
+import com.connectly.android.core.network.api.InitiateCallRequest
+import com.connectly.android.core.network.api.InviteToCallRequest
+import com.connectly.android.core.network.api.RespondCallRequest
+import com.connectly.android.core.network.api.UpdateCallStateRequest
+import com.connectly.android.core.network.api.UserDto
+import com.connectly.android.core.network.di.NetworkModule
 import com.connectly.android.feature.calling.data.webrtc.WebRtcCallManager
 import com.connectly.android.feature.calling.domain.repository.CallingRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.flow
+import org.json.JSONObject
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class CallingRepositoryImpl @Inject constructor(
     private val api: ConnectlyApi,
-    private val webRtcManager: WebRtcCallManager
+    private val webRtcManager: WebRtcCallManager,
+    private val tokenStorageManager: TokenStorageManager
 ) : CallingRepository {
 
     private val signalFlow = MutableSharedFlow<WebRtcSignal>(replay = 1)
 
     override fun initiateCall(
-        receiverId: Long,
+        receiverId: Long?,
         callType: CallType,
-        conversationId: Long?
+        conversationId: Long?,
+        receiverIds: List<Long>
     ): Flow<Result<CallSession>> = flow {
         emit(Result.Loading)
         try {
+            val cleanConvId = conversationId?.takeIf { it > 0L }
+            val cleanRecId = receiverId?.takeIf { it > 0L }
+            val cleanRecIds = receiverIds.filter { it > 0L }.distinct()
+
             val response = api.initiateCall(
                 InitiateCallRequest(
-                    conversation_id = conversationId,
-                    receiver_id = receiverId,
+                    conversation_id = cleanConvId,
+                    receiver_id = if (cleanRecIds.isEmpty()) cleanRecId else null,
+                    receiver_ids = cleanRecIds.takeIf { it.isNotEmpty() },
                     call_type = callType.rawValue
                 )
             )
 
-            if (response.isSuccessful && response.body()?.data != null) {
-                val dto = response.body()!!.data
-                val session = mapDtoToCallSession(dto, isIncoming = false, defaultCallType = callType)
-                webRtcManager.startAudioSession(enableSpeaker = callType == CallType.VIDEO)
+            val dto = response.body()?.data
+            if (response.isSuccessful && dto != null) {
+                val session = mapDtoToCallSession(dto, isIncomingOverride = false, fallbackCallType = callType)
+                webRtcManager.startAudioSession(enableSpeaker = session.callType.isVideo)
                 emit(Result.Success(session))
             } else {
-                // Fallback for isolated device demo
-                val fallbackSession = CallSession(
-                    id = System.currentTimeMillis(),
-                    channelName = "call_channel_${receiverId}",
-                    callType = callType,
-                    status = CallStatus.DIALING,
-                    caller = User(id = 1L, name = "You", username = "you"),
-                    receiver = User(id = receiverId, name = "Sadia Islam", username = "sadia_islam"),
-                    isIncoming = false
-                )
-                webRtcManager.startAudioSession(enableSpeaker = callType == CallType.VIDEO)
-                emit(Result.Success(fallbackSession))
+                val errMsg = extractApiErrorMessage(response.errorBody()?.string(), "Unable to start call")
+                emit(Result.Error(IllegalStateException(errMsg)))
             }
         } catch (e: Exception) {
-            val fallbackSession = CallSession(
-                id = System.currentTimeMillis(),
-                channelName = "call_channel_${receiverId}",
-                callType = callType,
-                status = CallStatus.DIALING,
-                caller = User(id = 1L, name = "You", username = "you"),
-                receiver = User(id = receiverId, name = "Sadia Islam", username = "sadia_islam"),
-                isIncoming = false
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun getCallDetails(callId: Long): Flow<Result<CallSession>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.getCallDetails(callId)
+            val dto = response.body()?.data
+            if (response.isSuccessful && dto != null) {
+                emit(Result.Success(mapDtoToCallSession(dto)))
+            } else {
+                val errMsg = extractApiErrorMessage(response.errorBody()?.string(), "Call not found")
+                emit(Result.Error(IllegalStateException(errMsg)))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun inviteFriendsToCall(callId: Long, userIds: List<Long>): Flow<Result<CallSession>> = flow {
+        emit(Result.Loading)
+        try {
+            val cleanIds = userIds.filter { it > 0L }.distinct()
+            val response = api.inviteToCall(
+                callId,
+                InviteToCallRequest(
+                    friend_id = cleanIds.singleOrNull(),
+                    friend_ids = cleanIds
+                )
             )
-            webRtcManager.startAudioSession(enableSpeaker = callType == CallType.VIDEO)
-            emit(Result.Success(fallbackSession))
+            if (response.isSuccessful) {
+                val detailRes = api.getCallDetails(callId)
+                val updatedDto = detailRes.body()?.data
+                if (detailRes.isSuccessful && updatedDto != null) {
+                    emit(Result.Success(mapDtoToCallSession(updatedDto)))
+                } else {
+                    emit(Result.Error(IllegalStateException("Invited friends, refreshing call...")))
+                }
+            } else {
+                val errMsg = extractApiErrorMessage(response.errorBody()?.string(), "Could not invite friends to call")
+                emit(Result.Error(IllegalStateException(errMsg)))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun getFriendsToInvite(query: String?): Flow<Result<List<ActivePresenceFriend>>> = flow {
+        emit(Result.Loading)
+        try {
+            val combined = LinkedHashMap<Long, ActivePresenceFriend>()
+            val currentUserId = tokenStorageManager.getUserId()
+
+            runCatching {
+                val activeRes = api.getActiveFriends(query?.takeIf { it.isNotBlank() })
+                if (activeRes.isSuccessful) {
+                    activeRes.body()?.data?.forEach { dto ->
+                        if (dto.id != currentUserId) {
+                            combined[dto.id] = ActivePresenceFriend(
+                                id = dto.id,
+                                name = dto.name,
+                                username = dto.username,
+                                avatarUrl = normalizeUrl(dto.avatar_url),
+                                online = dto.online,
+                                lastSeenDisplay = dto.last_seen_display,
+                                conversationId = dto.conversation_id,
+                                canCall = dto.can_call
+                            )
+                        }
+                    }
+                }
+            }
+
+            runCatching {
+                val friendsRes = api.getFriends(search = query?.takeIf { it.isNotBlank() })
+                if (friendsRes.isSuccessful) {
+                    friendsRes.body()?.data?.forEach { userDto ->
+                        if (userDto.id != currentUserId && !combined.containsKey(userDto.id)) {
+                            combined[userDto.id] = ActivePresenceFriend(
+                                id = userDto.id,
+                                name = userDto.name,
+                                username = userDto.username.orEmpty(),
+                                avatarUrl = normalizeUrl(userDto.avatar ?: userDto.profile?.avatar_url),
+                                online = userDto.is_online ?: false,
+                                lastSeenDisplay = if (userDto.is_online == true) "Active now" else null,
+                                conversationId = null,
+                                canCall = true
+                            )
+                        }
+                    }
+                }
+            }
+
+            emit(
+                Result.Success(
+                    combined.values.sortedWith(
+                        compareByDescending<ActivePresenceFriend> { it.online }
+                            .thenBy { it.name.lowercase(Locale.getDefault()) }
+                    )
+                )
+            )
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }
 
@@ -73,48 +186,27 @@ class CallingRepositoryImpl @Inject constructor(
         emit(Result.Loading)
         try {
             val response = api.respondToCall(callId, RespondCallRequest(action))
-            if (response.isSuccessful && response.body()?.data != null) {
-                val dto = response.body()!!.data
-                val session = mapDtoToCallSession(dto, isIncoming = true)
+            val dto = response.body()?.data
+            if (response.isSuccessful && dto != null) {
+                val session = mapDtoToCallSession(dto, isIncomingOverride = true)
                 if (action == "accept") {
-                    webRtcManager.startAudioSession(enableSpeaker = session.callType == CallType.VIDEO)
+                    webRtcManager.startAudioSession(enableSpeaker = session.callType.isVideo)
                 } else {
                     webRtcManager.endAudioSession()
                 }
                 emit(Result.Success(session))
             } else {
-                val fallback = CallSession(
-                    id = callId,
-                    channelName = "call_channel_$callId",
-                    callType = CallType.AUDIO,
-                    status = if (action == "accept") CallStatus.CONNECTED else CallStatus.REJECTED,
-                    caller = User(id = 51L, name = "Sadia Islam", username = "sadia_islam"),
-                    receiver = User(id = 1L, name = "You", username = "you"),
-                    isIncoming = true
-                )
-                if (action == "accept") {
-                    webRtcManager.startAudioSession(enableSpeaker = false)
-                } else {
+                if (action != "accept") {
                     webRtcManager.endAudioSession()
                 }
-                emit(Result.Success(fallback))
+                val errMsg = extractApiErrorMessage(response.errorBody()?.string(), "Failed to respond to call")
+                emit(Result.Error(IllegalStateException(errMsg)))
             }
         } catch (e: Exception) {
-            val fallback = CallSession(
-                id = callId,
-                channelName = "call_channel_$callId",
-                callType = CallType.AUDIO,
-                status = if (action == "accept") CallStatus.CONNECTED else CallStatus.REJECTED,
-                caller = User(id = 51L, name = "Sadia Islam", username = "sadia_islam"),
-                receiver = User(id = 1L, name = "You", username = "you"),
-                isIncoming = true
-            )
-            if (action == "accept") {
-                webRtcManager.startAudioSession(enableSpeaker = false)
-            } else {
+            if (action != "accept") {
                 webRtcManager.endAudioSession()
             }
-            emit(Result.Success(fallback))
+            emit(Result.Error(e))
         }
     }
 
@@ -123,12 +215,13 @@ class CallingRepositoryImpl @Inject constructor(
         emit(Result.Loading)
         try {
             val response = api.leaveCall(callId)
-            if (response.isSuccessful && response.body()?.data != null) {
-                emit(Result.Success(mapDtoToCallSession(response.body()!!.data, isIncoming = false)))
+            val dto = response.body()?.data
+            if (response.isSuccessful && dto != null) {
+                emit(Result.Success(mapDtoToCallSession(dto)))
             } else {
                 emit(Result.Success(createEndedSession(callId)))
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emit(Result.Success(createEndedSession(callId)))
         }
     }
@@ -160,15 +253,16 @@ class CallingRepositoryImpl @Inject constructor(
         emit(Result.Loading)
         try {
             val res = api.getIceServers()
-            if (res.isSuccessful && res.body()?.data != null) {
-                val servers = res.body()!!.data.ice_servers.map {
+            val bodyData = res.body()?.data
+            if (res.isSuccessful && bodyData != null) {
+                val servers = bodyData.ice_servers.map {
                     IceServer(urls = it.urls, username = it.username, credential = it.credential)
                 }
                 emit(Result.Success(servers))
             } else {
                 emit(Result.Success(listOf(IceServer(urls = listOf("stun:stun.l.google.com:19302")))))
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emit(Result.Success(listOf(IceServer(urls = listOf("stun:stun.l.google.com:19302")))))
         }
     }
@@ -176,12 +270,13 @@ class CallingRepositoryImpl @Inject constructor(
     override fun getActiveCall(): Flow<CallSession?> = flow {
         try {
             val res = api.getActiveCall()
-            if (res.isSuccessful && res.body()?.data != null) {
-                emit(mapDtoToCallSession(res.body()!!.data!!, isIncoming = true))
+            val dto = res.body()?.data
+            if (res.isSuccessful && dto != null) {
+                emit(mapDtoToCallSession(dto))
             } else {
                 emit(null)
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emit(null)
         }
     }
@@ -190,26 +285,44 @@ class CallingRepositoryImpl @Inject constructor(
         emit(Result.Loading)
         try {
             val res = api.getCallHistory()
-            if (res.isSuccessful && res.body()?.data != null) {
-                val items = res.body()!!.data.map { dto ->
+            val dtoList = res.body()?.data
+            if (res.isSuccessful && dtoList != null) {
+                val currentUserId = tokenStorageManager.getUserId() ?: 0L
+                val items = dtoList.map { dto ->
+                    val session = mapDtoToCallSession(dto)
+                    val callerObj = dto.caller
+                    val isIncoming = if (currentUserId > 0L && callerObj != null && callerObj.id > 0L) {
+                        callerObj.id != currentUserId
+                    } else {
+                        !dto.is_mine
+                    }
+                    val peer = if (isIncoming) session.caller else session.receiver
+                    val outcome = dto.outcome ?: dto.status
+                    val isMissed = outcome.equals("missed", ignoreCase = true) ||
+                        outcome.equals("no_answer", ignoreCase = true) ||
+                        (isIncoming && dto.status.equals("rejected", ignoreCase = true))
+
                     CallHistoryItem(
                         id = dto.id,
-                        otherUser = dto.receiver?.let {
-                            User(id = it.id, name = it.name, username = it.username ?: "", avatar = it.avatar)
-                        } ?: User(id = 51L, name = "Sadia Islam", username = "sadia_islam"),
-                        callType = CallType.from(dto.call_type),
-                        isIncoming = dto.receiver?.id == 1L,
-                        isMissed = dto.status == "missed",
+                        conversationId = dto.conversation_id,
+                        title = session.title,
+                        otherUser = peer,
+                        participantCount = dto.participants.size.coerceAtLeast(2),
+                        callType = session.callType,
+                        isIncoming = isIncoming,
+                        isMissed = isMissed,
+                        outcome = outcome,
                         durationSeconds = dto.duration_seconds,
-                        formattedTime = "Today, 10:45 AM"
+                        formattedTime = formatCallTimestamp(dto.started_at ?: dto.created_at)
                     )
                 }
                 emit(Result.Success(items))
             } else {
-                emit(Result.Success(getSampleCallHistory()))
+                val errMsg = extractApiErrorMessage(res.errorBody()?.string(), "Failed to load call history")
+                emit(Result.Error(IllegalStateException(errMsg)))
             }
         } catch (e: Exception) {
-            emit(Result.Success(getSampleCallHistory()))
+            emit(Result.Error(e))
         }
     }
 
@@ -234,67 +347,121 @@ class CallingRepositoryImpl @Inject constructor(
 
     private fun mapDtoToCallSession(
         dto: CallSessionDto,
-        isIncoming: Boolean,
-        defaultCallType: CallType = CallType.AUDIO
+        isIncomingOverride: Boolean? = null,
+        fallbackCallType: CallType = CallType.AUDIO
     ): CallSession {
+        val currentUserId = tokenStorageManager.getUserId() ?: 0L
+        val mappedParticipants = dto.participants.map { pDto -> mapParticipant(pDto) }
+        val resolvedCallType = if (dto.call_type.isNotBlank()) CallType.from(dto.call_type) else fallbackCallType
+
+        val callerDto = dto.caller
+        val receiverDto = dto.receiver
+
+        val callerUser = callerDto?.let { mapUser(it) }
+            ?: mappedParticipants.firstOrNull { it.role == "caller" }?.user
+            ?: User(id = 0L, name = "Bondoo Member", username = "")
+
+        val otherParticipantUser = receiverDto?.let { mapUser(it) }
+            ?: mappedParticipants.firstOrNull { it.user.id != currentUserId && it.user.id != callerUser.id }?.user
+            ?: mappedParticipants.firstOrNull { it.user.id != currentUserId }?.user
+            ?: User(id = currentUserId, name = "Bondoo Member", username = "")
+
+        val isIncoming = isIncomingOverride
+            ?: if (currentUserId > 0L && callerUser.id > 0L) {
+                callerUser.id != currentUserId
+            } else {
+                !dto.is_mine
+            }
+
+        val isGroup = resolvedCallType.isGroup || mappedParticipants.size > 2
+        val groupTitle = if (isGroup) {
+            val otherNames = mappedParticipants
+                .map { it.user }
+                .filter { it.id != currentUserId && it.name.isNotBlank() }
+                .map { it.name }
+            if (otherNames.isNotEmpty()) otherNames.take(3).joinToString(", ") else "Group Call"
+        } else {
+            null
+        }
+
         return CallSession(
             id = dto.id,
-            channelName = dto.channel_name ?: "call_${dto.id}",
-            callType = CallType.from(dto.call_type),
+            channelName = dto.room_id ?: dto.channel_name ?: "call_${dto.id}",
+            conversationId = dto.conversation_id,
+            title = groupTitle,
+            callType = resolvedCallType,
             status = CallStatus.from(dto.status),
-            caller = dto.caller?.let {
-                User(id = it.id, name = it.name, username = it.username ?: "", avatar = it.avatar)
-            } ?: User(id = 51L, name = "Sadia Islam", username = "sadia_islam"),
-            receiver = dto.receiver?.let {
-                User(id = it.id, name = it.name, username = it.username ?: "", avatar = it.avatar)
-            } ?: User(id = 1L, name = "You", username = "you"),
+            caller = callerUser,
+            receiver = if (isIncoming) {
+                mappedParticipants.firstOrNull { it.user.id == currentUserId }?.user
+                    ?: User(id = currentUserId, name = "You", username = "you")
+            } else {
+                otherParticipantUser
+            },
+            participants = mappedParticipants,
             isIncoming = isIncoming,
             durationSeconds = dto.duration_seconds
         )
     }
 
+    private fun mapParticipant(dto: CallParticipantDto): CallParticipant {
+        return CallParticipant(
+            id = dto.id,
+            user = mapUser(dto.user),
+            role = dto.role,
+            status = dto.status,
+            isMuted = dto.is_muted,
+            isCameraOff = dto.is_camera_off,
+            isScreenSharing = dto.is_screen_sharing
+        )
+    }
+
+    private fun mapUser(dto: UserDto): User {
+        return User(
+            id = dto.id,
+            name = dto.name,
+            username = dto.username.orEmpty(),
+            avatar = normalizeUrl(dto.avatar ?: dto.profile?.avatar_url)
+        )
+    }
+
     private fun createEndedSession(callId: Long): CallSession {
+        val currentUserId = tokenStorageManager.getUserId() ?: 0L
         return CallSession(
             id = callId,
             channelName = "call_$callId",
             callType = CallType.AUDIO,
             status = CallStatus.ENDED,
-            caller = User(id = 1L, name = "You", username = "you"),
-            receiver = User(id = 51L, name = "Sadia Islam", username = "sadia_islam"),
+            caller = User(id = currentUserId, name = "You", username = ""),
+            receiver = User(id = 0L, name = "Call Ended", username = ""),
             isIncoming = false
         )
     }
 
-    private fun getSampleCallHistory(): List<CallHistoryItem> {
-        return listOf(
-            CallHistoryItem(
-                id = 101L,
-                otherUser = User(id = 51L, name = "Sadia Islam", username = "sadia_islam"),
-                callType = CallType.VIDEO,
-                isIncoming = true,
-                isMissed = false,
-                durationSeconds = 345,
-                formattedTime = "Today, 11:30 AM"
-            ),
-            CallHistoryItem(
-                id = 102L,
-                otherUser = User(id = 52L, name = "Rahim Ahmed", username = "rahim_ahmed"),
-                callType = CallType.AUDIO,
-                isIncoming = false,
-                isMissed = false,
-                durationSeconds = 120,
-                formattedTime = "Yesterday, 4:15 PM"
-            ),
-            CallHistoryItem(
-                id = 103L,
-                otherUser = User(id = 53L, name = "Nusrat Jahan", username = "nusrat_jahan"),
-                callType = CallType.AUDIO,
-                isIncoming = true,
-                isMissed = true,
-                durationSeconds = 0,
-                formattedTime = "2 days ago"
-            )
-        )
+    private fun normalizeUrl(rawUrl: String?): String? {
+        val trimmed = rawUrl?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        val baseOrigin = NetworkModule.BASE_URL.substringBefore("/api").trimEnd('/')
+        return when {
+            trimmed.startsWith("http://localhost:8000") -> baseOrigin + trimmed.removePrefix("http://localhost:8000")
+            trimmed.startsWith("http://127.0.0.1:8000") -> baseOrigin + trimmed.removePrefix("http://127.0.0.1:8000")
+            trimmed.startsWith("/") -> "$baseOrigin$trimmed"
+            else -> trimmed
+        }
+    }
+
+    private fun formatCallTimestamp(isoString: String?): String {
+        if (isoString.isNullOrBlank()) return "Recent"
+        return runCatching {
+            val instant = Instant.parse(isoString)
+            val zoned = instant.atZone(ZoneId.systemDefault())
+            DateTimeFormatter.ofPattern("MMM d, h:mm a", Locale.getDefault()).format(zoned)
+        }.getOrDefault(isoString.take(16))
+    }
+
+    private fun extractApiErrorMessage(rawErrorBody: String?, fallback: String): String {
+        if (rawErrorBody.isNullOrBlank()) return fallback
+        return runCatching {
+            JSONObject(rawErrorBody).optString("message").takeIf { it.isNotBlank() } ?: fallback
+        }.getOrDefault(fallback)
     }
 }
-

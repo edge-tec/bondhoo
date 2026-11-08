@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Comment\CreateCommentRequest;
 use App\Models\Comment;
+use App\Models\ModerationRequest;
 use App\Models\Post;
 use App\Services\CommentService;
+use App\Services\Moderation\ContentModerationService;
 use App\Services\PostService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -61,6 +63,26 @@ class CommentController extends Controller
                 'success' => false,
                 'message' => 'You are not authorized to comment on this post.',
             ], 403);
+        }
+
+        // Phase 16.9: OpenAI AI Content Moderation for Comments
+        $moderationService = app(ContentModerationService::class);
+        $modRequest = $moderationService->moderateComment($request->user(), $request->input('body'), $postId);
+
+        if ($modRequest->status === ModerationRequest::STATUS_REJECTED) {
+            $reason = $modRequest->rejection_reason ?: 'Comment violates community safety standards.';
+
+            return response()->json([
+                'success' => false,
+                'message' => "Your comment could not be submitted because it violates our safety standards: {$reason}",
+            ], 422);
+        }
+
+        if ($modRequest->status === ModerationRequest::STATUS_QUARANTINED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your comment was blocked due to critical safety violations.',
+            ], 422);
         }
 
         $comment = $this->commentService->createComment(

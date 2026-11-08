@@ -9,6 +9,7 @@ use App\Http\Requests\Learning\StoreLessonRequest;
 use App\Models\LearningCourse;
 use App\Models\LearningCourseLesson;
 use App\Models\LearningCourseSection;
+use App\Models\LearningLessonProgress;
 use App\Services\Learning\CourseContentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,11 +23,55 @@ class LearningCurriculumApiController extends Controller
     /**
      * GET /api/v1/learning/courses/{id}/curriculum
      */
-    public function index(int $id): JsonResponse
+    public function index(Request $request, int $id): JsonResponse
     {
-        $course = LearningCourse::with(['sections.lessons.attachments', 'sections.lessons.quiz', 'sections.lessons.assignment'])->findOrFail($id);
+        $user = $request->user('sanctum') ?? $request->user('web');
+        $course = LearningCourse::findOrFail($id);
 
-        return $this->successResponse($course->sections, 'Curriculum retrieved successfully.');
+        $isPrivilegedViewer = $user && ((int) $user->id === (int) $course->instructor_id || $user->isAdmin());
+        $hasFullContentAccess = $isPrivilegedViewer || $course->isEnrolledByUser($user);
+
+        $sectionsQuery = $course->sections()->orderBy('sort_order');
+        if (! $isPrivilegedViewer) {
+            $sectionsQuery->where('is_published', true);
+        }
+
+        $sections = $sectionsQuery->with([
+            'lessons' => function ($q) use ($isPrivilegedViewer) {
+                if (! $isPrivilegedViewer) {
+                    $q->where('is_published', true);
+                }
+                $q->orderBy('sort_order');
+            },
+            'lessons.attachments',
+            'lessons.quiz:id,lesson_id,course_id,title,time_limit_minutes,passing_score,max_attempts',
+            'lessons.assignment:id,lesson_id,course_id,title,max_score,passing_score,allow_resubmissions',
+        ])->get();
+
+        $progressMap = [];
+        if ($user) {
+            $progressMap = LearningLessonProgress::where('user_id', $user->id)
+                ->where('course_id', $course->id)
+                ->get(['lesson_id', 'is_completed', 'last_position_seconds'])
+                ->keyBy('lesson_id')
+                ->all();
+        }
+
+        foreach ($sections as $section) {
+            foreach ($section->lessons as $lesson) {
+                $prog = $progressMap[$lesson->id] ?? null;
+                $lesson->setAttribute('is_completed', (bool) ($prog?->is_completed ?? false));
+                $lesson->setAttribute('last_position_seconds', (int) ($prog?->last_position_seconds ?? 0));
+
+                if (! $hasFullContentAccess && ! $lesson->is_preview) {
+                    $lesson->setAttribute('video_url', null);
+                    $lesson->setAttribute('content', null);
+                    $lesson->setRelation('attachments', collect());
+                }
+            }
+        }
+
+        return $this->successResponse($sections, 'Curriculum retrieved successfully.');
     }
 
     /**
@@ -34,16 +79,17 @@ class LearningCurriculumApiController extends Controller
      */
     public function storeSection(Request $request, int $id): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:200',
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer',
+            'is_published' => 'nullable|boolean',
         ]);
 
         $course = LearningCourse::findOrFail($id);
         $this->authorize('manageCurriculum', $course);
 
-        $section = $this->contentService->addSection($course, $request->all());
+        $section = $this->contentService->addSection($course, $validated);
 
         return $this->successResponse($section, 'Section added successfully.', 201);
     }
@@ -53,10 +99,17 @@ class LearningCurriculumApiController extends Controller
      */
     public function updateSection(Request $request, int $id): JsonResponse
     {
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:200',
+            'description' => 'nullable|string',
+            'sort_order' => 'nullable|integer',
+            'is_published' => 'nullable|boolean',
+        ]);
+
         $section = LearningCourseSection::with('course')->findOrFail($id);
         $this->authorize('manageCurriculum', $section->course);
 
-        $updated = $this->contentService->updateSection($section, $request->all());
+        $updated = $this->contentService->updateSection($section, $validated);
 
         return $this->successResponse($updated, 'Section updated successfully.');
     }

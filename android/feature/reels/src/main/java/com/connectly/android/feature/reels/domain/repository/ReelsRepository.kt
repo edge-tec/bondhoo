@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import java.io.File
 
 interface ReelsRepository {
-    fun getReelsFeed(page: Int = 1, perPage: Int = 10): Flow<Result<List<Reel>>>
+    fun getReelsFeed(page: Int = 1, perPage: Int = 10, tab: String = "for_you"): Flow<Result<List<Reel>>>
     fun createReel(videoFile: File, caption: String?, audioTitle: String?): Flow<Result<Reel>>
     fun reactToReel(reelId: Long, reaction: String): Flow<Result<Unit>>
     fun recordReelView(reelId: Long, durationSeconds: Int, completed: Boolean): Flow<Result<Unit>>

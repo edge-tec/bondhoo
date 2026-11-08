@@ -46,8 +46,11 @@ class BkashGatewayDriver extends AbstractPaymentGateway
 
     public function initiatePayment(MarketplaceOrder $order, array $options = []): array
     {
-        // When real production credentials are not provided or in sandbox, use verified sandbox driver
         if (! $this->isConfigured()) {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('bKash payment gateway is not configured in production environment.');
+            }
+
             return $this->fallbackDriver->initiatePayment($order, $options);
         }
 
@@ -82,10 +85,17 @@ class BkashGatewayDriver extends AbstractPaymentGateway
 
             Log::error('bKash Payment Initiation Error', ['body' => $response->body()]);
 
-            // Fallback to secure sandbox driver in non-production
+            if (app()->environment('production')) {
+                throw new \RuntimeException('bKash checkout session initiation failed.');
+            }
+
             return $this->fallbackDriver->initiatePayment($order, $options);
         } catch (\Throwable $e) {
             Log::error('bKash Exception: '.$e->getMessage());
+
+            if (app()->environment('production')) {
+                throw $e;
+            }
 
             return $this->fallbackDriver->initiatePayment($order, $options);
         }
@@ -94,6 +104,10 @@ class BkashGatewayDriver extends AbstractPaymentGateway
     public function verifyPayment(MarketplaceOrder $order, array $payload): array
     {
         if (! $this->isConfigured()) {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('bKash payment gateway is not configured in production environment.');
+            }
+
             return $this->fallbackDriver->verifyPayment($order, $payload);
         }
 
@@ -142,16 +156,38 @@ class BkashGatewayDriver extends AbstractPaymentGateway
                 ];
             }
 
-            return $this->fallbackDriver->verifyPayment($order, $payload);
+            return [
+                'verified' => false,
+                'status' => 'failed',
+                'transaction_id' => $paymentId,
+                'amount' => (float) $order->amount,
+                'currency' => $order->currency ?: 'BDT',
+                'provider_reference' => null,
+                'metadata' => ['error' => 'bKash payment execution failed.'],
+            ];
+        } catch (InvalidArgumentException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('bKash Verify Exception: '.$e->getMessage());
 
-            return $this->fallbackDriver->verifyPayment($order, $payload);
+            return [
+                'verified' => false,
+                'status' => 'failed',
+                'transaction_id' => $paymentId,
+                'amount' => (float) $order->amount,
+                'currency' => $order->currency ?: 'BDT',
+                'provider_reference' => null,
+                'metadata' => ['error' => 'bKash verification network failure.'],
+            ];
         }
     }
 
     public function processRefund(MarketplaceOrder $order, float $amount, string $reason): array
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('bKash automated refund API is not supported. Please initiate manual merchant refund.');
+        }
+
         return $this->fallbackDriver->processRefund($order, $amount, $reason);
     }
 

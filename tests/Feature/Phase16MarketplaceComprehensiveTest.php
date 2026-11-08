@@ -6,9 +6,6 @@ use App\Models\MarketplaceCategory;
 use App\Models\MarketplaceOffer;
 use App\Models\MarketplaceOrder;
 use App\Models\MarketplaceProduct;
-use App\Models\MarketplaceReview;
-use App\Models\Report;
-use App\Models\SavedItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,9 +15,13 @@ class Phase16MarketplaceComprehensiveTest extends TestCase
     use RefreshDatabase;
 
     protected User $seller;
+
     protected User $buyer;
+
     protected User $intruder;
+
     protected MarketplaceCategory $topCategory;
+
     protected MarketplaceCategory $subcategory;
 
     protected function setUp(): void

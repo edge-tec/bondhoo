@@ -3,8 +3,10 @@ package com.connectly.android.feature.stories.presentation.viewer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.connectly.android.core.common.result.Result
+import com.connectly.android.core.datastore.TokenStorageManager
 import com.connectly.android.core.model.Story
 import com.connectly.android.core.model.User
+import com.connectly.android.core.network.api.ConnectlyApi
 import com.connectly.android.feature.stories.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class StoryViewerViewModel @Inject constructor(
+    private val api: ConnectlyApi,
+    private val tokenStorageManager: TokenStorageManager,
     private val viewStoryUseCase: ViewStoryUseCase,
     private val reactToStoryUseCase: ReactToStoryUseCase,
     private val replyToStoryUseCase: ReplyToStoryUseCase,
@@ -38,23 +42,43 @@ class StoryViewerViewModel @Inject constructor(
     }
 
     private fun loadStory(storyId: Long) {
-        val sadia = User(
-            id = 21L,
-            name = "Sadia Islam",
-            username = "sadia_islam",
-            avatar = "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-            isVerified = true
-        )
-        val defaultStory = Story(
-            id = storyId,
-            userId = sadia.id,
-            author = sadia,
-            mediaUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-            viewsCount = 142
-        )
-        _uiState.update { it.copy(story = defaultStory) }
-
         viewModelScope.launch {
+            try {
+                val currentUserId = tokenStorageManager.getUserId()
+                val response = api.getStory(storyId)
+                if (response.isSuccessful && response.body()?.data != null) {
+                    val dto = response.body()!!.data!!
+                    val authorUser = User(
+                        id = dto.user?.id ?: 1L,
+                        name = dto.user?.name ?: "Bondhoo Creator",
+                        username = dto.user?.username ?: "creator",
+                        avatar = dto.user?.resolvedAvatar,
+                        isVerified = dto.user?.is_verified ?: false
+                    )
+                    val realStory = Story(
+                        id = dto.id,
+                        userId = dto.user?.id ?: 1L,
+                        author = authorUser,
+                        mediaUrl = dto.resolvedMediaUrl.ifBlank { dto.content ?: "" },
+                        mediaType = dto.resolvedMediaType,
+                        viewsCount = dto.views_count,
+                        privacy = dto.privacy
+                    )
+                    _uiState.update {
+                        it.copy(
+                            story = realStory,
+                            isViewingOwnStory = (dto.user?.id == currentUserId)
+                        )
+                    }
+                } else if (response.code() == 410) {
+                    _uiState.update {
+                        it.copy(errorMessage = "This story has expired and is no longer accessible.")
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = e.message) }
+            }
+
             viewStoryUseCase(storyId).collect()
         }
     }
@@ -84,4 +108,3 @@ class StoryViewerViewModel @Inject constructor(
         }
     }
 }
-

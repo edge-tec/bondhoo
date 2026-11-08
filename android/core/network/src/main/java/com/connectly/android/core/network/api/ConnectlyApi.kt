@@ -40,6 +40,22 @@ interface ConnectlyApi {
     @GET("v1/auth/me")
     suspend fun getMe(): Response<ApiResponse<UserDto>>
 
+    @GET("v1/profile/{username}")
+    suspend fun getUserProfile(
+        @Path("username") username: String
+    ): Response<ApiResponse<UserDto>>
+
+    @GET("v1/profile/about")
+    suspend fun getProfileAbout(): Response<ApiResponse<ProfileAboutDto>>
+
+    @GET("v1/profile/analytics")
+    suspend fun getProfileAnalytics(): Response<ApiResponse<ProfileAnalyticsDto>>
+
+    @GET("v1/users/{username}/posts")
+    suspend fun getUserPosts(
+        @Path("username") username: String
+    ): Response<ApiResponse<List<PostDto>>>
+
     @PUT("v1/auth/profile")
     suspend fun updateProfile(@Body body: UpdateProfileRequest): Response<ApiResponse<UserDto>>
 
@@ -64,8 +80,23 @@ interface ConnectlyApi {
     // -------------------------------------------------------------
     // Friends, Following & Moderation
     // -------------------------------------------------------------
+    @GET("v1/friends")
+    suspend fun getFriends(
+        @Query("search") search: String? = null,
+        @Query("filter") filter: String = "all",
+        @Query("per_page") perPage: Int = 50
+    ): Response<ApiResponse<List<UserDto>>>
+
+    @GET("v1/friends/requests")
+    suspend fun getFriendRequests(
+        @Query("per_page") perPage: Int = 50
+    ): Response<ApiResponse<List<FriendRequestDto>>>
+
     @POST("v1/friends/{id}/request")
     suspend fun sendFriendRequest(@Path("id") userId: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/friends/{id}/cancel")
+    suspend fun cancelFriendRequest(@Path("id") userId: Long): Response<ApiResponse<Unit>>
 
     @POST("v1/friends/{id}/accept")
     suspend fun acceptFriendRequest(@Path("id") userId: Long): Response<ApiResponse<Unit>>
@@ -185,6 +216,18 @@ interface ConnectlyApi {
     @POST("v1/profile/saved-items/toggle")
     suspend fun toggleSavePost(@Body body: ToggleSaveItemPayload): Response<ApiResponse<Unit>>
 
+    @POST("v1/posts/{id}/save")
+    suspend fun savePost(@Path("id") id: Long): Response<ApiResponse<Unit>>
+
+    @DELETE("v1/posts/{id}/save")
+    suspend fun unsavePost(@Path("id") id: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/posts/{id}/hide")
+    suspend fun hidePost(@Path("id") id: Long): Response<ApiResponse<Unit>>
+
+    @POST("v1/posts/{id}/unhide")
+    suspend fun unhidePost(@Path("id") id: Long): Response<ApiResponse<Unit>>
+
     @GET("v1/marketplace/categories")
     suspend fun getMarketplaceCategories(): Response<ApiResponse<List<MarketplaceCategoryDto>>>
 
@@ -211,22 +254,42 @@ interface ConnectlyApi {
         @Body body: CreateMarketplaceProductRequest
     ): Response<ApiResponse<MarketplaceProductDto>>
 
+    @GET("v1/marketplace/products/{id}")
+    suspend fun getMarketplaceProductDetails(
+        @Path("id") id: Long
+    ): Response<ApiResponse<MarketplaceProductDto>>
+
+    @PUT("v1/marketplace/products/{id}")
+    suspend fun updateMarketplaceProduct(
+        @Path("id") id: Long,
+        @Body body: UpdateMarketplaceProductRequest
+    ): Response<ApiResponse<MarketplaceProductDto>>
+
+    @PATCH("v1/marketplace/products/{id}/status")
+    suspend fun updateMarketplaceProductStatus(
+        @Path("id") id: Long,
+        @Body body: UpdateMarketplaceStatusRequest
+    ): Response<ApiResponse<MarketplaceProductDto>>
+
     @POST("v1/marketplace/products/{id}/favorite")
     suspend fun toggleFavoriteMarketplaceProduct(
         @Path("id") id: Long
     ): Response<ToggleFavoriteResponse>
 
+    @GET("v1/marketplace/favorites")
+    suspend fun getFavoriteMarketplaceProducts(): Response<ApiResponse<List<MarketplaceProductDto>>>
+
     @POST("v1/marketplace/products/{id}/contact")
     suspend fun contactMarketplaceSeller(
         @Path("id") id: Long,
         @Body body: ContactSellerRequest
-    ): Response<ApiResponse<Unit>>
+    ): Response<ApiResponse<ContactSellerResponseDto>>
 
     @POST("v1/marketplace/products/{id}/order")
     suspend fun orderMarketplaceProduct(
         @Path("id") id: Long,
         @Body body: OrderMarketplaceProductRequest
-    ): Response<ApiResponse<Unit>>
+    ): Response<ApiResponse<MarketplaceOrderDto>>
 
     @GET("v1/marketplace/my-listings")
     suspend fun getMyMarketplaceListings(): Response<ApiResponse<List<MarketplaceProductDto>>>
@@ -270,7 +333,26 @@ interface ConnectlyApi {
     ): Response<ApiResponse<MarketplaceOfferDto>>
 
     @GET("v1/marketplace/orders")
-    suspend fun getMarketplaceOrders(): Response<ApiResponse<List<MarketplaceOrderDto>>>
+    suspend fun getMarketplaceOrders(
+        @Query("role") role: String = "buyer"
+    ): Response<MarketplaceOrdersResponse>
+
+    @POST("v1/marketplace/orders/{id}/ship")
+    suspend fun shipMarketplaceOrder(
+        @Path("id") id: Long,
+        @Body body: ShipMarketplaceOrderRequest
+    ): Response<ApiResponse<MarketplaceOrderDto>>
+
+    @POST("v1/marketplace/orders/{id}/confirm-delivery")
+    suspend fun confirmMarketplaceOrderDelivery(
+        @Path("id") id: Long
+    ): Response<ApiResponse<MarketplaceOrderDto>>
+
+    @POST("v1/marketplace/orders/{id}/cancel")
+    suspend fun cancelMarketplaceOrder(
+        @Path("id") id: Long,
+        @Body body: CancelMarketplaceOrderRequest
+    ): Response<ApiResponse<MarketplaceOrderDto>>
 
     @GET("v1/marketplace/seller/dashboard")
     suspend fun getMarketplaceSellerDashboard(): Response<ApiResponse<MarketplaceSellerSummaryDto>>
@@ -297,6 +379,34 @@ interface ConnectlyApi {
         @Path("id") id: Long,
         @Body body: SharePostPayload
     ): Response<ApiResponse<Unit>>
+
+    @GET("v1/sharing/eligible-groups")
+    suspend fun getEligibleGroups(
+        @Query("q") query: String? = null
+    ): Response<ApiResponse<List<EligibleGroupDto>>>
+
+    @GET("v1/sharing/eligible-pages")
+    suspend fun getEligiblePages(
+        @Query("q") query: String? = null
+    ): Response<ApiResponse<List<EligiblePageDto>>>
+
+    @POST("v1/posts/{id}/share/timeline")
+    suspend fun sharePostToTimeline(
+        @Path("id") id: Long,
+        @Body body: ShareTimelineRequest
+    ): Response<ApiResponse<ShareResultDto>>
+
+    @POST("v1/posts/{id}/share/groups")
+    suspend fun sharePostToGroups(
+        @Path("id") id: Long,
+        @Body body: ShareGroupsRequest
+    ): Response<ApiResponse<ShareResultDto>>
+
+    @POST("v1/posts/{id}/share/pages")
+    suspend fun sharePostToPages(
+        @Path("id") id: Long,
+        @Body body: SharePageRequest
+    ): Response<ApiResponse<ShareResultDto>>
 
     @POST("v1/posts/{id}/react")
     suspend fun reactToPost(
@@ -343,6 +453,9 @@ interface ConnectlyApi {
 
     @GET("v1/stories")
     suspend fun getStories(): Response<ApiResponse<List<StoryUserDto>>>
+
+    @GET("v2/stories/{id}")
+    suspend fun getStory(@Path("id") storyId: Long): Response<ApiResponse<StoryDto>>
 
     @POST("v2/stories")
     suspend fun createStory(@Body body: CreateStoryPayload): Response<ApiResponse<StoryDto>>
@@ -460,19 +573,62 @@ interface ConnectlyApi {
     // -------------------------------------------------------------
     @GET("v1/conversations")
     suspend fun getConversations(
-        @Query("filter") filter: String = "all"
+        @Query("filter") filter: String = "all",
+        @Query("search") search: String? = null,
+        @Query("per_page") perPage: Int = 50
     ): Response<ApiResponse<List<ConversationDto>>>
+
+    @GET("v1/conversations/{id}")
+    suspend fun getConversation(
+        @Path("id") conversationId: Long
+    ): Response<ApiResponse<ConversationDto>>
 
     @POST("v1/conversations")
     suspend fun createConversation(
         @Body body: CreateConversationRequest
     ): Response<ApiResponse<ConversationDto>>
 
+    @DELETE("v1/conversations/{id}")
+    suspend fun deleteConversation(
+        @Path("id") conversationId: Long
+    ): Response<ApiResponse<JsonElement?>>
+
+    @POST("v1/conversations/{id}/request")
+    suspend fun handleMessageRequest(
+        @Path("id") conversationId: Long,
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<JsonElement?>>
+
+    @GET("v1/conversations/{id}/media")
+    suspend fun getConversationMedia(
+        @Path("id") conversationId: Long,
+        @Query("type") type: String = "media",
+        @Query("per_page") perPage: Int = 30
+    ): Response<ApiResponse<JsonElement?>>
+
+    @GET("v1/conversations/{id}/pins")
+    suspend fun getPinnedMessages(
+        @Path("id") conversationId: Long
+    ): Response<ApiResponse<JsonElement?>>
+
+    @POST("v1/conversations/{id}/messages/{messageId}/pin")
+    suspend fun pinMessage(
+        @Path("id") conversationId: Long,
+        @Path("messageId") messageId: Long
+    ): Response<ApiResponse<JsonElement?>>
+
+    @DELETE("v1/conversations/{id}/messages/{messageId}/pin")
+    suspend fun unpinMessage(
+        @Path("id") conversationId: Long,
+        @Path("messageId") messageId: Long
+    ): Response<ApiResponse<JsonElement?>>
+
     @GET("v1/conversations/{id}/messages")
     suspend fun getMessages(
         @Path("id") conversationId: Long,
         @Query("page") page: Int = 1,
-        @Query("per_page") perPage: Int = 30
+        @Query("per_page") perPage: Int = 50,
+        @Query("search") search: String? = null
     ): Response<ApiResponse<List<MessageDto>>>
 
     @POST("v1/conversations/{id}/messages")
@@ -482,22 +638,28 @@ interface ConnectlyApi {
     ): Response<ApiResponse<MessageDto>>
 
     @POST("v1/messages/{id}/delivered")
-    suspend fun markDelivered(@Path("id") messageId: Long): Response<Unit>
+    suspend fun markDelivered(@Path("id") messageId: Long): Response<JsonElement?>
 
     @POST("v1/conversations/{id}/read")
-    suspend fun markRead(@Path("id") conversationId: Long): Response<Unit>
+    suspend fun markRead(@Path("id") conversationId: Long): Response<JsonElement?>
 
     @POST("v1/messages/{id}/reactions")
     suspend fun reactToChatMessage(
         @Path("id") messageId: Long,
         @Body body: MessageReactionRequest
-    ): Response<ApiResponse<Unit>>
+    ): Response<ApiResponse<JsonElement?>>
 
     @POST("v1/messages/{id}/delete-for-me")
-    suspend fun deleteMessageForMe(@Path("id") messageId: Long): Response<ApiResponse<Unit>>
+    suspend fun deleteMessageForMe(@Path("id") messageId: Long): Response<ApiResponse<JsonElement?>>
 
     @POST("v1/messages/{id}/delete-for-everyone")
-    suspend fun deleteMessageForEveryone(@Path("id") messageId: Long): Response<ApiResponse<Unit>>
+    suspend fun deleteMessageForEveryone(@Path("id") messageId: Long): Response<ApiResponse<JsonElement?>>
+
+    @POST("v1/messages/{id}/report")
+    suspend fun reportMessage(
+        @Path("id") messageId: Long,
+        @Body body: ReportMarketplaceRequest
+    ): Response<ApiResponse<JsonElement?>>
 
     @Multipart
     @POST("v1/messages/attachments")
@@ -523,34 +685,34 @@ interface ConnectlyApi {
     suspend fun forwardMessage(
         @Path("id") messageId: Long,
         @Body body: Map<String, List<Long>>
-    ): Response<ApiResponse<List<MessageDto>>>
+    ): Response<ApiResponse<JsonElement?>>
 
     @POST("v1/messages/{id}/save")
-    suspend fun saveMessage(@Path("id") messageId: Long): Response<ApiResponse<Unit>>
+    suspend fun saveMessage(@Path("id") messageId: Long): Response<ApiResponse<JsonElement?>>
 
     @DELETE("v1/messages/{id}/save")
-    suspend fun unsaveMessage(@Path("id") messageId: Long): Response<ApiResponse<Unit>>
+    suspend fun unsaveMessage(@Path("id") messageId: Long): Response<ApiResponse<JsonElement?>>
 
     @GET("v1/saved-messages")
     suspend fun getSavedMessages(): Response<ApiResponse<List<MessageDto>>>
 
     @POST("v1/conversations/{id}/pin")
-    suspend fun togglePinConversation(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+    suspend fun togglePinConversation(@Path("id") conversationId: Long): Response<ApiResponse<JsonObject>>
 
     @POST("v1/conversations/{id}/archive")
-    suspend fun toggleArchiveConversation(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+    suspend fun toggleArchiveConversation(@Path("id") conversationId: Long): Response<ApiResponse<JsonObject>>
 
     @POST("v1/conversations/{id}/mute")
     suspend fun muteConversation(
         @Path("id") conversationId: Long,
         @Body body: Map<String, String> = emptyMap()
-    ): Response<ApiResponse<Map<String, String>>>
+    ): Response<ApiResponse<JsonObject>>
 
     @POST("v1/conversations/{id}/clear")
-    suspend fun clearConversation(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+    suspend fun clearConversation(@Path("id") conversationId: Long): Response<ApiResponse<JsonObject>>
 
     @POST("v1/conversations/{id}/leave")
-    suspend fun leaveConversationGroup(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+    suspend fun leaveConversationGroup(@Path("id") conversationId: Long): Response<ApiResponse<JsonObject>>
 
     @PUT("v1/conversations/{id}/group-info")
     suspend fun updateGroupInfo(
@@ -562,22 +724,29 @@ interface ConnectlyApi {
     suspend fun addGroupMembers(
         @Path("id") conversationId: Long,
         @Body body: Map<String, List<Long>>
-    ): Response<ApiResponse<Map<String, String>>>
+    ): Response<ApiResponse<JsonObject>>
 
     @DELETE("v1/conversations/{id}/members/{userId}")
     suspend fun removeConversationGroupMember(
         @Path("id") conversationId: Long,
         @Path("userId") userId: Long
-    ): Response<ApiResponse<Map<String, String>>>
+    ): Response<ApiResponse<JsonObject>>
+
+    @PUT("v1/conversations/{id}/members/{userId}/role")
+    suspend fun updateConversationMemberRole(
+        @Path("id") conversationId: Long,
+        @Path("userId") userId: Long,
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<JsonObject>>
 
     @POST("v1/conversations/{id}/draft")
     suspend fun saveDraft(
         @Path("id") conversationId: Long,
         @Body body: Map<String, String>
-    ): Response<ApiResponse<Map<String, String>>>
+    ): Response<ApiResponse<JsonObject>>
 
     @POST("v1/conversations/{id}/unread")
-    suspend fun markConversationUnread(@Path("id") conversationId: Long): Response<ApiResponse<Map<String, Boolean>>>
+    suspend fun markConversationUnread(@Path("id") conversationId: Long): Response<ApiResponse<JsonObject>>
 
     @Multipart
     @POST("v1/conversations/{id}/voice")
@@ -605,26 +774,37 @@ interface ConnectlyApi {
     @POST("v1/presence/heartbeat")
     suspend fun presenceHeartbeat(
         @Body body: Map<String, String> = emptyMap()
-    ): Response<ApiResponse<Map<String, String>>>
+    ): Response<ApiResponse<JsonElement?>>
 
     @POST("v1/presence/offline")
     suspend fun presenceOffline(
         @Body body: Map<String, String> = emptyMap()
-    ): Response<ApiResponse<Map<String, String>>>
+    ): Response<ApiResponse<JsonElement?>>
 
     @POST("v1/presence/typing")
     suspend fun presenceTyping(
         @Body body: Map<String, String>
-    ): Response<ApiResponse<Map<String, String>>>
+    ): Response<ApiResponse<JsonElement?>>
 
     @GET("v1/presence/friends/active")
-    suspend fun getActiveFriends(): Response<ApiResponse<List<ActivePresenceFriendDto>>>
+    suspend fun getActiveFriends(
+        @Query("q") query: String? = null
+    ): Response<ApiResponse<List<ActivePresenceFriendDto>>>
 
     // -------------------------------------------------------------
     // Real-Time Audio & Video Calling (WebRTC)
     // -------------------------------------------------------------
     @POST("v1/calls")
     suspend fun initiateCall(@Body body: InitiateCallRequest): Response<ApiResponse<CallSessionDto>>
+
+    @GET("v1/calls/{id}")
+    suspend fun getCallDetails(@Path("id") callId: Long): Response<ApiResponse<CallSessionDto>>
+
+    @POST("v1/calls/{id}/invite")
+    suspend fun inviteToCall(
+        @Path("id") callId: Long,
+        @Body body: InviteToCallRequest
+    ): Response<ApiResponse<JsonElement?>>
 
     @POST("v1/calls/{id}/respond")
     suspend fun respondToCall(
@@ -639,10 +819,10 @@ interface ConnectlyApi {
     suspend fun sendSignal(
         @Path("id") callId: Long,
         @Body body: CallSignalRequest
-    ): Response<ApiResponse<Map<String, String>>>
+    ): Response<ApiResponse<JsonElement?>>
 
     @GET("v1/calls/{id}/signals")
-    suspend fun getSignals(@Path("id") callId: Long): Response<ApiResponse<List<Map<String, String>>>>
+    suspend fun getSignals(@Path("id") callId: Long): Response<ApiResponse<List<JsonObject>>>
 
     @GET("v1/calls/ice-servers")
     suspend fun getIceServers(): Response<ApiResponse<IceServersResponse>>
@@ -653,14 +833,14 @@ interface ConnectlyApi {
     @GET("v1/calls/history")
     suspend fun getCallHistory(
         @Query("page") page: Int = 1,
-        @Query("per_page") perPage: Int = 20
+        @Query("per_page") perPage: Int = 30
     ): Response<ApiResponse<List<CallSessionDto>>>
 
     @POST("v1/calls/{id}/state")
     suspend fun updateCallState(
         @Path("id") callId: Long,
         @Body body: UpdateCallStateRequest
-    ): Response<ApiResponse<Unit>>
+    ): Response<ApiResponse<JsonElement?>>
 
     // -------------------------------------------------------------
     // Groups & Community (Screen 4)
@@ -1387,11 +1567,11 @@ interface ConnectlyApi {
     @GET("v1/learning/courses/{slug}")
     suspend fun getLearningCourseDetails(
         @Path("slug") slug: String
-    ): Response<ApiResponse<kotlinx.serialization.json.JsonElement?>>
+    ): Response<ApiResponse<LearningCourseDetailsResponseDto>>
 
     @POST("v1/learning/courses")
     suspend fun createLearningCourse(
-        @Body body: Map<String, @JvmSuppressWildcards Any?>
+        @Body body: kotlinx.serialization.json.JsonObject
     ): Response<ApiResponse<LearningCourseDto>>
 
     @GET("v1/learning/courses/{id}/curriculum")
@@ -1402,11 +1582,13 @@ interface ConnectlyApi {
     @POST("v1/learning/courses/{id}/enroll")
     suspend fun enrollInCourse(
         @Path("id") courseId: Long,
-        @Body body: EnrollCourseRequest
+        @Body body: EnrollCourseRequest = EnrollCourseRequest()
     ): Response<ApiResponse<LearningEnrollmentDto>>
 
     @GET("v1/learning/my-learning")
-    suspend fun getMyLearning(): Response<ApiResponse<List<LearningEnrollmentDto>>>
+    suspend fun getMyLearning(
+        @Query("status") status: String? = null
+    ): Response<LearningMyLearningResponse>
 
     @GET("v1/learning/lessons/{id}")
     suspend fun getLearningLesson(
@@ -1416,7 +1598,7 @@ interface ConnectlyApi {
     @POST("v1/learning/lessons/{id}/progress")
     suspend fun updateLessonProgress(
         @Path("id") lessonId: Long,
-        @Body body: Map<String, @JvmSuppressWildcards Any?>
+        @Body body: UpdateLessonProgressRequest
     ): Response<ApiResponse<kotlinx.serialization.json.JsonElement?>>
 
     @GET("v1/learning/quizzes/{id}")
@@ -1432,7 +1614,7 @@ interface ConnectlyApi {
     @POST("v1/learning/quizzes/attempts/{attemptId}/submit")
     suspend fun submitQuizAttempt(
         @Path("attemptId") attemptId: Long,
-        @Body body: Map<String, @JvmSuppressWildcards Any?>
+        @Body body: kotlinx.serialization.json.JsonObject
     ): Response<ApiResponse<LearningQuizAttemptDto>>
 
     @POST("v1/learning/courses/{id}/certificate")
@@ -1456,12 +1638,12 @@ interface ConnectlyApi {
     @POST("v1/learning/courses/{id}/reviews")
     suspend fun submitCourseReview(
         @Path("id") courseId: Long,
-        @Body body: Map<String, @JvmSuppressWildcards Any?>
+        @Body body: kotlinx.serialization.json.JsonObject
     ): Response<ApiResponse<LearningReviewDto>>
 
     @POST("v1/learning/instructors/apply")
     suspend fun applyAsInstructor(
-        @Body body: Map<String, @JvmSuppressWildcards Any?>
+        @Body body: kotlinx.serialization.json.JsonObject
     ): Response<ApiResponse<kotlinx.serialization.json.JsonElement?>>
 
     @GET("v1/learning/instructors/dashboard")
@@ -1510,6 +1692,24 @@ data class AuthResponse(
 
 
 @Serializable
+data class FriendProfileDto(
+    val avatar_url: String? = null,
+    val bio: String? = null,
+    val city: String? = null,
+    val country: String? = null
+)
+
+@Serializable
+data class FriendRequestDto(
+    val id: Long? = null,
+    val user_id: Long? = null,
+    val friend_id: Long? = null,
+    val status: String? = null,
+    val requested_at: String? = null,
+    val user: UserDto? = null
+)
+
+@Serializable
 data class UserDto(
     val id: Long = 0L,
     val name: String = "",
@@ -1518,12 +1718,25 @@ data class UserDto(
     val avatar: String? = null,
     val avatar_url: String? = null,
     val bio: String? = null,
+    val role: String? = null,
+    val is_online: Boolean = false,
     val is_verified: Boolean = false,
     val friends_count: Int = 0,
     val followers_count: Int = 0,
-    val following_count: Int = 0
+    val following_count: Int = 0,
+    val profile: FriendProfileDto? = null
 ) {
-    val resolvedAvatar: String? get() = avatar_url ?: avatar
+    val resolvedAvatar: String? get() {
+        val raw = avatar_url ?: avatar ?: profile?.avatar_url
+        return if (raw.isNullOrBlank()) null
+        else if (raw.startsWith("http://") || raw.startsWith("https://")) {
+            raw.replace("localhost:8000", "10.0.2.2:8000").replace("127.0.0.1:8000", "10.0.2.2:8000")
+        } else if (raw.startsWith("/")) {
+            "http://10.0.2.2:8000$raw"
+        } else {
+            "http://10.0.2.2:8000/$raw"
+        }
+    }
 }
 
 @Serializable
@@ -1558,12 +1771,20 @@ data class PostDto(
     val resolvedSharesCount: Int get() = if (shares_count > 0) shares_count else (counters?.shares ?: 0)
     val resolvedUserReaction: String? get() = viewer_reaction ?: user_reaction
     val resolvedMediaUrls: List<String> get() = media.mapNotNull { element ->
-        when (element) {
+        val raw = when (element) {
             is JsonPrimitive -> if (element.isString) element.content else null
             is JsonObject -> element["url"]?.jsonPrimitive?.contentOrNull
                 ?: element["original_url"]?.jsonPrimitive?.contentOrNull
                 ?: element["preview_url"]?.jsonPrimitive?.contentOrNull
             else -> null
+        }
+        if (raw.isNullOrBlank()) null
+        else if (raw.startsWith("http://") || raw.startsWith("https://")) {
+            raw.replace("localhost:8000", "10.0.2.2:8000").replace("127.0.0.1:8000", "10.0.2.2:8000")
+        } else if (raw.startsWith("/")) {
+            "http://10.0.2.2:8000$raw"
+        } else {
+            "http://10.0.2.2:8000/$raw"
         }
     }
     val type: String get() = if (resolvedMediaUrls.isNotEmpty()) "Media" else "Post"
@@ -1573,6 +1794,7 @@ data class PostDto(
 @Serializable
 data class StoryDto(
     val id: Long,
+    val user: UserDto? = null,
     val media_url: String? = null,
     val media_type: String? = null,
     val media: List<JsonElement> = emptyList(),
@@ -1654,26 +1876,38 @@ data class ReelDto(
 data class ConversationDto(
     val id: Long,
     val type: String = "direct",
+    val creator_id: Long? = null,
+    val is_saved: Boolean = false,
     val title: String? = null,
     val avatar_url: String? = null,
+    val description: String? = null,
+    val settings: JsonElement? = null,
     val other_user: UserDto? = null,
     val last_message: MessageDto? = null,
+    val last_message_at: String? = null,
     val unread_count: Int = 0,
     val is_pinned: Boolean = false,
     val is_archived: Boolean = false,
     val is_muted: Boolean = false,
+    val muted_until: String? = null,
+    val is_request: Boolean = false,
+    val request_status: String = "accepted",
     val is_online: Boolean = false,
     val draft_message: String? = null,
     val my_role: String = "member",
-    val members: List<UserDto> = emptyList()
+    val participants_count: Int = 0,
+    val members: List<UserDto> = emptyList(),
+    val created_at: String? = null
 )
 
 @Serializable
 data class MessageDto(
-    val id: Long,
-    val conversation_id: Long,
-    val sender_id: Long = 0,
-    val body: String = "",
+    val id: Long = 0L,
+    val conversation_id: Long = 0L,
+    val sender_id: Long? = null,
+    val sender_name: String? = null,
+    val sender: UserDto? = null,
+    val body: String? = null,
     val type: String = "text",
     val client_message_id: String? = null,
     val delivery_status: String = "sent",
@@ -1683,16 +1917,23 @@ data class MessageDto(
     val is_saved: Boolean = false,
     val is_deleted: Boolean = false,
     val is_forwarded: Boolean = false,
+    val version: Int = 1,
     val reply_to_message_id: Long? = null,
     val reply_preview: MessagePreviewDto? = null,
+    val reply_to: MessagePreviewDto? = null,
     val reactions: MessageReactionsSummaryDto? = null,
-    val metadata: Map<String, kotlinx.serialization.json.JsonElement>? = null,
-    val created_at: String = ""
+    val metadata: JsonElement? = null,
+    val media: List<MediaUploadResponse> = emptyList(),
+    val attachments: List<MediaUploadResponse> = emptyList(),
+    val sent_at: String? = null,
+    val delivered_at: String? = null,
+    val read_at: String? = null,
+    val created_at: String? = ""
 )
 
 @Serializable
 data class MessagePreviewDto(
-    val id: Long,
+    val id: Long = 0L,
     val sender_name: String? = null,
     val body: String? = null,
     val type: String = "text"
@@ -1700,7 +1941,7 @@ data class MessagePreviewDto(
 
 @Serializable
 data class MessageReactionsSummaryDto(
-    val counts: Map<String, Int> = emptyMap(),
+    val counts: JsonElement? = null,
     val total: Int = 0,
     val my_reaction: String? = null
 )
@@ -2234,9 +2475,11 @@ data class LoginRequest(
 @Serializable
 data class RegisterRequest(
     val name: String,
-    val username: String,
+    val username: String? = null,
     val email: String? = null,
     val phone: String? = null,
+    val birth_date: String? = null,
+    val gender: String? = null,
     val password: String,
     val device_name: String = "Android Device"
 )
@@ -2274,6 +2517,27 @@ data class UpdateProfileRequest(
 )
 
 @Serializable
+data class ProfileAnalyticsDto(
+    val total_views: Long = 0,
+    val views_today: Long = 0,
+    val views_this_week: Long = 0,
+    val unique_viewers_count: Long = 0,
+    val timeframe: String = "30d"
+)
+
+@Serializable
+data class ProfileAboutDto(
+    val user_id: Long = 0,
+    val username: String = "",
+    val name: String = "",
+    val bio: String? = null,
+    val headline: String? = null,
+    val intro: String? = null,
+    val about: String? = null,
+    val is_profile_locked: Boolean = false
+)
+
+@Serializable
 data class MediaUploadResponse(
     val id: Long? = null,
     val url: String? = null,
@@ -2281,13 +2545,19 @@ data class MediaUploadResponse(
     val preview_url: String? = null,
     val original_url: String? = null,
     val thumbnail_url: String? = null,
+    val download_url: String? = null,
+    val view_url: String? = null,
+    val name: String? = null,
+    val filename: String? = null,
     val mime_type: String? = null,
     val size: Long? = null,
     val width: Int? = null,
     val height: Int? = null,
-    val duration: Double? = null
+    val duration: Double? = null,
+    val metadata: JsonElement? = null
 ) {
     val resolvedUrl: String get() = preview_url ?: original_url ?: url ?: ""
+    val resolvedFileName: String get() = filename ?: name ?: "attachment"
 }
 
 @Serializable
@@ -2559,7 +2829,59 @@ data class ToggleSaveItemPayload(
 
 @Serializable
 data class SharePostPayload(
+    val caption: String? = null,
+    val target_type: String? = "timeline",
+    val target_id: Long? = null
+)
+
+@Serializable
+data class EligibleGroupDto(
+    val id: Long,
+    val name: String,
+    val slug: String? = null,
+    val avatar_url: String? = null,
+    val cover_url: String? = null,
+    val privacy: String = "public",
+    val members_count: Int = 0,
+    val user_role: String = "member",
+    val can_post: Boolean = true
+)
+
+@Serializable
+data class EligiblePageDto(
+    val id: Long,
+    val name: String,
+    val slug: String? = null,
+    val avatar_url: String? = null,
+    val category: String? = null,
+    val user_role: String = "owner",
+    val can_post: Boolean = true
+)
+
+@Serializable
+data class ShareTimelineRequest(
     val caption: String? = null
+)
+
+@Serializable
+data class ShareGroupsRequest(
+    val caption: String? = null,
+    val group_ids: List<Long>
+)
+
+@Serializable
+data class SharePageRequest(
+    val caption: String? = null,
+    val page_id: Long? = null,
+    val page_ids: List<Long>? = null
+)
+
+@Serializable
+data class ShareResultDto(
+    val shares_count: Int = 0,
+    val shared_count: Int = 1,
+    val group_ids: List<Long> = emptyList(),
+    val page_ids: List<Long> = emptyList()
 )
 
 @Serializable
@@ -2612,7 +2934,8 @@ data class CreateStoryPayload(
     val content: String? = null,
     val privacy: String = "public",
     val media_ids: List<Long> = emptyList(),
-    val background_color: String? = null
+    val background_color: String? = null,
+    val font_family: String? = null
 )
 
 @Serializable
@@ -2625,6 +2948,8 @@ data class CreateConversationRequest(
     val recipient_id: Long? = null,
     val type: String = "direct",
     val title: String? = null,
+    val description: String? = null,
+    val avatar_url: String? = null,
     val participant_ids: List<Long> = emptyList()
 )
 
@@ -2637,7 +2962,14 @@ data class MessageReactionRequest(
 data class InitiateCallRequest(
     val conversation_id: Long? = null,
     val receiver_id: Long? = null,
+    val receiver_ids: List<Long>? = null,
     val call_type: String
+)
+
+@Serializable
+data class InviteToCallRequest(
+    val friend_id: Long? = null,
+    val friend_ids: List<Long>? = null
 )
 
 @Serializable
@@ -2674,24 +3006,37 @@ data class UpdateCallStateRequest(
 @Serializable
 data class CallSessionDto(
     val id: Long,
+    val uuid: String? = null,
+    val room_id: String? = null,
     val channel_name: String? = null,
+    val conversation_id: Long? = null,
     val call_type: String = "audio",
     val status: String = "ringing",
+    val outcome: String? = null,
+    val is_mine: Boolean = false,
     val caller: UserDto? = null,
     val receiver: UserDto? = null,
     val participants: List<CallParticipantDto> = emptyList(),
+    val metadata: JsonElement? = null,
     val started_at: String? = null,
     val ended_at: String? = null,
+    val created_at: String? = null,
     val duration_seconds: Int = 0
 )
 
 @Serializable
 data class CallParticipantDto(
-    val id: Long,
-    val user: UserDto,
-    val status: String = "joined",
+    val id: Long = 0L,
+    val call_id: Long? = null,
+    val user: UserDto = UserDto(),
+    val role: String = "participant",
+    val status: String = "ringing",
+    val joined_at: String? = null,
+    val left_at: String? = null,
+    val duration_seconds: Int = 0,
     val is_muted: Boolean = false,
-    val is_camera_off: Boolean = false
+    val is_camera_off: Boolean = false,
+    val is_screen_sharing: Boolean = false
 )
 
 @Serializable
@@ -3695,6 +4040,7 @@ data class MarketplaceProductDto(
     val id: Long,
     val title: String,
     val price: Double = 0.0,
+    val stock: Int = 1,
     val original_price: Double? = null,
     val discount_percent: Int? = null,
     val currency: String = "BDT",
@@ -3714,6 +4060,8 @@ data class MarketplaceProductDto(
     val is_owner: Boolean = false,
     val views_count: Int = 0,
     val created_at: String? = null,
+    val category_id: Long? = null,
+    val subcategory_id: Long? = null,
     val category: MarketplaceCategoryDto? = null,
     val subcategory: MarketplaceSubcategoryDto? = null,
     val seller: MarketplaceSellerDto? = null
@@ -3735,6 +4083,28 @@ data class CreateMarketplaceProductRequest(
     val delivery_charge: Double = 0.0,
     val is_negotiable: Boolean = false,
     val images: List<String> = emptyList()
+)
+
+@Serializable
+data class UpdateMarketplaceProductRequest(
+    val category_id: Long? = null,
+    val subcategory_id: Long? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val price: Double? = null,
+    val original_price: Double? = null,
+    val condition: String? = null,
+    val brand: String? = null,
+    val location: String? = null,
+    val delivery_type: String? = null,
+    val delivery_charge: Double? = null,
+    val is_negotiable: Boolean? = null,
+    val images: List<String>? = null
+)
+
+@Serializable
+data class UpdateMarketplaceStatusRequest(
+    val status: String
 )
 
 @Serializable
@@ -3790,7 +4160,9 @@ data class MarketplaceOrderDto(
     val product_image: String? = null,
     val buyer_id: Long? = null,
     val seller_id: Long? = null,
+    val quantity: Int = 1,
     val amount: Double = 0.0,
+    val total_amount: Double? = null,
     val currency: String = "BDT",
     val status: String = "pending", // pending, confirmed, processing, shipped, delivered, completed, cancelled, disputed, refunded
     val escrow_status: String = "pending",
@@ -3800,7 +4172,58 @@ data class MarketplaceOrderDto(
     val shipping_phone: String? = null,
     val tracking_carrier: String? = null,
     val tracking_number: String? = null,
-    val created_at: String? = null
+    val created_at: String? = null,
+    val product: MarketplaceProductDto? = null
+)
+
+@Serializable
+data class MarketplaceOrdersResponse(
+    val status: String? = null,
+    val success: Boolean = true,
+    val message: String? = null,
+    val items: List<MarketplaceOrderDto>? = null,
+    val data: kotlinx.serialization.json.JsonElement? = null,
+    val summary: MarketplaceSellerSummaryDto? = null
+) {
+    fun resolvedOrders(): List<MarketplaceOrderDto> {
+        if (!items.isNullOrEmpty()) return items
+        val element = data ?: return emptyList()
+        val parser = Json { ignoreUnknownKeys = true; coerceInputValues = true }
+        return try {
+            when (element) {
+                is JsonArray -> parser.decodeFromJsonElement(ListSerializer(MarketplaceOrderDto.serializer()), element)
+                is JsonObject -> {
+                    val nested = element["data"]
+                    if (nested is JsonArray) {
+                        parser.decodeFromJsonElement(ListSerializer(MarketplaceOrderDto.serializer()), nested)
+                    } else {
+                        emptyList()
+                    }
+                }
+                else -> emptyList()
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+}
+
+@Serializable
+data class ShipMarketplaceOrderRequest(
+    val carrier: String? = null,
+    val tracking_number: String? = null
+)
+
+@Serializable
+data class CancelMarketplaceOrderRequest(
+    val reason: String
+)
+
+@Serializable
+data class ContactSellerResponseDto(
+    val conversation_id: Long? = null,
+    val seller_id: Long? = null,
+    val message_sent: Boolean = false
 )
 
 @Serializable
@@ -3840,8 +4263,10 @@ data class OrderMarketplaceProductRequest(
     val shipping_address: String,
     val shipping_name: String,
     val shipping_phone: String,
+    val delivery_type: String = "standard",
     val quantity: Int = 1,
-    val payment_method: String = "sandbox"
+    val payment_method: String = "sandbox",
+    val idempotency_key: String? = null
 )
 
 @Serializable
@@ -3857,7 +4282,12 @@ data class MarketplaceDeleteResponse(
     val status: String? = null,
     val message: String? = null,
     val data: kotlinx.serialization.json.JsonElement? = null
-)
+) {
+    companion object {
+        fun of(success: Boolean = true, status: String? = null, message: String? = null): MarketplaceDeleteResponse =
+            MarketplaceDeleteResponse(success = success, status = status, message = message, data = null)
+    }
+}
 
 @Serializable
 data class SavedItemDto(
@@ -4203,7 +4633,8 @@ data class LearningCategoryDto(
     val slug: String = "",
     val icon: String? = null,
     val description: String? = null,
-    val courses_count: Int = 0
+    val courses_count: Int = 0,
+    val children: List<LearningCategoryDto> = emptyList()
 )
 
 @Serializable
@@ -4231,9 +4662,16 @@ data class LearningCourseDto(
     val rating_avg: Double = 0.0,
     val rating_count: Int = 0,
     val is_featured: Boolean = false,
+    val is_enrolled: Boolean = false,
     val published_at: String? = null,
     val instructor: UserDto? = null,
     val category: LearningCategoryDto? = null
+)
+
+@Serializable
+data class LearningCourseDetailsResponseDto(
+    val course: LearningCourseDto? = null,
+    val is_enrolled: Boolean = false
 )
 
 @Serializable
@@ -4260,12 +4698,36 @@ data class LearningLessonDto(
     val sort_order: Int = 0,
     val is_preview: Boolean = false,
     val is_mandatory: Boolean = true,
-    val is_published: Boolean = true
+    val is_published: Boolean = true,
+    val is_completed: Boolean = false,
+    val last_position_seconds: Int = 0
 )
 
 @Serializable
 data class EnrollCourseRequest(
     val coupon_code: String? = null
+)
+
+@Serializable
+data class UpdateLessonProgressRequest(
+    val position_seconds: Int = 0,
+    val mark_completed: Boolean = false
+)
+
+@Serializable
+data class LearningDashboardMetaDto(
+    val enrolled_count: Int = 0,
+    val in_progress_count: Int = 0,
+    val completed_count: Int = 0,
+    val certificates_count: Int = 0
+)
+
+@Serializable
+data class LearningMyLearningResponse(
+    val success: Boolean = true,
+    val message: String? = null,
+    val data: List<LearningEnrollmentDto> = emptyList(),
+    val meta: LearningDashboardMetaDto? = null
 )
 
 @Serializable
@@ -4361,6 +4823,30 @@ data class LearningReviewDto(
     val created_at: String? = null,
     val user: UserDto? = null
 )
+
+object ApiErrorParser {
+    private val jsonParser = Json { ignoreUnknownKeys = true; isLenient = true }
+
+    fun extractMessage(rawJson: String?, fallback: String): String {
+        if (rawJson.isNullOrBlank()) return fallback
+        return try {
+            val obj = jsonParser.parseToJsonElement(rawJson)
+            if (obj is JsonObject) {
+                val msg = obj["message"]
+                if (msg is kotlinx.serialization.json.JsonPrimitive && msg.isString) {
+                    msg.content.takeIf { it.isNotBlank() } ?: fallback
+                } else {
+                    fallback
+                }
+            } else {
+                fallback
+            }
+        } catch (_: Exception) {
+            "\"message\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(rawJson)?.groupValues?.getOrNull(1) ?: fallback
+        }
+    }
+}
+
 
 
 

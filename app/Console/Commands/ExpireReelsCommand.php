@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
  */
 class ExpireReelsCommand extends Command
 {
-    protected $signature = 'reels:expire';
+    protected $signature = 'reels:expire {--cleanup : Also clean up media files for reels exceeding retention policy} {--retention=24 : Retention period in hours}';
 
     protected $description = 'Expire reels that have passed their 24-hour expiration threshold and broadcast realtime event';
 
@@ -20,6 +20,12 @@ class ExpireReelsCommand extends Command
         $expiredCount = $reelService->expireStaleReels();
 
         $this->info("Successfully expired {$expiredCount} reels.");
+
+        if ($this->option('cleanup')) {
+            $retentionHours = (int) $this->option('retention');
+            $cleanupResult = $reelService->cleanupExpiredReels($retentionHours);
+            $this->info("Cleaned up media for {$cleanupResult['cleaned_reels']} reels ({$cleanupResult['deleted_files']} files removed).");
+        }
 
         return Command::SUCCESS;
     }

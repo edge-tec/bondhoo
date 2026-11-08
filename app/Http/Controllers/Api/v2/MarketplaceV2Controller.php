@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\v2;
 
+use App\Exceptions\MarketplaceConflictException;
 use App\Http\Controllers\Admin\AdminMarketplaceController;
 use App\Http\Controllers\Controller;
 use App\Models\MarketplaceDispute;
@@ -9,8 +10,10 @@ use App\Models\MarketplaceOrder;
 use App\Models\MarketplaceProduct;
 use App\Models\MarketplaceReview;
 use App\Services\Marketplace\MarketplaceService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class MarketplaceV2Controller extends Controller
 {
@@ -37,14 +40,18 @@ class MarketplaceV2Controller extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = MarketplaceProduct::with(['seller', 'category'])->where('status', 'active');
+        $query = MarketplaceProduct::with([
+            'seller:id,name,username,seller_rating,seller_reviews_count,created_at',
+            'seller.profile:id,user_id,avatar_url,is_verified',
+            'category',
+        ])->where('status', 'active');
 
         if ($request->has('category_id')) {
             $query->where('category_id', $request->input('category_id'));
         }
 
         if ($request->has('q')) {
-            $q = $request->input('q');
+            $q = addcslashes((string) $request->input('q'), '%_\\');
             $query->where('title', 'like', "%{$q}%");
         }
 
@@ -60,19 +67,23 @@ class MarketplaceV2Controller extends Controller
     {
         $validated = $request->validate([
             'category_id' => 'required|exists:marketplace_categories,id',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+            'subcategory_id' => 'nullable|exists:marketplace_categories,id',
+            'title' => 'required|string|min:3|max:255',
+            'description' => 'nullable|string|max:10000',
+            'price' => 'required|numeric|min:0|max:100000000',
+            'stock' => 'nullable|integer|min:1|max:100000',
+            'original_price' => 'nullable|numeric|min:0|max:100000000',
             'currency' => 'nullable|string|max:3',
-            'condition' => 'nullable|string',
-            'location' => 'nullable|string',
-            'images' => 'nullable|array',
+            'condition' => 'nullable|string|in:new,used,refurbished',
+            'location' => 'nullable|string|max:255',
+            'images' => 'nullable|array|max:10',
+            'images.*' => ['string', 'max:2000', 'not_regex:/^\s*(javascript|data|vbscript):/i'],
             'variants' => 'nullable|array',
         ]);
 
         $product = $this->marketplaceService->createProduct($request->user(), $validated);
 
-        return response()->json(['status' => 'success', 'data' => $product], 201);
+        return response()->json(['status' => 'success', 'data' => $product->toResponseArray($request->user())], 201);
     }
 
     /**
@@ -90,14 +101,17 @@ class MarketplaceV2Controller extends Controller
             'idempotency_key' => 'nullable|string|max:100',
         ]);
 
+        $user = $request->user();
         $product = MarketplaceProduct::findOrFail($id);
 
         try {
             $isDuplicate = ! empty($validated['idempotency_key'])
-                && MarketplaceOrder::where('idempotency_key', $validated['idempotency_key'])->exists();
+                && MarketplaceOrder::where('buyer_id', $user->id)
+                    ->where('idempotency_key', $validated['idempotency_key'])
+                    ->exists();
 
             $order = $this->marketplaceService->placeOrder(
-                $request->user(),
+                $user,
                 $product,
                 $validated,
                 $request->input('payment_method', 'bkash')
@@ -112,6 +126,13 @@ class MarketplaceV2Controller extends Controller
                 'data' => $order,
                 'order' => $order,
             ], $status);
+        } catch (MarketplaceConflictException $e) {
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'code' => 'LISTING_UNAVAILABLE_CONFLICT',
+                'message' => $e->getMessage(),
+            ], 409);
         } catch (\InvalidArgumentException $e) {
             return response()->json(['status' => 'error', 'success' => false, 'message' => $e->getMessage()], 422);
         }
@@ -125,7 +146,7 @@ class MarketplaceV2Controller extends Controller
         $user = $request->user();
         $order = MarketplaceOrder::where(function ($q) use ($user) {
             $q->where('buyer_id', $user->id);
-            if ($user->is_admin ?? false) {
+            if ($user->isAdmin()) {
                 $q->orWhere('id', '>', 0);
             }
         })->findOrFail($id);
@@ -173,7 +194,7 @@ class MarketplaceV2Controller extends Controller
         $user = $request->user();
         $order = MarketplaceOrder::where(function ($q) use ($user) {
             $q->where('buyer_id', $user->id);
-            if ($user->is_admin ?? false) {
+            if ($user->isAdmin()) {
                 $q->orWhere('id', '>', 0);
             }
         })->findOrFail($id);
@@ -221,7 +242,9 @@ class MarketplaceV2Controller extends Controller
 
         return response()->json([
             'status' => 'success',
+            'success' => true,
             'data' => $orders,
+            'items' => $orders->items(),
             'summary' => $summary,
         ]);
     }
@@ -236,7 +259,7 @@ class MarketplaceV2Controller extends Controller
             ->where(function ($q) use ($user) {
                 $q->where('buyer_id', $user->id)
                     ->orWhere('seller_id', $user->id);
-                if ($user->is_admin ?? false) {
+                if ($user->isAdmin()) {
                     $q->orWhere('id', '>', 0);
                 }
             })
@@ -361,7 +384,7 @@ class MarketplaceV2Controller extends Controller
         $order = MarketplaceOrder::with('product')->findOrFail($id);
         $user = $request->user();
 
-        if ($order->buyer_id !== $user->id) {
+        if ((int) $order->buyer_id !== (int) $user->id) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized. Only the buyer of this order can submit a review.'], 403);
         }
 
@@ -411,7 +434,7 @@ class MarketplaceV2Controller extends Controller
         $order = MarketplaceOrder::where(function ($q) use ($user) {
             $q->where('buyer_id', $user->id)
                 ->orWhere('seller_id', $user->id);
-            if ($user->is_admin ?? false) {
+            if ($user->isAdmin()) {
                 $q->orWhere('id', '>', 0);
             }
         })->findOrFail($id);
@@ -442,9 +465,13 @@ class MarketplaceV2Controller extends Controller
         ]);
 
         $product = MarketplaceProduct::findOrFail($id);
-        $product = $this->marketplaceService->updateListingStatus($product, $request->input('status'), $request->user());
+        try {
+            $product = $this->marketplaceService->updateListingStatus($product, $request->input('status'), $request->user());
 
-        return response()->json(['status' => 'success', 'data' => $product]);
+            return response()->json(['status' => 'success', 'success' => true, 'data' => $product->toResponseArray($request->user())]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['status' => 'error', 'success' => false, 'message' => $e->getMessage()], 403);
+        }
     }
 
     /**
@@ -452,10 +479,24 @@ class MarketplaceV2Controller extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $product = MarketplaceProduct::findOrFail($id);
-        $this->marketplaceService->deleteListing($product, $request->user());
+        $user = $request->user();
+        $product = MarketplaceProduct::withTrashed()->find($id);
 
-        return response()->json(['status' => 'success', 'message' => 'লিস্টিং সফলভাবে মুছে ফেলা হয়েছে।']);
+        if (! $product) {
+            return response()->json(['status' => 'success', 'success' => true, 'message' => 'Listing already removed.', 'data' => null]);
+        }
+
+        if (! Gate::forUser($user)->allows('delete', $product)) {
+            return response()->json(['status' => 'error', 'success' => false, 'message' => 'Unauthorized.', 'data' => null], 403);
+        }
+
+        if ($product->trashed()) {
+            return response()->json(['status' => 'success', 'success' => true, 'message' => 'Listing already removed.', 'data' => null]);
+        }
+
+        $this->marketplaceService->deleteListing($product, $user);
+
+        return response()->json(['status' => 'success', 'success' => true, 'message' => 'লিস্টিং সফলভাবে মুছে ফেলা হয়েছে।', 'data' => null]);
     }
 
     /**

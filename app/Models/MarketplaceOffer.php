@@ -39,11 +39,15 @@ class MarketplaceOffer extends Model
         'rejected_at',
         'countered_at',
         'cancelled_at',
+        'redeemed_at',
     ];
 
     protected function casts(): array
     {
         return [
+            'product_id' => 'integer',
+            'buyer_id' => 'integer',
+            'seller_id' => 'integer',
             'offer_amount' => 'decimal:2',
             'original_price' => 'decimal:2',
             'counter_amount' => 'decimal:2',
@@ -52,12 +56,13 @@ class MarketplaceOffer extends Model
             'rejected_at' => 'datetime',
             'countered_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'redeemed_at' => 'datetime',
         ];
     }
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(MarketplaceProduct::class, 'product_id');
+        return $this->belongsTo(MarketplaceProduct::class, 'product_id')->withTrashed();
     }
 
     public function buyer(): BelongsTo
@@ -72,7 +77,16 @@ class MarketplaceOffer extends Model
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->whereIn('status', [self::STATUS_PENDING, self::STATUS_COUNTERED]);
+        return $query
+            ->whereIn('status', [self::STATUS_PENDING, self::STATUS_COUNTERED])
+            ->where(function (Builder $q): void {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            });
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at !== null && $this->expires_at->isPast();
     }
 
     public function toResponseArray(?User $viewer = null): array
@@ -99,11 +113,12 @@ class MarketplaceOffer extends Model
             'status' => $this->status,
             'message' => $this->message,
             'counter_message' => $this->counter_message,
-            'is_buyer' => $viewer && $viewer->id === $this->buyer_id,
-            'is_seller' => $viewer && $viewer->id === $this->seller_id,
+            'is_buyer' => $viewer ? (int) $viewer->id === (int) $this->buyer_id : false,
+            'is_seller' => $viewer ? (int) $viewer->id === (int) $this->seller_id : false,
+            'is_expired' => $this->isExpired(),
+            'expires_at' => $this->expires_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }
-

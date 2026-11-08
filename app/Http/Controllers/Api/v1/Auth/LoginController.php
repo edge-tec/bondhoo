@@ -58,11 +58,21 @@ class LoginController extends Controller
     {
         $user = $request->user()->load(['profile', 'settings', 'roles.permissions']);
 
+        $userPayload = $user->toArray();
+        $userPayload['friends_count'] = count($user->getFriendIds());
+        $userPayload['followers_count'] = $user->followers()->count();
+        $userPayload['following_count'] = $user->following()->count();
+        if ($user->profile) {
+            $userPayload['avatar'] = $userPayload['avatar'] ?? $user->profile->avatar_url;
+            $userPayload['avatar_url'] = $userPayload['avatar_url'] ?? $user->profile->avatar_url;
+            $userPayload['bio'] = $userPayload['bio'] ?? $user->profile->bio;
+        }
+
         return $this->successResponse(
-            data: [
+            data: array_merge($userPayload, [
                 'user' => $user,
                 'permissions' => $user->roles->flatMap->permissions->pluck('name')->unique()->values(),
-            ],
+            ]),
             message: 'Authenticated user profile.'
         );
     }

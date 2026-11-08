@@ -20,10 +20,21 @@ class RegisterUseCase @Inject constructor(
     operator fun invoke(
         name: String,
         email: String,
+        phone: String,
+        birthDate: String,
+        gender: String,
         password: String,
         passwordConfirmation: String
     ): Flow<Result<User>> {
-        return repository.register(name.trim(), email.trim(), password, passwordConfirmation)
+        return repository.register(
+            name.trim(),
+            email.trim(),
+            phone.trim(),
+            birthDate.trim(),
+            gender.trim(),
+            password,
+            passwordConfirmation
+        )
     }
 }
 

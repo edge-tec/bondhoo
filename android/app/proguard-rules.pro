@@ -30,6 +30,10 @@
 -keepclassmembers class com.connectly.android.core.model.** {
     *** Companion;
 }
+-keep,includedescriptorclasses class com.connectly.android.core.network.api.** { *; }
+-keepclassmembers class com.connectly.android.core.network.api.** {
+    *** Companion;
+}
 
 # 4. Retrofit 2 & OkHttp 3
 -dontwarn okio.**

@@ -17,25 +17,36 @@ data class LearningUiState(
     val activeTab: LearningTab = LearningTab.DISCOVER,
     val categories: List<LearningCategory> = emptyList(),
     val selectedCategoryId: Long? = null,
+    val selectedLevel: String? = null,
+    val selectedType: String? = null,
     val courses: List<LearningCourse> = emptyList(),
     val myLearning: List<LearningEnrollment> = emptyList(),
     val certificates: List<LearningCertificate> = emptyList(),
     val selectedCourseCurriculum: List<LearningSection> = emptyList(),
     val isLoadingCurriculum: Boolean = false,
+    val enrollingCourseIds: Set<Long> = emptySet(),
+    val completingLessonIds: Set<Long> = emptySet(),
     val searchQuery: String = "",
     val enrolledSuccessMessage: String? = null,
+    val enrollErrorMessage: String? = null,
     val errorMessage: String? = null
-)
+) {
+    val inProgressCount: Int get() = myLearning.count { !it.isCompleted }
+    val completedCount: Int get() = myLearning.count { it.isCompleted }
+}
 
 sealed interface LearningIntent {
     data class SelectTab(val tab: LearningTab) : LearningIntent
     data class SelectCategory(val categoryId: Long?) : LearningIntent
+    data class SelectLevel(val level: String?) : LearningIntent
+    data class SelectType(val type: String?) : LearningIntent
     data class SearchQueryChanged(val query: String) : LearningIntent
-    data class EnrollCourse(val courseId: Long) : LearningIntent
+    data class EnrollCourse(val courseId: Long, val couponCode: String? = null) : LearningIntent
     data class LoadCurriculum(val courseId: Long) : LearningIntent
     data class CompleteLesson(val lessonId: Long, val courseId: Long) : LearningIntent
     data object Refresh : LearningIntent
     data object ClearMessage : LearningIntent
+    data object ClearEnrollError : LearningIntent
 }
 
 sealed interface LearningUiEffect {
@@ -43,5 +54,3 @@ sealed interface LearningUiEffect {
     data class NavigateToLesson(val lessonId: Long) : LearningUiEffect
     data class ShowSnackbar(val message: String) : LearningUiEffect
 }
-
-

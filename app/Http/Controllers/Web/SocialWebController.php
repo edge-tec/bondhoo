@@ -43,6 +43,7 @@ use App\Services\Streaming\LiveGatewayService;
 use Database\Seeders\PageTaxonomySeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -105,15 +106,6 @@ class SocialWebController extends Controller
 
         if ($sessionUser) {
             return $sessionUser;
-        }
-
-        if (app()->environment('local')) {
-            $devUser = User::first();
-            if ($devUser) {
-                auth('web')->login($devUser);
-
-                return $devUser;
-            }
         }
 
         return null;
@@ -1695,6 +1687,12 @@ class SocialWebController extends Controller
         $categories = $this->marketplaceService->getTopCategoriesWithCounts();
         $featuredListings = $this->marketplaceService->getFeaturedListings($viewer, 8);
         $latestPaginator = $this->marketplaceService->getLatestListings($viewer, $filters, 16);
+        $savedListings = $viewer
+            ? collect($this->marketplaceService->getSavedListings($viewer, 32)->items())
+                ->map(fn ($p) => $p instanceof MarketplaceProduct ? $p->toResponseArray($viewer) : $p)
+                ->values()
+                ->all()
+            : [];
         $sidebarData = $this->getSidebarData($viewer);
 
         return Inertia::render('Marketplace/Index', [
@@ -1707,6 +1705,8 @@ class SocialWebController extends Controller
                 'per_page' => $latestPaginator->perPage(),
                 'total' => $latestPaginator->total(),
             ],
+            'savedListings' => $savedListings,
+            'activeTab' => (string) $request->query('tab', 'discover'),
             'filters' => $filters,
             'marketplaceProducts' => $latestPaginator->items(),
             'pendingRequests' => $sidebarData['pendingRequests'],
@@ -1726,7 +1726,14 @@ class SocialWebController extends Controller
         $viewer = $this->resolveViewer($request);
 
         $product = MarketplaceProduct::with(['seller.profile', 'category'])->findOrFail($id);
-        $product->increment('views_count');
+
+        if (! Gate::forUser($viewer)->allows('view', $product)) {
+            abort(404);
+        }
+
+        if (! $viewer || (int) $viewer->id !== (int) $product->seller_id) {
+            $product->increment('views_count');
+        }
 
         $productData = $product->toResponseArray($viewer);
 
@@ -1741,11 +1748,13 @@ class SocialWebController extends Controller
             ->values()
             ->all();
 
+        $categories = $this->marketplaceService->getCategories();
         $sidebarData = $this->getSidebarData($viewer);
 
         return Inertia::render('Marketplace/Show', [
             'product' => array_merge($productData, ['related_products' => $related]),
             'marketplaceProduct' => $productData,
+            'categories' => $categories,
             'pendingRequests' => $sidebarData['pendingRequests'],
             'contacts' => $sidebarData['contacts'],
             'suggestions' => $sidebarData['suggestions'],
@@ -1772,7 +1781,7 @@ class SocialWebController extends Controller
                 ->with('error', 'This listing is no longer available for purchase.');
         }
 
-        if ($product->seller_id === $viewer->id) {
+        if ((int) $product->seller_id === (int) $viewer->id) {
             return redirect()->route('marketplace.show', ['id' => $id])
                 ->with('error', 'You cannot purchase your own listing.');
         }
@@ -1839,6 +1848,7 @@ class SocialWebController extends Controller
             return $p->toResponseArray($viewer);
         });
 
+        $categories = $this->marketplaceService->getCategories();
         $sidebarData = $this->getSidebarData($viewer);
 
         return Inertia::render('Marketplace/MyListings', [
@@ -1848,6 +1858,7 @@ class SocialWebController extends Controller
                 'last_page' => $paginator->lastPage(),
                 'total' => $paginator->total(),
             ],
+            'categories' => $categories,
             'currentStatus' => $status,
             'marketplaceMyListings' => true,
             'pendingRequests' => $sidebarData['pendingRequests'],

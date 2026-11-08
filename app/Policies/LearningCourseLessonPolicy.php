@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Models\LearningCourse;
 use App\Models\LearningCourseLesson;
 use App\Models\User;
 
@@ -14,19 +15,39 @@ class LearningCourseLessonPolicy
      */
     public function view(User $user, LearningCourseLesson $lesson): bool
     {
-        // Free preview lessons are accessible to all authenticated users
+        $course = $lesson->course;
+        if (! $course) {
+            return false;
+        }
+
+        // Instructor and Admins always have access
+        if ((int) $user->id === (int) $course->instructor_id || $user->isAdmin()) {
+            return true;
+        }
+
+        if (! $lesson->is_published || $course->status !== LearningCourse::STATUS_PUBLISHED) {
+            return false;
+        }
+
+        // Free preview lessons on published courses are accessible to authenticated users
         if ($lesson->is_preview) {
             return true;
         }
 
-        $course = $lesson->course;
+        // Active or completed enrollment gives access
+        return $course->isEnrolledByUser($user);
+    }
 
-        // Instructor and Admins always have access
-        if ($user->id === $course->instructor_id || $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
-            return true;
+    /**
+     * Determine whether the user can record or complete lesson progress.
+     */
+    public function trackProgress(User $user, LearningCourseLesson $lesson): bool
+    {
+        $course = $lesson->course;
+        if (! $course || ! $lesson->is_published) {
+            return false;
         }
 
-        // Active enrollment gives access
         return $course->isEnrolledByUser($user);
     }
 }

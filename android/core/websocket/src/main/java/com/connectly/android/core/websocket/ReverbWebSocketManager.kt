@@ -122,6 +122,9 @@ class ReverbWebSocketManager @Inject constructor(
     private val _groupFlow = MutableSharedFlow<GroupEvent>(extraBufferCapacity = 16)
     val groupFlow: SharedFlow<GroupEvent> = _groupFlow.asSharedFlow()
 
+    private val _profileUpdatedFlow = MutableSharedFlow<ProfileUpdatedEvent>(extraBufferCapacity = 16)
+    val profileUpdatedFlow: SharedFlow<ProfileUpdatedEvent> = _profileUpdatedFlow.asSharedFlow()
+
     // Subscribed Channels Set for Auto-Recovery on Reconnect
     private val subscribedChannels = Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
 
@@ -147,8 +150,13 @@ class ReverbWebSocketManager @Inject constructor(
         _connectionState.value = ConnectionState.Connecting
 
         val token = tokenStorageManager.getAccessToken()
+        val wsUrl = if (com.connectly.android.core.network.BuildConfig.DEBUG) {
+            "ws://10.0.2.2:8080/app/connectly_reverb_key?protocol=7&client=android&version=1.0.0"
+        } else {
+            "wss://bondhoo.com/app/connectly_reverb_key?protocol=7&client=android&version=1.0.0"
+        }
         val request = Request.Builder()
-            .url("wss://bondhoo.com/app/connectly_reverb_key?protocol=7&client=android&version=1.0.0")
+            .url(wsUrl)
             .apply {
                 if (!token.isNullOrBlank()) {
                     header("Authorization", "Bearer $token")
@@ -220,15 +228,20 @@ class ReverbWebSocketManager @Inject constructor(
                         if (isDuplicate("new_$msgId") || isDuplicate(clientUuid)) return
 
                         val currentUserId = tokenStorageManager.getUserId()
-                        val senderId = msgJson.optLong("sender_id")
                         val senderJson = msgJson.optJSONObject("sender")
-                        val senderName = senderJson?.optString("name") ?: msgJson.optString("sender_name", "User")
+                        val senderId = msgJson.optLong("sender_id").takeIf { it > 0L }
+                            ?: senderJson?.optLong("id")
+                            ?: 0L
+                        val senderName = senderJson?.optString("name")?.takeIf { it.isNotBlank() }
+                            ?: msgJson.optString("sender_name", "User")
+                        val senderAvatar = senderJson?.optString("avatar_url")?.takeIf { it.isNotBlank() }
 
                         val message = Message(
                             id = msgId,
                             conversationId = convId,
                             senderId = senderId,
                             senderName = senderName,
+                            senderAvatar = senderAvatar,
                             body = msgJson.optString("body", ""),
                             type = msgJson.optString("type", "text"),
                             clientMessageId = clientUuid,
@@ -742,6 +755,30 @@ class ReverbWebSocketManager @Inject constructor(
                         }
                     }
                 }
+
+                // Profile updates (bio, details, avatar, cover)
+                "profile.updated", "profile.avatar.updated", "profile.cover.updated" -> {
+                    if (dataStr.isNotBlank()) {
+                        val data = JSONObject(dataStr)
+                        val userId = data.optLong("user_id", data.optLong("id"))
+                        val username = data.optString("username", "")
+                        val avatarUrl = if (data.has("avatar_url") && !data.isNull("avatar_url")) data.getString("avatar_url") else null
+                        val coverUrl = if (data.has("cover_url") && !data.isNull("cover_url")) data.getString("cover_url") else null
+                        val name = if (data.has("name") && !data.isNull("name")) data.getString("name") else null
+
+                        scope.launch {
+                            _profileUpdatedFlow.emit(
+                                ProfileUpdatedEvent(
+                                    userId = userId,
+                                    username = username,
+                                    avatarUrl = avatarUrl,
+                                    coverUrl = coverUrl,
+                                    name = name
+                                )
+                            )
+                        }
+                    }
+                }
             }
         } catch (_: Exception) {
             // Malformed frame ignored
@@ -822,6 +859,18 @@ class ReverbWebSocketManager @Inject constructor(
         val channel = "group.$groupId"
         subscribedChannels.add(channel)
         authorizeAndSubscribe(channel)
+    }
+
+    fun subscribeProfileChannel(username: String) {
+        val channel = "profile.$username"
+        subscribedChannels.add(channel)
+        sendPublicSubscribe(channel)
+    }
+
+    fun unsubscribeProfileChannel(username: String) {
+        val channel = "profile.$username"
+        subscribedChannels.remove(channel)
+        sendUnsubscribe(channel)
     }
 
     private fun sendPublicSubscribe(channel: String) {

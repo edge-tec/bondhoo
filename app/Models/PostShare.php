@@ -14,6 +14,8 @@ class PostShare extends Model
         'user_id',
         'post_id',
         'caption',
+        'target_type',
+        'target_id',
     ];
 
     public function user(): BelongsTo

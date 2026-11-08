@@ -11,8 +11,8 @@ import javax.inject.Inject
 class GetReelsFeedUseCase @Inject constructor(
     private val repository: ReelsRepository
 ) {
-    operator fun invoke(page: Int = 1, perPage: Int = 10): Flow<Result<List<Reel>>> =
-        repository.getReelsFeed(page, perPage)
+    operator fun invoke(page: Int = 1, perPage: Int = 10, tab: String = "for_you"): Flow<Result<List<Reel>>> =
+        repository.getReelsFeed(page, perPage, tab)
 }
 
 class CreateReelUseCase @Inject constructor(

@@ -29,6 +29,7 @@ class MarketplaceProduct extends Model
         'title',
         'description',
         'price',
+        'stock',
         'original_price',
         'discount_percent',
         'currency',
@@ -77,7 +78,11 @@ class MarketplaceProduct extends Model
     protected function casts(): array
     {
         return [
+            'seller_id' => 'integer',
+            'category_id' => 'integer',
+            'subcategory_id' => 'integer',
             'price' => 'decimal:2',
+            'stock' => 'integer',
             'original_price' => 'decimal:2',
             'discount_percent' => 'integer',
             'delivery_charge' => 'decimal:2',
@@ -168,6 +173,13 @@ class MarketplaceProduct extends Model
      */
     public function getSellerRatingInfo(): array
     {
+        if ($this->relationLoaded('seller') && $this->seller && (int) ($this->seller->seller_reviews_count ?? 0) > 0) {
+            return [
+                'rating' => round((float) $this->seller->seller_rating, 1),
+                'count' => (int) $this->seller->seller_reviews_count,
+            ];
+        }
+
         $reviewsQuery = MarketplaceReview::where('seller_id', $this->seller_id);
         $count = $reviewsQuery->count();
 
@@ -217,11 +229,16 @@ class MarketplaceProduct extends Model
             return url($img);
         }, $images);
 
+        $isSaved = array_key_exists('preloaded_is_saved', $this->attributes)
+            ? (bool) $this->attributes['preloaded_is_saved']
+            : $this->isSavedBy($viewer);
+
         return [
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description ?: '',
             'price' => (float) $this->price,
+            'stock' => $this->stock !== null ? (int) $this->stock : null,
             'original_price' => $this->original_price !== null ? (float) $this->original_price : null,
             'discount_percent' => $this->discount_percent !== null ? (int) $this->discount_percent : null,
             'currency' => $currency,
@@ -265,7 +282,8 @@ class MarketplaceProduct extends Model
                 'reviews_count' => $ratingInfo['count'],
                 'member_since' => $seller?->created_at ? $seller->created_at->format('M Y') : '2024',
             ],
-            'is_favorited' => $this->isSavedBy($viewer),
+            'is_favorited' => $isSaved,
+            'is_saved' => $isSaved,
             'is_owner' => $viewer && (int) $viewer->id === (int) $this->seller_id,
         ];
     }

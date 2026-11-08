@@ -10,7 +10,9 @@ use App\Models\LearningCourseProgress;
 use App\Models\LearningEnrollment;
 use App\Models\LearningLessonProgress;
 use App\Models\User;
+use App\Services\Contracts\NotificationServiceInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LearningProgressService
 {
@@ -31,23 +33,29 @@ class LearningProgressService
             $enrollment = LearningEnrollment::where('course_id', $lesson->course_id)
                 ->where('user_id', $user->id)
                 ->whereIn('status', [LearningEnrollment::STATUS_ACTIVE, LearningEnrollment::STATUS_COMPLETED])
+                ->lockForUpdate()
                 ->firstOrFail();
 
-            $lessonProgress = LearningLessonProgress::firstOrNew([
-                'user_id' => $user->id,
-                'lesson_id' => $lesson->id,
-            ]);
+            $enrollment->update(['last_accessed_at' => now()]);
 
-            $isNewlyCompleted = false;
+            $lessonProgress = LearningLessonProgress::where('user_id', $user->id)
+                ->where('lesson_id', $lesson->id)
+                ->lockForUpdate()
+                ->first();
 
-            if (! $lessonProgress->exists) {
+            if (! $lessonProgress) {
+                $lessonProgress = new LearningLessonProgress([
+                    'user_id' => $user->id,
+                    'lesson_id' => $lesson->id,
+                ]);
                 $lessonProgress->enrollment_id = $enrollment->id;
                 $lessonProgress->course_id = $lesson->course_id;
                 $lessonProgress->watch_time_seconds = $positionSeconds;
                 $lessonProgress->last_position_seconds = $positionSeconds;
                 $lessonProgress->is_completed = false;
             } else {
-                $lessonProgress->watch_time_seconds = max($lessonProgress->watch_time_seconds, $positionSeconds);
+                $lessonProgress->enrollment_id = $lessonProgress->enrollment_id ?: $enrollment->id;
+                $lessonProgress->watch_time_seconds = max((int) $lessonProgress->watch_time_seconds, $positionSeconds);
                 $lessonProgress->last_position_seconds = $positionSeconds;
             }
 
@@ -62,7 +70,6 @@ class LearningProgressService
             if (($markCompleted === true || $autoComplete) && ! $lessonProgress->is_completed) {
                 $lessonProgress->is_completed = true;
                 $lessonProgress->completed_at = now();
-                $isNewlyCompleted = true;
             }
 
             $lessonProgress->save();
@@ -83,18 +90,25 @@ class LearningProgressService
         User $user,
         LearningCourse $course
     ): LearningCourseProgress {
-        $totalLessons = (int) $course->lessons()->where('is_published', true)->count();
-        if ($totalLessons === 0) {
-            $totalLessons = 1;
-        }
+        $publishedLessonIds = $course->lessons()
+            ->where('is_published', true)
+            ->pluck('id')
+            ->all();
 
-        $completedLessons = LearningLessonProgress::where('course_id', $course->id)
-            ->where('user_id', $user->id)
-            ->where('is_completed', true)
-            ->count();
+        $totalLessons = count($publishedLessonIds);
 
-        $percentage = min(100.00, round(($completedLessons / $totalLessons) * 100, 2));
-        $isCompleted = ($percentage >= 100.00);
+        $completedLessons = $totalLessons > 0
+            ? LearningLessonProgress::where('course_id', $course->id)
+                ->where('user_id', $user->id)
+                ->whereIn('lesson_id', $publishedLessonIds)
+                ->where('is_completed', true)
+                ->count()
+            : 0;
+
+        $percentage = $totalLessons > 0
+            ? min(100.00, round(($completedLessons / $totalLessons) * 100, 2))
+            : 0.00;
+        $isCompleted = ($totalLessons > 0 && $completedLessons >= $totalLessons);
 
         $courseProgress = LearningCourseProgress::updateOrCreate(
             ['enrollment_id' => $enrollment->id],
@@ -113,10 +127,29 @@ class LearningProgressService
             $enrollment->update([
                 'status' => LearningEnrollment::STATUS_COMPLETED,
                 'completed_at' => now(),
+                'last_accessed_at' => now(),
             ]);
 
             // Auto issue completion certificate
             $this->certificateService->issueCertificate($user, $course);
+
+            DB::afterCommit(function () use ($user, $course, $enrollment): void {
+                try {
+                    app(NotificationServiceInterface::class)->send(
+                        recipientId: (int) $user->id,
+                        type: 'learning.course_completed',
+                        data: [
+                            'title' => 'Course Completed!',
+                            'message' => "Congratulations! You completed {$course->title}.",
+                            'course_id' => (int) $course->id,
+                            'course_slug' => $course->slug,
+                            'enrollment_id' => (int) $enrollment->id,
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to dispatch course completion notification', ['error' => $e->getMessage()]);
+                }
+            });
         }
 
         return $courseProgress;

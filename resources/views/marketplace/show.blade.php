@@ -151,14 +151,54 @@
             </div>
         </div>
 
-        <!-- Order Action Button -->
-        <button class="btn-fb-primary" style="padding: 12px 20px; font-size: 16px; justify-content: center; margin-bottom: 10px;" onclick="openOrderModal()">
-            ⚡ অর্ডার করুন (নিরাপদ এসক্রো)
-        </button>
+        @php
+            $isOwner = $currentUser && (int) $currentUser->id === (int) $product->seller_id;
+        @endphp
 
-        <a href="/messages" class="btn-fb-secondary" style="padding: 10px 20px; font-size: 14px; justify-content: center; margin-bottom: 20px;">
-            💬 বিক্রেতাকে মেসেজ পাঠান
-        </a>
+        @if($isOwner)
+            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                <div style="font-weight: 800; font-size: 14px; color: #1d4ed8; margin-bottom: 10px;">
+                    🏷️ এটি আপনার নিজের লিস্টিং ({{ strtoupper($product->status) }})
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <a href="{{ route('marketplace.my-listings') }}" class="btn-fb-primary" style="padding: 8px 14px; font-size: 13px; text-decoration: none;">
+                        ✏️ লিস্টিং ম্যানেজ করুন
+                    </a>
+                    @if($product->status === 'active')
+                        <form method="POST" action="{{ route('marketplace.products.status', $product->id) }}" style="margin: 0;">
+                            @csrf
+                            <input type="hidden" name="status" value="sold">
+                            <button type="submit" class="btn-fb-secondary" style="padding: 8px 14px; font-size: 13px;">✓ Sold মার্ক করুন</button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('marketplace.products.status', $product->id) }}" style="margin: 0;">
+                            @csrf
+                            <input type="hidden" name="status" value="active">
+                            <button type="submit" class="btn-fb-secondary" style="padding: 8px 14px; font-size: 13px;">↻ সক্রিয় করুন</button>
+                        </form>
+                    @endif
+                    <form method="POST" action="{{ route('marketplace.products.destroy', $product->id) }}" onsubmit="return confirm('আপনি কি নিশ্চিতভাবে এই বিজ্ঞাপনটি মুছে ফেলতে চান?');" style="margin: 0;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn-fb-secondary" style="padding: 8px 14px; font-size: 13px; color: #dc2626;">🗑️ মুছে ফেলুন</button>
+                    </form>
+                </div>
+            </div>
+        @else
+            @if($product->status === 'active')
+                <button class="btn-fb-primary" style="padding: 12px 20px; font-size: 16px; justify-content: center; margin-bottom: 10px;" onclick="openOrderModal()">
+                    ⚡ অর্ডার করুন (নিরাপদ এসক্রো)
+                </button>
+            @else
+                <div style="padding: 12px 16px; border-radius: 10px; background: #f1f5f9; color: #475569; font-weight: 700; font-size: 14px; text-align: center; margin-bottom: 10px;">
+                    এই পণ্যটি বর্তমানে বিক্রির জন্য উপলব্ধ নয় ({{ strtoupper($product->status) }})
+                </div>
+            @endif
+
+            <a href="/messages" class="btn-fb-secondary" style="padding: 10px 20px; font-size: 14px; justify-content: center; margin-bottom: 20px;">
+                💬 বিক্রেতাকে মেসেজ পাঠান
+            </a>
+        @endif
 
         <!-- Seller Profile Card -->
         <div class="seller-box">

@@ -32,6 +32,28 @@ class LiveKitService
     }
 
     /**
+     * Audit and verify LiveKit SFU health status without leaking secrets.
+     *
+     * @return array<string, mixed>
+     */
+    public function getHealthStatus(): array
+    {
+        $serverUrl = $this->getServerUrl();
+        $apiKey = $this->getApiKey();
+        $apiSecret = $this->getApiSecret();
+
+        $isConfigured = ! empty($serverUrl) && ! empty($apiKey) && ! empty($apiSecret) && ! str_contains($serverUrl, 'placeholder');
+
+        return [
+            'is_configured' => $isConfigured,
+            'server_url' => $serverUrl,
+            'has_api_key' => ! empty($apiKey),
+            'has_api_secret' => ! empty($apiSecret),
+            'timestamp' => now()->toIso8601String(),
+        ];
+    }
+
+    /**
      * Generate a cryptographic LiveKit access token with video grants.
      *
      * @param  array<string, mixed>  $customGrants

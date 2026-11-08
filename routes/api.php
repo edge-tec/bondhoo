@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\EmailManagementController;
 use App\Http\Controllers\Api\v1\Admin\AdminAuthController;
 use App\Http\Controllers\Api\v1\Admin\InfrastructureController;
 use App\Http\Controllers\Api\v1\AdminJobPortalApiController;
+use App\Http\Controllers\Api\v1\AdminModerationController;
 use App\Http\Controllers\Api\v1\AnalyticsController;
 use App\Http\Controllers\Api\v1\AppVersionController;
 use App\Http\Controllers\Api\v1\AtsApiController;
@@ -54,8 +55,10 @@ use App\Http\Controllers\Api\v1\ProfileEnterpriseApiController;
 use App\Http\Controllers\Api\v1\ReactionController;
 use App\Http\Controllers\Api\v1\ReportController;
 use App\Http\Controllers\Api\v1\SavedMessageController;
+use App\Http\Controllers\Api\v1\SavedPostController;
 use App\Http\Controllers\Api\v1\SearchController;
 use App\Http\Controllers\Api\v1\SettingsApiController;
+use App\Http\Controllers\Api\v1\SharingController;
 use App\Http\Controllers\Api\v1\StoryController;
 use App\Http\Controllers\Api\v1\SystemController;
 use App\Http\Controllers\Api\v1\UserController;
@@ -158,12 +161,27 @@ Route::prefix('v1')->group(function () {
     Route::get('/search', [SearchController::class, 'search'])->middleware('throttle:search');
 
     // Public Marketplace v1 endpoints
-    Route::get('/marketplace/categories', [MarketplaceApiController::class, 'categories']);
-    Route::get('/marketplace/products', [MarketplaceApiController::class, 'index']);
-    Route::get('/marketplace/featured', [MarketplaceApiController::class, 'featured']);
-    Route::get('/marketplace/products/{id}', [MarketplaceApiController::class, 'show'])->whereNumber('id');
-    Route::post('/marketplace/media/upload', [MarketplaceApiController::class, 'uploadMedia']);
-    Route::post('/marketplace/upload-media', [MarketplaceApiController::class, 'uploadMedia']);
+    Route::middleware(['throttle:marketplace-learning'])->group(function () {
+        Route::get('/marketplace/categories', [MarketplaceApiController::class, 'categories']);
+        Route::get('/marketplace/products', [MarketplaceApiController::class, 'index']);
+        Route::get('/marketplace/featured', [MarketplaceApiController::class, 'featured']);
+        Route::get('/marketplace/products/{id}', [MarketplaceApiController::class, 'show'])->whereNumber('id');
+    });
+
+    // Public Learning & Certificate Discovery (Optional Sanctum/Web user resolved inside controller)
+    Route::prefix('learning')->middleware(['throttle:marketplace-learning'])->group(function () {
+        Route::get('/categories', [LearningCourseApiController::class, 'categories']);
+        Route::get('/categories/{category}', [LearningCourseApiController::class, 'showCategory']);
+        Route::get('/courses/featured', [LearningCourseApiController::class, 'featured']);
+        Route::get('/courses/popular', [LearningCourseApiController::class, 'popular']);
+        Route::get('/courses', [LearningCourseApiController::class, 'index']);
+        Route::get('/courses/{slug}', [LearningCourseApiController::class, 'show']);
+        Route::get('/courses/{id}/curriculum', [LearningCurriculumApiController::class, 'index'])->whereNumber('id');
+        Route::get('/courses/{id}/reviews', [LearningReviewApiController::class, 'index'])->whereNumber('id');
+        Route::get('/certificates/verify/{code}', [LearningCertificateApiController::class, 'verify']);
+        Route::get('/certificates/{code}/download', [LearningCertificateApiController::class, 'download']);
+        Route::get('/certificates/{code}', [LearningCertificateApiController::class, 'verify'])->where('code', '(?!^[0-9]+$)[A-Za-z0-9\-_]+');
+    });
 
     // Public Job Board & Career Discovery (Phase 12 Professional Recruitment Platform)
     Route::get('/jobs/categories', [JobApiController::class, 'categories']);
@@ -273,6 +291,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/search', [ProfileEnterpriseApiController::class, 'searchProfiles']);
         });
 
+        Route::get('/profile/{username}', [ProfileController::class, 'show'])->where('username', '[A-Za-z0-9_.-]+');
+
         // Two-Factor Authentication Management
         Route::post('/auth/2fa/setup', [TwoFactorController::class, 'setup']);
         Route::post('/auth/2fa/enable', [TwoFactorController::class, 'enable']);
@@ -326,6 +346,12 @@ Route::prefix('v1')->group(function () {
         Route::delete('/users/{id}/block', [FriendController::class, 'unblock'])->whereNumber('id');
         Route::post('/friends/{id}/block', [FriendController::class, 'block'])->whereNumber('id');
         Route::delete('/friends/{id}/block', [FriendController::class, 'unblock'])->whereNumber('id');
+        Route::post('/users/{id}/mute', [FriendController::class, 'mute'])->whereNumber('id');
+        Route::delete('/users/{id}/mute', [FriendController::class, 'unmute'])->whereNumber('id');
+        Route::post('/users/{id}/unmute', [FriendController::class, 'unmute'])->whereNumber('id');
+        Route::post('/users/{id}/snooze', [FriendController::class, 'snooze'])->whereNumber('id');
+        Route::post('/friends/{id}/unmute', [FriendController::class, 'unmute'])->whereNumber('id');
+        Route::post('/friends/{id}/snooze', [FriendController::class, 'snooze'])->whereNumber('id');
 
         // Content Reporting
         Route::post('/reports', [ReportController::class, 'store'])->middleware('throttle:reports');
@@ -420,18 +446,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/admin/jobs/skills', [AdminJobPortalApiController::class, 'createSkill']);
 
         // Professional Learning & Development Platform (Phase 13 LMS)
-        Route::prefix('learning')->group(function () {
-            // Marketplace & Course Discovery
-            Route::get('/categories', [LearningCourseApiController::class, 'categories']);
-            Route::get('/categories/{category}', [LearningCourseApiController::class, 'showCategory']);
+        Route::prefix('learning')->middleware(['throttle:marketplace-learning'])->group(function () {
+            // Admin Category Management
             Route::post('/admin/categories', [LearningCourseApiController::class, 'storeCategory']);
             Route::put('/admin/categories/{id}', [LearningCourseApiController::class, 'updateCategory'])->whereNumber('id');
             Route::delete('/admin/categories/{id}', [LearningCourseApiController::class, 'destroyCategory'])->whereNumber('id');
 
-            Route::get('/courses/featured', [LearningCourseApiController::class, 'featured']);
-            Route::get('/courses/popular', [LearningCourseApiController::class, 'popular']);
-            Route::get('/courses', [LearningCourseApiController::class, 'index']);
-            Route::get('/courses/{slug}', [LearningCourseApiController::class, 'show']);
             Route::post('/courses', [LearningCourseApiController::class, 'store']);
             Route::put('/courses/{id}', [LearningCourseApiController::class, 'update'])->whereNumber('id');
             Route::delete('/courses/{id}', [LearningCourseApiController::class, 'destroyCourse'])->whereNumber('id');
@@ -447,7 +467,6 @@ Route::prefix('v1')->group(function () {
             Route::delete('/instructor/courses/{id}', [LearningCourseApiController::class, 'destroyCourse'])->whereNumber('id');
 
             // Curriculum & Content Management
-            Route::get('/courses/{id}/curriculum', [LearningCurriculumApiController::class, 'index'])->whereNumber('id');
             Route::post('/courses/{id}/sections', [LearningCurriculumApiController::class, 'storeSection'])->whereNumber('id');
             Route::post('/instructor/courses/{id}/sections', [LearningCurriculumApiController::class, 'storeSection'])->whereNumber('id');
             Route::put('/sections/{id}', [LearningCurriculumApiController::class, 'updateSection'])->whereNumber('id');
@@ -502,13 +521,10 @@ Route::prefix('v1')->group(function () {
             // Verified Certifications
             Route::post('/courses/{id}/certificate', [LearningCertificateApiController::class, 'claim'])->whereNumber('id');
             Route::get('/my-certificates', [LearningCertificateApiController::class, 'myCertificates']);
-            Route::get('/certificates/verify/{code}', [LearningCertificateApiController::class, 'verify']);
             Route::get('/certificates/{id}', [LearningCertificateApiController::class, 'show'])->whereNumber('id');
-            Route::get('/certificates/{code}', [LearningCertificateApiController::class, 'verify']);
             Route::post('/instructor/certificates/{id}/revoke', [LearningCertificateApiController::class, 'revoke'])->whereNumber('id');
 
             // Reviews & Ratings
-            Route::get('/courses/{id}/reviews', [LearningReviewApiController::class, 'index'])->whereNumber('id');
             Route::post('/courses/{id}/reviews', [LearningReviewApiController::class, 'store'])->whereNumber('id');
             Route::post('/reviews/{id}/reply', [LearningReviewApiController::class, 'reply'])->whereNumber('id');
 
@@ -597,6 +613,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/calls', [CallController::class, 'initiate']);
         Route::get('/calls/history', [CallController::class, 'history']);
         Route::get('/calls/ice-servers', [CallController::class, 'iceServers']);
+        Route::get('/calls/health', [CallController::class, 'health']);
         Route::get('/calls/active', [CallController::class, 'active']);
         Route::get('/calls/{id}', [CallController::class, 'show']);
         Route::get('/calls/{id}/token', [CallController::class, 'token']);
@@ -769,10 +786,28 @@ Route::prefix('v1')->group(function () {
         Route::post('/posts', [PostController::class, 'store'])->middleware('throttle:posts');
         Route::put('/posts/{id}', [PostController::class, 'update'])->whereNumber('id');
         Route::delete('/posts/{id}', [PostController::class, 'destroy'])->whereNumber('id');
+        Route::post('/posts/{id}/hide', [PostController::class, 'hide'])->whereNumber('id');
+        Route::post('/posts/{id}/unhide', [PostController::class, 'unhide'])->whereNumber('id');
+        Route::post('/posts/{id}/save', [SavedPostController::class, 'save'])->whereNumber('id');
+        Route::delete('/posts/{id}/save', [SavedPostController::class, 'unsave'])->whereNumber('id');
+        Route::post('/posts/{id}/unsave', [SavedPostController::class, 'unsave'])->whereNumber('id');
+        Route::get('/saved-posts', [SavedPostController::class, 'index']);
+        Route::get('/saved-posts/collections', [SavedPostController::class, 'collections']);
+        Route::post('/saved-posts/collections', [SavedPostController::class, 'storeCollection']);
+        Route::put('/saved-posts/collections/{id}', [SavedPostController::class, 'updateCollection'])->whereNumber('id');
+        Route::delete('/saved-posts/collections/{id}', [SavedPostController::class, 'destroyCollection'])->whereNumber('id');
+        Route::post('/saved-posts/collections/{id}/add', [SavedPostController::class, 'addToCollection'])->whereNumber('id');
+        Route::post('/saved-posts/collections/{id}/remove', [SavedPostController::class, 'removeFromCollection'])->whereNumber('id');
+
         Route::post('/posts/{id}/pin', [PostController::class, 'togglePin'])->whereNumber('id');
         Route::post('/posts/{id}/toggle-comments', [PostController::class, 'toggleComments'])->whereNumber('id');
         Route::post('/posts/{id}/comments/toggle', [PostController::class, 'toggleComments'])->whereNumber('id');
         Route::post('/posts/{id}/share', [PostController::class, 'share'])->whereNumber('id')->middleware('throttle:shares');
+        Route::post('/posts/{id}/share/timeline', [SharingController::class, 'shareToTimeline'])->whereNumber('id')->middleware('throttle:shares');
+        Route::post('/posts/{id}/share/groups', [SharingController::class, 'shareToGroups'])->whereNumber('id')->middleware('throttle:shares');
+        Route::post('/posts/{id}/share/pages', [SharingController::class, 'shareToPages'])->whereNumber('id')->middleware('throttle:shares');
+        Route::get('/sharing/eligible-groups', [SharingController::class, 'eligibleGroups']);
+        Route::get('/sharing/eligible-pages', [SharingController::class, 'eligiblePages']);
         Route::post('/posts/{id}/poll/vote', [PostController::class, 'votePoll'])->whereNumber('id');
         Route::post('/posts/{id}/collaborator', [PostController::class, 'respondCollaborator'])->whereNumber('id');
         Route::post('/posts/{id}/impression', [AnalyticsController::class, 'impression'])->whereNumber('id');
@@ -842,48 +877,65 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/reports', [ReportController::class, 'index']);
             Route::put('/reports/{id}', [ReportController::class, 'update']);
+
+            // Phase 16.9: OpenAI AI Content Moderation & Anti-Abuse Engine
+            Route::prefix('moderation')->group(function () {
+                Route::get('/overview', [AdminModerationController::class, 'overview']);
+                Route::get('/queue', [AdminModerationController::class, 'queue']);
+                Route::get('/settings', [AdminModerationController::class, 'settings']);
+                Route::put('/settings', [AdminModerationController::class, 'updateSettings']);
+                Route::get('/{id}', [AdminModerationController::class, 'show'])->whereNumber('id');
+                Route::post('/{id}/approve', [AdminModerationController::class, 'approve'])->whereNumber('id');
+                Route::post('/{id}/reject', [AdminModerationController::class, 'reject'])->whereNumber('id');
+                Route::post('/{id}/escalate', [AdminModerationController::class, 'escalate'])->whereNumber('id');
+                Route::post('/{id}/suspend-user', [AdminModerationController::class, 'suspendUser'])->whereNumber('id');
+            });
         });
 
-        // Marketplace v1
-        Route::post('/marketplace/products', [MarketplaceApiController::class, 'store']);
-        Route::put('/marketplace/products/{id}', [MarketplaceApiController::class, 'update'])->whereNumber('id');
-        Route::patch('/marketplace/products/{id}', [MarketplaceApiController::class, 'update'])->whereNumber('id');
-        Route::patch('/marketplace/products/{id}/status', [MarketplaceApiController::class, 'updateStatus'])->whereNumber('id');
-        Route::post('/marketplace/products/{id}/status', [MarketplaceApiController::class, 'updateStatus'])->whereNumber('id');
-        Route::delete('/marketplace/products/{id}', [MarketplaceApiController::class, 'destroy'])->whereNumber('id');
-        Route::post('/marketplace/products/{id}/favorite', [MarketplaceApiController::class, 'toggleFavorite'])->whereNumber('id');
-        Route::get('/marketplace/favorites', [MarketplaceApiController::class, 'favorites']);
-        Route::post('/marketplace/products/{id}/message', [MarketplaceApiController::class, 'contact'])->whereNumber('id');
-        Route::post('/marketplace/products/{id}/contact', [MarketplaceApiController::class, 'contact'])->whereNumber('id');
-        Route::post('/marketplace/products/{id}/report', [MarketplaceApiController::class, 'report'])->whereNumber('id');
-        Route::get('/marketplace/my-listings', [MarketplaceApiController::class, 'myListings']);
+        // Marketplace v1 (Authenticated + Rate Limited)
+        Route::middleware(['throttle:marketplace-learning'])->group(function () {
+            Route::post('/marketplace/media/upload', [MarketplaceApiController::class, 'uploadMedia']);
+            Route::post('/marketplace/upload-media', [MarketplaceApiController::class, 'uploadMedia']);
+            Route::post('/marketplace/products', [MarketplaceApiController::class, 'store']);
+            Route::put('/marketplace/products/{id}', [MarketplaceApiController::class, 'update'])->whereNumber('id');
+            Route::patch('/marketplace/products/{id}', [MarketplaceApiController::class, 'update'])->whereNumber('id');
+            Route::patch('/marketplace/products/{id}/status', [MarketplaceApiController::class, 'updateStatus'])->whereNumber('id');
+            Route::post('/marketplace/products/{id}/status', [MarketplaceApiController::class, 'updateStatus'])->whereNumber('id');
+            Route::delete('/marketplace/products/{id}', [MarketplaceApiController::class, 'destroy'])->whereNumber('id');
+            Route::post('/marketplace/products/{id}/favorite', [MarketplaceApiController::class, 'toggleFavorite'])->whereNumber('id');
+            Route::get('/marketplace/favorites', [MarketplaceApiController::class, 'favorites']);
+            Route::post('/marketplace/products/{id}/message', [MarketplaceApiController::class, 'contact'])->whereNumber('id');
+            Route::post('/marketplace/products/{id}/contact', [MarketplaceApiController::class, 'contact'])->whereNumber('id');
+            Route::post('/marketplace/products/{id}/report', [MarketplaceApiController::class, 'report'])->whereNumber('id');
+            Route::get('/marketplace/my-listings', [MarketplaceApiController::class, 'myListings']);
 
-        // Marketplace Offers
-        Route::post('/marketplace/products/{id}/offers', [MarketplaceApiController::class, 'submitOffer'])->whereNumber('id');
-        Route::get('/marketplace/offers/my-offers', [MarketplaceApiController::class, 'myOffers']);
-        Route::get('/marketplace/offers/received', [MarketplaceApiController::class, 'receivedOffers']);
-        Route::post('/marketplace/offers/{id}/accept', [MarketplaceApiController::class, 'acceptOffer'])->whereNumber('id');
-        Route::post('/marketplace/offers/{id}/reject', [MarketplaceApiController::class, 'rejectOffer'])->whereNumber('id');
-        Route::post('/marketplace/offers/{id}/counter', [MarketplaceApiController::class, 'counterOffer'])->whereNumber('id');
-        Route::post('/marketplace/offers/{id}/cancel', [MarketplaceApiController::class, 'cancelOffer'])->whereNumber('id');
-        Route::get('/marketplace/seller/dashboard', [MarketplaceApiController::class, 'sellerDashboard']);
-        Route::get('/marketplace/buyer/dashboard', [MarketplaceApiController::class, 'buyerDashboard']);
+            // Marketplace Offers
+            Route::post('/marketplace/products/{id}/offers', [MarketplaceApiController::class, 'submitOffer'])->whereNumber('id');
+            Route::get('/marketplace/offers/my-offers', [MarketplaceApiController::class, 'myOffers']);
+            Route::get('/marketplace/offers/received', [MarketplaceApiController::class, 'receivedOffers']);
+            Route::post('/marketplace/offers/{id}/accept', [MarketplaceApiController::class, 'acceptOffer'])->whereNumber('id');
+            Route::post('/marketplace/offers/{id}/reject', [MarketplaceApiController::class, 'rejectOffer'])->whereNumber('id');
+            Route::post('/marketplace/offers/{id}/counter', [MarketplaceApiController::class, 'counterOffer'])->whereNumber('id');
+            Route::post('/marketplace/offers/{id}/cancel', [MarketplaceApiController::class, 'cancelOffer'])->whereNumber('id');
+            Route::get('/marketplace/seller/dashboard', [MarketplaceApiController::class, 'sellerDashboard']);
+            Route::get('/marketplace/buyer/dashboard', [MarketplaceApiController::class, 'buyerDashboard']);
 
-        // Orders & Escrow
-        Route::get('/marketplace/orders', [MarketplaceV2Controller::class, 'orders']);
-        Route::get('/marketplace/orders/{id}', [MarketplaceV2Controller::class, 'showOrder'])->whereNumber('id');
-        Route::patch('/marketplace/orders/{id}/status', [MarketplaceV2Controller::class, 'updateOrderStatus'])->whereNumber('id');
-        Route::post('/marketplace/products/{id}/order', [MarketplaceV2Controller::class, 'order'])->whereNumber('id');
-        Route::post('/marketplace/orders/{id}/checkout', [MarketplaceV2Controller::class, 'checkout'])->whereNumber('id');
-        Route::post('/marketplace/orders/{id}/verify-payment', [MarketplaceV2Controller::class, 'verifyPayment'])->whereNumber('id');
-        Route::post('/marketplace/orders/{id}/release-escrow', [MarketplaceV2Controller::class, 'releaseEscrow'])->whereNumber('id');
-        Route::post('/marketplace/orders/{id}/ship', [MarketplaceV2Controller::class, 'shipOrder'])->whereNumber('id');
-        Route::post('/marketplace/orders/{id}/confirm-delivery', [MarketplaceV2Controller::class, 'confirmDelivery'])->whereNumber('id');
-        Route::post('/marketplace/orders/{id}/cancel', [MarketplaceV2Controller::class, 'cancelOrder'])->whereNumber('id');
-        Route::post('/marketplace/orders/{id}/dispute', [MarketplaceV2Controller::class, 'disputeOrder'])->whereNumber('id');
-        Route::post('/marketplace/orders/{id}/review', [MarketplaceV2Controller::class, 'reviewOrder'])->whereNumber('id');
-        Route::get('/marketplace/orders/{id}/transactions', [MarketplaceV2Controller::class, 'orderTransactions'])->whereNumber('id');
-        Route::get('/marketplace/seller/summary', [MarketplaceV2Controller::class, 'sellerSummary']);
+            // Orders & Escrow
+            Route::get('/marketplace/orders', [MarketplaceV2Controller::class, 'orders']);
+            Route::get('/marketplace/orders/{id}', [MarketplaceV2Controller::class, 'showOrder'])->whereNumber('id');
+            Route::patch('/marketplace/orders/{id}/status', [MarketplaceV2Controller::class, 'updateOrderStatus'])->whereNumber('id');
+            Route::post('/marketplace/products/{id}/order', [MarketplaceV2Controller::class, 'order'])->whereNumber('id');
+            Route::post('/marketplace/orders/{id}/checkout', [MarketplaceV2Controller::class, 'checkout'])->whereNumber('id');
+            Route::post('/marketplace/orders/{id}/verify-payment', [MarketplaceV2Controller::class, 'verifyPayment'])->whereNumber('id');
+            Route::post('/marketplace/orders/{id}/release-escrow', [MarketplaceV2Controller::class, 'releaseEscrow'])->whereNumber('id');
+            Route::post('/marketplace/orders/{id}/ship', [MarketplaceV2Controller::class, 'shipOrder'])->whereNumber('id');
+            Route::post('/marketplace/orders/{id}/confirm-delivery', [MarketplaceV2Controller::class, 'confirmDelivery'])->whereNumber('id');
+            Route::post('/marketplace/orders/{id}/cancel', [MarketplaceV2Controller::class, 'cancelOrder'])->whereNumber('id');
+            Route::post('/marketplace/orders/{id}/dispute', [MarketplaceV2Controller::class, 'disputeOrder'])->whereNumber('id');
+            Route::post('/marketplace/orders/{id}/review', [MarketplaceV2Controller::class, 'reviewOrder'])->whereNumber('id');
+            Route::get('/marketplace/orders/{id}/transactions', [MarketplaceV2Controller::class, 'orderTransactions'])->whereNumber('id');
+            Route::get('/marketplace/seller/summary', [MarketplaceV2Controller::class, 'sellerSummary']);
+        });
     });
 });
 
@@ -1381,6 +1433,8 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         Route::post('/marketplace/media/upload', [MarketplaceV2Controller::class, 'uploadMedia']);
         Route::post('/marketplace/upload-media', [MarketplaceV2Controller::class, 'uploadMedia']);
         Route::post('/marketplace/products', [MarketplaceV2Controller::class, 'store']);
+        Route::put('/marketplace/products/{id}', [MarketplaceApiController::class, 'update'])->whereNumber('id');
+        Route::patch('/marketplace/products/{id}', [MarketplaceApiController::class, 'update'])->whereNumber('id');
         Route::get('/marketplace/my-listings', [MarketplaceV2Controller::class, 'myListings']);
         Route::patch('/marketplace/products/{id}/status', [MarketplaceV2Controller::class, 'updateListingStatus'])->whereNumber('id');
         Route::delete('/marketplace/products/{id}', [MarketplaceV2Controller::class, 'destroy'])->whereNumber('id');
@@ -1521,10 +1575,12 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
             Route::get('/feed', [ReelV2ApiController::class, 'feed']);
             Route::post('/', [ReelV2ApiController::class, 'store']);
             Route::get('/saved', [ReelV2ApiController::class, 'savedReels']);
+            Route::get('/archived', [ReelV2ApiController::class, 'archived']);
             Route::get('/drafts', [ReelV2ApiController::class, 'drafts']);
             Route::get('/{reel}', [ReelV2ApiController::class, 'show'])->whereNumber('reel');
             Route::put('/{reel}', [ReelV2ApiController::class, 'update'])->whereNumber('reel');
             Route::post('/{reel}/publish', [ReelV2ApiController::class, 'publish'])->whereNumber('reel');
+            Route::post('/{reel}/archive', [ReelV2ApiController::class, 'archive'])->whereNumber('reel');
             Route::get('/users/{user}', [ReelV2ApiController::class, 'userReels'])->whereNumber('user');
             Route::post('/{reel}/view', [ReelV2ApiController::class, 'recordView'])->whereNumber('reel');
             Route::post('/{reel}/react', [ReelV2ApiController::class, 'react'])->whereNumber('reel');

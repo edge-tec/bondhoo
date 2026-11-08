@@ -3,6 +3,7 @@
 namespace App\Services\Marketplace\Payments;
 
 use App\Models\MarketplaceOrder;
+use App\Models\MarketplacePaymentTransaction;
 use InvalidArgumentException;
 
 class SandboxGatewayDriver extends AbstractPaymentGateway
@@ -83,7 +84,7 @@ class SandboxGatewayDriver extends AbstractPaymentGateway
             }
         }
 
-        // Validate signature if provided
+        // Validate cryptographic signature when provided, or enforce genuine server-issued checkout session in non-production
         if (isset($payload['signature']) && ! empty($payload['signature'])) {
             $signatureCheckData = [
                 'order_id' => $order->id,
@@ -98,8 +99,19 @@ class SandboxGatewayDriver extends AbstractPaymentGateway
             $expectedSignature = $this->generateSignature($signatureCheckData, $this->secretKey);
             // Verify HMAC timing attack safe
             if (! hash_equals($expectedSignature, (string) $payload['signature']) && ! hash_equals($this->generateSignature(['trx_id' => $trxId], $this->secretKey), (string) $payload['signature'])) {
-                // If signature was provided but invalid, reject callback
                 throw new InvalidArgumentException('Invalid cryptographic transaction signature.');
+            }
+        } else {
+            if (app()->environment('production')) {
+                throw new InvalidArgumentException('Missing cryptographic transaction signature.');
+            }
+
+            $hasInitiatedSession = MarketplacePaymentTransaction::where('order_id', $order->id)
+                ->where('transaction_reference', $trxId)
+                ->exists();
+
+            if (! $hasInitiatedSession) {
+                throw new InvalidArgumentException('Unrecognized or uninitiated payment transaction reference.');
             }
         }
 

@@ -36,6 +36,8 @@ class LearningEnrollment extends Model
     protected function casts(): array
     {
         return [
+            'course_id' => 'integer',
+            'user_id' => 'integer',
             'price_paid' => 'decimal:2',
             'enrolled_at' => 'datetime',
             'completed_at' => 'datetime',

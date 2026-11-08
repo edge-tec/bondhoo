@@ -24,7 +24,8 @@ class CourseService
             ->where('status', LearningCourse::STATUS_PUBLISHED);
 
         if (! empty($filters['q'])) {
-            $term = '%'.strtolower(trim($filters['q'])).'%';
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], strtolower(trim((string) $filters['q'])));
+            $term = '%'.$escaped.'%';
             $query->where(function ($q) use ($term) {
                 $q->whereRaw('LOWER(title) LIKE ?', [$term])
                     ->orWhereRaw('LOWER(subtitle) LIKE ?', [$term])
@@ -33,13 +34,27 @@ class CourseService
         }
 
         if (! empty($filters['category_id'])) {
-            $query->where('category_id', $filters['category_id']);
+            $catId = (int) $filters['category_id'];
+            $childIds = LearningCategory::where('parent_id', $catId)
+                ->where('is_active', true)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+            $query->whereIn('category_id', array_values(array_unique(array_merge([$catId], $childIds))));
         }
 
         if (! empty($filters['category_slug'])) {
-            $query->whereHas('category', function ($q) use ($filters) {
-                $q->where('slug', $filters['category_slug']);
-            });
+            $cat = LearningCategory::where('slug', $filters['category_slug'])->first();
+            if ($cat) {
+                $childIds = LearningCategory::where('parent_id', $cat->id)
+                    ->where('is_active', true)
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+                $query->whereIn('category_id', array_values(array_unique(array_merge([(int) $cat->id], $childIds))));
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         if (! empty($filters['level']) && $filters['level'] !== 'all') {
@@ -52,16 +67,16 @@ class CourseService
 
         if (! empty($filters['skill'])) {
             $query->whereHas('skills', function ($q) use ($filters) {
-                $q->whereRaw('LOWER(skill_name) = ?', [strtolower(trim($filters['skill']))]);
+                $q->whereRaw('LOWER(skill_name) = ?', [strtolower(trim((string) $filters['skill']))]);
             });
         }
 
         if (isset($filters['min_price'])) {
-            $query->where('price', '>=', (float) $filters['min_price']);
+            $query->whereRaw('COALESCE(discounted_price, price) >= ?', [(float) $filters['min_price']]);
         }
 
         if (isset($filters['max_price'])) {
-            $query->where('price', '<=', (float) $filters['max_price']);
+            $query->whereRaw('COALESCE(discounted_price, price) <= ?', [(float) $filters['max_price']]);
         }
 
         if (isset($filters['min_rating'])) {
@@ -70,9 +85,9 @@ class CourseService
 
         $sortBy = $filters['sort_by'] ?? ($filters['sort'] ?? 'popular');
         match ($sortBy) {
-            'newest', 'latest' => $query->orderByDesc('published_at'),
-            'price_low' => $query->orderBy('price'),
-            'price_high' => $query->orderByDesc('price'),
+            'newest', 'latest' => $query->orderByDesc('published_at')->orderByDesc('id'),
+            'price_low' => $query->orderByRaw('COALESCE(discounted_price, price) ASC'),
+            'price_high' => $query->orderByRaw('COALESCE(discounted_price, price) DESC'),
             'rating' => $query->orderByDesc('rating_avg')->orderByDesc('rating_count'),
             default => $query->orderByDesc('is_featured')->orderByDesc('enrollments_count'),
         };
@@ -118,11 +133,22 @@ class CourseService
     }
 
     /**
-     * Delete/soft-delete a course.
+     * Delete/soft-delete a course and synchronize category counts.
      */
     public function deleteCourse(LearningCourse $course): bool
     {
-        return (bool) $course->delete();
+        return DB::transaction(function () use ($course) {
+            $wasPublished = $course->status === LearningCourse::STATUS_PUBLISHED;
+            $categoryId = $course->category_id;
+
+            $deleted = (bool) $course->delete();
+
+            if ($deleted && $wasPublished && $categoryId) {
+                $this->recountCategoryCourses((int) $categoryId);
+            }
+
+            return $deleted;
+        });
     }
 
     /**
@@ -153,6 +179,23 @@ class CourseService
             return null;
         }
 
+        $isPrivilegedViewer = $viewer && ((int) $viewer->id === (int) $course->instructor_id || $viewer->isAdmin());
+        if ($course->status !== LearningCourse::STATUS_PUBLISHED && ! $isPrivilegedViewer) {
+            return null;
+        }
+
+        $hasFullCurriculumAccess = $isPrivilegedViewer || $course->isEnrolledByUser($viewer);
+        if (! $hasFullCurriculumAccess) {
+            foreach ($course->sections as $section) {
+                foreach ($section->lessons as $lesson) {
+                    if (! $lesson->is_preview) {
+                        $lesson->setAttribute('video_url', null);
+                        $lesson->setAttribute('content', null);
+                    }
+                }
+            }
+        }
+
         return $course;
     }
 
@@ -163,7 +206,7 @@ class CourseService
     {
         return DB::transaction(function () use ($instructor, $data) {
             $slug = Str::slug($data['title']);
-            if (LearningCourse::where('slug', $slug)->exists()) {
+            if (LearningCourse::withTrashed()->where('slug', $slug)->exists()) {
                 $slug .= '-'.Str::random(5);
             }
 
@@ -179,8 +222,8 @@ class CourseService
                 'thumbnail_url' => $data['thumbnail_url'] ?? null,
                 'promotional_video_url' => $data['promotional_video_url'] ?? null,
                 'type' => $data['type'] ?? 'free',
-                'price' => $data['price'] ?? 0.00,
-                'discounted_price' => $data['discounted_price'] ?? null,
+                'price' => ($data['type'] ?? 'free') === 'free' ? 0.00 : ($data['price'] ?? 0.00),
+                'discounted_price' => ($data['type'] ?? 'free') === 'free' ? null : ($data['discounted_price'] ?? null),
                 'currency' => $data['currency'] ?? 'USD',
                 'status' => LearningCourse::STATUS_DRAFT,
                 'learning_objectives' => $data['learning_objectives'] ?? [],
@@ -199,10 +242,6 @@ class CourseService
                 }
             }
 
-            if ($course->category_id) {
-                LearningCategory::where('id', $course->category_id)->increment('courses_count');
-            }
-
             return $course->load(['skills', 'category']);
         });
     }
@@ -213,7 +252,7 @@ class CourseService
     public function updateCourse(LearningCourse $course, array $data): LearningCourse
     {
         return DB::transaction(function () use ($course, $data) {
-            $oldCategoryId = $course->category_id;
+            $oldCategoryId = $course->category_id ? (int) $course->category_id : null;
 
             $course->update($data);
 
@@ -229,13 +268,12 @@ class CourseService
                 }
             }
 
-            if (isset($data['category_id']) && $data['category_id'] !== $oldCategoryId) {
-                if ($oldCategoryId) {
-                    LearningCategory::where('id', $oldCategoryId)->decrement('courses_count');
-                }
-                if ($data['category_id']) {
-                    LearningCategory::where('id', $data['category_id'])->increment('courses_count');
-                }
+            $newCategoryId = $course->category_id ? (int) $course->category_id : null;
+            if ($oldCategoryId && $oldCategoryId !== $newCategoryId) {
+                $this->recountCategoryCourses($oldCategoryId);
+            }
+            if ($newCategoryId) {
+                $this->recountCategoryCourses($newCategoryId);
             }
 
             return $course->fresh(['skills', 'category']);
@@ -247,12 +285,32 @@ class CourseService
      */
     public function publishCourse(LearningCourse $course, bool $autoApprove = true): LearningCourse
     {
-        $status = $autoApprove ? LearningCourse::STATUS_PUBLISHED : LearningCourse::STATUS_PENDING;
-        $course->update([
-            'status' => $status,
-            'published_at' => $autoApprove ? now() : null,
-        ]);
+        return DB::transaction(function () use ($course, $autoApprove) {
+            $status = $autoApprove ? LearningCourse::STATUS_PUBLISHED : LearningCourse::STATUS_PENDING;
+            $course->update([
+                'status' => $status,
+                'published_at' => $autoApprove ? ($course->published_at ?? now()) : null,
+            ]);
 
-        return $course;
+            if ($course->category_id) {
+                $this->recountCategoryCourses((int) $course->category_id);
+            }
+
+            return $course->fresh();
+        });
+    }
+
+    /**
+     * Recalculate published courses count for a category deterministically.
+     */
+    public function recountCategoryCourses(int $categoryId): void
+    {
+        $publishedCount = LearningCourse::where('category_id', $categoryId)
+            ->where('status', LearningCourse::STATUS_PUBLISHED)
+            ->count();
+
+        LearningCategory::where('id', $categoryId)->update([
+            'courses_count' => $publishedCount,
+        ]);
     }
 }

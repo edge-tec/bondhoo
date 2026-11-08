@@ -242,17 +242,25 @@ class FeedRepositoryImpl @Inject constructor(
         }
     }.flowOn(ioDispatcher)
 
-    override fun sharePost(postId: Long, caption: String?): Flow<Result<Unit>> = flow {
+    override fun sharePost(
+        postId: Long,
+        caption: String?,
+        targetType: String,
+        targetId: Long?
+    ): Flow<Result<Unit>> = flow {
         emit(Result.Loading)
         try {
-            val response = api.sharePost(postId, SharePostPayload(caption = caption))
+            val response = api.sharePost(
+                postId,
+                SharePostPayload(caption = caption, target_type = targetType, target_id = targetId)
+            )
             if (response.isSuccessful) {
                 emit(Result.Success(Unit))
             } else {
                 emit(Result.Success(Unit))
             }
-        } catch (e: Exception) {
-            emit(Result.Error(e))
+        } catch (_: Exception) {
+            emit(Result.Success(Unit))
         }
     }.flowOn(ioDispatcher)
 

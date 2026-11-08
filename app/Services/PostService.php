@@ -6,6 +6,7 @@ use App\Jobs\FeedUpdateJob;
 use App\Models\AuditLog;
 use App\Models\Group;
 use App\Models\Media;
+use App\Models\ModerationRequest;
 use App\Models\Page;
 use App\Models\PageFollower;
 use App\Models\Post;
@@ -14,11 +15,13 @@ use App\Models\Story;
 use App\Models\User;
 use App\Services\Contracts\NotificationServiceInterface;
 use App\Services\Contracts\QueueServiceInterface;
+use App\Services\Moderation\ContentModerationService;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
 class PostService
@@ -34,10 +37,31 @@ class PostService
 
     public function createPost(User $user, array $data, ?string $ip = null, ?string $userAgent = null): Post
     {
-        return DB::transaction(function () use ($user, $data, $ip, $userAgent) {
+        // Phase 16.9: OpenAI AI Content Moderation Pre-Publication Scan
+        $moderationService = app(ContentModerationService::class);
+        $modRequest = $moderationService->moderatePost($user, $data);
+
+        if ($modRequest->status === ModerationRequest::STATUS_REJECTED) {
+            $reason = $modRequest->rejection_reason ?: 'Content violates safety guidelines.';
+            throw ValidationException::withMessages([
+                'content' => ["Your post could not be published because it violates our safety standards: {$reason}"],
+            ]);
+        }
+
+        if ($modRequest->status === ModerationRequest::STATUS_QUARANTINED) {
+            throw ValidationException::withMessages([
+                'content' => ['Content quarantined due to critical safety violations.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($user, $data, $ip, $userAgent, $modRequest) {
             // Determine status and scheduled time
             $scheduledAt = null;
             $status = $data['status'] ?? 'published';
+
+            if ($modRequest->status === ModerationRequest::STATUS_MANUAL_REVIEW) {
+                $status = 'pending_review';
+            }
 
             if (! empty($data['scheduled_at'])) {
                 $parsedDate = Carbon::parse($data['scheduled_at']);
@@ -121,6 +145,10 @@ class PostService
                 'status' => $status,
                 'scheduled_at' => $scheduledAt,
             ]);
+
+            // Link Moderation Request
+            $modRequest->moderatable_id = $post->id;
+            $modRequest->save();
 
             // Attach Media if IDs are passed
             if (! empty($data['media_ids'])) {

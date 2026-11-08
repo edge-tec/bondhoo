@@ -261,7 +261,7 @@ class ReelEnterpriseService
         }
 
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। মেয়াদোত্তীর্ণ রিল সম্পাদনা করা সম্ভব নয়।');
+            throw new Exception('This reel has expired and can no longer be edited.');
         }
 
         $allowed = array_intersect_key($data, array_flip([
@@ -287,7 +287,7 @@ class ReelEnterpriseService
         $reel = Reel::with(['user.profile', 'media', 'reactions', 'musicTrack', 'saves'])->findOrFail($id);
 
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে।');
+            throw new Exception('This reel has expired and is no longer accessible.');
         }
 
         if ($reel->is_draft && (! $viewer || (int) $viewer->id !== (int) $reel->user_id)) {
@@ -398,6 +398,100 @@ class ReelEnterpriseService
     }
 
     /**
+     * Friends Reels Feed (Mutual friends only)
+     */
+    public function getFriendsFeed(User $viewer, int $perPage = 10): LengthAwarePaginator
+    {
+        $this->cleanupExpiredReelsThrottled();
+
+        $friendIds = Friendship::where('user_id', $viewer->id)
+            ->where('status', Friendship::STATUS_ACCEPTED)
+            ->pluck('friend_id')
+            ->all();
+
+        $blockedUserIds = $this->privacyService->getBlockedUserIds($viewer->id);
+        if (! empty($blockedUserIds)) {
+            $friendIds = array_values(array_diff($friendIds, $blockedUserIds));
+        }
+
+        $query = Reel::query()
+            ->active()
+            ->whereIn('user_id', $friendIds ?: [0])
+            ->whereIn('privacy', ['public', 'friends'])
+            ->with(['user.profile', 'media', 'reactions', 'musicTrack', 'saves'])
+            ->latest('id');
+
+        $paginator = $query->paginate($perPage);
+
+        $paginator->getCollection()->transform(function (Reel $reel) use ($viewer) {
+            return $reel->toResponseArray($viewer);
+        });
+
+        return $paginator;
+    }
+
+    /**
+     * Popular Reels Feed (Ranked by calculated engagement score)
+     */
+    public function getPopularFeed(?User $viewer = null, int $perPage = 10): LengthAwarePaginator
+    {
+        $this->cleanupExpiredReelsThrottled();
+
+        $query = Reel::query()
+            ->active()
+            ->where('privacy', 'public')
+            ->with(['user.profile', 'media', 'reactions', 'musicTrack', 'saves']);
+
+        if ($viewer) {
+            $blockedUserIds = $this->privacyService->getBlockedUserIds($viewer->id);
+            if (! empty($blockedUserIds)) {
+                $query->whereNotIn('user_id', $blockedUserIds);
+            }
+        }
+
+        $query->orderByRaw('((likes_count * 3) + (comments_count * 4) + (shares_count * 5) + views_count) DESC')
+            ->latest('id');
+
+        $paginator = $query->paginate($perPage);
+
+        $paginator->getCollection()->transform(function (Reel $reel) use ($viewer) {
+            return $reel->toResponseArray($viewer);
+        });
+
+        return $paginator;
+    }
+
+    /**
+     * Latest Reels Feed (Reverse-chronological active reels)
+     */
+    public function getLatestFeed(?User $viewer = null, int $perPage = 10): LengthAwarePaginator
+    {
+        $this->cleanupExpiredReelsThrottled();
+
+        $query = Reel::query()
+            ->active()
+            ->where('privacy', 'public')
+            ->with(['user.profile', 'media', 'reactions', 'musicTrack', 'saves']);
+
+        if ($viewer) {
+            $blockedUserIds = $this->privacyService->getBlockedUserIds($viewer->id);
+            if (! empty($blockedUserIds)) {
+                $query->whereNotIn('user_id', $blockedUserIds);
+            }
+        }
+
+        $query->latest('id');
+
+        $paginator = $query->paginate($perPage);
+
+        $paginator->getCollection()->transform(function (Reel $reel) use ($viewer) {
+            return $reel->toResponseArray($viewer);
+        });
+
+        return $paginator;
+    }
+
+    /**
      * নির্দিষ্ট ইউজারের রিলস তালিকা
      */
     public function getUserReels(User $targetUser, ?User $viewer = null, int $perPage = 12): LengthAwarePaginator
@@ -463,7 +557,7 @@ class ReelEnterpriseService
     public function reactToReel(Reel $reel, User $user, string $type = 'like'): array
     {
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে।');
+            throw new Exception('This reel has expired.');
         }
 
         $validTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry'];
@@ -535,7 +629,7 @@ class ReelEnterpriseService
     public function addComment(Reel $reel, User $user, string $commentText, ?int $parentId = null): ReelComment
     {
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। নতুন মন্তব্য যোগ করা যাবে না।');
+            throw new Exception('This reel has expired. Comments are no longer accepted.');
         }
 
         if (! $reel->allow_comments) {
@@ -602,7 +696,7 @@ class ReelEnterpriseService
     public function getComments(Reel $reel, ?User $viewer = null, int $perPage = 20): LengthAwarePaginator
     {
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে।');
+            throw new Exception('This reel has expired.');
         }
 
         $paginator = ReelComment::where('reel_id', $reel->id)
@@ -657,7 +751,7 @@ class ReelEnterpriseService
     public function likeComment(ReelComment $comment, User $user): array
     {
         if ($comment->reel?->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে।');
+            throw new Exception('This reel has expired.');
         }
 
         $existing = ReelCommentLike::where('reel_comment_id', $comment->id)
@@ -694,7 +788,7 @@ class ReelEnterpriseService
     public function toggleSave(Reel $reel, User $user): array
     {
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে।');
+            throw new Exception('This reel has expired.');
         }
 
         $save = ReelSave::where('reel_id', $reel->id)
@@ -780,7 +874,7 @@ class ReelEnterpriseService
     public function recordShare(Reel $reel, ?User $user = null, string $platform = 'internal'): array
     {
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। শেয়ার করা সম্ভব নয়।');
+            throw new Exception('This reel has expired. Sharing is no longer allowed.');
         }
 
         ReelShare::create([
@@ -889,6 +983,34 @@ class ReelEnterpriseService
     }
 
     /**
+     * Archive a reel for owner's private view only
+     *
+     * @throws AuthorizationException
+     */
+    public function archiveReel(Reel $reel, User $user): bool
+    {
+        if ($reel->user_id !== $user->id) {
+            throw new AuthorizationException('You are not authorized to archive this reel.');
+        }
+
+        return $reel->update([
+            'is_archived' => true,
+        ]);
+    }
+
+    /**
+     * Get user's archived reels (Owner private access only)
+     */
+    public function getArchivedReels(User $user, int $perPage = 12): LengthAwarePaginator
+    {
+        return Reel::where('user_id', $user->id)
+            ->archived()
+            ->with(['user.profile', 'media', 'musicTrack', 'reactions', 'saves'])
+            ->latest('id')
+            ->paginate($perPage);
+    }
+
+    /**
      * রিল সরাসরি মেসেজের মাধ্যমে এক বা একাধিক ব্যবহারকারীকে পাঠানো
      *
      * @param  array<int>  $recipientIds
@@ -904,7 +1026,7 @@ class ReelEnterpriseService
         ?string $idempotencyKey = null
     ): array {
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। মেসেজে পাঠানো সম্ভব নয়।');
+            throw new Exception('This reel has expired. Sharing via direct message is no longer allowed.');
         }
 
         $recipientIds = array_unique(array_filter(
@@ -913,7 +1035,7 @@ class ReelEnterpriseService
         ));
 
         if (empty($recipientIds)) {
-            throw new Exception('অন্তত একজন বৈধ প্রাপক নির্বাচন করুন।');
+            throw new Exception('Please select at least one valid recipient.');
         }
 
         $messenger = app(MessengerServiceInterface::class);
@@ -1004,7 +1126,7 @@ class ReelEnterpriseService
         }
 
         if ($failedCount > 0 && $sentCount === 0) {
-            throw new Exception('বার্তা পাঠানো সম্ভব হয়নি। ব্যবহারকারীর মেসেজিং অথবা প্রাইভেসি সেটিংস পরীক্ষা করুন।');
+            throw new Exception('Failed to send message. Please check the recipient messaging or privacy settings.');
         }
 
         return [
@@ -1015,14 +1137,14 @@ class ReelEnterpriseService
     }
 
     /**
-     * রিল নিজের প্রোফাইল বা ওয়ালের ফিডে শেয়ার করা
+     * Share reel to user's own profile / timeline feed
      *
      * @throws Exception
      */
     public function shareToProfile(Reel $reel, User $user, ?string $caption = null): Post
     {
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। শেয়ার করা সম্ভব নয়।');
+            throw new Exception('This reel has expired. Sharing is no longer allowed.');
         }
 
         $primaryMedia = $reel->media->firstWhere('quality', 'original') ?? $reel->media->first();
@@ -1104,12 +1226,12 @@ class ReelEnterpriseService
     public function shareToGroup(Reel $reel, User $user, int $groupId, ?string $caption = null): Post
     {
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। শেয়ার করা সম্ভব নয়।');
+            throw new Exception('This reel has expired. Sharing is no longer allowed.');
         }
 
         $group = Group::findOrFail($groupId);
         if (! $group->isMember($user->id)) {
-            throw new AuthorizationException('এই গ্রুপে পোস্ট করার জন্য আপনাকে গ্রুপের সক্রিয় সদস্য হতে হবে।');
+            throw new AuthorizationException('You must be an active member of this group to share posts.');
         }
 
         $primaryMedia = $reel->media->firstWhere('quality', 'original') ?? $reel->media->first();
@@ -1188,7 +1310,7 @@ class ReelEnterpriseService
     public function shareToPage(Reel $reel, User $user, int $pageId, ?string $caption = null): Post
     {
         if ($reel->isExpired()) {
-            throw new Exception('এই রিলটির মেয়াদ শেষ হয়ে গেছে। শেয়ার করা সম্ভব নয়।');
+            throw new Exception('This reel has expired. Sharing is no longer allowed.');
         }
 
         $page = Page::findOrFail($pageId);
@@ -1203,7 +1325,7 @@ class ReelEnterpriseService
             ], true);
 
         if (! $isPageManager) {
-            throw new AuthorizationException('এই পেইজের পক্ষে পোস্ট পাবলিশ করার অনুমতি আপনার নেই।');
+            throw new AuthorizationException('You are not authorized to publish on behalf of this page.');
         }
 
         $primaryMedia = $reel->media->firstWhere('quality', 'original') ?? $reel->media->first();
@@ -1375,5 +1497,51 @@ class ReelEnterpriseService
         }
 
         return $count;
+    }
+
+    /**
+     * Clean up expired reels past retention threshold
+     *
+     * @return array{cleaned_reels: int, deleted_files: int}
+     */
+    public function cleanupExpiredReels(int $retentionHours = 24): array
+    {
+        $cutoff = now()->subHours($retentionHours);
+
+        $expiredReels = Reel::where('is_expired', true)
+            ->where('is_archived', false)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', $cutoff)
+            ->with(['media'])
+            ->get();
+
+        $cleanedReels = 0;
+        $deletedFiles = 0;
+
+        foreach ($expiredReels as $reel) {
+            foreach ($reel->media as $mediaItem) {
+                $disk = 'public';
+                if ($mediaItem->video_path && Storage::disk($disk)->exists($mediaItem->video_path)) {
+                    Storage::disk($disk)->delete($mediaItem->video_path);
+                    $deletedFiles++;
+                }
+                if ($mediaItem->thumbnail_path && Storage::disk($disk)->exists($mediaItem->thumbnail_path)) {
+                    Storage::disk($disk)->delete($mediaItem->thumbnail_path);
+                    $deletedFiles++;
+                }
+                $mediaItem->delete();
+            }
+
+            $reel->update([
+                'is_archived' => true,
+            ]);
+
+            $cleanedReels++;
+        }
+
+        return [
+            'cleaned_reels' => $cleanedReels,
+            'deleted_files' => $deletedFiles,
+        ];
     }
 }

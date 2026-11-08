@@ -70,6 +70,7 @@ class MarketplaceOrder extends Model
         'buyer_id',
         'seller_id',
         'product_id',
+        'accepted_offer_id',
         'quantity',
         'unit_price',
         'subtotal',
@@ -132,6 +133,10 @@ class MarketplaceOrder extends Model
     protected function casts(): array
     {
         return [
+            'buyer_id' => 'integer',
+            'seller_id' => 'integer',
+            'product_id' => 'integer',
+            'accepted_offer_id' => 'integer',
             'quantity' => 'integer',
             'unit_price' => 'decimal:2',
             'subtotal' => 'decimal:2',
@@ -195,7 +200,7 @@ class MarketplaceOrder extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(MarketplaceProduct::class, 'product_id');
+        return $this->belongsTo(MarketplaceProduct::class, 'product_id')->withTrashed();
     }
 
     public function cancelledByUser(): BelongsTo
@@ -259,13 +264,13 @@ class MarketplaceOrder extends Model
         }
 
         // Buyer can cancel before shipment
-        if ($this->buyer_id === $user->id) {
+        if ((int) $this->buyer_id === (int) $user->id) {
             return in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING, self::STATUS_CONFIRMED], true)
                 && $this->shipped_at === null;
         }
 
         // Seller or Admin can cancel before delivery
-        if ($this->seller_id === $user->id || ($user->is_admin ?? false)) {
+        if ((int) $this->seller_id === (int) $user->id || $user->isAdmin()) {
             return in_array($this->status, [self::STATUS_PENDING, self::STATUS_PROCESSING, self::STATUS_CONFIRMED, self::STATUS_SHIPPED], true);
         }
 
@@ -278,7 +283,11 @@ class MarketplaceOrder extends Model
             return false;
         }
 
-        if ($this->seller_id !== $user->id && ! $user->isAdmin()) {
+        if (! $this->isPaid()) {
+            return false;
+        }
+
+        if ((int) $this->seller_id !== (int) $user->id && ! $user->isAdmin()) {
             return false;
         }
 
@@ -292,17 +301,18 @@ class MarketplaceOrder extends Model
             return false;
         }
 
-        if ($this->buyer_id !== $user->id && ! $user->isAdmin()) {
+        if ((int) $this->buyer_id !== (int) $user->id && ! $user->isAdmin()) {
             return false;
         }
 
-        return $this->escrow_status !== self::ESCROW_RELEASED
-            && ! in_array($this->status, [self::STATUS_CANCELLED, self::STATUS_REFUNDED], true);
+        return $this->escrow_status === self::ESCROW_HELD
+            && ! in_array($this->status, [self::STATUS_CANCELLED, self::STATUS_REFUNDED], true)
+            && ! in_array($this->payment_status, [self::PAYMENT_FAILED, self::PAYMENT_REFUNDED], true);
     }
 
     public function canBeDisputedBy(?User $user): bool
     {
-        if (! $user || $this->buyer_id !== $user->id) {
+        if (! $user || (int) $this->buyer_id !== (int) $user->id) {
             return false;
         }
 
@@ -313,7 +323,7 @@ class MarketplaceOrder extends Model
 
     public function canBeReviewedBy(?User $user): bool
     {
-        if (! $user || $this->buyer_id !== $user->id) {
+        if (! $user || (int) $this->buyer_id !== (int) $user->id) {
             return false;
         }
 
@@ -412,8 +422,8 @@ class MarketplaceOrder extends Model
                 'can_release_escrow' => $this->canReleaseEscrow($viewer),
                 'can_dispute' => $this->canBeDisputedBy($viewer),
                 'can_review' => $this->canBeReviewedBy($viewer),
-                'is_buyer' => $viewer ? $this->buyer_id === $viewer->id : false,
-                'is_seller' => $viewer ? $this->seller_id === $viewer->id : false,
+                'is_buyer' => $viewer ? (int) $this->buyer_id === (int) $viewer->id : false,
+                'is_seller' => $viewer ? (int) $this->seller_id === (int) $viewer->id : false,
             ],
         ];
     }

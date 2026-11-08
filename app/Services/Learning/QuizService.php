@@ -51,24 +51,29 @@ class QuizService
     }
 
     /**
-     * Start a new quiz attempt.
+     * Start a new quiz attempt with row-level lock against max_attempts races.
      */
     public function startAttempt(User $user, LearningQuiz $quiz): LearningQuizAttempt
     {
-        $pastAttemptsCount = LearningQuizAttempt::where('quiz_id', $quiz->id)
-            ->where('user_id', $user->id)
-            ->count();
+        return DB::transaction(function () use ($user, $quiz) {
+            User::whereKey($user->id)->lockForUpdate()->firstOrFail();
 
-        if ($quiz->max_attempts > 0 && $pastAttemptsCount >= $quiz->max_attempts) {
-            throw new Exception("Maximum allowed attempts ({$quiz->max_attempts}) reached.");
-        }
+            $pastAttemptsCount = LearningQuizAttempt::where('quiz_id', $quiz->id)
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->count();
 
-        return LearningQuizAttempt::create([
-            'quiz_id' => $quiz->id,
-            'user_id' => $user->id,
-            'attempt_number' => $pastAttemptsCount + 1,
-            'started_at' => now(),
-        ]);
+            if ($quiz->max_attempts > 0 && $pastAttemptsCount >= $quiz->max_attempts) {
+                throw new Exception("Maximum allowed attempts ({$quiz->max_attempts}) reached.");
+            }
+
+            return LearningQuizAttempt::create([
+                'quiz_id' => $quiz->id,
+                'user_id' => $user->id,
+                'attempt_number' => $pastAttemptsCount + 1,
+                'started_at' => now(),
+            ]);
+        });
     }
 
     /**
@@ -79,7 +84,12 @@ class QuizService
         array $answers
     ): LearningQuizAttempt {
         return DB::transaction(function () use ($attempt, $answers) {
-            $quiz = $attempt->quiz;
+            $lockedAttempt = LearningQuizAttempt::with('quiz.course')->whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+            if ($lockedAttempt->submitted_at) {
+                throw new Exception('This attempt has already been submitted.');
+            }
+
+            $quiz = $lockedAttempt->quiz;
             $questions = $quiz->questions()->with('options')->get()->keyBy('id');
 
             $totalPossiblePoints = 0;
@@ -97,8 +107,7 @@ class QuizService
                 if ($submittedAnswer !== null) {
                     if (is_array($submittedAnswer)) {
                         $selectedOptionIds = array_map('intval', $submittedAnswer);
-                        // Check if all selected are correct and all correct are selected
-                        $correctOptionIds = $question->options->where('is_correct', true)->pluck('id')->all();
+                        $correctOptionIds = $question->options->where('is_correct', true)->pluck('id')->map(fn ($id) => (int) $id)->all();
                         sort($correctOptionIds);
                         sort($selectedOptionIds);
                         $isCorrect = ($correctOptionIds === $selectedOptionIds);
@@ -106,10 +115,9 @@ class QuizService
                         $selectedOptionId = (int) $submittedAnswer;
                         $selectedOptionIds = [$selectedOptionId];
                         $option = $question->options->firstWhere('id', $selectedOptionId);
-                        $isCorrect = $option && $option->is_correct;
+                        $isCorrect = (bool) ($option && $option->is_correct);
                     } elseif (is_string($submittedAnswer)) {
                         $textAnswer = trim($submittedAnswer);
-                        // Case-insensitive match against any correct option text
                         $correctTexts = $question->options->where('is_correct', true)->pluck('option_text')->all();
                         foreach ($correctTexts as $cText) {
                             if (strcasecmp(trim($cText), $textAnswer) === 0) {
@@ -125,14 +133,18 @@ class QuizService
                     $earnedPoints += $pointsAwarded;
                 }
 
-                LearningQuizAnswer::create([
-                    'attempt_id' => $attempt->id,
-                    'question_id' => $question->id,
-                    'selected_option_ids' => $selectedOptionIds,
-                    'text_answer' => $textAnswer,
-                    'is_correct' => $isCorrect,
-                    'points_awarded' => $pointsAwarded,
-                ]);
+                LearningQuizAnswer::updateOrCreate(
+                    [
+                        'attempt_id' => $lockedAttempt->id,
+                        'question_id' => $question->id,
+                    ],
+                    [
+                        'selected_option_ids' => $selectedOptionIds,
+                        'text_answer' => $textAnswer,
+                        'is_correct' => $isCorrect,
+                        'points_awarded' => $pointsAwarded,
+                    ]
+                );
             }
 
             $scorePercentage = $totalPossiblePoints > 0
@@ -141,7 +153,7 @@ class QuizService
 
             $passed = ($scorePercentage >= $quiz->passing_score);
 
-            $attempt->update([
+            $lockedAttempt->update([
                 'score' => $scorePercentage,
                 'total_points' => $totalPossiblePoints,
                 'earned_points' => $earnedPoints,
@@ -149,15 +161,17 @@ class QuizService
                 'submitted_at' => now(),
             ]);
 
-            // If passed, mark quiz lesson as completed
+            // If passed, mark quiz lesson as completed and recalculate overall course progress
             if ($passed && $quiz->lesson_id) {
                 $enrollment = LearningEnrollment::where('course_id', $quiz->course_id)
-                    ->where('user_id', $attempt->user_id)
+                    ->where('user_id', $lockedAttempt->user_id)
+                    ->whereIn('status', [LearningEnrollment::STATUS_ACTIVE, LearningEnrollment::STATUS_COMPLETED])
+                    ->lockForUpdate()
                     ->first();
 
                 LearningLessonProgress::updateOrCreate(
                     [
-                        'user_id' => $attempt->user_id,
+                        'user_id' => $lockedAttempt->user_id,
                         'lesson_id' => $quiz->lesson_id,
                     ],
                     [
@@ -167,9 +181,16 @@ class QuizService
                         'completed_at' => now(),
                     ]
                 );
+
+                if ($enrollment && $quiz->course) {
+                    $student = User::find($lockedAttempt->user_id);
+                    if ($student) {
+                        app(LearningProgressService::class)->recalculateCourseProgress($enrollment, $student, $quiz->course);
+                    }
+                }
             }
 
-            return $attempt->fresh(['answers']);
+            return $lockedAttempt->fresh(['answers']);
         });
     }
 
@@ -178,7 +199,7 @@ class QuizService
      */
     public function getAttempt(User $user, LearningQuizAttempt $attempt): array
     {
-        if ($attempt->user_id !== $user->id && ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if ((int) $attempt->user_id !== (int) $user->id && ! $user->isAdmin()) {
             throw new Exception('Unauthorized attempt access.');
         }
 
@@ -201,11 +222,20 @@ class QuizService
         }
 
         DB::transaction(function () use ($attempt, $answers) {
+            $validQuestionIds = $attempt->quiz
+                ? $attempt->quiz->questions()->pluck('id')->map(fn ($id) => (int) $id)->all()
+                : [];
+
             foreach ($answers as $qId => $val) {
+                $questionId = (int) $qId;
+                if (! empty($validQuestionIds) && ! in_array($questionId, $validQuestionIds, true)) {
+                    continue;
+                }
+
                 LearningQuizAnswer::updateOrCreate(
                     [
                         'attempt_id' => $attempt->id,
-                        'question_id' => (int) $qId,
+                        'question_id' => $questionId,
                     ],
                     [
                         'selected_option_ids' => is_array($val) ? array_map('intval', $val) : (is_numeric($val) ? [(int) $val] : []),
@@ -221,7 +251,7 @@ class QuizService
      */
     public function getAttemptResult(User $user, LearningQuizAttempt $attempt): array
     {
-        if ($attempt->user_id !== $user->id && ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if ((int) $attempt->user_id !== (int) $user->id && ! $user->isAdmin()) {
             throw new Exception('Unauthorized attempt access.');
         }
 

@@ -261,8 +261,20 @@ fun LearningHomeScreen(
                     LearningTab.DISCOVER -> DiscoverTabContent(
                         state = state,
                         onSelectCategory = { viewModel.handleIntent(LearningIntent.SelectCategory(it)) },
-                        onEnroll = { viewModel.handleIntent(LearningIntent.EnrollCourse(it)) },
+                        onSelectLevel = { viewModel.handleIntent(LearningIntent.SelectLevel(it)) },
+                        onSelectType = { viewModel.handleIntent(LearningIntent.SelectType(it)) },
+                        onEnroll = { course ->
+                            val effectivePrice = course.discountedPrice ?: course.price
+                            if (effectivePrice > 0.0) {
+                                viewModel.handleIntent(LearningIntent.ClearEnrollError)
+                                selectedCourseForDetails = course
+                                viewModel.handleIntent(LearningIntent.LoadCurriculum(course.id))
+                            } else {
+                                viewModel.handleIntent(LearningIntent.EnrollCourse(course.id))
+                            }
+                        },
                         onCourseClick = { course ->
+                            viewModel.handleIntent(LearningIntent.ClearEnrollError)
                             selectedCourseForDetails = course
                             viewModel.handleIntent(LearningIntent.LoadCurriculum(course.id))
                         }
@@ -293,16 +305,23 @@ fun LearningHomeScreen(
 
     // 1. Course Details Modal Dialog
     selectedCourseForDetails?.let { course ->
-        val isEnrolled = state.myLearning.any { it.courseId == course.id }
+        val isEnrolled = course.isEnrolled || state.myLearning.any { it.courseId == course.id }
+        val isEnrolling = course.id in state.enrollingCourseIds
         CourseDetailsDialog(
             course = course,
             isEnrolled = isEnrolled,
+            isEnrolling = isEnrolling,
+            enrollErrorMessage = state.enrollErrorMessage,
             curriculum = state.selectedCourseCurriculum,
             isLoadingCurriculum = state.isLoadingCurriculum,
-            onDismiss = { selectedCourseForDetails = null },
-            onEnroll = {
-                viewModel.handleIntent(LearningIntent.EnrollCourse(course.id))
-                selectedCourseForDetails = null
+            onDismiss = {
+                if (!isEnrolling) {
+                    viewModel.handleIntent(LearningIntent.ClearEnrollError)
+                    selectedCourseForDetails = null
+                }
+            },
+            onEnroll = { couponCode ->
+                viewModel.handleIntent(LearningIntent.EnrollCourse(course.id, couponCode))
             },
             onContinue = {
                 selectedCourseForDetails = null
@@ -318,13 +337,15 @@ fun LearningHomeScreen(
     }
 
     // 2. Interactive Lesson Player Modal Dialog
-    activeEnrollmentForPlayer?.let { enrollment ->
+    activeEnrollmentForPlayer?.let { currentEnrollment ->
+        val liveEnrollment = state.myLearning.firstOrNull { it.courseId == currentEnrollment.courseId } ?: currentEnrollment
         LessonPlayerDialog(
-            enrollment = enrollment,
+            enrollment = liveEnrollment,
             curriculum = state.selectedCourseCurriculum,
+            completingLessonIds = state.completingLessonIds,
             onDismiss = { activeEnrollmentForPlayer = null },
             onCompleteLesson = { lessonId ->
-                viewModel.handleIntent(LearningIntent.CompleteLesson(lessonId, enrollment.courseId))
+                viewModel.handleIntent(LearningIntent.CompleteLesson(lessonId, liveEnrollment.courseId))
             }
         )
     }
@@ -354,7 +375,9 @@ fun LearningHomeScreen(
 private fun DiscoverTabContent(
     state: LearningUiState,
     onSelectCategory: (Long?) -> Unit,
-    onEnroll: (Long) -> Unit,
+    onSelectLevel: (String?) -> Unit = {},
+    onSelectType: (String?) -> Unit = {},
+    onEnroll: (LearningCourse) -> Unit,
     onCourseClick: (LearningCourse) -> Unit
 ) {
     LazyColumn(
@@ -388,6 +411,42 @@ private fun DiscoverTabContent(
                                 selectedContainerColor = ConnectlyBlue.copy(alpha = 0.15f),
                                 selectedLabelColor = ConnectlyBlue
                             )
+                        )
+                    }
+                }
+            }
+        }
+
+        // Level & Pricing Filter Row
+        item {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                item {
+                    FilterChip(
+                        selected = state.selectedType == null,
+                        onClick = { onSelectType(null) },
+                        label = { Text("All Prices", fontSize = 11.sp) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = state.selectedType == "free",
+                        onClick = { onSelectType(if (state.selectedType == "free") null else "free") },
+                        label = { Text("Free", fontSize = 11.sp) }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = state.selectedType == "paid",
+                        onClick = { onSelectType(if (state.selectedType == "paid") null else "paid") },
+                        label = { Text("Paid", fontSize = 11.sp) }
+                    )
+                }
+                listOf("beginner" to "Beginner", "intermediate" to "Intermediate", "expert" to "Expert").forEach { (lvl, label) ->
+                    item {
+                        FilterChip(
+                            selected = state.selectedLevel == lvl,
+                            onClick = { onSelectLevel(if (state.selectedLevel == lvl) null else lvl) },
+                            label = { Text(label, fontSize = 11.sp) }
                         )
                     }
                 }
@@ -431,12 +490,14 @@ private fun DiscoverTabContent(
                 }
             }
         } else {
-            items(state.courses) { course ->
-                val isEnrolled = state.myLearning.any { it.courseId == course.id }
+            items(state.courses, key = { it.id }) { course ->
+                val isEnrolled = course.isEnrolled || state.myLearning.any { it.courseId == course.id }
+                val isEnrolling = course.id in state.enrollingCourseIds
                 CourseCard(
                     course = course,
                     isEnrolled = isEnrolled,
-                    onEnroll = { onEnroll(course.id) },
+                    isEnrolling = isEnrolling,
+                    onEnroll = { onEnroll(course) },
                     onClick = { onCourseClick(course) }
                 )
             }
@@ -448,6 +509,7 @@ private fun DiscoverTabContent(
 private fun CourseCard(
     course: LearningCourse,
     isEnrolled: Boolean,
+    isEnrolling: Boolean = false,
     onEnroll: () -> Unit,
     onClick: () -> Unit
 ) {
@@ -634,17 +696,29 @@ private fun CourseCard(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // Price and Enroll Button
+                val effectivePrice = course.discountedPrice ?: course.price
+                val currencySymbol = if (course.currency.equals("BDT", ignoreCase = true)) "৳" else "$"
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = if (course.price == 0.0) "FREE" else "$${course.price}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (course.price == 0.0) Color(0xFF10B981) else ConnectlyBlue
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = if (effectivePrice == 0.0) "FREE" else "$currencySymbol${effectivePrice}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (effectivePrice == 0.0) Color(0xFF10B981) else ConnectlyBlue
+                        )
+                        if (course.discountedPrice != null && course.discountedPrice < course.price) {
+                            Text(
+                                text = "$currencySymbol${course.price}",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.outline,
+                                style = androidx.compose.ui.text.TextStyle(textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough)
+                            )
+                        }
+                    }
 
                     if (isEnrolled) {
                         Surface(
@@ -663,14 +737,19 @@ private fun CourseCard(
                     } else {
                         Button(
                             onClick = onEnroll,
+                            enabled = !isEnrolling,
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue)
                         ) {
-                            Text(
-                                if (course.price == 0.0) "Enroll Free" else "Enroll Now",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            if (isEnrolling) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text(
+                                    if (effectivePrice == 0.0) "Enroll Free" else "Enroll Now",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }
@@ -1000,12 +1079,18 @@ private fun CertificatesTabContent(
 fun CourseDetailsDialog(
     course: LearningCourse,
     isEnrolled: Boolean,
+    isEnrolling: Boolean = false,
+    enrollErrorMessage: String? = null,
     curriculum: List<LearningSection>,
     isLoadingCurriculum: Boolean,
     onDismiss: () -> Unit,
-    onEnroll: () -> Unit,
+    onEnroll: (couponCode: String?) -> Unit,
     onContinue: () -> Unit
 ) {
+    var couponCode by remember(course.id) { mutableStateOf("") }
+    val effectivePrice = course.discountedPrice ?: course.price
+    val currencySymbol = if (course.currency.equals("BDT", ignoreCase = true)) "৳" else "$"
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -1018,7 +1103,7 @@ fun CourseDetailsDialog(
                 TopAppBar(
                     title = { Text("Course Syllabus & Details", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
                     navigationIcon = {
-                        IconButton(onClick = onDismiss) {
+                        IconButton(onClick = onDismiss, enabled = !isEnrolling) {
                             Icon(Icons.Default.Close, contentDescription = "Close")
                         }
                     },
@@ -1100,6 +1185,47 @@ fun CourseDetailsDialog(
                         }
                     }
 
+                    // Paid Course Coupon Input (when not yet enrolled)
+                    if (!isEnrolled && effectivePrice > 0.0) {
+                        OutlinedTextField(
+                            value = couponCode,
+                            onValueChange = { couponCode = it.uppercase() },
+                            label = { Text("Coupon / Scholarship Code (Optional)") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    // Real Server Enrollment Error Banner + Retry
+                    if (!isEnrolled && !enrollErrorMessage.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = enrollErrorMessage,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                TextButton(
+                                    onClick = { onEnroll(couponCode.takeIf { it.isNotBlank() }) },
+                                    enabled = !isEnrolling
+                                ) {
+                                    Text("Retry", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+
                     // Course Overview Description
                     Card(
                         shape = RoundedCornerShape(16.dp),
@@ -1140,7 +1266,12 @@ fun CourseDetailsDialog(
                                                     modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
                                                     verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    Icon(Icons.Default.PlayCircle, null, modifier = Modifier.size(14.dp), tint = ConnectlyBlue)
+                                                    Icon(
+                                                        imageVector = if (les.isCompleted) Icons.Default.CheckCircle else Icons.Default.PlayCircle,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(14.dp),
+                                                        tint = if (les.isCompleted) Color(0xFF10B981) else ConnectlyBlue
+                                                    )
                                                     Spacer(modifier = Modifier.width(6.dp))
                                                     Text(les.title, fontSize = 12.sp, modifier = Modifier.weight(1f))
                                                     Text("${les.videoDurationSeconds / 60}m", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
@@ -1170,10 +1301,10 @@ fun CourseDetailsDialog(
                         Column {
                             Text("Tuition", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
                             Text(
-                                if (course.price == 0.0) "FREE" else "$${course.price}",
+                                if (effectivePrice == 0.0) "FREE" else "$currencySymbol$effectivePrice",
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 20.sp,
-                                color = if (course.price == 0.0) Color(0xFF10B981) else ConnectlyBlue
+                                color = if (effectivePrice == 0.0) Color(0xFF10B981) else ConnectlyBlue
                             )
                         }
 
@@ -1189,13 +1320,20 @@ fun CourseDetailsDialog(
                             }
                         } else {
                             Button(
-                                onClick = onEnroll,
+                                onClick = { onEnroll(couponCode.takeIf { it.isNotBlank() }) },
+                                enabled = !isEnrolling,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue)
                             ) {
-                                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(if (course.price == 0.0) "Enroll in Course Free" else "Enroll Now", fontWeight = FontWeight.Bold)
+                                if (isEnrolling) {
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Enrolling...", fontWeight = FontWeight.Bold)
+                                } else {
+                                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(if (effectivePrice == 0.0) "Enroll in Course Free" else "Pay & Enroll Now", fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
@@ -1214,13 +1352,27 @@ fun CourseDetailsDialog(
 fun LessonPlayerDialog(
     enrollment: LearningEnrollment,
     curriculum: List<LearningSection>,
+    completingLessonIds: Set<Long> = emptySet(),
     onDismiss: () -> Unit,
     onCompleteLesson: (Long) -> Unit
 ) {
+    val allLessons = remember(curriculum) { curriculum.flatMap { it.lessons } }
     var isPlaying by remember { mutableStateOf(true) }
     var lessonProgress by remember { mutableFloatStateOf(0.45f) }
-    var selectedLessonTitle by remember { mutableStateOf("Module 1.1: Architecture & Foundations") }
-    var selectedLessonId by remember { mutableStateOf(1L) }
+    var selectedLessonId by remember { mutableStateOf(0L) }
+    var selectedLessonTitle by remember { mutableStateOf("Loading curriculum...") }
+
+    LaunchedEffect(allLessons) {
+        if (allLessons.isNotEmpty() && allLessons.none { it.id == selectedLessonId }) {
+            val initial = allLessons.firstOrNull { !it.isCompleted } ?: allLessons.first()
+            selectedLessonId = initial.id
+            selectedLessonTitle = initial.title
+            lessonProgress = if (initial.isCompleted) 1.0f else 0.45f
+        }
+    }
+
+    val isCurrentCompleted = allLessons.firstOrNull { it.id == selectedLessonId }?.isCompleted == true
+    val isSyncingCurrent = selectedLessonId in completingLessonIds
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -1307,16 +1459,28 @@ fun LessonPlayerDialog(
                     // Mark Complete Button
                     Button(
                         onClick = {
-                            lessonProgress = 1.0f
-                            onCompleteLesson(selectedLessonId)
+                            if (selectedLessonId > 0L) {
+                                lessonProgress = 1.0f
+                                onCompleteLesson(selectedLessonId)
+                            }
                         },
+                        enabled = selectedLessonId > 0L && !isSyncingCurrent,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
                     ) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Mark Lesson Complete & Continue", fontWeight = FontWeight.Bold)
+                        if (isSyncingCurrent) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Saving Progress...", fontWeight = FontWeight.Bold)
+                        } else {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                if (isCurrentCompleted) "Lesson Completed ✓" else "Mark Lesson Complete & Continue",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
 
                     // Lesson Syllabus
@@ -1333,14 +1497,15 @@ fun LessonPlayerDialog(
                                     Text(sec.title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = ConnectlyBlue)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     sec.lessons.forEach { les ->
+                                        val isSelected = selectedLessonId == les.id
                                         Surface(
                                             onClick = {
                                                 selectedLessonTitle = les.title
                                                 selectedLessonId = les.id
-                                                lessonProgress = 0.2f
+                                                lessonProgress = if (les.isCompleted) 1.0f else 0.2f
                                             },
                                             shape = RoundedCornerShape(8.dp),
-                                            color = if (selectedLessonTitle == les.title) ConnectlyBlue.copy(alpha = 0.12f) else Color.Transparent,
+                                            color = if (isSelected) ConnectlyBlue.copy(alpha = 0.12f) else Color.Transparent,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Row(
@@ -1348,13 +1513,17 @@ fun LessonPlayerDialog(
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.PlayCircle,
+                                                    imageVector = if (les.isCompleted) Icons.Default.CheckCircle else Icons.Default.PlayCircle,
                                                     contentDescription = null,
-                                                    tint = if (selectedLessonTitle == les.title) ConnectlyBlue else MaterialTheme.colorScheme.outline,
+                                                    tint = when {
+                                                        les.isCompleted -> Color(0xFF10B981)
+                                                        isSelected -> ConnectlyBlue
+                                                        else -> MaterialTheme.colorScheme.outline
+                                                    },
                                                     modifier = Modifier.size(16.dp)
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
-                                                Text(les.title, fontSize = 12.sp, modifier = Modifier.weight(1f), fontWeight = if (selectedLessonTitle == les.title) FontWeight.Bold else FontWeight.Normal)
+                                                Text(les.title, fontSize = 12.sp, modifier = Modifier.weight(1f), fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
                                                 Text("${les.videoDurationSeconds / 60}m", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
                                             }
                                         }
@@ -1362,7 +1531,7 @@ fun LessonPlayerDialog(
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
                             } else {
-                                Text("1. Domain-Driven Design Architecture\n2. Reactive Flow & WebSocket Integration\n3. Automated CI/CD Testing Suites", fontSize = 13.sp, lineHeight = 20.sp)
+                                Text("Loading course modules...", fontSize = 13.sp, lineHeight = 20.sp)
                             }
                         }
                     }

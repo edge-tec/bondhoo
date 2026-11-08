@@ -24,7 +24,7 @@ import com.connectly.android.feature.profile.presentation.saved.SavedPostsScreen
 import com.connectly.android.feature.profile.presentation.settings.SettingsScreen
 import com.connectly.android.feature.profile.presentation.storage.DataStorageSettingsScreen
 
-const val PROFILE_ROUTE = "profile_route"
+const val PROFILE_ROUTE = "profile_route?username={username}"
 const val EDIT_PROFILE_ROUTE = "edit_profile_route"
 const val PRIVACY_SETTINGS_ROUTE = "privacy_settings_route"
 const val NOTIFICATION_SETTINGS_ROUTE = "notification_settings_route"
@@ -43,8 +43,12 @@ const val MARKETPLACE_ROUTE = "marketplace_route"
 const val SAVED_POSTS_ROUTE = "saved_posts_route"
 const val MEMORIES_ROUTE = "memories_route"
 
-fun NavController.navigateToProfile(navOptions: NavOptions? = null) {
-    navigate(PROFILE_ROUTE, navOptions)
+fun NavController.navigateToProfile(username: String? = null, navOptions: NavOptions? = null) {
+    if (!username.isNullOrBlank() && username != "me") {
+        navigate("profile_route?username=$username", navOptions)
+    } else {
+        navigate("profile_route", navOptions)
+    }
 }
 
 fun NavController.navigateToFriends(navOptions: NavOptions? = null) {
@@ -118,13 +122,38 @@ fun NavController.navigateToMemories(navOptions: NavOptions? = null) {
 fun NavGraphBuilder.profileGraph(
     navController: NavController,
     themeManager: ThemeManager,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToChat: (Long) -> Unit = {},
+    onNavigateToCreatePost: (String?) -> Unit = {},
+    onNavigateToCreateStory: () -> Unit = {},
+    onNavigateToLive: () -> Unit = {}
 ) {
-    composable(PROFILE_ROUTE) {
+    composable(
+        route = PROFILE_ROUTE,
+        arguments = listOf(
+            androidx.navigation.navArgument("username") {
+                type = androidx.navigation.NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    ) { backStackEntry ->
+        val usernameArg = backStackEntry.arguments?.getString("username")
+        val viewModel: com.connectly.android.feature.profile.presentation.profile.ProfileViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+        androidx.compose.runtime.LaunchedEffect(usernameArg) {
+            viewModel.handleIntent(com.connectly.android.feature.profile.presentation.profile.ProfileIntent.LoadProfile(usernameArg ?: "me"))
+        }
         ProfileScreen(
             onNavigateBack = { navController.popBackStack() },
             onNavigateToEditProfile = { navController.navigateToEditProfile() },
-            onNavigateToSettings = { navController.navigateToSettings() }
+            onNavigateToSettings = { navController.navigateToSettings() },
+            onNavigateToFriends = { navController.navigateToFriends() },
+            onNavigateToChat = onNavigateToChat,
+            onNavigateToCreatePost = onNavigateToCreatePost,
+            onNavigateToCreateStory = onNavigateToCreateStory,
+            onNavigateToLive = onNavigateToLive,
+            onNavigateToUserProfile = { userIdent -> navController.navigateToProfile(userIdent) },
+            viewModel = viewModel
         )
     }
 
@@ -176,7 +205,7 @@ fun NavGraphBuilder.profileGraph(
     composable(BLOCKED_USERS_ROUTE) {
         BlockedUsersScreen(
             onNavigateBack = { navController.popBackStack() },
-            onNavigateToUserProfile = { navController.navigateToProfile() }
+            onNavigateToUserProfile = { userId -> navController.navigateToProfile(userId.toString()) }
         )
     }
 
@@ -227,13 +256,14 @@ fun NavGraphBuilder.profileGraph(
 
     composable(FRIENDS_ROUTE) {
         FriendsScreen(
-            onNavigateToUserProfile = { navController.navigateToProfile() }
+            onNavigateToUserProfile = { userId -> navController.navigateToProfile(userId.toString()) }
         )
     }
 
     composable(MARKETPLACE_ROUTE) {
         MarketplaceScreen(
-            onNavigateBack = { navController.popBackStack() }
+            onNavigateBack = { navController.popBackStack() },
+            onNavigateToChat = onNavigateToChat
         )
     }
 

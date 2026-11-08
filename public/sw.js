@@ -1,4 +1,4 @@
-// Bondhoo Social Network Enterprise Progressive Web App (PWA) Service Worker v7.4 (jugajug-v7.4-cache)
+// Bondhoo Social Network Enterprise Progressive Web App (PWA) Service Worker v7.4 (jugajug-v7.4-cache, jugajug-v2-cache, upgrade from bondhoo-pwa-v3.0)
 const CACHE_NAME = 'bondhoo-pwa-v7.4';
 const OFFLINE_URL = '/offline';
 

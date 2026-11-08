@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Post\CreatePostRequest;
 use App\Http\Requests\Post\UpdatePostRequest;
 use App\Models\GroupMember;
+use App\Models\HiddenPost;
 use App\Models\Post;
 use App\Models\PostDraft;
 use App\Models\PostShare;
@@ -182,13 +183,23 @@ class PostController extends Controller
             ], 403);
         }
 
-        $caption = $request->input('caption');
+        $request->validate([
+            'caption' => ['nullable', 'string', 'max:5000'],
+            'target_type' => ['nullable', 'string', 'in:timeline,group,page'],
+            'target_id' => ['nullable', 'integer'],
+        ]);
 
-        $share = DB::transaction(function () use ($request, $post, $caption) {
+        $caption = $request->input('caption');
+        $targetType = $request->input('target_type', 'timeline');
+        $targetId = $request->input('target_id');
+
+        $share = DB::transaction(function () use ($request, $post, $caption, $targetType, $targetId) {
             $share = PostShare::create([
                 'user_id' => $request->user()->id,
                 'post_id' => $post->id,
                 'caption' => $caption,
+                'target_type' => $targetType,
+                'target_id' => $targetId,
             ]);
 
             $post->increment('shares_count');
@@ -205,8 +216,8 @@ class PostController extends Controller
                         'actor_id' => $request->user()->id,
                         'actor_name' => $request->user()->name ?? $request->user()->username,
                         'target_id' => $post->id,
-                        'title' => 'আপনার পোস্ট শেয়ার করা হয়েছে',
-                        'message' => ($request->user()->name ?? $request->user()->username).' আপনার পোস্টটি শেয়ার করেছেন।',
+                        'title' => 'Your post was shared',
+                        'message' => ($request->user()->name ?? $request->user()->username).' shared your post.',
                     ],
                     channels: ['database']
                 );
@@ -221,6 +232,43 @@ class PostController extends Controller
                 'shares_count' => $post->fresh()->shares_count,
             ],
             message: 'Post shared successfully.'
+        );
+    }
+
+    /**
+     * Hide a post from viewer's feed.
+     */
+    public function hide(Request $request, int $id): JsonResponse
+    {
+        $post = Post::findOrFail($id);
+        $user = $request->user();
+
+        HiddenPost::firstOrCreate([
+            'user_id' => $user->id,
+            'post_id' => $post->id,
+        ]);
+
+        return $this->successResponse(
+            data: ['post_id' => $post->id, 'is_hidden' => true],
+            message: 'Post hidden from your feed.'
+        );
+    }
+
+    /**
+     * Unhide a post from viewer's feed.
+     */
+    public function unhide(Request $request, int $id): JsonResponse
+    {
+        $post = Post::findOrFail($id);
+        $user = $request->user();
+
+        HiddenPost::where('user_id', $user->id)
+            ->where('post_id', $post->id)
+            ->delete();
+
+        return $this->successResponse(
+            data: ['post_id' => $post->id, 'is_hidden' => false],
+            message: 'Post unhidden from your feed.'
         );
     }
 

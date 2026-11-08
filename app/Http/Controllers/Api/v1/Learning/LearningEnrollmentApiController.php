@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\v1\Learning;
 
 use App\Http\Controllers\Controller;
+use App\Models\LearningCertificate;
 use App\Models\LearningCourse;
 use App\Models\LearningCourseLesson;
 use App\Models\LearningEnrollment;
 use App\Services\Learning\EnrollmentService;
 use App\Services\Learning\LearningProgressService;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -26,14 +28,23 @@ class LearningEnrollmentApiController extends Controller
      */
     public function enroll(Request $request, int $id): JsonResponse
     {
+        $request->validate([
+            'coupon_code' => 'nullable|string|max:64',
+        ]);
+
         $user = $request->user();
         $course = LearningCourse::findOrFail($id);
         $couponCode = $request->input('coupon_code');
 
         try {
-            $enrollment = $this->enrollmentService->enrollUser($user, $course, $couponCode);
+            $enrollment = $this->enrollmentService->enrollUser($user, $course, is_string($couponCode) ? $couponCode : null);
 
-            return $this->successResponse($enrollment->load(['course.instructor', 'courseProgress']), 'Enrolled successfully in course.');
+            return $this->successResponse(
+                $enrollment->load(['course.instructor', 'course.category', 'courseProgress']),
+                'Enrolled successfully in course.'
+            );
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 422);
         }
@@ -45,13 +56,40 @@ class LearningEnrollmentApiController extends Controller
     public function myLearning(Request $request): JsonResponse
     {
         $user = $request->user();
-        $enrollments = LearningEnrollment::with(['course.instructor', 'courseProgress'])
-            ->where('user_id', $user->id)
-            ->where('status', LearningEnrollment::STATUS_ACTIVE)
-            ->latest('last_accessed_at')
+        $statusFilter = $request->query('status');
+
+        $query = LearningEnrollment::with(['course.instructor', 'course.category', 'courseProgress'])
+            ->where('user_id', $user->id);
+
+        if (in_array($statusFilter, [LearningEnrollment::STATUS_ACTIVE, LearningEnrollment::STATUS_COMPLETED], true)) {
+            $query->where('status', $statusFilter);
+        } else {
+            $query->whereIn('status', [LearningEnrollment::STATUS_ACTIVE, LearningEnrollment::STATUS_COMPLETED]);
+        }
+
+        $enrollments = $query
+            ->orderByRaw('COALESCE(last_accessed_at, enrolled_at, created_at) DESC')
             ->get();
 
-        return $this->successResponse($enrollments, 'My learning list retrieved successfully.');
+        $allActiveAndCompleted = LearningEnrollment::where('user_id', $user->id)
+            ->whereIn('status', [LearningEnrollment::STATUS_ACTIVE, LearningEnrollment::STATUS_COMPLETED])
+            ->get(['id', 'status']);
+
+        $inProgressCount = $allActiveAndCompleted->where('status', LearningEnrollment::STATUS_ACTIVE)->count();
+        $completedCount = $allActiveAndCompleted->where('status', LearningEnrollment::STATUS_COMPLETED)->count();
+        $certificatesCount = LearningCertificate::where('user_id', $user->id)->where('is_revoked', false)->count();
+
+        return $this->successResponse(
+            $enrollments,
+            'My learning list retrieved successfully.',
+            200,
+            [
+                'enrolled_count' => $inProgressCount + $completedCount,
+                'in_progress_count' => $inProgressCount,
+                'completed_count' => $completedCount,
+                'certificates_count' => $certificatesCount,
+            ]
+        );
     }
 
     /**
@@ -87,7 +125,7 @@ class LearningEnrollmentApiController extends Controller
         $user = $request->user();
         $lesson = LearningCourseLesson::with('course')->findOrFail($id);
 
-        $this->authorize('view', $lesson);
+        $this->authorize('trackProgress', $lesson);
 
         $progress = $this->progressService->recordLessonProgress(
             $user,
@@ -124,7 +162,7 @@ class LearningEnrollmentApiController extends Controller
         $user = $request->user();
         $enrollment = LearningEnrollment::with('courseProgress')->findOrFail($id);
 
-        if ($enrollment->user_id !== $user->id && ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if ((int) $enrollment->user_id !== (int) $user->id && ! $user->isAdmin()) {
             return $this->errorResponse('Unauthorized to view this enrollment progress.', 403);
         }
 
@@ -143,8 +181,10 @@ class LearningEnrollmentApiController extends Controller
             $cancelled = $this->enrollmentService->cancelEnrollment($user, $enrollment);
 
             return $this->successResponse($cancelled, 'Enrollment cancelled successfully.');
-        } catch (Exception $e) {
+        } catch (AuthorizationException $e) {
             return $this->errorResponse($e->getMessage(), 403);
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
         }
     }
 
@@ -167,7 +207,7 @@ class LearningEnrollmentApiController extends Controller
     public function lessonProgress(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $lesson = LearningCourseLesson::findOrFail($id);
+        $lesson = LearningCourseLesson::with('course')->findOrFail($id);
 
         $this->authorize('view', $lesson);
 
@@ -184,7 +224,7 @@ class LearningEnrollmentApiController extends Controller
         $user = $request->user();
         $lesson = LearningCourseLesson::with('course')->findOrFail($id);
 
-        $this->authorize('view', $lesson);
+        $this->authorize('trackProgress', $lesson);
 
         $progress = $this->progressService->markLessonComplete($user, $lesson);
 

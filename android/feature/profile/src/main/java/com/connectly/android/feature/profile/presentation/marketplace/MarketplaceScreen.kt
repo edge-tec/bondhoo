@@ -48,12 +48,21 @@ import com.connectly.android.core.network.api.*
 @Composable
 fun MarketplaceScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToChat: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: MarketplaceViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+
+    LaunchedEffect(uiState.pendingChatConversationId) {
+        val convId = uiState.pendingChatConversationId
+        if (convId != null && convId > 0L) {
+            viewModel.consumePendingChatNavigation()
+            onNavigateToChat(convId)
+        }
+    }
 
     LaunchedEffect(uiState.errorMessage, uiState.successMessage) {
         uiState.errorMessage?.let {
@@ -407,7 +416,13 @@ fun MarketplaceScreen(
                     MarketplaceTab.MY_ORDERS -> {
                         OrdersListView(
                             orders = uiState.orders,
+                            myOffers = uiState.myOffers,
                             isLoading = uiState.isLoading,
+                            isSubmitting = uiState.isSubmitting,
+                            onConfirmDelivery = { viewModel.confirmOrderDelivery(it) },
+                            onCancelOrder = { viewModel.cancelOrder(it) },
+                            onAcceptCounterOffer = { viewModel.acceptOffer(it) },
+                            onCancelOffer = { viewModel.cancelOffer(it) },
                             onRefresh = { viewModel.loadOrders() }
                         )
                     }
@@ -416,12 +431,15 @@ fun MarketplaceScreen(
                         SellingDashboardView(
                             summary = uiState.sellerSummary,
                             receivedOffers = uiState.receivedOffers,
-                            orders = uiState.orders,
+                            orders = uiState.sellerOrders,
                             isLoading = uiState.isLoading,
                             isSubmitting = uiState.isSubmitting,
                             onAcceptOffer = { viewModel.acceptOffer(it) },
                             onRejectOffer = { viewModel.rejectOffer(it) },
                             onCounterOffer = { viewModel.openCounterDialog(it) },
+                            onShipOrder = { orderId, carrier, tracking ->
+                                viewModel.shipOrder(orderId, carrier, tracking)
+                            },
                             onRefresh = { viewModel.loadSellerDashboard() }
                         )
                     }
@@ -434,7 +452,7 @@ fun MarketplaceScreen(
     uiState.selectedProduct?.let { product ->
         ProductDetailDialog(
             product = product,
-            isSubmitting = uiState.isSubmitting,
+            isSubmitting = uiState.isSubmitting || product.id in uiState.deletingProductIds,
             onDismiss = { viewModel.closeProductDetails() },
             onMessageClick = { viewModel.openMessageDialog() },
             onOfferClick = { viewModel.openOfferDialog() },
@@ -446,13 +464,45 @@ fun MarketplaceScreen(
                     putExtra(Intent.EXTRA_SUBJECT, product.title)
                     putExtra(
                         Intent.EXTRA_TEXT,
-                        "Check out this product on BONDHOO Marketplace: ${product.title} for ${product.currency} ${product.price}\nhttps://bondhoo.com/marketplace/${product.id}"
+                        "Check out this product on Bondoo Marketplace: ${product.title} for ${product.currency} ${product.price}\nhttps://bondhoo.com/marketplace/${product.id}"
                     )
                 }
                 context.startActivity(Intent.createChooser(shareIntent, "Share Listing"))
             },
             onReportClick = { viewModel.openReportDialog() },
+            onEditClick = { viewModel.openEditDialog(product) },
+            onUpdateStatusClick = { newStatus -> viewModel.updateListingStatus(product.id, newStatus) },
             onDeleteClick = { viewModel.deleteListing(product.id) }
+        )
+    }
+
+    // Edit Listing Dialog (Owner Only)
+    if (uiState.showEditDialog && uiState.editingProduct != null) {
+        EditListingDialog(
+            product = uiState.editingProduct!!,
+            categoryList = uiState.categoryList,
+            isSubmitting = uiState.isSubmitting,
+            onDismiss = { viewModel.closeEditDialog() },
+            onSubmit = { title, catId, subId, price, origPrice, condition, brand, location, delType, delCharge, isNeg, desc, existingImages, imgUrl, files ->
+                viewModel.updateListing(
+                    productId = uiState.editingProduct!!.id,
+                    title = title,
+                    categoryId = catId,
+                    subcategoryId = subId,
+                    price = price,
+                    originalPrice = origPrice,
+                    condition = condition,
+                    brand = brand,
+                    location = location,
+                    deliveryType = delType,
+                    deliveryCharge = delCharge,
+                    isNegotiable = isNeg,
+                    description = desc,
+                    existingImages = existingImages,
+                    imageUrl = imgUrl,
+                    imageFiles = files
+                )
+            }
         )
     }
 
@@ -571,38 +621,74 @@ private fun ProductCard(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Condition Badge
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = Color.Black.copy(alpha = 0.65f),
+                // Condition + Status Badge
+                Row(
                     modifier = Modifier
                         .padding(8.dp)
-                        .align(Alignment.TopStart)
+                        .align(Alignment.TopStart),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text = product.condition.uppercase(),
-                        color = Color.White,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = Color.Black.copy(alpha = 0.65f)
+                    ) {
+                        Text(
+                            text = product.condition.replace('_', ' ').uppercase(),
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                    if (product.status != "active") {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = if (product.status == "sold") Color(0xFFC62828) else Color(0xFFEF6C00)
+                        ) {
+                            Text(
+                                text = product.status.uppercase(),
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
 
-                // Bookmark/Favorite Button
-                IconButton(
-                    onClick = onFavoriteClick,
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .size(32.dp)
-                        .align(Alignment.TopEnd)
-                        .background(Color.White.copy(alpha = 0.85f), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = if (product.is_favorited) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
-                        contentDescription = "Bookmark",
-                        tint = if (product.is_favorited) ConnectlyBlue else Color.DarkGray,
-                        modifier = Modifier.size(16.dp)
-                    )
+                // Ownership badge vs Bookmark/Favorite Button
+                if (product.is_owner) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = ConnectlyBlue.copy(alpha = 0.9f),
+                        modifier = Modifier
+                            .padding(6.dp)
+                            .align(Alignment.TopEnd)
+                    ) {
+                        Text(
+                            text = "YOUR ITEM",
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    }
+                } else {
+                    IconButton(
+                        onClick = onFavoriteClick,
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .size(32.dp)
+                            .align(Alignment.TopEnd)
+                            .background(Color.White.copy(alpha = 0.85f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = if (product.is_favorited) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                            contentDescription = "Bookmark",
+                            tint = if (product.is_favorited) ConnectlyBlue else Color.DarkGray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
 
@@ -674,6 +760,8 @@ private fun ProductDetailDialog(
     onFavoriteToggle: () -> Unit,
     onShareClick: () -> Unit,
     onReportClick: () -> Unit,
+    onEditClick: () -> Unit = {},
+    onUpdateStatusClick: (String) -> Unit = {},
     onDeleteClick: () -> Unit
 ) {
     var showConfirmDelete by remember { mutableStateOf(false) }
@@ -682,7 +770,7 @@ private fun ProductDetailDialog(
         AlertDialog(
             onDismissRequest = { if (!isSubmitting) showConfirmDelete = false },
             title = { Text("Delete Listing", fontWeight = FontWeight.Bold) },
-            text = { Text("Are you sure you want to permanently delete \"${product.title}\"? This action cannot be undone.") },
+            text = { Text("Are you sure you want to remove \"${product.title}\" from Marketplace?") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -721,7 +809,7 @@ private fun ProductDetailDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Image Header with Condition Badge & Action Buttons
+                // Image Header with Status Badge & Action Buttons
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -735,7 +823,25 @@ private fun ProductDetailDialog(
                         modifier = Modifier.fillMaxSize()
                     )
 
-                    // Share button on top right
+                    if (product.status != "active") {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (product.status == "sold") Color(0xFFC62828) else Color(0xFFEF6C00),
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(8.dp)
+                        ) {
+                            Text(
+                                text = product.status.uppercase(),
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    // Top-right action buttons (Save only for non-owner)
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -750,18 +856,20 @@ private fun ProductDetailDialog(
                         ) {
                             Icon(Icons.Default.Share, contentDescription = "Share", tint = ConnectlyBlue, modifier = Modifier.size(16.dp))
                         }
-                        IconButton(
-                            onClick = onFavoriteToggle,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(Color.White.copy(alpha = 0.85f), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = if (product.is_favorited) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
-                                contentDescription = "Save",
-                                tint = if (product.is_favorited) ConnectlyBlue else Color.DarkGray,
-                                modifier = Modifier.size(16.dp)
-                            )
+                        if (!product.is_owner) {
+                            IconButton(
+                                onClick = onFavoriteToggle,
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(Color.White.copy(alpha = 0.85f), CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = if (product.is_favorited) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                                    contentDescription = "Save",
+                                    tint = if (product.is_favorited) ConnectlyBlue else Color.DarkGray,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -805,14 +913,14 @@ private fun ProductDetailDialog(
                     }
                 }
 
-                // Attributes Row: Condition, Location, Delivery
+                // Attributes Row: Condition, Location
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     AssistChip(
                         onClick = {},
-                        label = { Text("Condition: ${product.condition.replaceFirstChar { it.uppercase() }}", fontSize = 11.sp) }
+                        label = { Text("Condition: ${product.condition.replace('_', ' ').replaceFirstChar { it.uppercase() }}", fontSize = 11.sp) }
                     )
                     AssistChip(
                         onClick = {},
@@ -821,7 +929,17 @@ private fun ProductDetailDialog(
                     )
                 }
 
-                // Verified Seller Card
+                // Seller Card bound to authentic backend verification & rating
+                val sellerVerified = product.seller?.is_verified == true
+                val sellerReviews = product.seller?.reviews_count ?: 0
+                val sellerRating = product.seller?.rating ?: 0.0
+                val sellerSubtitle = buildString {
+                    append(if (product.is_owner) "Your Listing" else if (sellerVerified) "Verified Member" else "Community Seller")
+                    if (sellerReviews > 0) {
+                        append(" • ★ ${"%.1f".format(sellerRating)} ($sellerReviews reviews)")
+                    }
+                }
+
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
@@ -844,15 +962,17 @@ private fun ProductDetailDialog(
                         Column(modifier = Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = product.seller_name ?: "Bondhoo Seller",
+                                    text = product.seller?.name ?: product.seller_name ?: "Bondoo Seller",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(Icons.Default.Verified, contentDescription = "Verified", tint = ConnectlyBlue, modifier = Modifier.size(14.dp))
+                                if (sellerVerified) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(Icons.Default.Verified, contentDescription = "Verified", tint = ConnectlyBlue, modifier = Modifier.size(14.dp))
+                                }
                             }
                             Text(
-                                text = "Verified Member • ★ 4.9 (42 reviews)",
+                                text = sellerSubtitle,
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -869,13 +989,15 @@ private fun ProductDetailDialog(
                 )
 
                 if (!product.is_owner) {
-                    // Action Buttons: Message, Make Offer, Buy Now
+                    val isPurchasable = product.status == "active"
+                    // Non-Owner Action Buttons: Message, Make Offer, Buy Now
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         OutlinedButton(
                             onClick = onMessageClick,
+                            enabled = !isSubmitting,
                             modifier = Modifier.weight(1f),
                             contentPadding = PaddingValues(horizontal = 6.dp)
                         ) {
@@ -886,29 +1008,32 @@ private fun ProductDetailDialog(
 
                         OutlinedButton(
                             onClick = onOfferClick,
+                            enabled = !isSubmitting && isPurchasable,
                             modifier = Modifier.weight(1f),
                             contentPadding = PaddingValues(horizontal = 6.dp)
                         ) {
-                            Icon(Icons.Default.LocalOffer, contentDescription = null, modifier = Modifier.size(14.dp), tint = ConnectlyBlue)
+                            Icon(Icons.Default.LocalOffer, contentDescription = null, modifier = Modifier.size(14.dp), tint = if (isPurchasable) ConnectlyBlue else Color.Gray)
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Offer", fontSize = 11.sp)
                         }
 
                         Button(
                             onClick = onOrderClick,
+                            enabled = !isSubmitting && isPurchasable,
                             modifier = Modifier.weight(1.2f),
                             colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue),
                             contentPadding = PaddingValues(horizontal = 6.dp)
                         ) {
                             Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Buy Now", fontSize = 11.sp)
+                            Text(if (isPurchasable) "Buy Now" else product.status.uppercase(), fontSize = 11.sp)
                         }
                     }
 
                     // Visitor Report option
                     TextButton(
                         onClick = onReportClick,
+                        enabled = !isSubmitting,
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -917,7 +1042,56 @@ private fun ProductDetailDialog(
                         Text("Report Listing", fontSize = 11.sp)
                     }
                 } else {
-                    // Owner Options: Delete My Listing
+                    // Owner-Only Controls: Edit, Pause/Activate, Mark as Sold, Delete
+                    Text("Manage Your Listing", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = ConnectlyBlue)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = onEditClick,
+                            enabled = !isSubmitting,
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 6.dp)
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Edit", fontSize = 11.sp)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                val nextStatus = if (product.status == "active") "inactive" else "active"
+                                onUpdateStatusClick(nextStatus)
+                            },
+                            enabled = !isSubmitting,
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (product.status == "active") Icons.Default.PauseCircle else Icons.Default.PlayCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(if (product.status == "active") "Pause" else "Activate", fontSize = 11.sp)
+                        }
+
+                        if (product.status != "sold") {
+                            Button(
+                                onClick = { onUpdateStatusClick("sold") },
+                                enabled = !isSubmitting,
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                                modifier = Modifier.weight(1.15f),
+                                contentPadding = PaddingValues(horizontal = 6.dp)
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Mark Sold", fontSize = 11.sp)
+                            }
+                        }
+                    }
+
                     Button(
                         onClick = { showConfirmDelete = true },
                         enabled = !isSubmitting,
@@ -927,7 +1101,7 @@ private fun ProductDetailDialog(
                         if (isSubmitting) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), color = MaterialTheme.colorScheme.onError, strokeWidth = 2.dp)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Deleting...", fontSize = 13.sp)
+                            Text("Working...", fontSize = 13.sp)
                         } else {
                             Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
@@ -1167,14 +1341,20 @@ private fun CategoriesDirectoryView(
 @Composable
 private fun OrdersListView(
     orders: List<MarketplaceOrderDto>,
+    myOffers: List<MarketplaceOfferDto> = emptyList(),
     isLoading: Boolean,
+    isSubmitting: Boolean = false,
+    onConfirmDelivery: (Long) -> Unit = {},
+    onCancelOrder: (Long) -> Unit = {},
+    onAcceptCounterOffer: (Long) -> Unit = {},
+    onCancelOffer: (Long) -> Unit = {},
     onRefresh: () -> Unit
 ) {
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = ConnectlyBlue)
         }
-    } else if (orders.isEmpty()) {
+    } else if (orders.isEmpty() && myOffers.isEmpty()) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -1182,52 +1362,178 @@ private fun OrdersListView(
         ) {
             Icon(Icons.Outlined.ShoppingBag, contentDescription = null, modifier = Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(10.dp))
-            Text("No Orders Yet", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("When you buy or sell products, orders will appear here.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("No Orders or Sent Offers Yet", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text("Your purchases and price offers will appear here.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(10.dp))
+            OutlinedButton(onClick = onRefresh) {
+                Text("Refresh", fontSize = 12.sp)
+            }
         }
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(orders, key = { it.id }) { order ->
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(order.order_number ?: "ORD-${order.id}", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = when (order.status) {
-                                    "completed", "delivered" -> Color(0xFFE8F5E9)
-                                    "cancelled" -> Color(0xFFFFEBEE)
-                                    else -> ConnectlyBlue.copy(alpha = 0.12f)
-                                }
+            if (orders.isNotEmpty()) {
+                item {
+                    Text("My Purchases (${orders.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+                }
+                items(orders, key = { "ord-${it.id}" }) { order ->
+                    val displayTotal = order.total_amount ?: order.amount
+                    val displayTitle = order.product?.title ?: order.product_title
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = order.status.uppercase(),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
+                                Text(order.order_number ?: "ORD-${order.id}", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
                                     color = when (order.status) {
-                                        "completed", "delivered" -> Color(0xFF2E7D32)
-                                        "cancelled" -> Color(0xFFC62828)
-                                        else -> ConnectlyBlue
-                                    },
+                                        "completed", "delivered" -> Color(0xFFE8F5E9)
+                                        "cancelled", "refunded" -> Color(0xFFFFEBEE)
+                                        else -> ConnectlyBlue.copy(alpha = 0.12f)
+                                    }
+                                ) {
+                                    Text(
+                                        text = order.status.uppercase(),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = when (order.status) {
+                                            "completed", "delivered" -> Color(0xFF2E7D32)
+                                            "cancelled", "refunded" -> Color(0xFFC62828)
+                                            else -> ConnectlyBlue
+                                        },
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            if (!displayTitle.isNullOrBlank()) {
+                                Text(displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            }
+                            Text("Total: ৳ ${displayTotal.toLong()}", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = ConnectlyBlue)
+                            Text("Ship to: ${order.shipping_name ?: "Buyer"} • ${order.shipping_address ?: "Dhaka"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (!order.tracking_number.isNullOrBlank()) {
+                                Text(
+                                    text = "Tracking: ${order.tracking_carrier ?: "Courier"} #${order.tracking_number}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = ConnectlyBlue
+                                )
+                            }
+                            Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFFFF8E1)) {
+                                Text(
+                                    text = if (order.escrow_status == "released") "✓ Escrow Released to Seller" else "🛡️ Escrow Protection (${order.escrow_status.uppercase()})",
+                                    fontSize = 10.sp,
+                                    color = Color(0xFFF57F17),
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
+
+                            val canConfirm = order.status in listOf("confirmed", "processing", "shipped")
+                            val canCancel = order.status in listOf("pending", "confirmed", "processing")
+                            if (canConfirm || canCancel) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    if (canConfirm) {
+                                        Button(
+                                            onClick = { onConfirmDelivery(order.id) },
+                                            enabled = !isSubmitting,
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                                            modifier = Modifier.weight(1.3f),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                        ) {
+                                            Text("Confirm Delivery", fontSize = 11.sp)
+                                        }
+                                    }
+                                    if (canCancel) {
+                                        OutlinedButton(
+                                            onClick = { onCancelOrder(order.id) },
+                                            enabled = !isSubmitting,
+                                            modifier = Modifier.weight(1f),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                        ) {
+                                            Text("Cancel", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        Text("Total: ৳ ${order.amount.toLong()}", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = ConnectlyBlue)
-                        Text("Ship to: ${order.shipping_name ?: "Buyer"} • ${order.shipping_address ?: "Dhaka"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFFFF8E1)) {
-                            Text("🛡️ Escrow Protection Active", fontSize = 10.sp, color = Color(0xFFF57F17), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    }
+                }
+            }
+
+            if (myOffers.isNotEmpty()) {
+                item {
+                    Text("My Sent Offers (${myOffers.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
+                }
+                items(myOffers, key = { "off-${it.id}" }) { offer ->
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(offer.product_title ?: "Listing #${offer.product_id}", fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                                Surface(shape = RoundedCornerShape(4.dp), color = ConnectlyBlue.copy(alpha = 0.12f)) {
+                                    Text(
+                                        text = offer.status.uppercase(),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ConnectlyBlue,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            Text("Your Offer: ৳ ${offer.offer_amount.toLong()}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = ConnectlyBlue)
+                            val counterAmt = offer.counter_amount
+                            if (counterAmt != null) {
+                                Text(
+                                    text = "Seller Counteroffer: ৳ ${counterAmt.toLong()}${if (!offer.counter_message.isNullOrBlank()) " — \"${offer.counter_message}\"" else ""}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2E7D32)
+                                )
+                            }
+                            if (offer.status == "countered" || offer.status == "pending") {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    if (offer.status == "countered") {
+                                        Button(
+                                            onClick = { onAcceptCounterOffer(offer.id) },
+                                            enabled = !isSubmitting,
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                                            modifier = Modifier.weight(1.3f),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                        ) {
+                                            Text("Accept Counter (৳${(offer.counter_amount ?: offer.offer_amount).toLong()})", fontSize = 11.sp)
+                                        }
+                                    }
+                                    OutlinedButton(
+                                        onClick = { onCancelOffer(offer.id) },
+                                        enabled = !isSubmitting,
+                                        modifier = Modifier.weight(1f),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                    ) {
+                                        Text("Cancel Offer", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1246,8 +1552,57 @@ private fun SellingDashboardView(
     onAcceptOffer: (offerId: Long) -> Unit,
     onRejectOffer: (offerId: Long) -> Unit,
     onCounterOffer: (offer: MarketplaceOfferDto) -> Unit,
+    onShipOrder: (orderId: Long, carrier: String?, trackingNumber: String?) -> Unit = { _, _, _ -> },
     onRefresh: () -> Unit
 ) {
+    var orderForShipment by remember { mutableStateOf<MarketplaceOrderDto?>(null) }
+    var carrierInput by remember { mutableStateOf("Pathao Courier") }
+    var trackingInput by remember { mutableStateOf("") }
+
+    if (orderForShipment != null) {
+        AlertDialog(
+            onDismissRequest = { if (!isSubmitting) orderForShipment = null },
+            title = { Text("Mark Order as Shipped", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Order: ${orderForShipment!!.order_number ?: "ORD-${orderForShipment!!.id}"}", fontSize = 12.sp)
+                    OutlinedTextField(
+                        value = carrierInput,
+                        onValueChange = { carrierInput = it },
+                        label = { Text("Courier / Carrier") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = trackingInput,
+                        onValueChange = { trackingInput = it },
+                        label = { Text("Tracking Number (optional)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val targetId = orderForShipment!!.id
+                        orderForShipment = null
+                        onShipOrder(targetId, carrierInput, trackingInput)
+                    },
+                    enabled = !isSubmitting,
+                    colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue)
+                ) {
+                    Text("Confirm Shipment")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { orderForShipment = null }, enabled = !isSubmitting) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1260,8 +1615,60 @@ private fun SellingDashboardView(
             MetricCard("Sold Items", "${summary?.sold_listings ?: 0}", Modifier.weight(1f))
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MetricCard("Total Orders", "${summary?.total_orders ?: 0}", Modifier.weight(1f))
+            MetricCard("Total Orders", "${summary?.total_orders ?: orders.size}", Modifier.weight(1f))
             MetricCard("Revenue", "৳ ${(summary?.gross_sales ?: 0.0).toLong()}", Modifier.weight(1f), isHighlight = true)
+        }
+
+        // Seller Orders Fulfillment Section
+        Text("Seller Orders (${orders.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        if (orders.isEmpty()) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "No buyer orders received yet.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(14.dp)
+                )
+            }
+        } else {
+            orders.forEach { order ->
+                val displayTotal = order.total_amount ?: order.amount
+                Card(
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(order.order_number ?: "ORD-${order.id}", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("৳ ${displayTotal.toLong()} • ${order.status.uppercase()}", fontWeight = FontWeight.Bold, color = ConnectlyBlue, fontSize = 12.sp)
+                        }
+                        Text(
+                            text = "Deliver to: ${order.shipping_name ?: "Buyer"} • ${order.shipping_address ?: "Dhaka"}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (order.status in listOf("pending", "confirmed", "processing")) {
+                            Button(
+                                onClick = {
+                                    trackingInput = ""
+                                    orderForShipment = order
+                                },
+                                enabled = !isSubmitting,
+                                colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue),
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(vertical = 6.dp)
+                            ) {
+                                Text("Mark as Shipped", fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Offers Management Section
@@ -1295,6 +1702,9 @@ private fun SellingDashboardView(
                                 color = ConnectlyBlue,
                                 fontSize = 13.sp
                             )
+                        }
+                        if (!offer.product_title.isNullOrBlank()) {
+                            Text("Item: ${offer.product_title}", fontSize = 11.sp, fontWeight = FontWeight.Medium)
                         }
                         if (offer.message != null) {
                             Text("\"${offer.message}\"", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1703,6 +2113,226 @@ private fun CreateListingDialog(
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
                 } else {
                     Text("Publish Listing")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isSubmitting) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun EditListingDialog(
+    product: MarketplaceProductDto,
+    categoryList: List<MarketplaceCategoryDto>,
+    isSubmitting: Boolean,
+    onDismiss: () -> Unit,
+    onSubmit: (
+        title: String,
+        categoryId: Long,
+        subcategoryId: Long?,
+        price: Double,
+        originalPrice: Double?,
+        condition: String,
+        brand: String?,
+        location: String,
+        deliveryType: String,
+        deliveryCharge: Double,
+        isNegotiable: Boolean,
+        description: String,
+        existingImages: List<String>,
+        imageUrl: String?,
+        imageFiles: List<File>
+    ) -> Unit
+) {
+    val context = LocalContext.current
+    var title by remember(product.id) { mutableStateOf(product.title) }
+    var priceText by remember(product.id) { mutableStateOf(product.price.toLong().toString()) }
+    var originalPriceText by remember(product.id) { mutableStateOf(product.original_price?.toLong()?.toString() ?: "") }
+    var location by remember(product.id) { mutableStateOf(product.location ?: "Dhaka, Bangladesh") }
+    var brand by remember(product.id) { mutableStateOf(product.brand ?: "") }
+    var isNegotiable by remember(product.id) { mutableStateOf(product.is_negotiable) }
+    var deliveryChargeText by remember(product.id) { mutableStateOf(product.delivery_charge.toLong().toString()) }
+    var description by remember(product.id) { mutableStateOf(product.description ?: "") }
+    var existingImages by remember(product.id) {
+        mutableStateOf(
+            if (product.images.isNotEmpty()) product.images
+            else listOfNotNull(product.primary_image_url ?: product.primary_image)
+        )
+    }
+    var imageUrl by remember(product.id) { mutableStateOf("") }
+    var selectedUris by remember(product.id) { mutableStateOf<List<Uri>>(emptyList()) }
+    var selectedCategoryId by remember(product.id) {
+        mutableLongStateOf(product.category_id ?: product.category?.id ?: categoryList.firstOrNull()?.id ?: 1L)
+    }
+    var selectedSubcategoryId by remember(product.id) {
+        mutableStateOf(product.subcategory_id ?: product.subcategory?.id)
+    }
+    var selectedCondition by remember(product.id) { mutableStateOf(product.condition) }
+    var selectedDeliveryType by remember(product.id) { mutableStateOf(product.delivery_type) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 5)
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            selectedUris = (selectedUris + uris).distinct().take(5)
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = { if (!isSubmitting) onDismiss() },
+        title = {
+            Text(
+                text = "Edit Listing (তথ্য সম্পাদনা করুন)",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Product Title") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = priceText,
+                        onValueChange = { priceText = it },
+                        label = { Text("Price (৳)") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = originalPriceText,
+                        onValueChange = { originalPriceText = it },
+                        label = { Text("Old Price (৳)") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("+ Add More Photos (${existingImages.size + selectedUris.size})", fontSize = 12.sp)
+                }
+
+                OutlinedTextField(
+                    value = imageUrl,
+                    onValueChange = { imageUrl = it },
+                    label = { Text("Additional Photo URL (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (categoryList.isNotEmpty()) {
+                    Text("Category", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        categoryList.forEach { cat ->
+                            FilterChip(
+                                selected = selectedCategoryId == cat.id,
+                                onClick = {
+                                    selectedCategoryId = cat.id
+                                    selectedSubcategoryId = null
+                                },
+                                label = { Text(cat.name, fontSize = 11.sp) }
+                            )
+                        }
+                    }
+                }
+
+                Text("Condition", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("new" to "New", "used" to "Used", "like_new" to "Like New", "refurbished" to "Refurbished").forEach { (code, label) ->
+                        FilterChip(
+                            selected = selectedCondition == code,
+                            onClick = { selectedCondition = code },
+                            label = { Text(label, fontSize = 10.sp) }
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = { Text("Brand / Manufacturer") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = location,
+                    onValueChange = { location = it },
+                    label = { Text("Location") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    maxLines = 4,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val p = priceText.toDoubleOrNull() ?: product.price
+                    val orig = originalPriceText.toDoubleOrNull()
+                    val delCh = deliveryChargeText.toDoubleOrNull() ?: product.delivery_charge
+                    val files = selectedUris.mapNotNull { uriToFile(context, it) }
+                    onSubmit(
+                        title,
+                        selectedCategoryId,
+                        selectedSubcategoryId,
+                        p,
+                        orig,
+                        selectedCondition,
+                        brand.takeIf { it.isNotBlank() },
+                        location,
+                        selectedDeliveryType,
+                        delCh,
+                        isNegotiable,
+                        description,
+                        existingImages,
+                        imageUrl.takeIf { it.isNotBlank() },
+                        files
+                    )
+                },
+                enabled = !isSubmitting && title.isNotBlank() && (priceText.toDoubleOrNull() ?: 0.0) > 0.0,
+                colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue)
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
+                } else {
+                    Text("Save Changes")
                 }
             }
         },

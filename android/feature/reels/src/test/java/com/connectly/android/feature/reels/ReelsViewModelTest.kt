@@ -55,7 +55,7 @@ class ReelsViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { getReelsFeedUseCase(1, 10) } returns flowOf(
+        every { getReelsFeedUseCase(any(), any(), any()) } returns flowOf(
             Result.Loading,
             Result.Success(listOf(testReel))
         )

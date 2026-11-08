@@ -144,6 +144,7 @@ export interface MarketplaceSeller {
     rating: number;
     reviews_count: number;
     verified: boolean;
+    is_verified?: boolean;
 }
 
 export interface MarketplaceReview {
@@ -161,6 +162,8 @@ export interface MarketplaceReview {
 
 export interface MarketplaceProduct {
     id: number;
+    seller_id?: number;
+    category_id?: number;
     title: string;
     description: string;
     price: number;
@@ -175,11 +178,14 @@ export interface MarketplaceProduct {
     delivery_charge: number;
     location: string;
     status: string;
+    stock?: number | null;
     images: string[];
     primary_image: string;
     is_boosted: boolean;
     is_featured: boolean;
     is_saved: boolean;
+    is_favorited?: boolean;
+    is_owner?: boolean;
     views_count: number;
     time_ago: string;
     created_at?: string;

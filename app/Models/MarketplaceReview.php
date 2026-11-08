@@ -31,13 +31,17 @@ class MarketplaceReview extends Model
     protected function casts(): array
     {
         return [
+            'order_id' => 'integer',
+            'product_id' => 'integer',
+            'buyer_id' => 'integer',
+            'seller_id' => 'integer',
             'rating' => 'integer',
         ];
     }
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(MarketplaceProduct::class, 'product_id');
+        return $this->belongsTo(MarketplaceProduct::class, 'product_id')->withTrashed();
     }
 
     public function buyer(): BelongsTo

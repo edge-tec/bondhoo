@@ -8,8 +8,10 @@ use App\Models\MarketplaceOrder;
 use App\Models\MarketplaceProduct;
 use App\Models\User;
 use App\Services\Marketplace\MarketplaceService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -98,8 +100,14 @@ class MarketplaceWebController extends Controller
         $product = MarketplaceProduct::with(['seller.profile', 'category'])
             ->findOrFail($id);
 
-        // Increment view count safely
-        $product->increment('views_count');
+        if (! Gate::forUser($user)->allows('view', $product)) {
+            abort(404);
+        }
+
+        // Increment view count safely for non-owners
+        if (! $user || (int) $user->id !== (int) $product->seller_id) {
+            $product->increment('views_count');
+        }
 
         $similarProducts = MarketplaceProduct::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
@@ -440,6 +448,51 @@ class MarketplaceWebController extends Controller
     }
 
     /**
+     * Web endpoint: update an existing product listing (owner/admin only).
+     */
+    public function updateListingWeb(Request $request, int $id): RedirectResponse
+    {
+        $user = $this->resolveUser($request);
+        if (! $user) {
+            return redirect()->guest('/login');
+        }
+
+        $product = MarketplaceProduct::findOrFail($id);
+
+        if (! Gate::forUser($user)->allows('update', $product)) {
+            abort(403, 'Unauthorized to edit this listing.');
+        }
+
+        $validated = $request->validate([
+            'category_id' => 'sometimes|required|exists:marketplace_categories,id',
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'sometimes|required|numeric|min:0',
+            'currency' => 'nullable|string|max:3',
+            'condition' => 'nullable|string|max:50',
+            'location' => 'nullable|string|max:255',
+            'brand' => 'nullable|string|max:100',
+            'is_negotiable' => 'nullable|boolean',
+            'delivery_type' => 'nullable|string|in:pickup,shipping,both',
+            'delivery_charge' => 'nullable|numeric|min:0',
+            'image_url' => 'nullable|url',
+        ]);
+
+        if (! empty($validated['image_url'])) {
+            $validated['images'] = [$validated['image_url']];
+        }
+        unset($validated['image_url']);
+
+        try {
+            $this->marketplaceService->updateProduct($product, $validated, $user);
+
+            return back()->with('success', 'লিস্টিং সফলভাবে আপডেট করা হয়েছে।');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Web endpoint: update listing status (active, sold, inactive).
      */
     public function updateListingStatusWeb(Request $request, int $id): RedirectResponse
@@ -474,12 +527,20 @@ class MarketplaceWebController extends Controller
             return redirect()->guest('/login');
         }
 
-        $product = MarketplaceProduct::findOrFail($id);
+        $product = MarketplaceProduct::withTrashed()->findOrFail($id);
 
         try {
             $this->marketplaceService->deleteListing($product, $user);
 
+            $referer = (string) $request->headers->get('referer', '');
+            if (str_contains($referer, '/marketplace/'.$id)) {
+                return redirect()->route('marketplace.my-listings')
+                    ->with('success', 'বিজ্ঞাপনটি সফলভাবে মুছে ফেলা হয়েছে।');
+            }
+
             return back()->with('success', 'বিজ্ঞাপনটি সফলভাবে মুছে ফেলা হয়েছে।');
+        } catch (AuthorizationException $e) {
+            abort(403, $e->getMessage());
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }

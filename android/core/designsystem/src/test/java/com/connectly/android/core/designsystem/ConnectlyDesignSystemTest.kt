@@ -2,9 +2,11 @@ package com.connectly.android.core.designsystem
 
 import com.connectly.android.core.designsystem.component.BottomBarDestination
 import com.connectly.android.core.designsystem.component.ConnectlyReaction
+import com.connectly.android.core.designsystem.component.EmojiCategory
 import com.connectly.android.core.designsystem.theme.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ConnectlyDesignSystemTest {
@@ -52,6 +54,39 @@ class ConnectlyDesignSystemTest {
         assertEquals("Videos", BottomBarDestination.REELS.title)
         assertEquals("Messenger", BottomBarDestination.MESSENGER.title)
         assertEquals("Menu", BottomBarDestination.MENU.title)
+    }
+
+    @Test
+    fun verify_emoji_categories_and_presets() {
+        val categories = EmojiCategory.entries
+        assertTrue(categories.size >= 7)
+
+        val smileys = EmojiCategory.SMILEYS
+        assertEquals("Smileys", smileys.label)
+        assertTrue(smileys.emojis.contains("😀"))
+        assertTrue(smileys.emojis.contains("😂"))
+        assertTrue(smileys.emojis.contains("😍"))
+
+        val gestures = EmojiCategory.GESTURES
+        assertTrue(gestures.emojis.contains("👍"))
+        assertTrue(gestures.emojis.contains("👏"))
+        assertTrue(gestures.emojis.contains("🙏"))
+
+        val love = EmojiCategory.LOVE
+        assertTrue(love.emojis.contains("❤️"))
+
+        val party = EmojiCategory.CELEBRATION
+        assertTrue(party.emojis.contains("🔥"))
+        assertTrue(party.emojis.contains("🎉"))
+
+        val food = EmojiCategory.FOOD
+        assertTrue(food.emojis.contains("🍕"))
+
+        val sports = EmojiCategory.ACTIVITIES
+        assertTrue(sports.emojis.contains("⚽"))
+
+        val objects = EmojiCategory.OBJECTS
+        assertTrue(objects.emojis.contains("💡"))
     }
 }
 

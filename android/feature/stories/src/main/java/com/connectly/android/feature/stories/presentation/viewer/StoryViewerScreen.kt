@@ -1,13 +1,18 @@
 package com.connectly.android.feature.stories.presentation.viewer
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,12 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.connectly.android.core.designsystem.component.ConnectlyAvatar
 import com.connectly.android.core.designsystem.theme.ConnectlyBlue
 
 @Composable
@@ -33,23 +41,108 @@ fun StoryViewerScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var messageText by remember { mutableStateOf("") }
+    val progressAnim = remember { Animatable(0f) }
+    var isPaused by remember { mutableStateOf(false) }
 
     LaunchedEffect(storyId) {
         viewModel.handleIntent(StoryViewerIntent.LoadStory(storyId))
+    }
+
+    // Auto-progress animation
+    LaunchedEffect(state.story, isPaused) {
+        if (state.story != null && !isPaused) {
+            val remaining = (1f - progressAnim.value)
+            val duration = (5000 * remaining).toInt().coerceAtLeast(100)
+            val result = progressAnim.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = duration, easing = LinearEasing)
+            )
+            if (result.endReason == androidx.compose.animation.core.AnimationEndReason.Finished) {
+                onNavigateBack()
+            }
+        }
     }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isPaused = true
+                        tryAwaitRelease()
+                        isPaused = false
+                    },
+                    onTap = { offset ->
+                        if (offset.x < size.width * 0.35f) {
+                            // Tap left: previous or exit
+                            onNavigateBack()
+                        } else if (offset.x > size.width * 0.65f) {
+                            // Tap right: advance
+                            onNavigateBack()
+                        }
+                    }
+                )
+            }
     ) {
-        // Full screen media image
-        AsyncImage(
-            model = state.story?.mediaUrl ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-            contentDescription = "Story Media",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+        // Expired story notification
+        if (state.errorMessage != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.9f))
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = state.errorMessage ?: "This story has expired.",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = onNavigateBack,
+                        colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue)
+                    ) {
+                        Text("Go Back")
+                    }
+                }
+            }
+            return
+        }
+
+        // Story Background & Content
+        val story = state.story
+        val isTextStory = story?.mediaType == "text" || story?.mediaUrl.isNullOrBlank() || story?.mediaUrl?.startsWith("http") != true
+
+        if (isTextStory) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(ConnectlyBlue),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = story?.mediaUrl.orEmpty(),
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(32.dp)
+                )
+            }
+        } else {
+            AsyncImage(
+                model = story?.mediaUrl ?: "",
+                contentDescription = "Story Media",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
         // Gradient top & bottom scrims
         Box(
@@ -86,7 +179,7 @@ fun StoryViewerScreen(
         ) {
             // Segmented progress bar
             LinearProgressIndicator(
-                progress = { 0.65f },
+                progress = { progressAnim.value },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(3.dp)
@@ -107,11 +200,10 @@ fun StoryViewerScreen(
                         .clip(CircleShape)
                         .background(Color.LightGray)
                 ) {
-                    AsyncImage(
-                        model = state.story?.author?.avatar ?: "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-                        contentDescription = "Story Author",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                    ConnectlyAvatar(
+                        imageUrl = story?.author?.avatar,
+                        name = story?.author?.name ?: "Story",
+                        size = 38.dp
                     )
                 }
 
@@ -119,16 +211,29 @@ fun StoryViewerScreen(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = state.story?.author?.name ?: "Sadia Islam",
+                        text = story?.author?.name ?: "Story",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
                     Text(
-                        text = "2h ago",
+                        text = "Active Story • 24h",
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = 12.sp
                     )
+                }
+
+                if (state.isViewingOwnStory) {
+                    IconButton(onClick = {
+                        viewModel.handleIntent(StoryViewerIntent.DeleteStory)
+                        onNavigateBack()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = Color.White
+                        )
+                    }
                 }
 
                 IconButton(onClick = onNavigateBack) {
@@ -141,86 +246,87 @@ fun StoryViewerScreen(
             }
         }
 
-        // Bottom Controls: Message Input & Quick Emoji Reactions
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(16.dp)
-                .align(Alignment.BottomCenter)
-        ) {
-            // Quick Emojis
-            val quickEmojis = listOf("❤️", "😂", "😮", "😢", "👍", "👏")
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+        // Bottom Controls: Message Input & Quick Emoji Reactions (for other user's stories)
+        if (!state.isViewingOwnStory) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(16.dp)
+                    .align(Alignment.BottomCenter)
             ) {
-                quickEmojis.forEach { emoji ->
-                    Text(
-                        text = emoji,
-                        fontSize = 28.sp,
+                // Quick Emojis
+                val quickEmojis = listOf("❤️", "😂", "😮", "😢", "👍", "🔥")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    quickEmojis.forEach { emoji ->
+                        Text(
+                            text = emoji,
+                            fontSize = 28.sp,
+                            modifier = Modifier
+                                .clickable {
+                                    viewModel.handleIntent(StoryViewerIntent.ReactStory(emoji))
+                                }
+                                .padding(4.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = messageText,
+                        onValueChange = { messageText = it },
+                        placeholder = { Text("Send message...", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp) },
                         modifier = Modifier
-                            .clickable {
-                                viewModel.handleIntent(StoryViewerIntent.ReactStory(emoji))
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White.copy(alpha = 0.6f),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedContainerColor = Color.White.copy(alpha = 0.15f),
+                            unfocusedContainerColor = Color.White.copy(alpha = 0.15f)
+                        ),
+                        trailingIcon = {
+                            if (messageText.isNotBlank()) {
+                                IconButton(onClick = {
+                                    viewModel.handleIntent(StoryViewerIntent.SendReply(messageText))
+                                    messageText = ""
+                                }) {
+                                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = ConnectlyBlue)
+                                }
                             }
-                            .padding(4.dp)
+                        }
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Reply input bar matching Screen 2
+        } else {
+            // Viewers summary for owner
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(16.dp)
+                    .align(Alignment.BottomCenter),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = messageText,
-                    onValueChange = { messageText = it },
-                    placeholder = { Text("Send message...", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.White.copy(alpha = 0.6f),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedContainerColor = Color.White.copy(alpha = 0.15f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.15f)
-                    ),
-                    trailingIcon = {
-                        if (messageText.isNotBlank()) {
-                            IconButton(onClick = {
-                                viewModel.handleIntent(StoryViewerIntent.SendReply(messageText))
-                                messageText = ""
-                            }) {
-                                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = ConnectlyBlue)
-                            }
-                        }
-                    }
+                Text(
+                    text = "${story?.viewsCount ?: 0} viewers",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
                 )
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                IconButton(
-                    onClick = { /* Share */ },
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "Share",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
             }
         }
     }
 }
-

@@ -30,6 +30,7 @@ fun NavGraphBuilder.feedGraph(
     onNavigateToStoryViewer: (Long) -> Unit,
     onNavigateToCreateStory: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToUserProfile: (String) -> Unit = {},
     onNavigateToLive: (Long) -> Unit = {}
 ) {
     composable(FEED_ROUTE) {
@@ -38,6 +39,7 @@ fun NavGraphBuilder.feedGraph(
             onNavigateToStoryViewer = onNavigateToStoryViewer,
             onNavigateToCreateStory = onNavigateToCreateStory,
             onNavigateToProfile = onNavigateToProfile,
+            onNavigateToUserProfile = onNavigateToUserProfile,
             onNavigateToLive = onNavigateToLive
         )
     }

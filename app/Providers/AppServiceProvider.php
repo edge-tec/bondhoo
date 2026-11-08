@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Models\Comment;
 use App\Models\Group;
+use App\Models\LearningCourse;
+use App\Models\LearningCourseLesson;
+use App\Models\MarketplaceOffer;
 use App\Models\MarketplaceOrder;
 use App\Models\MarketplaceProduct;
 use App\Models\Page;
@@ -18,6 +21,9 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Policies\CommentPolicy;
 use App\Policies\GroupPolicy;
+use App\Policies\LearningCourseLessonPolicy;
+use App\Policies\LearningCoursePolicy;
+use App\Policies\MarketplaceOfferPolicy;
 use App\Policies\MarketplaceOrderPolicy;
 use App\Policies\MarketplaceProductPolicy;
 use App\Policies\PagePolicy;
@@ -101,11 +107,22 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Group::class, GroupPolicy::class);
         Gate::policy(MarketplaceProduct::class, MarketplaceProductPolicy::class);
         Gate::policy(MarketplaceOrder::class, MarketplaceOrderPolicy::class);
+        Gate::policy(MarketplaceOffer::class, MarketplaceOfferPolicy::class);
+        Gate::policy(LearningCourse::class, LearningCoursePolicy::class);
+        Gate::policy(LearningCourseLesson::class, LearningCourseLessonPolicy::class);
         // ১. সাধারণ API রিকোয়েস্ট রেট লিমিট (প্রতি মিনিটে ৬০ টি)
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by(
                 $request->user()?->id ?: $request->ip()
             );
+        });
+
+        // Marketplace & Learning API Rate Limit (GET: 180/min, Mutations: 30/min)
+        RateLimiter::for('marketplace-learning', function (Request $request) {
+            $key = ($request->user()?->id ?: $request->ip()).'|'.($request->isMethodSafe() ? 'read' : 'write');
+            $maxAttempts = $request->isMethodSafe() ? 180 : 30;
+
+            return Limit::perMinute($maxAttempts)->by($key);
         });
 
         // ২. অথেনটিকেশন ও লগইন রেট লিমিট (Brute-force রোধে প্রতি মিনিটে ৫ টি প্রচেষ্টা)

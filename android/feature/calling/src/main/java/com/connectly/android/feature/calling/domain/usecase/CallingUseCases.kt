@@ -1,6 +1,7 @@
 package com.connectly.android.feature.calling.domain.usecase
 
 import com.connectly.android.core.common.result.Result
+import com.connectly.android.core.model.ActivePresenceFriend
 import com.connectly.android.core.model.CallHistoryItem
 import com.connectly.android.core.model.CallSession
 import com.connectly.android.core.model.CallType
@@ -13,8 +14,37 @@ import javax.inject.Inject
 class InitiateCallUseCase @Inject constructor(
     private val repository: CallingRepository
 ) {
-    operator fun invoke(receiverId: Long, callType: CallType, conversationId: Long? = null): Flow<Result<CallSession>> {
-        return repository.initiateCall(receiverId, callType, conversationId)
+    operator fun invoke(
+        receiverId: Long? = null,
+        callType: CallType,
+        conversationId: Long? = null,
+        receiverIds: List<Long> = emptyList()
+    ): Flow<Result<CallSession>> {
+        return repository.initiateCall(receiverId, callType, conversationId, receiverIds)
+    }
+}
+
+class GetCallDetailsUseCase @Inject constructor(
+    private val repository: CallingRepository
+) {
+    operator fun invoke(callId: Long): Flow<Result<CallSession>> {
+        return repository.getCallDetails(callId)
+    }
+}
+
+class InviteFriendsToCallUseCase @Inject constructor(
+    private val repository: CallingRepository
+) {
+    operator fun invoke(callId: Long, userIds: List<Long>): Flow<Result<CallSession>> {
+        return repository.inviteFriendsToCall(callId, userIds)
+    }
+}
+
+class GetFriendsToInviteUseCase @Inject constructor(
+    private val repository: CallingRepository
+) {
+    operator fun invoke(query: String? = null): Flow<Result<List<ActivePresenceFriend>>> {
+        return repository.getFriendsToInvite(query)
     }
 }
 
@@ -81,4 +111,3 @@ class UpdateCallStateUseCase @Inject constructor(
         return repository.updateCallState(callId, isMuted, isCameraOff)
     }
 }
-

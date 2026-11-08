@@ -23,21 +23,24 @@ class MarketplaceOfferNotification extends Notification
     public function toArray(object $notifiable): array
     {
         $product = $this->offer->product;
+        $productTitle = $product?->title ?? 'Product Listing';
+        $buyerName = $this->offer->buyer?->name ?? 'A buyer';
         $title = match ($this->actionType) {
             'created' => 'নতুন অফার পেয়েছেন (New Offer Received)',
-            'accepted' => 'আপনার অফার গ্রহণ করা হয়েছে (Offer Accepted)',
-            'rejected' => 'আপনার অফার প্রত্যাখ্যাত হয়েছে (Offer Declined)',
+            'accepted', 'counter_accepted' => 'অফার গ্রহণ করা হয়েছে (Offer Accepted)',
+            'rejected' => 'অফার প্রত্যাখ্যাত হয়েছে (Offer Declined)',
             'countered' => 'কাউন্টার অফার পেয়েছেন (Counteroffer Received)',
             'cancelled' => 'অফার বাতিল করা হয়েছে (Offer Cancelled)',
             default => 'Marketplace Notification',
         };
 
         $body = match ($this->actionType) {
-            'created' => "{$this->offer->buyer->name} '{$product?->title}'-এর জন্য ৳{$this->offer->offer_amount} অফার করেছেন।",
-            'accepted' => "বিক্রেতা '{$product?->title}'-এর জন্য আপনার ৳{$this->offer->offer_amount} অফার গ্রহণ করেছেন।",
-            'rejected' => "বিক্রেতা '{$product?->title}'-এর জন্য আপনার অফার গ্রহণ করেননি।",
-            'countered' => "বিক্রেতা '{$product?->title}'-এর জন্য ৳{$this->offer->counter_amount} কাউন্টার অফার দিয়েছেন।",
-            'cancelled' => "ক্রেতা অফারটি প্রত্যাহার করেছেন।",
+            'created' => "{$buyerName} '{$productTitle}'-এর জন্য ৳{$this->offer->offer_amount} অফার করেছেন।",
+            'accepted' => "বিক্রেতা '{$productTitle}'-এর জন্য আপনার ৳{$this->offer->offer_amount} অফার গ্রহণ করেছেন।",
+            'counter_accepted' => "{$buyerName} '{$productTitle}'-এর জন্য আপনার ৳{$this->offer->offer_amount} কাউন্টার অফার গ্রহণ করেছেন।",
+            'rejected' => "'{$productTitle}'-এর অফারটি প্রত্যাখ্যাত হয়েছে।",
+            'countered' => "বিক্রেতা '{$productTitle}'-এর জন্য ৳{$this->offer->counter_amount} কাউন্টার অফার দিয়েছেন।",
+            'cancelled' => "{$buyerName} অফারটি প্রত্যাহার করেছেন।",
             default => 'You have an update on your marketplace offer.',
         };
 
@@ -54,4 +57,3 @@ class MarketplaceOfferNotification extends Notification
         ];
     }
 }
-

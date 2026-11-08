@@ -132,7 +132,7 @@
           </div>
 
           <!-- Actions -->
-          <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+          <div class="flex items-center flex-wrap gap-2 self-end sm:self-center shrink-0">
             <a
               :href="'/marketplace/' + item.id"
               class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-xs font-semibold text-slate-700 dark:text-slate-200"
@@ -140,29 +140,46 @@
               View
             </a>
 
-            <!-- Status Changer -->
             <button
-              v-if="item.status === 'active'"
               type="button"
-              @click="updateStatus(item, 'sold')"
-              class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700"
+              @click="openEditModal(item)"
+              class="px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/30 hover:bg-blue-100 text-xs font-semibold text-[#1877F2] cursor-pointer"
             >
-              Mark as Sold
+              Edit
             </button>
+
+            <!-- Status Changer -->
+            <template v-if="item.status === 'active'">
+              <button
+                type="button"
+                @click="updateStatus(item, 'inactive')"
+                class="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-xs font-semibold text-amber-700 cursor-pointer"
+              >
+                Pause
+              </button>
+              <button
+                type="button"
+                @click="updateStatus(item, 'sold')"
+                class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 cursor-pointer"
+              >
+                Mark as Sold
+              </button>
+            </template>
             <button
-              v-else-if="item.status === 'sold'"
+              v-else
               type="button"
               @click="updateStatus(item, 'active')"
-              class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100"
+              class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 cursor-pointer"
             >
-              Re-activate
+              Activate
             </button>
 
             <!-- Delete -->
             <button
               type="button"
               @click="deleteItem(item)"
-              class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+              :disabled="deletingId === item.id"
+              class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50"
               title="Delete Listing"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -195,15 +212,76 @@
         </a>
       </div>
 
+      <!-- Edit Listing Modal -->
+      <div v-if="editingItem" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Edit Listing</h3>
+            <button type="button" @click="editingItem = null" class="text-slate-400 hover:text-slate-600">✕</button>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Title</label>
+              <input v-model="editForm.title" type="text" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Price ({{ editingItem.currency || 'BDT' }})</label>
+                <input v-model.number="editForm.price" type="number" min="0" step="0.01" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Condition</label>
+                <select v-model="editForm.condition" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs">
+                  <option value="new">Brand New</option>
+                  <option value="like_new">Used - Like New</option>
+                  <option value="used">Used - Good</option>
+                  <option value="refurbished">Refurbished</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div v-if="categories && categories.length > 0">
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Category</label>
+                <select v-model.number="editForm.category_id" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs">
+                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Location</label>
+                <input v-model="editForm.location" type="text" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Description</label>
+              <textarea v-model="editForm.description" rows="3" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs resize-none"></textarea>
+            </div>
+            <div v-if="editError" class="p-2.5 rounded-xl bg-rose-50 text-rose-700 text-xs">{{ editError }}</div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" @click="editingItem = null" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500">Cancel</button>
+            <button
+              type="button"
+              @click="saveEdit"
+              :disabled="isSavingEdit || !editForm.title.trim()"
+              class="px-5 py-2 rounded-xl bg-[#1877F2] hover:bg-[#1666D8] text-white text-xs font-bold disabled:opacity-50"
+            >
+              {{ isSavingEdit ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, reactive, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
-import type { MarketplaceProduct, User, SuggestedFriend, UpcomingEvent } from '../../types';
+import type { MarketplaceCategory, MarketplaceProduct, User, SuggestedFriend, UpcomingEvent } from '../../types';
 
 const props = defineProps<{
   listings: {
@@ -212,6 +290,7 @@ const props = defineProps<{
     last_page: number;
     total: number;
   };
+  categories?: MarketplaceCategory[];
   currentStatus?: string;
   pendingRequests?: any[];
   contacts?: User[];
@@ -224,11 +303,80 @@ const props = defineProps<{
 const items = ref<MarketplaceProduct[]>([...props.listings.data]);
 const selectedStatus = ref(props.currentStatus || '');
 const defaultImage = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80';
+const deletingId = ref<number | null>(null);
+const editingItem = ref<MarketplaceProduct | null>(null);
+const isSavingEdit = ref(false);
+const editError = ref('');
+const editForm = reactive({
+  title: '',
+  price: 0,
+  condition: 'used',
+  category_id: 0,
+  location: '',
+  description: '',
+});
+
+watch(
+  () => props.listings.data,
+  (next) => {
+    items.value = [...next];
+  }
+);
+
+const openEditModal = (item: MarketplaceProduct) => {
+  editingItem.value = item;
+  editError.value = '';
+  editForm.title = item.title;
+  editForm.price = Number(item.price || 0);
+  editForm.condition = item.condition || 'used';
+  editForm.category_id = Number(item.category?.id || item.category_id || (props.categories?.[0]?.id ?? 0));
+  editForm.location = item.location || '';
+  editForm.description = item.description || '';
+};
+
+const saveEdit = async () => {
+  if (!editingItem.value || isSavingEdit.value || !editForm.title.trim()) return;
+  isSavingEdit.value = true;
+  editError.value = '';
+  try {
+    const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+    const res = await fetch(`/api/v1/marketplace/products/${editingItem.value.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        title: editForm.title.trim(),
+        price: Number(editForm.price),
+        condition: editForm.condition,
+        category_id: editForm.category_id || undefined,
+        location: editForm.location.trim(),
+        description: editForm.description.trim(),
+      }),
+    });
+    const payload = await res.json();
+    if (res.ok && payload.data) {
+      const idx = items.value.findIndex((i) => i.id === editingItem.value!.id);
+      if (idx !== -1) {
+        items.value[idx] = { ...items.value[idx], ...payload.data };
+      }
+      editingItem.value = null;
+    } else {
+      editError.value = payload.message || 'Failed to save listing updates.';
+    }
+  } catch (err: any) {
+    editError.value = err.message || 'Network error while updating listing.';
+  } finally {
+    isSavingEdit.value = false;
+  }
+};
 
 const filterStatus = (status: string) => {
   selectedStatus.value = status;
   router.get('/marketplace/my-listings', status ? { status } : {}, {
-    preserveState: true,
+    preserveState: false,
   });
 };
 
@@ -253,8 +401,10 @@ const updateStatus = async (item: MarketplaceProduct, newStatus: string) => {
 };
 
 const deleteItem = async (item: MarketplaceProduct) => {
+  if (deletingId.value === item.id) return;
   if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return;
 
+  deletingId.value = item.id;
   try {
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
     const res = await fetch(`/api/v1/marketplace/products/${item.id}`, {
@@ -264,11 +414,16 @@ const deleteItem = async (item: MarketplaceProduct) => {
         'Accept': 'application/json',
       },
     });
-    if (res.ok) {
+    if (res.ok || res.status === 204) {
       items.value = items.value.filter(i => i.id !== item.id);
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      alert(payload.message || 'Failed to delete listing.');
     }
   } catch (e) {
     console.error('Failed to delete listing', e);
+  } finally {
+    deletingId.value = null;
   }
 };
 </script>

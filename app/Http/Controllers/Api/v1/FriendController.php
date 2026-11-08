@@ -389,6 +389,47 @@ class FriendController extends Controller
     }
 
     /**
+     * Mute a user.
+     */
+    public function mute(Request $request, int $userId): JsonResponse
+    {
+        $hours = $request->input('hours') ? (int) $request->input('hours') : null;
+        $this->friendshipService->muteUser($request->user(), $userId, $hours);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User muted successfully.',
+        ]);
+    }
+
+    /**
+     * Unmute a user.
+     */
+    public function unmute(Request $request, int $userId): JsonResponse
+    {
+        $this->friendshipService->unmuteUser($request->user(), $userId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User unmuted successfully.',
+        ]);
+    }
+
+    /**
+     * Snooze a user for specified days (default 30).
+     */
+    public function snooze(Request $request, int $userId): JsonResponse
+    {
+        $days = (int) ($request->input('days') ?? 30);
+        $this->friendshipService->snoozeUser($request->user(), $userId, $days);
+
+        return response()->json([
+            'success' => true,
+            'message' => "User snoozed for {$days} days.",
+        ]);
+    }
+
+    /**
      * Toggle Favorite friend.
      */
     public function toggleFavorite(Request $request, int $friendId): JsonResponse

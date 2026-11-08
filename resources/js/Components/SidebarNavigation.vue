@@ -216,6 +216,25 @@
         <span class="truncate">Marketplace</span>
       </a>
 
+      <!-- Learning & Development -->
+      <a
+        href="/learning"
+        :class="[
+          'flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group min-h-[48px]',
+          currentRoute === 'learning' || isCurrentPath('/learning')
+            ? 'bg-[#1E293B] text-white font-semibold shadow-xs border border-slate-700/50'
+            : 'text-slate-200 hover:bg-[#1E293B]/60 hover:text-white'
+        ]"
+      >
+        <span class="w-9 h-9 rounded-xl flex items-center justify-center bg-[#1E293B] text-[#60A5FA] shrink-0 group-hover:scale-105 transition-transform">
+          <!-- Academic Cap Icon -->
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+          </svg>
+        </span>
+        <span class="truncate">Learning &amp; Courses</span>
+      </a>
+
       <!-- 7. Live Studio (Highlighted Item as in Reference Screenshot) -->
       <a
         href="/live/studio"

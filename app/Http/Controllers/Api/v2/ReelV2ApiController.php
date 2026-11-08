@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\v2;
 
 use App\Http\Controllers\Controller;
+use App\Models\ModerationRequest;
 use App\Models\Page;
 use App\Models\Reel;
 use App\Models\ReelComment;
 use App\Models\User;
+use App\Services\Moderation\ContentModerationService;
 use App\Services\ReelEnterpriseService;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -39,6 +41,12 @@ class ReelV2ApiController extends Controller
             $reels = $this->reelService->getUserReels($viewer, $viewer, $perPage);
         } elseif ($tab === 'following' && $viewer) {
             $reels = $this->reelService->getFollowingFeed($viewer, $perPage);
+        } elseif ($tab === 'friends' && $viewer) {
+            $reels = $this->reelService->getFriendsFeed($viewer, $perPage);
+        } elseif ($tab === 'popular') {
+            $reels = $this->reelService->getPopularFeed($viewer, $perPage);
+        } elseif ($tab === 'latest') {
+            $reels = $this->reelService->getLatestFeed($viewer, $perPage);
         } else {
             $reels = $this->reelService->getFeed($viewer, $perPage);
         }
@@ -94,6 +102,26 @@ class ReelV2ApiController extends Controller
             'is_draft' => ['nullable', 'boolean'],
         ]);
 
+        // Phase 16.9: OpenAI AI Content Moderation for Reels
+        $moderationService = app(ContentModerationService::class);
+        $modRequest = $moderationService->moderateReel($request->user(), $validated);
+
+        if ($modRequest->status === ModerationRequest::STATUS_REJECTED) {
+            $reason = $modRequest->rejection_reason ?: 'Reel violates community safety standards.';
+
+            return response()->json([
+                'success' => false,
+                'message' => "Your reel could not be published because it violates our safety standards: {$reason}",
+            ], 422);
+        }
+
+        if ($modRequest->status === ModerationRequest::STATUS_QUARANTINED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Reel was blocked due to critical safety violations.',
+            ], 422);
+        }
+
         if (! empty($validated['page_id'])) {
             $page = Page::findOrFail($validated['page_id']);
             $user = $request->user();
@@ -108,7 +136,7 @@ class ReelV2ApiController extends Controller
             if (! $canManage) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'এই পেইজের পক্ষে রিল আপলোড করার অনুমতি আপনার নেই।',
+                    'message' => 'You are not authorized to upload reels for this page.',
                 ], 403);
             }
         }
@@ -212,6 +240,7 @@ class ReelV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
+                'error_code' => 'REEL_EXPIRED',
                 'message' => $e->getMessage(),
             ], 410);
         }
@@ -245,7 +274,7 @@ class ReelV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
-                'message' => 'এই রিলটির মেয়াদ শেষ হয়ে গেছে।',
+                'message' => 'This reel has expired and is no longer accessible.',
             ], 410);
         }
 
@@ -270,7 +299,7 @@ class ReelV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
-                'message' => 'এই রিলটির মেয়াদ শেষ হয়ে গেছে।',
+                'message' => 'This reel has expired.',
             ], 410);
         }
 
@@ -319,6 +348,7 @@ class ReelV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
+                'error_code' => 'REEL_EXPIRED',
                 'message' => $e->getMessage(),
             ], 410);
         }
@@ -333,7 +363,7 @@ class ReelV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
-                'message' => 'এই রিলটির মেয়াদ শেষ হয়ে গেছে। মন্তব্য করা সম্ভব নয়।',
+                'message' => 'This reel has expired. Comments are no longer accepted.',
             ], 410);
         }
 
@@ -404,6 +434,7 @@ class ReelV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
+                'error_code' => 'REEL_EXPIRED',
                 'message' => $e->getMessage(),
             ], 410);
         }
@@ -425,6 +456,7 @@ class ReelV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
+                'error_code' => 'REEL_EXPIRED',
                 'message' => $e->getMessage(),
             ], 410);
         }
@@ -483,6 +515,7 @@ class ReelV2ApiController extends Controller
             return response()->json([
                 'success' => false,
                 'is_expired' => true,
+                'error_code' => 'REEL_EXPIRED',
                 'message' => $e->getMessage(),
             ], 410);
         }
@@ -660,14 +693,14 @@ class ReelV2ApiController extends Controller
         if (! $reported) {
             return response()->json([
                 'success' => true,
-                'message' => 'আপনি ইতিমধ্যে এই রিলটির বিরুদ্ধে রিপোর্ট জমা দিয়েছেন। এটি মডারেশন পর্যালোচনায় রয়েছে।',
+                'message' => 'You have already submitted a report for this reel. It is currently under review.',
                 'already_reported' => true,
             ]);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'রিপোর্ট সফলভাবে জমা হয়েছে। আমাদের প্ল্যাটফর্ম নিরাপদ রাখতে সহায়তার জন্য ধন্যবাদ।',
+            'message' => 'Report submitted successfully. Thank you for helping keep our community safe.',
         ]);
     }
 
@@ -689,5 +722,43 @@ class ReelV2ApiController extends Controller
                 'message' => $e->getMessage(),
             ], 403);
         }
+    }
+
+    /**
+     * Archive a reel (owner-only private archive)
+     */
+    public function archive(Request $request, Reel $reel): JsonResponse
+    {
+        try {
+            $this->reelService->archiveReel($reel, $request->user());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reel archived successfully.',
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
+        }
+    }
+
+    /**
+     * List user's private archived reels
+     */
+    public function archived(Request $request): JsonResponse
+    {
+        $perPage = (int) $request->input('per_page', 12);
+        $archived = $this->reelService->getArchivedReels($request->user(), $perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $archived->items(),
+            'meta' => [
+                'total' => $archived->total(),
+                'current_page' => $archived->currentPage(),
+            ],
+        ]);
     }
 }

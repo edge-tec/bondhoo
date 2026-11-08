@@ -28,6 +28,13 @@ class LearningAssignmentApiController extends Controller
         $user = $request->user();
         $assignment = LearningAssignment::with('course')->findOrFail($id);
 
+        if ($assignment->course && $assignment->course->type !== LearningCourse::TYPE_FREE) {
+            $isPrivileged = (int) $assignment->course->instructor_id === (int) $user->id || $user->isAdmin();
+            if (! $isPrivileged && ! $assignment->course->isEnrolledByUser($user)) {
+                return $this->errorResponse('Enrollment is required to access this assignment.', 403);
+            }
+        }
+
         $mySubmission = LearningAssignmentSubmission::where('assignment_id', $assignment->id)
             ->where('user_id', $user->id)
             ->first();
@@ -44,7 +51,14 @@ class LearningAssignmentApiController extends Controller
     public function submit(SubmitAssignmentRequest $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $assignment = LearningAssignment::findOrFail($id);
+        $assignment = LearningAssignment::with('course')->findOrFail($id);
+
+        if ($assignment->course && $assignment->course->type !== LearningCourse::TYPE_FREE) {
+            $isPrivileged = (int) $assignment->course->instructor_id === (int) $user->id || $user->isAdmin();
+            if (! $isPrivileged && ! $assignment->course->isEnrolledByUser($user)) {
+                return $this->errorResponse('Enrollment is required to submit this assignment.', 403);
+            }
+        }
 
         try {
             $submission = $this->assignmentService->submitAssignment($user, $assignment, $request->validated());
@@ -60,18 +74,19 @@ class LearningAssignmentApiController extends Controller
      */
     public function grade(Request $request, int $id): JsonResponse
     {
-        $request->validate([
-            'score' => 'required|integer|min:0|max:100',
-            'feedback' => 'nullable|string',
-        ]);
-
         $user = $request->user();
         $submission = LearningAssignmentSubmission::with('assignment.course')->findOrFail($id);
 
         $course = $submission->assignment->course;
-        if ($course->instructor_id !== $user->id && ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (! $course || ((int) $course->instructor_id !== (int) $user->id && ! $user->isAdmin())) {
             return $this->errorResponse('Unauthorized to grade this assignment.', 403);
         }
+
+        $maxScore = max(1, (int) ($submission->assignment->max_score ?? 100));
+        $request->validate([
+            'score' => "required|integer|min:0|max:{$maxScore}",
+            'feedback' => 'nullable|string|max:5000',
+        ]);
 
         $graded = $this->assignmentService->gradeSubmission(
             $user,
@@ -88,7 +103,16 @@ class LearningAssignmentApiController extends Controller
      */
     public function indexCourse(Request $request, int $courseId): JsonResponse
     {
+        $user = $request->user();
         $course = LearningCourse::findOrFail($courseId);
+
+        if ($course->type !== LearningCourse::TYPE_FREE) {
+            $isPrivileged = (int) $course->instructor_id === (int) $user->id || $user->isAdmin();
+            if (! $isPrivileged && ! $course->isEnrolledByUser($user)) {
+                return $this->errorResponse('Enrollment is required to view course assignments.', 403);
+            }
+        }
+
         $assignments = $this->assignmentService->getCourseAssignments($course);
 
         return $this->successResponse($assignments, 'Course assignments retrieved.');
@@ -102,7 +126,11 @@ class LearningAssignmentApiController extends Controller
         $user = $request->user();
         $submission = LearningAssignmentSubmission::with(['assignment.course', 'user:id,name,username'])->findOrFail($id);
 
-        if ($submission->user_id !== $user->id && $submission->assignment->course->instructor_id !== $user->id && ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (
+            (int) $submission->user_id !== (int) $user->id
+            && (int) ($submission->assignment?->course?->instructor_id ?? 0) !== (int) $user->id
+            && ! $user->isAdmin()
+        ) {
             return $this->errorResponse('Unauthorized to view this submission.', 403);
         }
 
@@ -117,7 +145,7 @@ class LearningAssignmentApiController extends Controller
         $user = $request->user();
         $submission = LearningAssignmentSubmission::with('assignment')->findOrFail($id);
 
-        if ($submission->user_id !== $user->id) {
+        if ((int) $submission->user_id !== (int) $user->id) {
             return $this->errorResponse('Unauthorized.', 403);
         }
 
@@ -135,13 +163,15 @@ class LearningAssignmentApiController extends Controller
      */
     public function storeInstructor(Request $request, int $courseId): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:200',
             'description' => 'nullable|string',
             'instructions' => 'nullable|string',
             'lesson_id' => 'nullable|integer',
             'total_points' => 'nullable|integer|min:1',
+            'max_score' => 'nullable|integer|min:1',
             'passing_score' => 'nullable|integer|min:1',
+            'due_days_after_enrollment' => 'nullable|integer|min:1',
             'due_date' => 'nullable|date',
             'allow_resubmissions' => 'nullable|boolean',
         ]);
@@ -150,11 +180,13 @@ class LearningAssignmentApiController extends Controller
         $course = LearningCourse::findOrFail($courseId);
 
         try {
-            $assignment = $this->assignmentService->createAssignment($user, $course, $request->all());
+            $assignment = $this->assignmentService->createAssignment($user, $course, $validated);
 
             return $this->successResponse($assignment, 'Assignment created successfully.', 201);
         } catch (Exception $e) {
-            return $this->errorResponse($e->getMessage(), 403);
+            $code = str_contains($e->getMessage(), 'Unauthorized') ? 403 : 422;
+
+            return $this->errorResponse($e->getMessage(), $code);
         }
     }
 
@@ -163,11 +195,22 @@ class LearningAssignmentApiController extends Controller
      */
     public function updateInstructor(Request $request, int $id): JsonResponse
     {
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:200',
+            'description' => 'nullable|string',
+            'instructions' => 'nullable|string',
+            'total_points' => 'nullable|integer|min:1',
+            'max_score' => 'nullable|integer|min:1',
+            'passing_score' => 'nullable|integer|min:1',
+            'due_days_after_enrollment' => 'nullable|integer|min:1',
+            'allow_resubmissions' => 'nullable|boolean',
+        ]);
+
         $user = $request->user();
         $assignment = LearningAssignment::with('course')->findOrFail($id);
 
         try {
-            $updated = $this->assignmentService->updateAssignment($user, $assignment, $request->all());
+            $updated = $this->assignmentService->updateAssignment($user, $assignment, $validated);
 
             return $this->successResponse($updated, 'Assignment updated successfully.');
         } catch (Exception $e) {

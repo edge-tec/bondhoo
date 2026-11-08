@@ -34,6 +34,8 @@ class MarketplacePaymentTransaction extends Model
 
     public const TYPE_RELEASE = 'release';
 
+    public const TYPE_PAYOUT = self::TYPE_RELEASE;
+
     public const TYPE_FEE = 'fee';
 
     protected $fillable = [

@@ -1375,6 +1375,75 @@ class FriendshipService
     }
 
     /**
+     * Mute a user's posts from feed.
+     */
+    public function muteUser(User $user, int $targetId, ?int $hours = null): bool
+    {
+        $friendship = Friendship::where(function ($q) use ($user, $targetId) {
+            $q->where('user_id', $user->id)->where('friend_id', $targetId);
+        })->orWhere(function ($q) use ($user, $targetId) {
+            $q->where('user_id', $targetId)->where('friend_id', $user->id);
+        })->first();
+
+        if ($friendship) {
+            $friendship->update([
+                'is_muted' => true,
+                'muted_until' => $hours ? Carbon::now()->addHours($hours) : null,
+            ]);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Unmute a user.
+     */
+    public function unmuteUser(User $user, int $targetId): bool
+    {
+        $friendship = Friendship::where(function ($q) use ($user, $targetId) {
+            $q->where('user_id', $user->id)->where('friend_id', $targetId);
+        })->orWhere(function ($q) use ($user, $targetId) {
+            $q->where('user_id', $targetId)->where('friend_id', $user->id);
+        })->first();
+
+        if ($friendship) {
+            $friendship->update([
+                'is_muted' => false,
+                'muted_until' => null,
+                'snoozed_until' => null,
+            ]);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Snooze a user's posts from feed for specified days.
+     */
+    public function snoozeUser(User $user, int $targetId, int $days = 30): bool
+    {
+        $friendship = Friendship::where(function ($q) use ($user, $targetId) {
+            $q->where('user_id', $user->id)->where('friend_id', $targetId);
+        })->orWhere(function ($q) use ($user, $targetId) {
+            $q->where('user_id', $targetId)->where('friend_id', $user->id);
+        })->first();
+
+        if ($friendship) {
+            $friendship->update([
+                'snoozed_until' => Carbon::now()->addDays($days),
+            ]);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Real-time counters summary.
      */
     public function getCounters(User $user): array

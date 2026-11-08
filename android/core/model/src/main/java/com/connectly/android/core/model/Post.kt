@@ -16,6 +16,8 @@ data class Post(
     val isSaved: Boolean = false,
     val privacy: String = "public",
     val feedTab: String = "for_you",
+    val status: String = "published",
+    val moderationStatus: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
 

@@ -53,8 +53,15 @@ class VoiceMessageController extends Controller
      */
     public function store(Request $request, int $id): JsonResponse
     {
+        if (is_string($request->input('waveform'))) {
+            $decodedWaveform = json_decode($request->input('waveform'), true);
+            $request->merge([
+                'waveform' => is_array($decodedWaveform) ? $decodedWaveform : null,
+            ]);
+        }
+
         $validated = $request->validate([
-            'audio' => ['required', 'file', 'mimes:webm,weba,ogg,mp3,wav,m4a,aac,bin,mp4,mov', 'max:51200'], // max 50MB
+            'audio' => ['required', 'file', 'mimes:webm,weba,ogg,mp3,wav,m4a,aac,bin,mp4,mov,3gp,amr', 'max:51200'], // max 50MB
             'duration' => ['required', 'integer', 'min:1', 'max:3600'], // up to 60 mins
             'waveform' => ['nullable', 'array'],
         ]);

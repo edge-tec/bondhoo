@@ -41,6 +41,10 @@ class SslCommerzGatewayDriver extends AbstractPaymentGateway
     public function initiatePayment(MarketplaceOrder $order, array $options = []): array
     {
         if (! $this->isConfigured()) {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('SSLCommerz payment gateway is not configured in production environment.');
+            }
+
             return $this->fallbackDriver->initiatePayment($order, $options);
         }
 
@@ -94,9 +98,17 @@ class SslCommerzGatewayDriver extends AbstractPaymentGateway
 
             Log::error('SSLCommerz Session Init Error', ['body' => $response->body()]);
 
+            if (app()->environment('production')) {
+                throw new \RuntimeException('SSLCommerz checkout session initiation failed.');
+            }
+
             return $this->fallbackDriver->initiatePayment($order, $options);
         } catch (\Throwable $e) {
             Log::error('SSLCommerz Exception: '.$e->getMessage());
+
+            if (app()->environment('production')) {
+                throw $e;
+            }
 
             return $this->fallbackDriver->initiatePayment($order, $options);
         }
@@ -105,6 +117,10 @@ class SslCommerzGatewayDriver extends AbstractPaymentGateway
     public function verifyPayment(MarketplaceOrder $order, array $payload): array
     {
         if (! $this->isConfigured()) {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('SSLCommerz payment gateway is not configured in production environment.');
+            }
+
             return $this->fallbackDriver->verifyPayment($order, $payload);
         }
 
@@ -128,6 +144,7 @@ class SslCommerzGatewayDriver extends AbstractPaymentGateway
                 $paidAmount = (float) $response->json('amount', 0);
                 $currency = strtoupper((string) $response->json('currency', 'BDT'));
                 $tranId = (string) $response->json('tran_id', $valId);
+                $bankTranId = (string) $response->json('bank_tran_id');
 
                 if (in_array($status, ['VALID', 'VALIDATED'], true)) {
                     if (! $this->amountsMatch($order->amount, $paidAmount)) {
@@ -135,36 +152,66 @@ class SslCommerzGatewayDriver extends AbstractPaymentGateway
                     }
 
                     return [
+                        'verified' => true,
                         'order_id' => $order->id,
                         'gateway' => 'sslcommerz',
                         'transaction_id' => $tranId,
-                        'bank_tran_id' => (string) $response->json('bank_tran_id'),
+                        'provider_reference' => $bankTranId ?: $valId,
+                        'bank_tran_id' => $bankTranId,
                         'card_type' => (string) $response->json('card_type'),
                         'status' => 'COMPLETED',
                         'amount' => $paidAmount,
                         'currency' => $currency,
                         'verified_at' => now()->toIso8601String(),
+                        'metadata' => $this->sanitizePayload($response->json()),
                         'raw_response' => $this->sanitizePayload($response->json()),
                     ];
                 }
 
                 return [
+                    'verified' => false,
                     'order_id' => $order->id,
                     'gateway' => 'sslcommerz',
                     'transaction_id' => $tranId,
-                    'status' => 'FAILED',
+                    'provider_reference' => $bankTranId ?: null,
+                    'status' => 'failed',
                     'amount' => $paidAmount,
                     'currency' => $currency,
                     'verified_at' => now()->toIso8601String(),
+                    'metadata' => $this->sanitizePayload($response->json()),
                     'raw_response' => $this->sanitizePayload($response->json()),
                 ];
             }
 
             Log::error('SSLCommerz Validator API Error', ['body' => $response->body()]);
 
+            if (app()->environment('production')) {
+                return [
+                    'verified' => false,
+                    'status' => 'failed',
+                    'transaction_id' => $valId,
+                    'amount' => (float) $order->amount,
+                    'currency' => 'BDT',
+                    'provider_reference' => null,
+                    'metadata' => ['error' => 'SSLCommerz validation failed via validator API.'],
+                ];
+            }
+
             return $this->fallbackDriver->verifyPayment($order, $payload);
         } catch (\Throwable $e) {
             Log::error('SSLCommerz Verify Exception: '.$e->getMessage());
+
+            if (app()->environment('production')) {
+                return [
+                    'verified' => false,
+                    'status' => 'failed',
+                    'transaction_id' => $valId,
+                    'amount' => (float) $order->amount,
+                    'currency' => 'BDT',
+                    'provider_reference' => null,
+                    'metadata' => ['error' => 'SSLCommerz verify exception: '.$e->getMessage()],
+                ];
+            }
 
             return $this->fallbackDriver->verifyPayment($order, $payload);
         }
@@ -173,11 +220,17 @@ class SslCommerzGatewayDriver extends AbstractPaymentGateway
     public function processRefund(MarketplaceOrder $order, float $amount, string $reason): array
     {
         if (! $this->isConfigured()) {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('SSLCommerz payment gateway is not configured in production environment.');
+            }
+
             return $this->fallbackDriver->processRefund($order, $amount, $reason);
         }
 
         try {
-            $bankTranId = $order->paymentTransaction?->transaction_reference ?? '';
+            $bankTranId = $order->paymentTransaction?->provider_reference
+                ?? $order->paymentTransaction?->transaction_reference
+                ?? '';
 
             $response = Http::asForm()
                 ->timeout(15)
@@ -193,6 +246,7 @@ class SslCommerzGatewayDriver extends AbstractPaymentGateway
 
             if ($response->successful() && strtoupper((string) $response->json('status')) === 'SUCCESS') {
                 return [
+                    'success' => true,
                     'status' => 'REFUNDED',
                     'refund_id' => (string) ($response->json('refund_ref_id') ?? 'REF_'.bin2hex(random_bytes(6))),
                     'amount' => $amount,
@@ -202,9 +256,17 @@ class SslCommerzGatewayDriver extends AbstractPaymentGateway
                 ];
             }
 
+            if (app()->environment('production')) {
+                throw new \RuntimeException('SSLCommerz refund rejected: '.$response->body());
+            }
+
             return $this->fallbackDriver->processRefund($order, $amount, $reason);
         } catch (\Throwable $e) {
             Log::error('SSLCommerz Refund Exception: '.$e->getMessage());
+
+            if (app()->environment('production')) {
+                throw $e;
+            }
 
             return $this->fallbackDriver->processRefund($order, $amount, $reason);
         }

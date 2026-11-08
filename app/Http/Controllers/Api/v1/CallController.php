@@ -7,6 +7,7 @@ use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\MessengerSyncEvent;
 use App\Services\Calling\CallingService;
+use App\Services\Calling\LiveKitService;
 use App\Services\Contracts\MessengerServiceInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
@@ -320,6 +321,24 @@ class CallController extends Controller
         return $this->successResponse(
             data: ['ice_servers' => $servers],
             message: 'ICE servers retrieved successfully.'
+        );
+    }
+
+    /**
+     * Sanity and health audit of calling infrastructure (TURN/STUN & LiveKit SFU).
+     */
+    public function health(Request $request): JsonResponse
+    {
+        $turnHealth = $this->callingService->getTurnHealthStatus();
+        $liveKitHealth = app(LiveKitService::class)->getHealthStatus();
+
+        return $this->successResponse(
+            data: [
+                'turn' => $turnHealth,
+                'livekit' => $liveKitHealth,
+                'status' => 'operational',
+            ],
+            message: 'Calling infrastructure health retrieved successfully.'
         );
     }
 

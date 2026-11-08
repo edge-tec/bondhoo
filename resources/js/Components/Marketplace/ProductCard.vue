@@ -30,8 +30,15 @@
         Brand New
       </div>
 
-      <!-- Favorite / Save Heart Button -->
+      <!-- Owner Badge vs Favorite / Save Heart Button -->
+      <span
+        v-if="product.is_owner"
+        class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-slate-900/85 text-white text-[10px] font-bold shadow-sm z-10"
+      >
+        Your Listing
+      </span>
       <button
+        v-else
         type="button"
         @click.stop="toggleSave"
         :aria-label="isSaved ? 'Remove from saved' : 'Save listing'"
@@ -100,15 +107,27 @@
             <p class="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover/seller:text-[#1877F2] truncate">
               {{ product.seller?.name || 'Community Seller' }}
             </p>
-            <div class="flex items-center gap-1 text-[10px] text-amber-500 font-bold">
+            <div v-if="sellerReviewsCount > 0" class="flex items-center gap-1 text-[10px] text-amber-500 font-bold">
               <span>★ {{ sellerRatingFormatted }}</span>
               <span class="text-slate-400 font-normal">({{ sellerReviewsCount }})</span>
+            </div>
+            <div v-else class="text-[10px] text-slate-400 font-medium">
+              New seller
             </div>
           </div>
         </a>
 
-        <!-- Chat Bubble Button -->
+        <!-- Manage Link for Owner vs Chat Bubble Button for Non-Owner -->
+        <a
+          v-if="product.is_owner"
+          :href="'/marketplace/' + product.id"
+          @click.stop
+          class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-bold text-slate-700 dark:text-slate-200 shrink-0 ml-2"
+        >
+          Manage
+        </a>
         <button
+          v-else
           type="button"
           @click.stop="$emit('contact', product)"
           class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 hover:border-[#1877F2] hover:bg-blue-50/50 dark:hover:bg-blue-900/30 text-slate-500 hover:text-[#1877F2] flex items-center justify-center transition-all shrink-0 ml-2"
@@ -125,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type { MarketplaceProduct } from '../../types';
 
 const props = defineProps<{
@@ -138,7 +157,14 @@ const emit = defineEmits<{
 }>();
 
 const defaultImage = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80';
-const isSaved = ref(Boolean(props.product.is_saved));
+const isSaved = ref(Boolean(props.product.is_favorited ?? props.product.is_saved));
+
+watch(
+  () => [props.product.is_favorited, props.product.is_saved],
+  ([fav, saved]) => {
+    isSaved.value = Boolean(fav ?? saved);
+  }
+);
 
 const sellerAvatar = computed(() => {
   return props.product.seller?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
@@ -149,12 +175,12 @@ const sellerProfileUrl = computed(() => {
 });
 
 const sellerRatingFormatted = computed(() => {
-  const rating = Number(props.product.seller?.rating || 4.8);
+  const rating = Number(props.product.seller?.rating || 0);
   return rating.toFixed(1);
 });
 
 const sellerReviewsCount = computed(() => {
-  return props.product.seller?.reviews_count || 12;
+  return Number(props.product.seller?.reviews_count || 0);
 });
 
 const goToDetail = () => {
@@ -172,7 +198,8 @@ const handleAvatarError = (e: Event) => {
 };
 
 const toggleSave = async () => {
-  isSaved.value = !isSaved.value;
+  const previous = isSaved.value;
+  isSaved.value = !previous;
   try {
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
     const res = await fetch(`/api/v1/marketplace/products/${props.product.id}/favorite`, {
@@ -183,13 +210,21 @@ const toggleSave = async () => {
         'Accept': 'application/json',
       },
     });
+    if (res.status === 401) {
+      isSaved.value = previous;
+      window.location.href = '/login';
+      return;
+    }
     if (res.ok) {
       const data = await res.json();
       if (typeof data.is_favorited === 'boolean') {
         isSaved.value = data.is_favorited;
       }
+    } else {
+      isSaved.value = previous;
     }
   } catch (err) {
+    isSaved.value = previous;
     console.error('Failed to toggle favorite', err);
   }
   emit('saved-toggle', isSaved.value);

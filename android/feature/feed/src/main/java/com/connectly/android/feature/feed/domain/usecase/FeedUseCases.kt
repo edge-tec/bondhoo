@@ -56,8 +56,13 @@ class ToggleSavePostUseCase @Inject constructor(
 class SharePostUseCase @Inject constructor(
     private val repository: FeedRepository
 ) {
-    operator fun invoke(postId: Long, caption: String? = null): Flow<Result<Unit>> =
-        repository.sharePost(postId, caption)
+    operator fun invoke(
+        postId: Long,
+        caption: String? = null,
+        targetType: String = "timeline",
+        targetId: Long? = null
+    ): Flow<Result<Unit>> =
+        repository.sharePost(postId, caption, targetType, targetId)
 }
 
 class ReactToPostUseCase @Inject constructor(

@@ -158,7 +158,7 @@ class StoryEnterpriseService
         $story = Story::with(['user.profile', 'media', 'storyMedia.media', 'musicTrack', 'views', 'reactions'])->findOrFail($id);
 
         if ($story->isExpired()) {
-            throw new Exception('এই স্টোরিটির মেয়াদ শেষ হয়ে গেছে।');
+            throw new Exception('This story has expired.');
         }
 
         // ইউজার ব্লক চেক
@@ -286,7 +286,7 @@ class StoryEnterpriseService
     public function reactToStory(Story $story, User $user, string $type = 'like'): array
     {
         if ($story->isExpired()) {
-            throw new Exception('এই স্টোরিটির মেয়াদ শেষ হয়ে গেছে।');
+            throw new Exception('This story has expired.');
         }
 
         $validTypes = ['like', 'love', 'care', 'haha', 'wow', 'sad', 'angry'];
@@ -328,7 +328,7 @@ class StoryEnterpriseService
                         'story_id' => $story->id,
                         'actor_id' => $user->id,
                         'actor_name' => $user->name,
-                        'message' => "{$user->name} আপনার স্টোরিতে রিঅ্যাক্ট করেছেন।",
+                        'message' => "{$user->name} reacted to your story.",
                         'type' => $type,
                     ],
                     ['database', 'broadcast']
@@ -348,7 +348,7 @@ class StoryEnterpriseService
     public function replyToStory(Story $story, User $user, string $message): StoryReply
     {
         if ($story->isExpired()) {
-            throw new Exception('এই স্টোরিটির মেয়াদ শেষ হয়ে গেছে। রিপ্লাই পাঠানো সম্ভব নয়।');
+            throw new Exception('This story has expired. Replies are no longer accepted.');
         }
 
         if (! $story->allow_replies) {
@@ -531,7 +531,7 @@ class StoryEnterpriseService
     public function recordShare(Story $story, User $user, string $platform = 'internal'): array
     {
         if ($story->isExpired()) {
-            throw new Exception('এই স্টোরিটির মেয়াদ শেষ হয়ে গেছে। শেয়ার করা সম্ভব নয়।');
+            throw new Exception('This story has expired. Sharing is no longer allowed.');
         }
 
         $story->increment('shares_count');

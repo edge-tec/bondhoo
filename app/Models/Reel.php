@@ -51,7 +51,9 @@ class Reel extends Model
         'status',
         'published_at',
         'expires_at',
+        'expired_at',
         'is_expired',
+        'is_archived',
         'is_draft',
         'location',
         'allow_comments',
@@ -80,7 +82,9 @@ class Reel extends Model
             'saves_count' => 'integer',
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
+            'expired_at' => 'datetime',
             'is_expired' => 'boolean',
+            'is_archived' => 'boolean',
             'is_draft' => 'boolean',
             'allow_comments' => 'boolean',
             'allow_duet' => 'boolean',
@@ -149,17 +153,26 @@ class Reel extends Model
     }
 
     /**
-     * শুধুমাত্র সক্রিয় (২৪ ঘণ্টার মধ্যে থাকা এবং আন-এক্সপায়ার্ড) রিল ফিল্টার স্কোপ
+     * শুধুমাত্র সক্রিয় (২৪ ঘণ্টার মধ্যে থাকা এবং আন-এক্সপায়ার্ড, আন-আর্কাইভড) রিল ফিল্টার স্কোপ
      */
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_READY)
             ->where('is_draft', false)
             ->where('is_expired', false)
+            ->where('is_archived', false)
             ->where(function (Builder $q) {
                 $q->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());
             });
+    }
+
+    /**
+     * শুধুমাত্র ওনারের নিজস্ব আর্কাইভড রিল ফিল্টার স্কোপ
+     */
+    public function scopeArchived(Builder $query): Builder
+    {
+        return $query->where('is_archived', true);
     }
 
     /**
@@ -275,6 +288,7 @@ class Reel extends Model
             'published_at' => $this->published_at?->toIso8601String(),
             'expires_at' => $this->expires_at?->toIso8601String(),
             'is_expired' => $this->isExpired(),
+            'is_archived' => (bool) $this->is_archived,
             'time_remaining_seconds' => $this->expires_at ? max(0, (int) now()->diffInSeconds($this->expires_at, false)) : 0,
             'video_url' => $primary?->video_url,
             'thumbnail_url' => $coverUrl,
@@ -284,7 +298,7 @@ class Reel extends Model
             'has_saved' => $hasSaved,
             'renditions' => $renditions,
             'created_at' => $this->created_at?->toIso8601String(),
-            'formatted_time' => $this->created_at?->diffForHumans() ?? 'এইমাত্র',
+            'formatted_time' => $this->created_at?->diffForHumans() ?? 'Just now',
         ];
     }
 }

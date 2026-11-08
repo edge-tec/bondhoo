@@ -99,7 +99,9 @@ class MarketplaceApiController extends Controller
             ], 403);
         }
 
-        $product->increment('views_count');
+        if (! $viewer || (int) $viewer->id !== (int) $product->seller_id) {
+            $product->increment('views_count');
+        }
 
         $related = MarketplaceProduct::with(['seller.profile', 'category'])
             ->where('category_id', $product->category_id)
@@ -136,17 +138,18 @@ class MarketplaceApiController extends Controller
             'title' => 'required|string|min:3|max:255',
             'description' => 'nullable|string|max:10000',
             'price' => 'required|numeric|min:0|max:100000000',
+            'stock' => 'nullable|integer|min:1|max:100000',
             'original_price' => 'nullable|numeric|min:0|max:100000000',
             'currency' => 'nullable|string|max:5',
-            'condition' => 'nullable|string|in:new,used,refurbished',
+            'condition' => 'nullable|string|in:new,like_new,used,good,fair,refurbished',
             'brand' => 'nullable|string|max:100',
             'model' => 'nullable|string|max:100',
             'is_negotiable' => 'nullable|boolean',
             'delivery_type' => 'nullable|string|in:pickup,delivery,both',
             'delivery_charge' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
-            'images' => 'nullable|array',
-            'images.*' => 'string',
+            'images' => 'nullable|array|max:10',
+            'images.*' => ['string', 'max:2000', 'not_regex:/^\s*(javascript|data|vbscript):/i'],
         ]);
 
         $product = $this->marketplaceService->createProduct($user, $validated);
@@ -175,20 +178,34 @@ class MarketplaceApiController extends Controller
             'subcategory_id' => 'nullable|exists:marketplace_categories,id',
             'title' => 'sometimes|string|min:3|max:255',
             'description' => 'nullable|string|max:10000',
-            'price' => 'sometimes|numeric|min:0',
+            'price' => 'sometimes|numeric|min:0|max:100000000',
+            'stock' => 'nullable|integer|min:0|max:100000',
             'original_price' => 'nullable|numeric|min:0|max:100000000',
             'currency' => 'nullable|string|max:5',
-            'condition' => 'nullable|string|in:new,used,refurbished',
+            'condition' => 'nullable|string|in:new,like_new,used,good,fair,refurbished',
             'brand' => 'nullable|string|max:100',
             'model' => 'nullable|string|max:100',
             'is_negotiable' => 'nullable|boolean',
             'delivery_type' => 'nullable|string|in:pickup,delivery,both',
             'delivery_charge' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
-            'images' => 'nullable|array',
-            'images.*' => 'string',
+            'images' => 'nullable|array|max:10',
+            'images.*' => ['string', 'max:2000', 'not_regex:/^\s*(javascript|data|vbscript):/i'],
             'status' => 'nullable|string|in:active,sold,inactive,archived',
         ]);
+
+        if (array_key_exists('price', $validated) || array_key_exists('original_price', $validated)) {
+            $newPrice = (float) ($validated['price'] ?? $product->price);
+            $newOriginal = array_key_exists('original_price', $validated)
+                ? ($validated['original_price'] !== null ? (float) $validated['original_price'] : null)
+                : ($product->original_price !== null ? (float) $product->original_price : null);
+
+            if ($newOriginal !== null && $newOriginal > $newPrice && $newOriginal > 0) {
+                $validated['discount_percent'] = (int) round((($newOriginal - $newPrice) / $newOriginal) * 100);
+            } else {
+                $validated['discount_percent'] = null;
+            }
+        }
 
         $product->update($validated);
 
@@ -205,9 +222,18 @@ class MarketplaceApiController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'Unauthenticated.',
+                'data' => null,
+            ], 401);
+        }
+
         $product = MarketplaceProduct::withTrashed()->find($id);
 
-        if (! $product || $product->trashed()) {
+        if (! $product) {
             return response()->json([
                 'status' => 'success',
                 'success' => true,
@@ -221,7 +247,17 @@ class MarketplaceApiController extends Controller
                 'status' => 'error',
                 'success' => false,
                 'message' => 'Unauthorized.',
+                'data' => null,
             ], 403);
+        }
+
+        if ($product->trashed()) {
+            return response()->json([
+                'status' => 'success',
+                'success' => true,
+                'message' => 'Listing already removed.',
+                'data' => null,
+            ]);
         }
 
         $this->marketplaceService->deleteListing($product, $user);
@@ -445,7 +481,7 @@ class MarketplaceApiController extends Controller
         }
 
         $request->validate([
-            'offer_amount' => 'required|numeric|min:1',
+            'offer_amount' => 'required|numeric|min:1|max:100000000',
             'message' => 'nullable|string|max:500',
         ]);
 
@@ -591,7 +627,7 @@ class MarketplaceApiController extends Controller
         $offer = MarketplaceOffer::findOrFail($id);
 
         $request->validate([
-            'counter_amount' => 'required|numeric|min:1',
+            'counter_amount' => 'required|numeric|min:1|max:100000000',
             'counter_message' => 'nullable|string|max:500',
         ]);
 
@@ -679,7 +715,14 @@ class MarketplaceApiController extends Controller
             ->where(function ($q) {
                 $q->where('item_type', 'marketplace_product')
                     ->orWhere('item_type', MarketplaceProduct::class);
-            })->count();
+            })
+            ->whereIn('item_id', MarketplaceProduct::query()
+                ->where(function ($q) use ($user): void {
+                    $q->whereIn('status', [MarketplaceProduct::STATUS_ACTIVE, MarketplaceProduct::STATUS_SOLD])
+                        ->orWhere('seller_id', $user->id);
+                })
+                ->select('id'))
+            ->count();
 
         return response()->json([
             'success' => true,

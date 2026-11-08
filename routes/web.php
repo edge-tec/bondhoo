@@ -11,6 +11,7 @@ use App\Http\Controllers\Web\CallWebController;
 use App\Http\Controllers\Web\DeviceWebController;
 use App\Http\Controllers\Web\FriendsWebController;
 use App\Http\Controllers\Web\GroupWebController;
+use App\Http\Controllers\Web\LearningWebController;
 use App\Http\Controllers\Web\MarketplaceWebController;
 use App\Http\Controllers\Web\MessengerWebController;
 use App\Http\Controllers\Web\NotificationWebController;
@@ -534,13 +535,7 @@ Route::post('/pages/{slug}/follow', [PageWebController::class, 'followPage'])->n
 Route::post('/pages/{slug}/unfollow', [PageWebController::class, 'unfollowPage'])->name('pages.unfollow.slug');
 
 Route::get('/marketplace', function (Request $request) use ($resolveWebUser) {
-    $resolveWebUser();
-    if (! auth('web')->check() && app()->environment('local')) {
-        $devUser = User::first();
-        if ($devUser) {
-            auth('web')->login($devUser);
-        }
-    }
+    $resolveWebUser($request);
 
     if ($request->query('blade')) {
         return app(MarketplaceWebController::class)->index($request);
@@ -550,13 +545,7 @@ Route::get('/marketplace', function (Request $request) use ($resolveWebUser) {
 })->name('marketplace.index');
 
 Route::get('/marketplace/create', function (Request $request) use ($resolveWebUser) {
-    $resolveWebUser();
-    if (! auth('web')->check() && app()->environment('local')) {
-        $devUser = User::first();
-        if ($devUser) {
-            auth('web')->login($devUser);
-        }
-    }
+    $resolveWebUser($request);
 
     return app(SocialWebController::class)->marketplaceCreate($request);
 })->name('marketplace.create');
@@ -572,13 +561,7 @@ Route::post('/marketplace/orders/{id}/dispute', [MarketplaceWebController::class
 Route::post('/marketplace/orders/{id}/review', [MarketplaceWebController::class, 'reviewOrderWeb'])->name('marketplace.orders.review')->whereNumber('id');
 
 Route::get('/marketplace/my-listings', function (Request $request) use ($resolveWebUser) {
-    $resolveWebUser();
-    if (! auth('web')->check() && app()->environment('local')) {
-        $devUser = User::first();
-        if ($devUser) {
-            auth('web')->login($devUser);
-        }
-    }
+    $resolveWebUser($request);
 
     if ($request->query('blade')) {
         return app(MarketplaceWebController::class)->myListings($request);
@@ -588,17 +571,12 @@ Route::get('/marketplace/my-listings', function (Request $request) use ($resolve
 })->name('marketplace.my-listings');
 
 Route::post('/marketplace/products', [MarketplaceWebController::class, 'storeListingWeb'])->name('marketplace.products.store');
+Route::put('/marketplace/products/{id}', [MarketplaceWebController::class, 'updateListingWeb'])->name('marketplace.products.update')->whereNumber('id');
 Route::post('/marketplace/products/{id}/status', [MarketplaceWebController::class, 'updateListingStatusWeb'])->name('marketplace.products.status')->whereNumber('id');
 Route::delete('/marketplace/products/{id}', [MarketplaceWebController::class, 'destroyListingWeb'])->name('marketplace.products.destroy')->whereNumber('id');
 
 Route::get('/marketplace/{id}', function (Request $request, int $id) use ($resolveWebUser) {
-    $resolveWebUser();
-    if (! auth('web')->check() && app()->environment('local')) {
-        $devUser = User::first();
-        if ($devUser) {
-            auth('web')->login($devUser);
-        }
-    }
+    $resolveWebUser($request);
 
     if ($request->query('blade')) {
         return app(MarketplaceWebController::class)->show($request, $id);
@@ -608,16 +586,14 @@ Route::get('/marketplace/{id}', function (Request $request, int $id) use ($resol
 })->name('marketplace.show')->whereNumber('id');
 
 Route::get('/marketplace/{id}/checkout', function (Request $request, int $id) use ($resolveWebUser) {
-    $resolveWebUser();
-    if (! auth('web')->check() && app()->environment('local')) {
-        $devUser = User::first();
-        if ($devUser) {
-            auth('web')->login($devUser);
-        }
-    }
+    $resolveWebUser($request);
 
     return app(SocialWebController::class)->marketplaceCheckout($request, $id);
 })->name('marketplace.checkout')->whereNumber('id');
+
+Route::get('/learning', [LearningWebController::class, 'index'])->name('learning.index');
+Route::get('/learning/courses/{slug}', [LearningWebController::class, 'show'])->name('learning.courses.show');
+Route::get('/verify/cert/{code}', [LearningWebController::class, 'verifyCertificate'])->name('learning.certificates.verify');
 
 Route::get('/watch', [WatchWebController::class, 'index'])->name('watch.index');
 Route::get('/live/create', [WatchWebController::class, 'create'])->name('live.create');
@@ -864,10 +840,12 @@ Route::middleware(['web'])->group(function () use ($resolveWebUser) {
     })->name('app.marketplace.create');
 
     Route::get('/app/marketplace/my-listings', function (Request $request) use ($resolveWebUser) {
-        $resolveWebUser();
+        $resolveWebUser($request);
 
         return app(SocialWebController::class)->marketplaceMyListings($request);
     })->name('app.marketplace.my-listings');
+
+    Route::get('/app/learning', [LearningWebController::class, 'index'])->name('app.learning');
 
     Route::get('/saved', function (Request $request) use ($resolveWebUser) {
         $resolveWebUser();

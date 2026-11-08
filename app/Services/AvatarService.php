@@ -6,10 +6,12 @@ use App\Events\ProfileUpdatedEvent;
 use App\Jobs\ProcessAvatarJob;
 use App\Models\AuditLog;
 use App\Models\Media;
+use App\Models\ModerationRequest;
 use App\Models\Post;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Services\Contracts\MediaStorageServiceInterface;
+use App\Services\Moderation\ContentModerationService;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -32,6 +34,17 @@ class AvatarService
     {
         // 1. Deep Security & MIME validation (never trust client MIME)
         $meta = $this->validateAndInspectFile($file);
+
+        // Phase 16.9: OpenAI AI Content Moderation for Avatars
+        $moderationService = app(ContentModerationService::class);
+        $modRequest = $moderationService->moderateProfileMedia($user, 'avatar', $file);
+
+        if ($modRequest->status === ModerationRequest::STATUS_REJECTED || $modRequest->status === ModerationRequest::STATUS_QUARANTINED) {
+            $reason = $modRequest->rejection_reason ?: 'Avatar image violates community safety standards.';
+            throw ValidationException::withMessages([
+                'avatar' => ["Avatar upload rejected: {$reason}"],
+            ]);
+        }
 
         // 2. Identify old avatar media and paths for safe deferred deletion
         $oldMediaRecords = Media::where('user_id', $user->id)

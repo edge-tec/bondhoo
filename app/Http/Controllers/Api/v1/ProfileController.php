@@ -52,9 +52,20 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $profileData = $this->profileService->getProfileByUsername($user->username, $user);
+        $payload = array_merge([
+            'id' => $profileData['user']['id'] ?? $user->id,
+            'name' => $profileData['user']['name'] ?? $user->name,
+            'username' => $profileData['user']['username'] ?? $user->username,
+            'email' => $user->email,
+            'avatar' => $profileData['profile']['avatar_url'] ?? null,
+            'bio' => $profileData['profile']['bio'] ?? null,
+            'friends_count' => $profileData['stats']['friends_count'] ?? 0,
+            'followers_count' => $profileData['stats']['followers_count'] ?? 0,
+            'following_count' => $profileData['stats']['following_count'] ?? 0,
+        ], $profileData);
 
         return $this->successResponse(
-            data: $profileData,
+            data: $payload,
             message: 'User profile retrieved.'
         );
     }
@@ -63,9 +74,19 @@ class ProfileController extends Controller
     {
         $viewer = $request->user('sanctum');
         $profileData = $this->profileService->getProfileByUsername($username, $viewer);
+        $payload = array_merge([
+            'id' => $profileData['user']['id'] ?? 0,
+            'name' => $profileData['user']['name'] ?? '',
+            'username' => $profileData['user']['username'] ?? '',
+            'avatar' => $profileData['profile']['avatar_url'] ?? null,
+            'bio' => $profileData['profile']['bio'] ?? null,
+            'friends_count' => $profileData['stats']['friends_count'] ?? 0,
+            'followers_count' => $profileData['stats']['followers_count'] ?? 0,
+            'following_count' => $profileData['stats']['following_count'] ?? 0,
+        ], $profileData);
 
         return $this->successResponse(
-            data: $profileData,
+            data: $payload,
             message: 'User profile retrieved.'
         );
     }

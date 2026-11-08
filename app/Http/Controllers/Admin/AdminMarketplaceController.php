@@ -190,7 +190,7 @@ class AdminMarketplaceController extends Controller
         $query = MarketplacePaymentTransaction::with(['order.buyer.profile', 'order.seller.profile']);
 
         if ($gateway = $request->query('gateway')) {
-            $query->where('payment_gateway', $gateway);
+            $query->where('provider', $gateway);
         }
 
         if ($status = $request->query('status')) {
@@ -198,7 +198,7 @@ class AdminMarketplaceController extends Controller
         }
 
         if ($type = $request->query('type')) {
-            $query->where('transaction_type', $type);
+            $query->where('type', $type);
         }
 
         $transactions = $query->latest('id')->paginate(30);
@@ -232,17 +232,24 @@ class AdminMarketplaceController extends Controller
         $admin = $this->authorizeAdmin($request);
 
         $request->validate([
-            'resolution' => 'required|string|in:refunded,released_to_seller,rejected',
+            'resolution' => 'required|string|in:refunded,released_to_seller,rejected,resolved_refund,resolved_released,resolved_reject',
             'notes' => 'nullable|string|max:1000',
             'refund_amount' => 'nullable|numeric|min:0',
         ]);
 
         $dispute = MarketplaceDispute::with('order')->findOrFail($id);
 
+        $normalizedResolution = match ($request->input('resolution')) {
+            'refunded' => MarketplaceDispute::STATUS_REFUNDED,
+            'released_to_seller' => MarketplaceDispute::STATUS_RELEASED,
+            'rejected' => MarketplaceDispute::STATUS_REJECTED,
+            default => $request->input('resolution'),
+        };
+
         $dispute = $this->marketplaceService->resolveDispute(
             $dispute,
             $admin,
-            $request->input('resolution'),
+            $normalizedResolution,
             $request->all()
         );
 

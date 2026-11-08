@@ -13,6 +13,9 @@ sealed interface RegisterUiIntent {
     data class Register(
         val name: String,
         val email: String,
+        val phone: String,
+        val birthDate: String,
+        val gender: String,
         val pass: String,
         val confirmPass: String,
         val termsAccepted: Boolean

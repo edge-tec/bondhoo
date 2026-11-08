@@ -47,6 +47,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_legal_hold',
         'risk_score',
         'risk_factors',
+        'seller_rating',
+        'seller_reviews_count',
     ];
 
     protected $hidden = [
@@ -71,6 +73,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_legal_hold' => 'boolean',
             'risk_score' => 'integer',
             'risk_factors' => 'array',
+            'seller_rating' => 'float',
+            'seller_reviews_count' => 'integer',
             'password' => 'hashed',
         ];
     }
@@ -490,8 +494,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasRole(['ADMIN', 'SUPER_ADMIN', 'admin', 'super_admin'])
             || ($this->status === 'admin')
-            || (bool) ($this->is_admin ?? false)
-            || str_contains((string) ($this->email ?? ''), 'admin@');
+            || (bool) ($this->getAttribute('is_admin') ?? false);
     }
 
     /**

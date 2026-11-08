@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Learning\StoreCourseRequest;
 use App\Models\LearningCategory;
 use App\Models\LearningCourse;
+use App\Models\LearningEnrollment;
 use App\Services\Learning\CourseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,9 @@ class LearningCourseApiController extends Controller
     {
         $categories = LearningCategory::where('is_active', true)
             ->whereNull('parent_id')
-            ->with('children')
+            ->with(['children' => function ($q) {
+                $q->where('is_active', true)->orderBy('sort_order');
+            }])
             ->orderBy('sort_order')
             ->get();
 
@@ -54,6 +57,22 @@ class LearningCourseApiController extends Controller
         $perPage = min(max((int) $request->query('per_page', 15), 1), 50);
         $courses = $this->courseService->getMarketplaceCourses($filters, $perPage);
 
+        $user = $request->user('sanctum') ?? $request->user('web');
+        $enrolledCourseIds = [];
+        if ($user && count($courses->items()) > 0) {
+            $courseIds = array_map(fn ($c) => $c->id, $courses->items());
+            $enrolledCourseIds = LearningEnrollment::where('user_id', $user->id)
+                ->whereIn('course_id', $courseIds)
+                ->whereIn('status', [LearningEnrollment::STATUS_ACTIVE, LearningEnrollment::STATUS_COMPLETED])
+                ->pluck('course_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        }
+
+        foreach ($courses->items() as $course) {
+            $course->setAttribute('is_enrolled', in_array((int) $course->id, $enrolledCourseIds, true));
+        }
+
         return $this->successResponse(
             $courses->items(),
             'Courses retrieved successfully.',
@@ -72,14 +91,15 @@ class LearningCourseApiController extends Controller
      */
     public function show(Request $request, string $slug): JsonResponse
     {
-        $course = $this->courseService->getCourseDetails($slug, $request->user());
+        $user = $request->user('sanctum') ?? $request->user('web');
+        $course = $this->courseService->getCourseDetails($slug, $user);
 
         if (! $course) {
             return $this->errorResponse('Course not found.', 404);
         }
 
-        $user = $request->user();
         $isEnrolled = $course->isEnrolledByUser($user);
+        $course->setAttribute('is_enrolled', $isEnrolled);
 
         return $this->successResponse([
             'course' => $course,
@@ -149,13 +169,18 @@ class LearningCourseApiController extends Controller
      */
     public function showCategory(string|int $category): JsonResponse
     {
+        $query = LearningCategory::where('is_active', true)->with([
+            'children' => function ($q) {
+                $q->where('is_active', true)->orderBy('sort_order');
+            },
+            'courses' => function ($q) {
+                $q->where('status', LearningCourse::STATUS_PUBLISHED)->limit(10);
+            },
+        ]);
+
         $cat = is_numeric($category)
-            ? LearningCategory::with(['children', 'courses' => function ($q) {
-                $q->where('status', LearningCourse::STATUS_PUBLISHED)->limit(10);
-            }])->find($category)
-            : LearningCategory::with(['children', 'courses' => function ($q) {
-                $q->where('status', LearningCourse::STATUS_PUBLISHED)->limit(10);
-            }])->where('slug', $category)->first();
+            ? $query->find($category)
+            : $query->where('slug', $category)->first();
 
         if (! $cat) {
             return $this->errorResponse('Category not found.', 404);
@@ -170,7 +195,7 @@ class LearningCourseApiController extends Controller
     public function storeCategory(Request $request): JsonResponse
     {
         $user = $request->user();
-        if (! $user || ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (! $user || ! $user->isAdmin()) {
             return $this->errorResponse('Unauthorized admin access.', 403);
         }
 
@@ -199,7 +224,7 @@ class LearningCourseApiController extends Controller
     public function updateCategory(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        if (! $user || ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (! $user || ! $user->isAdmin()) {
             return $this->errorResponse('Unauthorized admin access.', 403);
         }
 
@@ -226,7 +251,7 @@ class LearningCourseApiController extends Controller
     public function destroyCategory(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        if (! $user || ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (! $user || ! $user->isAdmin()) {
             return $this->errorResponse('Unauthorized admin access.', 403);
         }
 
@@ -270,7 +295,7 @@ class LearningCourseApiController extends Controller
         $user = $request->user();
         $course = LearningCourse::with(['sections.lessons.attachments', 'category', 'skills'])->findOrFail($id);
 
-        if ($course->instructor_id !== $user->id && ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if ((int) $course->instructor_id !== (int) $user->id && ! $user->isAdmin()) {
             return $this->errorResponse('Unauthorized access to course.', 403);
         }
 

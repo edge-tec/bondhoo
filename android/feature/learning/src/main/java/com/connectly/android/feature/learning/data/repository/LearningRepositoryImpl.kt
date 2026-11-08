@@ -2,6 +2,10 @@ package com.connectly.android.feature.learning.data.repository
 
 import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.network.api.ConnectlyApi
+import com.connectly.android.core.network.api.EnrollCourseRequest
+import com.connectly.android.core.network.api.LearningCategoryDto
+import com.connectly.android.core.network.api.LearningCourseDto
+import com.connectly.android.core.network.api.UpdateLessonProgressRequest
 import com.connectly.android.feature.learning.domain.model.LearningCategory
 import com.connectly.android.feature.learning.domain.model.LearningCertificate
 import com.connectly.android.feature.learning.domain.model.LearningCourse
@@ -15,6 +19,9 @@ import com.connectly.android.feature.learning.domain.model.LearningSection
 import com.connectly.android.feature.learning.domain.repository.LearningRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,25 +30,65 @@ class LearningRepositoryImpl @Inject constructor(
     private val api: ConnectlyApi
 ) : LearningRepository {
 
+    private fun extractErrorMessage(errorBodyString: String?, fallback: String): String {
+        if (errorBodyString.isNullOrBlank()) return fallback
+        return try {
+            val obj = Json.parseToJsonElement(errorBodyString).jsonObject
+            obj["message"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() } ?: fallback
+        } catch (_: Exception) {
+            "\"message\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(errorBodyString)?.groupValues?.getOrNull(1) ?: fallback
+        }
+    }
+
+    private fun LearningCategoryDto.toDomain(): LearningCategory = LearningCategory(
+        id = id,
+        name = name,
+        slug = slug,
+        icon = icon,
+        description = description,
+        coursesCount = courses_count,
+        children = children.map { it.toDomain() }
+    )
+
+    private fun LearningCourseDto.toDomain(overrideEnrolled: Boolean? = null): LearningCourse = LearningCourse(
+        id = id,
+        instructorId = instructor_id,
+        categoryId = category_id,
+        title = title,
+        slug = slug,
+        subtitle = subtitle,
+        description = description,
+        level = level,
+        language = language,
+        thumbnailUrl = thumbnail_url,
+        promotionalVideoUrl = promotional_video_url,
+        type = type,
+        price = price,
+        discountedPrice = discounted_price,
+        currency = currency,
+        status = status,
+        durationMinutes = duration_minutes,
+        totalSections = total_sections,
+        totalLessons = total_lessons,
+        enrollmentsCount = enrollments_count,
+        ratingAvg = rating_avg,
+        ratingCount = rating_count,
+        isFeatured = is_featured,
+        instructorName = instructor?.name,
+        categoryName = category?.name,
+        isEnrolled = overrideEnrolled ?: is_enrolled
+    )
+
     override fun getCategories(): Flow<Result<List<LearningCategory>>> = flow {
         emit(Result.Loading)
         try {
             val response = api.getLearningCategories()
             if (response.isSuccessful && response.body() != null) {
                 val dtos = response.body()?.data ?: emptyList()
-                val categories = dtos.map {
-                    LearningCategory(
-                        id = it.id,
-                        name = it.name,
-                        slug = it.slug,
-                        icon = it.icon,
-                        description = it.description,
-                        coursesCount = it.courses_count
-                    )
-                }
-                emit(Result.Success(categories))
+                emit(Result.Success(dtos.map { it.toDomain() }))
             } else {
-                emit(Result.Error(Exception(response.body()?.message ?: "Failed to fetch categories")))
+                val msg = extractErrorMessage(response.errorBody()?.string(), response.body()?.message ?: "Failed to fetch categories")
+                emit(Result.Error(Exception(msg)))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -70,38 +117,10 @@ class LearningRepositoryImpl @Inject constructor(
             )
             if (response.isSuccessful && response.body() != null) {
                 val dtos = response.body()?.data ?: emptyList()
-                val courses = dtos.map {
-                    LearningCourse(
-                        id = it.id,
-                        instructorId = it.instructor_id,
-                        categoryId = it.category_id,
-                        title = it.title,
-                        slug = it.slug,
-                        subtitle = it.subtitle,
-                        description = it.description,
-                        level = it.level,
-                        language = it.language,
-                        thumbnailUrl = it.thumbnail_url,
-                        promotionalVideoUrl = it.promotional_video_url,
-                        type = it.type,
-                        price = it.price,
-                        discountedPrice = it.discounted_price,
-                        currency = it.currency,
-                        status = it.status,
-                        durationMinutes = it.duration_minutes,
-                        totalSections = it.total_sections,
-                        totalLessons = it.total_lessons,
-                        enrollmentsCount = it.enrollments_count,
-                        ratingAvg = it.rating_avg,
-                        ratingCount = it.rating_count,
-                        isFeatured = it.is_featured,
-                        instructorName = it.instructor?.name,
-                        categoryName = it.category?.name
-                    )
-                }
-                emit(Result.Success(courses))
+                emit(Result.Success(dtos.map { it.toDomain() }))
             } else {
-                emit(Result.Error(Exception(response.body()?.message ?: "Failed to fetch courses")))
+                val msg = extractErrorMessage(response.errorBody()?.string(), response.body()?.message ?: "Failed to fetch courses")
+                emit(Result.Error(Exception(msg)))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -112,38 +131,12 @@ class LearningRepositoryImpl @Inject constructor(
         emit(Result.Loading)
         try {
             val response = api.getLearningCourseDetails(slug)
-            if (response.isSuccessful) {
-                // Return a baseline object
-                val course = LearningCourse(
-                    id = 1,
-                    instructorId = 1,
-                    categoryId = 1,
-                    title = "Course Details",
-                    slug = slug,
-                    subtitle = null,
-                    description = "Detailed course syllabus and overview",
-                    level = "all_levels",
-                    language = "en",
-                    thumbnailUrl = null,
-                    promotionalVideoUrl = null,
-                    type = "free",
-                    price = 0.0,
-                    discountedPrice = null,
-                    currency = "USD",
-                    status = "published",
-                    durationMinutes = 120,
-                    totalSections = 4,
-                    totalLessons = 16,
-                    enrollmentsCount = 42,
-                    ratingAvg = 4.8,
-                    ratingCount = 12,
-                    isFeatured = true,
-                    instructorName = "Lead Instructor",
-                    categoryName = "Computer Science"
-                )
-                emit(Result.Success(course))
+            val payload = response.body()?.data
+            if (response.isSuccessful && payload?.course != null) {
+                emit(Result.Success(payload.course!!.toDomain(overrideEnrolled = payload.is_enrolled)))
             } else {
-                emit(Result.Error(Exception("Course not found")))
+                val msg = extractErrorMessage(response.errorBody()?.string(), "Course not found")
+                emit(Result.Error(Exception(msg)))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -177,14 +170,15 @@ class LearningRepositoryImpl @Inject constructor(
                                 sortOrder = lDto.sort_order,
                                 isPreview = lDto.is_preview,
                                 isMandatory = lDto.is_mandatory,
-                                isCompleted = false
+                                isCompleted = lDto.is_completed
                             )
                         }
                     )
                 }
                 emit(Result.Success(sections))
             } else {
-                emit(Result.Error(Exception("Failed to fetch curriculum")))
+                val msg = extractErrorMessage(response.errorBody()?.string(), "Failed to fetch curriculum")
+                emit(Result.Error(Exception(msg)))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -194,25 +188,32 @@ class LearningRepositoryImpl @Inject constructor(
     override fun enrollCourse(courseId: Long, couponCode: String?): Flow<Result<LearningEnrollment>> = flow {
         emit(Result.Loading)
         try {
-            val body = com.connectly.android.core.network.api.EnrollCourseRequest(coupon_code = couponCode)
+            val body = EnrollCourseRequest(coupon_code = couponCode?.trim()?.takeIf { it.isNotBlank() })
             val response = api.enrollInCourse(courseId, body)
-            if (response.isSuccessful && response.body() != null) {
-                val dto = response.body()?.data
+            if (response.isSuccessful && response.body()?.data != null) {
+                val dto = response.body()!!.data
                 val enrollment = LearningEnrollment(
-                    id = dto?.id ?: 0,
-                    courseId = dto?.course_id ?: courseId,
-                    courseTitle = dto?.course?.title ?: "Enrolled Course",
-                    courseThumbnail = dto?.course?.thumbnail_url,
-                    instructorName = dto?.course?.instructor?.name,
-                    status = dto?.status ?: "active",
-                    progressPercentage = dto?.course_progress?.percentage ?: 0.0,
-                    completedLessons = dto?.course_progress?.completed_lessons_count ?: 0,
-                    totalLessons = dto?.course_progress?.total_lessons_count ?: 0,
-                    isCompleted = dto?.course_progress?.is_completed ?: false
+                    id = dto.id,
+                    courseId = if (dto.course_id != 0L) dto.course_id else courseId,
+                    courseTitle = dto.course?.title?.takeIf { it.isNotBlank() } ?: "Enrolled Course",
+                    courseThumbnail = dto.course?.thumbnail_url,
+                    instructorName = dto.course?.instructor?.name,
+                    status = dto.status,
+                    progressPercentage = dto.course_progress?.percentage ?: 0.0,
+                    completedLessons = dto.course_progress?.completed_lessons_count ?: 0,
+                    totalLessons = dto.course_progress?.total_lessons_count ?: (dto.course?.total_lessons ?: 0),
+                    isCompleted = dto.status == "completed" || (dto.course_progress?.is_completed == true)
                 )
                 emit(Result.Success(enrollment))
             } else {
-                emit(Result.Error(Exception(response.body()?.message ?: "Enrollment failed")))
+                val fallback = when (response.code()) {
+                    401 -> "Please sign in to enroll in this course."
+                    403 -> "You are not authorized to enroll in this course."
+                    422 -> "Could not complete enrollment. Please check course eligibility or wallet balance."
+                    else -> "Enrollment failed (${response.code()})"
+                }
+                val msg = extractErrorMessage(response.errorBody()?.string(), response.body()?.message ?: fallback)
+                emit(Result.Error(Exception(msg)))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -225,23 +226,26 @@ class LearningRepositoryImpl @Inject constructor(
             val response = api.getMyLearning()
             if (response.isSuccessful && response.body() != null) {
                 val dtos = response.body()?.data ?: emptyList()
-                val list = dtos.map { dto ->
-                    LearningEnrollment(
-                        id = dto.id,
-                        courseId = dto.course_id,
-                        courseTitle = dto.course?.title ?: "Course",
-                        courseThumbnail = dto.course?.thumbnail_url,
-                        instructorName = dto.course?.instructor?.name,
-                        status = dto.status,
-                        progressPercentage = dto.course_progress?.percentage ?: 0.0,
-                        completedLessons = dto.course_progress?.completed_lessons_count ?: 0,
-                        totalLessons = dto.course_progress?.total_lessons_count ?: 0,
-                        isCompleted = dto.course_progress?.is_completed ?: false
-                    )
-                }
+                val list = dtos
+                    .filter { it.status == "active" || it.status == "completed" }
+                    .map { dto ->
+                        LearningEnrollment(
+                            id = dto.id,
+                            courseId = dto.course_id,
+                            courseTitle = dto.course?.title ?: "Course",
+                            courseThumbnail = dto.course?.thumbnail_url,
+                            instructorName = dto.course?.instructor?.name,
+                            status = dto.status,
+                            progressPercentage = if (dto.status == "completed") 100.0 else (dto.course_progress?.percentage ?: 0.0),
+                            completedLessons = dto.course_progress?.completed_lessons_count ?: 0,
+                            totalLessons = dto.course_progress?.total_lessons_count ?: (dto.course?.total_lessons ?: 0),
+                            isCompleted = dto.status == "completed" || (dto.course_progress?.is_completed == true)
+                        )
+                    }
                 emit(Result.Success(list))
             } else {
-                emit(Result.Error(Exception("Failed to fetch my learning list")))
+                val msg = extractErrorMessage(response.errorBody()?.string(), "Failed to fetch my learning list")
+                emit(Result.Error(Exception(msg)))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -257,15 +261,16 @@ class LearningRepositoryImpl @Inject constructor(
         try {
             val response = api.updateLessonProgress(
                 lessonId,
-                mapOf(
-                    "position_seconds" to positionSeconds,
-                    "mark_completed" to markCompleted
+                UpdateLessonProgressRequest(
+                    position_seconds = positionSeconds,
+                    mark_completed = markCompleted
                 )
             )
             if (response.isSuccessful) {
                 emit(Result.Success(Unit))
             } else {
-                emit(Result.Error(Exception("Progress sync failed")))
+                val msg = extractErrorMessage(response.errorBody()?.string(), "Progress sync failed (${response.code()})")
+                emit(Result.Error(Exception(msg)))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -277,7 +282,7 @@ class LearningRepositoryImpl @Inject constructor(
         try {
             val response = api.getLearningQuiz(quizId)
             if (response.isSuccessful && response.body() != null) {
-                val dto = response.body()!!.data!!
+                val dto = response.body()!!.data
                 val quiz = LearningQuiz(
                     id = dto.id,
                     lessonId = dto.lesson_id,
@@ -312,9 +317,17 @@ class LearningRepositoryImpl @Inject constructor(
         try {
             val startRes = api.startQuizAttempt(quizId)
             val attemptId = startRes.body()?.data?.id ?: 1
-            val submitRes = api.submitQuizAttempt(attemptId, mapOf("answers" to answers))
+            val answersJson = kotlinx.serialization.json.buildJsonObject {
+                answers.forEach { (k, v) ->
+                    put(k.toString(), kotlinx.serialization.json.JsonPrimitive(v.toString()))
+                }
+            }
+            val submitBody = kotlinx.serialization.json.buildJsonObject {
+                put("answers", answersJson)
+            }
+            val submitRes = api.submitQuizAttempt(attemptId, submitBody)
             if (submitRes.isSuccessful && submitRes.body() != null) {
-                val dto = submitRes.body()!!.data!!
+                val dto = submitRes.body()!!.data
                 val result = LearningQuizResult(
                     score = dto.score,
                     totalPoints = dto.total_points,

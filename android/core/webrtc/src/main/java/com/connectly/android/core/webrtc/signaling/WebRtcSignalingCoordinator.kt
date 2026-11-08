@@ -26,6 +26,11 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -63,6 +68,9 @@ class WebRtcSignalingCoordinator @Inject constructor(
 
     private val _callEndedFlow = MutableSharedFlow<CallEndedEvent>(extraBufferCapacity = 16)
     val callEndedFlow: SharedFlow<CallEndedEvent> = _callEndedFlow.asSharedFlow()
+
+    private val _reconnectRequestFlow = MutableSharedFlow<Long>(extraBufferCapacity = 8)
+    val reconnectRequestFlow: SharedFlow<Long> = _reconnectRequestFlow.asSharedFlow()
 
     private val _participantStateFlow = MutableSharedFlow<CallParticipantStateEvent>(extraBufferCapacity = 32)
     val participantStateFlow: SharedFlow<CallParticipantStateEvent> = _participantStateFlow.asSharedFlow()
@@ -148,19 +156,23 @@ class WebRtcSignalingCoordinator @Inject constructor(
                     val response = api.getSignals(callId)
                     if (response.isSuccessful && response.body()?.data != null) {
                         val signals = response.body()!!.data
-                        signals.forEach { signalMap ->
-                            val sigType = signalMap["signal_type"]?.toString() ?: ""
-                            val senderId = (signalMap["sender_id"] as? Number)?.toLong() ?: 0L
-                            val targetId = (signalMap["target_user_id"] as? Number)?.toLong()
-                            val senderName = signalMap["sender_name"]?.toString()
+                        signals.forEach { signalObj: JsonObject ->
+                            val sigType = signalObj["signal_type"]?.jsonPrimitive?.contentOrNull ?: ""
+                            val senderId = signalObj["sender_id"]?.jsonPrimitive?.longOrNull ?: 0L
+                            val targetId = signalObj["target_user_id"]?.jsonPrimitive?.longOrNull
+                            val senderName = signalObj["sender_name"]?.jsonPrimitive?.contentOrNull
 
-                            @Suppress("UNCHECKED_CAST")
-                            val payload = (signalMap["payload"] as? Map<String, Any?>)?.mapValues {
-                                it.value?.toString() ?: ""
+                            val payloadObj = try {
+                                signalObj["payload"]?.jsonObject
+                            } catch (_: Exception) {
+                                null
+                            }
+                            val payload = payloadObj?.entries?.associate { (key, elem) ->
+                                key to (runCatching { elem.jsonPrimitive.content }.getOrDefault(elem.toString()))
                             } ?: emptyMap()
 
                             val currentUserId = tokenStorage.getUserId()
-                            if (senderId != currentUserId) {
+                            if (senderId > 0L && senderId != currentUserId) {
                                 processSignal(
                                     CallSignalEvent(
                                         callId = callId,
@@ -209,7 +221,15 @@ class WebRtcSignalingCoordinator @Inject constructor(
                     )
                 )
             }
+            "renegotiate", "restart-ice" -> {
+                _reconnectRequestFlow.emit(signal.callId)
+            }
         }
+    }
+
+    suspend fun triggerIceRestart(callId: Long, targetUserId: Long? = null): Boolean {
+        _reconnectRequestFlow.emit(callId)
+        return sendRenegotiate(callId, targetUserId)
     }
 
     suspend fun sendOffer(callId: Long, sdp: String, targetUserId: Long? = null): Boolean {

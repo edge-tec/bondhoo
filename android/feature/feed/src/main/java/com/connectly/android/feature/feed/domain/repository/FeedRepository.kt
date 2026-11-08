@@ -27,10 +27,10 @@ interface FeedRepository {
     fun updatePost(postId: Long, content: String, audience: String): Flow<Result<Post>>
     fun deletePost(postId: Long): Flow<Result<Unit>>
     fun toggleSavePost(postId: Long): Flow<Result<Boolean>>
-    fun sharePost(postId: Long, caption: String?): Flow<Result<Unit>>
+    fun sharePost(postId: Long, caption: String?, targetType: String = "timeline", targetId: Long? = null): Flow<Result<Unit>>
     fun reactToPost(postId: Long, reactionType: String): Flow<Result<ReactionResponse>>
     fun reportPost(postId: Long, reason: String, details: String? = null): Flow<Result<Unit>>
-    
+
     // Comments
     fun getComments(postId: Long, parentId: Long?): Flow<Result<List<Comment>>>
     fun addComment(postId: Long, body: String, parentId: Long?): Flow<Result<Comment>>

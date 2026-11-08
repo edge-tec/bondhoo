@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.connectly.android.core.designsystem.component.ConnectlyEmojiPicker
+import com.connectly.android.core.designsystem.component.ConnectlyQuickEmojiRow
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -201,22 +203,23 @@ fun ReelsScreen(
                     expanded = feedMenuExpanded,
                     onDismissRequest = { feedMenuExpanded = false }
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("For You") },
-                        onClick = {
-                            selectedFeedType = "For You"
-                            feedMenuExpanded = false
-                            viewModel.handleIntent(ReelsIntent.LoadFeed)
-                        }
+                    val feedCategories = listOf(
+                        "For You" to "for_you",
+                        "Following" to "following",
+                        "Friends" to "friends",
+                        "Popular" to "popular",
+                        "Latest" to "latest"
                     )
-                    DropdownMenuItem(
-                        text = { Text("Following") },
-                        onClick = {
-                            selectedFeedType = "Following"
-                            feedMenuExpanded = false
-                            viewModel.handleIntent(ReelsIntent.LoadFeed)
-                        }
-                    )
+                    feedCategories.forEach { (label, tabKey) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                selectedFeedType = label
+                                feedMenuExpanded = false
+                                viewModel.handleIntent(ReelsIntent.LoadFeed(tabKey))
+                            }
+                        )
+                    }
                 }
             }
 
@@ -534,11 +537,12 @@ private fun ReelsCommentsDrawerContent(
     onAddComment: (String) -> Unit
 ) {
     var newCommentText by remember { mutableStateOf("") }
+    var showEmojiPicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(460.dp)
+            .height(580.dp)
             .padding(16.dp)
     ) {
         Text("Reel Comments", fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -575,29 +579,75 @@ private fun ReelsCommentsDrawerContent(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Quick Emoji Reaction Bar
+        ConnectlyQuickEmojiRow(
+            onEmojiSelected = { emoji ->
+                newCommentText += emoji
+            }
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(
+                onClick = { showEmojiPicker = !showEmojiPicker },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EmojiEmotions,
+                    contentDescription = "Select Emoji",
+                    tint = if (showEmojiPicker) ConnectlyBlue else Color(0xFF64748B),
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+
             OutlinedTextField(
                 value = newCommentText,
                 onValueChange = { newCommentText = it },
                 placeholder = { Text("Add a comment...") },
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(24.dp)
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
             IconButton(
                 onClick = {
                     if (newCommentText.isNotBlank()) {
                         onAddComment(newCommentText)
                         newCommentText = ""
+                        showEmojiPicker = false
                     }
                 },
                 enabled = newCommentText.isNotBlank()
             ) {
                 Icon(Icons.Default.Send, contentDescription = "Send", tint = ConnectlyBlue)
             }
+        }
+
+        // Full Categorized Emoji Picker
+        if (showEmojiPicker) {
+            Spacer(modifier = Modifier.height(8.dp))
+            ConnectlyEmojiPicker(
+                onEmojiSelected = { emoji ->
+                    newCommentText += emoji
+                },
+                onBackspace = {
+                    if (newCommentText.isNotEmpty()) {
+                        newCommentText = if (newCommentText.length >= 2 && Character.isSurrogate(newCommentText.last())) {
+                            newCommentText.dropLast(2)
+                        } else {
+                            newCommentText.dropLast(1)
+                        }
+                    }
+                },
+                onClose = { showEmojiPicker = false },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+            )
         }
     }
 }

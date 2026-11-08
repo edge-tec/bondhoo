@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\v1\Learning;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Learning\SubmitQuizAttemptRequest;
+use App\Models\LearningCourse;
 use App\Models\LearningQuiz;
 use App\Models\LearningQuizAttempt;
 use App\Services\Learning\QuizService;
@@ -22,9 +23,18 @@ class LearningQuizApiController extends Controller
     /**
      * GET /api/v1/learning/quizzes/{id}
      */
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
-        $quiz = LearningQuiz::findOrFail($id);
+        $user = $request->user();
+        $quiz = LearningQuiz::with('course')->findOrFail($id);
+
+        if ($quiz->course && $quiz->course->type !== LearningCourse::TYPE_FREE) {
+            $isPrivileged = (int) $quiz->course->instructor_id === (int) $user->id || $user->isAdmin();
+            if (! $isPrivileged && ! $quiz->course->isEnrolledByUser($user)) {
+                return $this->errorResponse('Enrollment is required to access this quiz.', 403);
+            }
+        }
+
         $data = $this->quizService->getQuizForStudent($quiz);
 
         return $this->successResponse($data, 'Quiz retrieved successfully.');
@@ -36,7 +46,14 @@ class LearningQuizApiController extends Controller
     public function startAttempt(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $quiz = LearningQuiz::findOrFail($id);
+        $quiz = LearningQuiz::with('course')->findOrFail($id);
+
+        if ($quiz->course && $quiz->course->type !== LearningCourse::TYPE_FREE) {
+            $isPrivileged = (int) $quiz->course->instructor_id === (int) $user->id || $user->isAdmin();
+            if (! $isPrivileged && ! $quiz->course->isEnrolledByUser($user)) {
+                return $this->errorResponse('Enrollment is required to start a quiz attempt.', 403);
+            }
+        }
 
         try {
             $attempt = $this->quizService->startAttempt($user, $quiz);
@@ -55,7 +72,7 @@ class LearningQuizApiController extends Controller
         $user = $request->user();
         $attempt = LearningQuizAttempt::with('quiz')->findOrFail($attemptId);
 
-        if ($attempt->user_id !== $user->id) {
+        if ((int) $attempt->user_id !== (int) $user->id) {
             return $this->errorResponse('Unauthorized attempt access.', 403);
         }
 
@@ -63,9 +80,13 @@ class LearningQuizApiController extends Controller
             return $this->errorResponse('This attempt has already been submitted.', 422);
         }
 
-        $graded = $this->quizService->submitQuiz($attempt, $request->input('answers'));
+        try {
+            $graded = $this->quizService->submitQuiz($attempt, (array) $request->input('answers'));
 
-        return $this->successResponse($graded, 'Quiz submitted and graded successfully.');
+            return $this->successResponse($graded, 'Quiz submitted and graded successfully.');
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
     }
 
     /**
@@ -91,9 +112,9 @@ class LearningQuizApiController extends Controller
     public function saveAnswers(Request $request, int $attemptId): JsonResponse
     {
         $user = $request->user();
-        $attempt = LearningQuizAttempt::findOrFail($attemptId);
+        $attempt = LearningQuizAttempt::with('quiz')->findOrFail($attemptId);
 
-        if ($attempt->user_id !== $user->id && ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if ((int) $attempt->user_id !== (int) $user->id && ! $user->isAdmin()) {
             return $this->errorResponse('Unauthorized attempt access.', 403);
         }
 

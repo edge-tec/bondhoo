@@ -64,11 +64,11 @@
       <!-- Main Tabs and Status Filter -->
       <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <!-- Role Tabs -->
-        <div class="flex items-center gap-2 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/60 w-fit">
+        <div class="flex flex-wrap items-center gap-2 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/60 w-fit">
           <button
             type="button"
             @click="switchTab('purchases')"
-            class="px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
             :class="activeTab === 'purchases' ? 'bg-white dark:bg-slate-900 text-[#1877F2] shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
           >
             <span>🛍️ আমার ক্রয় (Purchases)</span>
@@ -76,20 +76,36 @@
           <button
             type="button"
             @click="switchTab('sales')"
-            class="px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
             :class="activeTab === 'sales' ? 'bg-white dark:bg-slate-900 text-[#1877F2] shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
           >
             <span>💼 আমার বিক্রয় (Sales)</span>
           </button>
+          <button
+            type="button"
+            @click="switchTab('offers_received')"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+            :class="activeTab === 'offers_received' ? 'bg-white dark:bg-slate-900 text-[#1877F2] shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+          >
+            <span>📥 প্রাপ্ত অফার (Received)</span>
+          </button>
+          <button
+            type="button"
+            @click="switchTab('offers_sent')"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+            :class="activeTab === 'offers_sent' ? 'bg-white dark:bg-slate-900 text-[#1877F2] shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'"
+          >
+            <span>📤 পাঠানো অফার (Sent)</span>
+          </button>
         </div>
 
-        <!-- Status Filter Pills -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none text-xs">
+        <!-- Status Filter Pills (Orders Only) -->
+        <div v-if="activeTab === 'purchases' || activeTab === 'sales'" class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none text-xs">
           <button
             v-for="st in statusFilters"
-            :key="st.key"
+            :key="String(st.key)"
             @click="filterByStatus(st.key)"
-            class="px-3 py-1.5 rounded-full font-bold transition-all shrink-0"
+            class="px-3 py-1.5 rounded-full font-bold transition-all shrink-0 cursor-pointer"
             :class="currentStatus === st.key ? 'bg-[#1877F2] text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'"
           >
             {{ st.label }}
@@ -97,8 +113,113 @@
         </div>
       </div>
 
+      <!-- OFFERS MANAGEMENT VIEW -->
+      <div v-if="activeTab === 'offers_received' || activeTab === 'offers_sent'" class="space-y-4">
+        <div v-if="isLoading" class="py-16 text-center">
+          <div class="w-8 h-8 border-3 border-[#1877F2] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p class="text-xs text-slate-400 font-semibold mt-3">অফার লোড হচ্ছে...</p>
+        </div>
+        <div v-else-if="offers.length === 0" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-12 text-center shadow-sm">
+          <div class="text-3xl mb-2">🤝</div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">
+            {{ activeTab === 'offers_received' ? 'কোনো নতুন অফার পাওয়া যায়নি' : 'আপনি এখনো কোনো অফার পাঠাননি' }}
+          </h3>
+          <p class="text-xs text-slate-500 mt-1">
+            {{ activeTab === 'offers_received' ? 'ক্রেতারা আপনার পণ্যে দর প্রস্তাব পাঠালে এখানে দেখা যাবে।' : 'মার্কেটপ্লেসের পণ্যে Make an Offer বাটন ব্যবহার করে দর প্রস্তাব পাঠান।' }}
+          </p>
+        </div>
+        <div v-else class="space-y-3">
+          <div
+            v-for="offer in offers"
+            :key="'offer-' + offer.id"
+            class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+          >
+            <div class="space-y-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-blue-50 text-[#1877F2]">
+                  {{ offer.status }}
+                </span>
+                <span class="text-xs text-slate-400">{{ formatDate(offer.created_at) }}</span>
+              </div>
+              <a
+                :href="'/marketplace/' + offer.product_id"
+                class="font-bold text-sm text-slate-900 dark:text-white hover:text-[#1877F2] block truncate"
+              >
+                {{ offer.product?.title || ('Listing #' + offer.product_id) }}
+              </a>
+              <div class="text-xs text-slate-600 dark:text-slate-300 flex flex-wrap items-center gap-3">
+                <span>প্রস্তাবিত মূল্য: <strong class="text-[#1877F2]">৳ {{ Number(offer.offer_amount || offer.amount || 0).toLocaleString() }}</strong></span>
+                <span v-if="offer.counter_amount">কাউন্টার মূল্য: <strong class="text-amber-600">৳ {{ Number(offer.counter_amount).toLocaleString() }}</strong></span>
+                <span v-if="activeTab === 'offers_received' && offer.buyer">ক্রেতা: <strong>{{ offer.buyer.name }}</strong></span>
+                <span v-if="activeTab === 'offers_sent' && offer.seller">বিক্রেতা: <strong>{{ offer.seller.name }}</strong></span>
+              </div>
+              <p v-if="offer.message" class="text-xs text-slate-500 italic">"{{ offer.message }}"</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <!-- Seller Actions on Pending Offer -->
+              <template v-if="activeTab === 'offers_received' && offer.status === 'pending'">
+                <button
+                  type="button"
+                  @click="respondOffer(offer.id, 'accept')"
+                  :disabled="offerBusyId === offer.id"
+                  class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
+                >
+                  ✓ গ্রহণ করুন
+                </button>
+                <button
+                  type="button"
+                  @click="openCounterModal(offer)"
+                  :disabled="offerBusyId === offer.id"
+                  class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
+                >
+                  ⇄ কাউন্টার অফার
+                </button>
+                <button
+                  type="button"
+                  @click="respondOffer(offer.id, 'reject')"
+                  :disabled="offerBusyId === offer.id"
+                  class="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold cursor-pointer disabled:opacity-50"
+                >
+                  ✕ প্রত্যাখ্যান
+                </button>
+              </template>
+
+              <!-- Buyer Actions on Sent Offer -->
+              <template v-if="activeTab === 'offers_sent'">
+                <button
+                  v-if="offer.status === 'countered'"
+                  type="button"
+                  @click="respondOffer(offer.id, 'accept')"
+                  :disabled="offerBusyId === offer.id"
+                  class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
+                >
+                  ✓ কাউন্টার মূল্য মেনে নিন (৳ {{ Number(offer.counter_amount || 0).toLocaleString() }})
+                </button>
+                <a
+                  v-if="offer.status === 'accepted'"
+                  :href="'/marketplace/' + offer.product_id"
+                  class="px-3.5 py-1.5 rounded-xl bg-[#1877F2] hover:bg-blue-600 text-white text-xs font-bold"
+                >
+                  ⚡ অনুমোদিত মূল্যে অর্ডার করুন
+                </a>
+                <button
+                  v-if="['pending', 'countered'].includes(offer.status)"
+                  type="button"
+                  @click="respondOffer(offer.id, 'cancel')"
+                  :disabled="offerBusyId === offer.id"
+                  class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-bold cursor-pointer disabled:opacity-50"
+                >
+                  বাতিল করুন
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Orders List Container -->
-      <div v-if="isLoading" class="py-16 text-center">
+      <div v-else-if="isLoading" class="py-16 text-center">
         <div class="w-8 h-8 border-3 border-[#1877F2] border-t-transparent rounded-full animate-spin mx-auto"></div>
         <p class="text-xs text-slate-400 font-semibold mt-3">অর্ডার লোড হচ্ছে...</p>
       </div>
@@ -258,16 +379,13 @@
                   🚚 পণ্য শিপ করুন
                 </button>
 
-                <!-- Mark Delivered Button -->
-                <button
+                <!-- Buyer-Only Delivery Notice for Seller -->
+                <span
                   v-if="order.status === 'shipped'"
-                  type="button"
-                  @click="markDelivered(order)"
-                  :disabled="actionInProgress === order.id"
-                  class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold text-center shadow-sm transition-all"
+                  class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold text-center"
                 >
-                  📦 ডেলিভারি সম্পন্ন
-                </button>
+                  ⏳ ক্রেতার ডেলিভারি নিশ্চিতকরণের অপেক্ষায়
+                </span>
               </template>
 
               <!-- Cancel Button (if permitted) -->
@@ -403,6 +521,28 @@
       </div>
     </div>
 
+    <!-- Counteroffer Modal (Seller) -->
+    <div v-if="counterModalOffer" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">কাউন্টার অফার পাঠান</h3>
+        <p class="text-xs text-slate-500">
+          ক্রেতার প্রস্তাবিত মূল্য: <strong>৳ {{ Number(counterModalOffer.offer_amount || counterModalOffer.amount || 0).toLocaleString() }}</strong>
+        </p>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">আপনার কাউন্টার মূল্য (৳):</label>
+          <input v-model.number="counterAmount" type="number" min="1" step="1" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">বার্তা (ঐচ্ছিক):</label>
+          <input v-model="counterMessage" type="text" placeholder="সর্বনিম্ন বিক্রয় মূল্য..." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="counterModalOffer = null" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500">বাতিল</button>
+          <button type="button" @click="submitCounterOffer" :disabled="!counterAmount || counterAmount <= 0" class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold disabled:opacity-50">কাউন্টার পাঠান</button>
+        </div>
+      </div>
+    </div>
+
   </AppLayout>
 </template>
 
@@ -412,14 +552,23 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps<{
   activeTab?: string;
+  currentTab?: string;
   purchases?: any;
   sales?: any;
+  initialPurchases?: any;
+  initialSales?: any;
+  initialSummary?: any;
 }>();
 
-const activeTab = ref(props.activeTab || 'purchases');
+const activeTab = ref(props.currentTab || props.activeTab || 'purchases');
 const currentStatus = ref<string | null>(null);
 const orders = ref<any[]>([]);
-const sellerSummary = ref<any>(null);
+const offers = ref<any[]>([]);
+const offerBusyId = ref<number | null>(null);
+const counterModalOffer = ref<any>(null);
+const counterAmount = ref<number>(0);
+const counterMessage = ref('');
+const sellerSummary = ref<any>(props.initialSummary || null);
 const isLoading = ref(false);
 const actionInProgress = ref<number | null>(null);
 
@@ -449,6 +598,11 @@ const statusFilters = [
 ];
 
 const fetchOrders = async () => {
+  if (activeTab.value === 'offers_received' || activeTab.value === 'offers_sent') {
+    await fetchOffers();
+    return;
+  }
+
   isLoading.value = true;
   try {
     const role = activeTab.value === 'sales' ? 'seller' : 'buyer';
@@ -462,7 +616,7 @@ const fetchOrders = async () => {
     });
     const data = await res.json();
     if (data.status === 'success') {
-      orders.value = data.data.data || data.data || [];
+      orders.value = data.data?.data || data.data || [];
     }
 
     if (activeTab.value === 'sales') {
@@ -472,6 +626,87 @@ const fetchOrders = async () => {
     console.error(e);
   } finally {
     isLoading.value = false;
+  }
+};
+
+const fetchOffers = async () => {
+  isLoading.value = true;
+  try {
+    const role = activeTab.value === 'offers_received' ? 'seller' : 'buyer';
+    const res = await fetch(`/api/v2/marketplace/offers?role=${role}`, {
+      headers: { Accept: 'application/json' },
+    });
+    const payload = await res.json();
+    if (res.ok && payload.status === 'success') {
+      offers.value = payload.data?.data || payload.data || [];
+    }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const respondOffer = async (offerId: number, action: 'accept' | 'reject' | 'cancel') => {
+  offerBusyId.value = offerId;
+  try {
+    const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+    const res = await fetch(`/api/v2/marketplace/offers/${offerId}/${action}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+        Accept: 'application/json',
+      },
+    });
+    const payload = await res.json();
+    if (res.ok && payload.status === 'success') {
+      await fetchOffers();
+    } else {
+      alert(payload.message || 'অফার আপডেট করা সম্ভব হয়নি।');
+    }
+  } catch (e: any) {
+    alert(e.message || 'Network error');
+  } finally {
+    offerBusyId.value = null;
+  }
+};
+
+const openCounterModal = (offer: any) => {
+  counterModalOffer.value = offer;
+  counterAmount.value = Math.max(1, Math.round(Number(offer.offer_amount || offer.amount || 0) * 1.05));
+  counterMessage.value = '';
+};
+
+const submitCounterOffer = async () => {
+  if (!counterModalOffer.value || !counterAmount.value || counterAmount.value <= 0) return;
+  const offerId = counterModalOffer.value.id;
+  offerBusyId.value = offerId;
+  try {
+    const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+    const res = await fetch(`/api/v2/marketplace/offers/${offerId}/counter`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        amount: Number(counterAmount.value),
+        message: counterMessage.value.trim() || undefined,
+      }),
+    });
+    const payload = await res.json();
+    if (res.ok && payload.status === 'success') {
+      counterModalOffer.value = null;
+      await fetchOffers();
+    } else {
+      alert(payload.message || 'কাউন্টার অফার পাঠানো সম্ভব হয়নি।');
+    }
+  } catch (e: any) {
+    alert(e.message || 'Network error');
+  } finally {
+    offerBusyId.value = null;
   }
 };
 

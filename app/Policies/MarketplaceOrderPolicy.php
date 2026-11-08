@@ -12,9 +12,9 @@ class MarketplaceOrderPolicy
      */
     public function view(User $user, MarketplaceOrder $order): bool
     {
-        return $order->buyer_id === $user->id
-            || $order->seller_id === $user->id
-            || (bool) ($user->is_admin ?? false);
+        return (int) $order->buyer_id === (int) $user->id
+            || (int) $order->seller_id === (int) $user->id
+            || $user->isAdmin();
     }
 
     /**
@@ -22,7 +22,7 @@ class MarketplaceOrderPolicy
      */
     public function update(User $user, MarketplaceOrder $order): bool
     {
-        return $order->seller_id === $user->id || (bool) ($user->is_admin ?? false);
+        return (int) $order->seller_id === (int) $user->id || $user->isAdmin();
     }
 
     /**
@@ -46,8 +46,8 @@ class MarketplaceOrderPolicy
      */
     public function confirmDelivery(User $user, MarketplaceOrder $order): bool
     {
-        return ($order->buyer_id === $user->id && in_array($order->status, [MarketplaceOrder::STATUS_SHIPPED, MarketplaceOrder::STATUS_PROCESSING]))
-            || (bool) ($user->is_admin ?? false);
+        return ((int) $order->buyer_id === (int) $user->id && in_array($order->status, [MarketplaceOrder::STATUS_SHIPPED, MarketplaceOrder::STATUS_PROCESSING], true))
+            || $user->isAdmin();
     }
 
     /**
@@ -79,6 +79,6 @@ class MarketplaceOrderPolicy
      */
     public function refund(User $user, MarketplaceOrder $order): bool
     {
-        return (bool) ($user->is_admin ?? false);
+        return $user->isAdmin();
     }
 }

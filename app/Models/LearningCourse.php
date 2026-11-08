@@ -65,6 +65,8 @@ class LearningCourse extends Model
     protected function casts(): array
     {
         return [
+            'instructor_id' => 'integer',
+            'category_id' => 'integer',
             'learning_objectives' => 'array',
             'prerequisites' => 'array',
             'target_audience' => 'array',

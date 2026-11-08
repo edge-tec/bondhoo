@@ -6,7 +6,8 @@ data class LearningCategory(
     val slug: String,
     val icon: String?,
     val description: String?,
-    val coursesCount: Int
+    val coursesCount: Int,
+    val children: List<LearningCategory> = emptyList()
 )
 
 data class LearningCourse(
@@ -34,7 +35,8 @@ data class LearningCourse(
     val ratingCount: Int,
     val isFeatured: Boolean,
     val instructorName: String?,
-    val categoryName: String?
+    val categoryName: String?,
+    val isEnrolled: Boolean = false
 )
 
 data class LearningSection(

@@ -67,7 +67,7 @@ class LearningReviewApiController extends Controller
         $user = $request->user();
 
         $review = LearningCourseReview::with('course')->findOrFail($id);
-        if ($review->course->instructor_id !== $user->id && ! $user->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (! $review->course || ((int) $review->course->instructor_id !== (int) $user->id && ! $user->isAdmin())) {
             return $this->errorResponse('Unauthorized to reply to this review.', 403);
         }
 

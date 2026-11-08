@@ -38,6 +38,10 @@ class StripeGatewayDriver extends AbstractPaymentGateway
     public function initiatePayment(MarketplaceOrder $order, array $options = []): array
     {
         if (! $this->isConfigured()) {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('Stripe payment gateway is not configured in production environment.');
+            }
+
             return $this->fallbackDriver->initiatePayment($order, $options);
         }
 
@@ -91,9 +95,17 @@ class StripeGatewayDriver extends AbstractPaymentGateway
 
             Log::error('Stripe Checkout Session Error', ['body' => $response->body()]);
 
+            if (app()->environment('production')) {
+                throw new \RuntimeException('Stripe Checkout session initiation failed.');
+            }
+
             return $this->fallbackDriver->initiatePayment($order, $options);
         } catch (\Throwable $e) {
             Log::error('Stripe Initiation Exception: '.$e->getMessage());
+
+            if (app()->environment('production')) {
+                throw $e;
+            }
 
             return $this->fallbackDriver->initiatePayment($order, $options);
         }
@@ -102,6 +114,10 @@ class StripeGatewayDriver extends AbstractPaymentGateway
     public function verifyPayment(MarketplaceOrder $order, array $payload): array
     {
         if (! $this->isConfigured()) {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('Stripe payment gateway is not configured in production environment.');
+            }
+
             return $this->fallbackDriver->verifyPayment($order, $payload);
         }
 
@@ -120,6 +136,7 @@ class StripeGatewayDriver extends AbstractPaymentGateway
                 $status = (string) $response->json('payment_status'); // 'paid', 'unpaid', 'no_payment_required'
                 $amountTotal = ((float) $response->json('amount_total', 0)) / 100;
                 $currency = strtoupper((string) $response->json('currency', 'USD'));
+                $paymentIntent = (string) $response->json('payment_intent');
 
                 if ($status === 'paid') {
                     if (! $this->amountsMatch($order->amount, $amountTotal)) {
@@ -127,35 +144,65 @@ class StripeGatewayDriver extends AbstractPaymentGateway
                     }
 
                     return [
+                        'verified' => true,
                         'order_id' => $order->id,
                         'gateway' => 'stripe',
                         'transaction_id' => $sessionId,
-                        'payment_intent' => (string) $response->json('payment_intent'),
+                        'provider_reference' => $paymentIntent ?: $sessionId,
+                        'payment_intent' => $paymentIntent,
                         'status' => 'COMPLETED',
                         'amount' => $amountTotal,
                         'currency' => $currency,
                         'verified_at' => now()->toIso8601String(),
+                        'metadata' => $this->sanitizePayload($response->json()),
                         'raw_response' => $this->sanitizePayload($response->json()),
                     ];
                 }
 
                 return [
+                    'verified' => false,
                     'order_id' => $order->id,
                     'gateway' => 'stripe',
                     'transaction_id' => $sessionId,
-                    'status' => 'FAILED',
+                    'provider_reference' => $paymentIntent ?: null,
+                    'status' => 'failed',
                     'amount' => $amountTotal,
                     'currency' => $currency,
                     'verified_at' => now()->toIso8601String(),
+                    'metadata' => $this->sanitizePayload($response->json()),
                     'raw_response' => $this->sanitizePayload($response->json()),
                 ];
             }
 
             Log::error('Stripe Verification Error', ['body' => $response->body()]);
 
+            if (app()->environment('production')) {
+                return [
+                    'verified' => false,
+                    'status' => 'failed',
+                    'transaction_id' => $sessionId,
+                    'amount' => (float) $order->amount,
+                    'currency' => strtoupper((string) ($order->currency ?: 'USD')),
+                    'provider_reference' => null,
+                    'metadata' => ['error' => 'Stripe verification failed via provider API.'],
+                ];
+            }
+
             return $this->fallbackDriver->verifyPayment($order, $payload);
         } catch (\Throwable $e) {
             Log::error('Stripe Verify Exception: '.$e->getMessage());
+
+            if (app()->environment('production')) {
+                return [
+                    'verified' => false,
+                    'status' => 'failed',
+                    'transaction_id' => $sessionId,
+                    'amount' => (float) $order->amount,
+                    'currency' => strtoupper((string) ($order->currency ?: 'USD')),
+                    'provider_reference' => null,
+                    'metadata' => ['error' => 'Stripe verification exception: '.$e->getMessage()],
+                ];
+            }
 
             return $this->fallbackDriver->verifyPayment($order, $payload);
         }
@@ -164,25 +211,37 @@ class StripeGatewayDriver extends AbstractPaymentGateway
     public function processRefund(MarketplaceOrder $order, float $amount, string $reason): array
     {
         if (! $this->isConfigured()) {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('Stripe payment gateway is not configured in production environment.');
+            }
+
             return $this->fallbackDriver->processRefund($order, $amount, $reason);
         }
 
         try {
+            $paymentIntent = $order->paymentTransaction?->provider_reference ?? $order->transaction_id;
+
+            $refundParams = [
+                'amount' => (int) round($amount * 100),
+                'reason' => 'requested_by_customer',
+                'metadata' => [
+                    'order_id' => (string) $order->id,
+                    'order_number' => (string) $order->order_number,
+                    'refund_reason' => $reason,
+                ],
+            ];
+            if ($paymentIntent && str_starts_with($paymentIntent, 'pi_')) {
+                $refundParams['payment_intent'] = $paymentIntent;
+            }
+
             $response = Http::withToken($this->secretKey)
                 ->asForm()
                 ->timeout(15)
-                ->post('https://api.stripe.com/v1/refunds', [
-                    'amount' => (int) round($amount * 100),
-                    'reason' => 'requested_by_customer',
-                    'metadata' => [
-                        'order_id' => (string) $order->id,
-                        'order_number' => (string) $order->order_number,
-                        'refund_reason' => $reason,
-                    ],
-                ]);
+                ->post('https://api.stripe.com/v1/refunds', $refundParams);
 
             if ($response->successful()) {
                 return [
+                    'success' => true,
                     'status' => 'REFUNDED',
                     'refund_id' => (string) $response->json('id'),
                     'amount' => $amount,
@@ -192,9 +251,17 @@ class StripeGatewayDriver extends AbstractPaymentGateway
                 ];
             }
 
+            if (app()->environment('production')) {
+                throw new \RuntimeException('Stripe refund rejected: '.$response->body());
+            }
+
             return $this->fallbackDriver->processRefund($order, $amount, $reason);
         } catch (\Throwable $e) {
             Log::error('Stripe Refund Exception: '.$e->getMessage());
+
+            if (app()->environment('production')) {
+                throw $e;
+            }
 
             return $this->fallbackDriver->processRefund($order, $amount, $reason);
         }

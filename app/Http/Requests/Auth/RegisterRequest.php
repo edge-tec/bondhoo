@@ -15,9 +15,11 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['nullable', 'string', 'max:100'],
-            'username' => ['required', 'string', 'min:3', 'max:30', 'alpha_dash', 'unique:users,username'],
+            'username' => ['nullable', 'string', 'min:3', 'max:30', 'alpha_dash', 'unique:users,username'],
             'email' => ['nullable', 'required_without:phone', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['nullable', 'required_without:email', 'string', 'max:20', 'unique:users,phone'],
+            'phone' => ['nullable', 'string', 'max:25', 'unique:users,phone'],
+            'birth_date' => ['nullable', 'date'],
+            'gender' => ['nullable', 'string', 'in:male,female,other,Male,Female,Other'],
             'password' => ['required', 'string', 'min:8'],
             'device_name' => ['nullable', 'string', 'max:100'],
         ];

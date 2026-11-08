@@ -82,6 +82,9 @@ class AuthRepositoryImpl @Inject constructor(
     override fun register(
         name: String,
         email: String,
+        phone: String,
+        birthDate: String,
+        gender: String,
         password: String,
         passwordConfirmation: String
     ): Flow<Result<User>> = flow {
@@ -93,6 +96,9 @@ class AuthRepositoryImpl @Inject constructor(
                     name = name,
                     username = generatedUsername,
                     email = email,
+                    phone = phone.ifBlank { null },
+                    birth_date = birthDate.ifBlank { null },
+                    gender = gender.ifBlank { null },
                     password = password
                 )
             )

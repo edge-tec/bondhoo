@@ -245,10 +245,22 @@
               </div>
             </div>
 
-            <!-- Buyer Fulfillment / Confirm Delivery Action -->
+            <!-- Buyer & Seller Fulfillment Actions -->
             <div class="mt-6 pt-5 border-t border-slate-200 space-y-2.5">
+              <!-- Seller Ship Action -->
               <button
-                v-if="isBuyer && (order.status === 'shipped' || order.escrow_status === 'held')"
+                v-if="isSeller && ['pending', 'processing', 'confirmed', 'paid'].includes(order.status)"
+                type="button"
+                @click="showShipModal = true"
+                :disabled="actionLoading"
+                class="w-full py-3 px-4 rounded-xl bg-[#1877F2] hover:bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <span>🚚 পণ্য শিপ করুন (ট্র্যাকিং যুক্ত করুন)</span>
+              </button>
+
+              <!-- Buyer Confirm Delivery / Release Escrow -->
+              <button
+                v-if="isBuyer && order.escrow_status === 'held' && ['shipped', 'delivered', 'processing', 'confirmed'].includes(order.status)"
                 type="button"
                 @click="confirmDelivery"
                 :disabled="actionLoading"
@@ -440,6 +452,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Ship Order Modal (Seller) -->
+    <div v-if="showShipModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <h3 class="text-base font-extrabold text-slate-900">পণ্য শিপমেন্ট ট্র্যাকিং যুক্ত করুন</h3>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">কুরিয়ার সার্ভিস:</label>
+          <input v-model="shipCarrier" type="text" placeholder="Steadfast / Pathao / RedX..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">ট্র্যাকিং নম্বর:</label>
+          <input v-model="shipTracking" type="text" placeholder="e.g. TRK-2026-001" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono" />
+        </div>
+        <div class="flex justify-end gap-2.5 pt-2">
+          <button type="button" @click="showShipModal = false" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold">বাতিল</button>
+          <button type="button" @click="submitShip" :disabled="actionLoading" class="px-4 py-2 rounded-xl bg-[#1877F2] hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50">
+            {{ actionLoading ? 'আপডেট হচ্ছে...' : 'শিপ নিশ্চিত করুন' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </AppLayout>
 </template>
 
@@ -493,6 +526,9 @@ const props = defineProps<{
 const showReviewModal = ref(false)
 const showDisputeModal = ref(false)
 const showCancelModal = ref(false)
+const showShipModal = ref(false)
+const shipCarrier = ref('')
+const shipTracking = ref('')
 const actionLoading = ref(false)
 
 const reviewRating = ref(5)
@@ -564,6 +600,35 @@ const statusBadgeClass = (st: string) => {
     disputed: 'bg-orange-50 text-orange-700 border-orange-200',
   }
   return map[st] || 'bg-slate-50 text-slate-700 border-slate-200'
+}
+
+const submitShip = async () => {
+  actionLoading.value = true
+  try {
+    const res = await fetch(`/api/v2/marketplace/orders/${props.order.id}/ship`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+      },
+      body: JSON.stringify({
+        carrier: shipCarrier.value.trim() || undefined,
+        tracking_number: shipTracking.value.trim() || undefined,
+      }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      showShipModal.value = false
+      window.location.reload()
+    } else {
+      alert(data.message || 'শিপমেন্ট আপডেট করা সম্ভব হয়নি।')
+    }
+  } catch (err: any) {
+    alert(err.message || 'ত্রুটি ঘটেছে।')
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 const confirmDelivery = async () => {

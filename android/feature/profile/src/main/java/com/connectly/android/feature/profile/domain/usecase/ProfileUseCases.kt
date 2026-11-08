@@ -42,6 +42,13 @@ class SendFriendRequestUseCase @Inject constructor(
         repository.sendFriendRequest(userId)
 }
 
+class CancelFriendRequestUseCase @Inject constructor(
+    private val repository: ProfileRepository
+) {
+    operator fun invoke(userId: Long): Flow<Result<Unit>> =
+        repository.cancelFriendRequest(userId)
+}
+
 class AcceptFriendRequestUseCase @Inject constructor(
     private val repository: ProfileRepository
 ) {
@@ -54,6 +61,13 @@ class RejectFriendRequestUseCase @Inject constructor(
 ) {
     operator fun invoke(userId: Long): Flow<Result<Unit>> =
         repository.rejectFriendRequest(userId)
+}
+
+class UnfriendUserUseCase @Inject constructor(
+    private val repository: ProfileRepository
+) {
+    operator fun invoke(userId: Long): Flow<Result<Unit>> =
+        repository.unfriendUser(userId)
 }
 
 class FollowUserUseCase @Inject constructor(
@@ -84,10 +98,67 @@ class UnblockUserUseCase @Inject constructor(
         repository.unblockUser(userId)
 }
 
+class ReportUserUseCase @Inject constructor(
+    private val repository: ProfileRepository
+) {
+    operator fun invoke(userId: Long, reason: String, details: String? = null): Flow<Result<Unit>> =
+        repository.reportUser(userId, reason, details)
+}
+
 class UpdatePrivacySettingsUseCase @Inject constructor(
     private val repository: ProfileRepository
 ) {
     operator fun invoke(visibility: String): Flow<Result<Unit>> =
         repository.updatePrivacySettings(visibility)
 }
+
+class GetUserPostsUseCase @Inject constructor(
+    private val repository: ProfileRepository
+) {
+    operator fun invoke(username: String): Flow<Result<List<com.connectly.android.core.model.Post>>> =
+        repository.getUserPosts(username)
+}
+
+class GetProfileAnalyticsUseCase @Inject constructor(
+    private val repository: ProfileRepository
+) {
+    operator fun invoke(): Flow<Result<com.connectly.android.core.network.api.ProfileAnalyticsDto>> =
+        repository.getProfileAnalytics()
+}
+
+class GetProfileAboutUseCase @Inject constructor(
+    private val repository: ProfileRepository
+) {
+    operator fun invoke(): Flow<Result<com.connectly.android.core.network.api.ProfileAboutDto>> =
+        repository.getProfileAbout()
+}
+
+class ReactToPostUseCase @Inject constructor(
+    private val repository: ProfileRepository
+) {
+    operator fun invoke(postId: Long, type: String = "like"): Flow<Result<Unit>> =
+        repository.reactToPost(postId, type)
+}
+
+class GetPostCommentsUseCase @Inject constructor(
+    private val repository: ProfileRepository
+) {
+    operator fun invoke(postId: Long): Flow<Result<List<com.connectly.android.core.network.api.CommentDto>>> =
+        repository.getPostComments(postId)
+}
+
+class AddPostCommentUseCase @Inject constructor(
+    private val repository: ProfileRepository
+) {
+    operator fun invoke(postId: Long, content: String): Flow<Result<com.connectly.android.core.network.api.CommentDto>> =
+        repository.addPostComment(postId, content)
+}
+
+class SharePostUseCase @Inject constructor(
+    private val repository: ProfileRepository
+) {
+    operator fun invoke(postId: Long, caption: String? = null, targetType: String = "timeline", targetId: Long? = null): Flow<Result<Unit>> =
+        repository.sharePost(postId, caption, targetType, targetId)
+}
+
 

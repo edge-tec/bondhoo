@@ -31,13 +31,19 @@ class AuthService
             $lastName = $data['last_name'] ?? null;
             $fullName = $data['name'] ?? trim("{$firstName} {$lastName}");
 
+            $username = ! empty($data['username'])
+                ? strtolower($data['username'])
+                : strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', explode('@', $data['email'] ?? 'user')[0]).'_'.rand(100, 999));
+
             $user = User::create([
                 'first_name' => $firstName,
                 'last_name' => $lastName,
                 'name' => $fullName ?: null,
-                'username' => strtolower($data['username']),
+                'username' => $username,
                 'email' => isset($data['email']) ? strtolower($data['email']) : null,
                 'phone' => $data['phone'] ?? null,
+                'birth_date' => $data['birth_date'] ?? null,
+                'gender' => ! empty($data['gender']) ? strtolower($data['gender']) : null,
                 'password' => $data['password'], // Casts to hashed in User model
                 'status' => 'active',
                 'last_login_at' => now(),
@@ -57,6 +63,8 @@ class AuthService
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
                 'display_name' => $user->name ?? $user->username,
+                'birth_date' => $data['birth_date'] ?? null,
+                'gender' => ! empty($data['gender']) ? strtolower($data['gender']) : null,
                 'bio' => $data['bio'] ?? null,
                 'location' => $data['location'] ?? null,
                 'joined_date' => now(),

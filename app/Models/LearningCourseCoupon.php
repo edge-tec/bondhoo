@@ -30,6 +30,7 @@ class LearningCourseCoupon extends Model
     protected function casts(): array
     {
         return [
+            'course_id' => 'integer',
             'discount_amount' => 'decimal:2',
             'max_uses' => 'integer',
             'times_used' => 'integer',
@@ -43,9 +44,13 @@ class LearningCourseCoupon extends Model
         return $this->belongsTo(LearningCourse::class, 'course_id');
     }
 
-    public function isValid(): bool
+    public function isValid(?int $courseId = null): bool
     {
         if (! $this->is_active) {
+            return false;
+        }
+
+        if ($courseId !== null && $this->course_id !== null && (int) $this->course_id !== $courseId) {
             return false;
         }
 
@@ -53,7 +58,7 @@ class LearningCourseCoupon extends Model
             return false;
         }
 
-        if ($this->max_uses > 0 && $this->times_used >= $this->max_uses) {
+        if ($this->max_uses !== null && $this->max_uses > 0 && $this->times_used >= $this->max_uses) {
             return false;
         }
 

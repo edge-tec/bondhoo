@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Contracts\CacheServiceInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -172,11 +173,15 @@ class Conversation extends Model
         if ($effectiveLastMessage) {
             $lastMessageData = [
                 'id' => $effectiveLastMessage->id,
-                'body' => $effectiveLastMessage->is_deleted_for_everyone ? 'This message was deleted.' : $effectiveLastMessage->body,
+                'conversation_id' => $this->id,
+                'body' => $effectiveLastMessage->is_deleted_for_everyone ? 'This message was deleted.' : ($effectiveLastMessage->body ?? ''),
                 'sender_id' => $effectiveLastMessage->sender_id,
+                'sender_name' => $effectiveLastMessage->sender?->name ?? $effectiveLastMessage->sender?->username,
+                'is_mine' => $viewer ? (int) $effectiveLastMessage->sender_id === (int) $viewer->id : false,
                 'type' => $effectiveLastMessage->type,
                 'delivery_status' => $effectiveLastMessage->delivery_status,
                 'sent_at' => $effectiveLastMessage->sent_at?->toIso8601String(),
+                'created_at' => $effectiveLastMessage->created_at?->toIso8601String(),
                 'is_edited' => (bool) $effectiveLastMessage->is_edited,
                 'is_deleted' => (bool) $effectiveLastMessage->is_deleted_for_everyone,
                 'version' => $effectiveLastMessage->version ?? 1,
@@ -223,7 +228,9 @@ class Conversation extends Model
                 'username' => $otherUser->username,
                 'avatar_url' => $otherUser->profile?->avatar_url,
                 'bio' => $otherUser->profile?->bio,
+                'is_online' => app(CacheServiceInterface::class)->isUserOnline($otherUser->id),
             ] : null,
+            'is_online' => $otherUser ? app(CacheServiceInterface::class)->isUserOnline($otherUser->id) : false,
             'members' => $membersList,
             'last_message' => $lastMessageData,
             'last_message_at' => $effectiveLastMessageAt,

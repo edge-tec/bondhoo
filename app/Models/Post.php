@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Post extends Model
 {
@@ -232,6 +233,15 @@ class Post extends Model
                 'is_verified' => (bool) $this->page->is_verified,
             ] : null,
             'viewer_reaction' => $viewerReaction,
+            'user_reaction' => $viewerReaction,
+            'is_saved' => $viewer ? DB::table('saved_items')->where('user_id', $viewer->id)->where(function ($q) {
+                $q->where('item_type', 'post')->orWhere('item_type', Post::class);
+            })->where('item_id', $this->id)->exists() : false,
+            'is_hidden' => $viewer ? DB::table('hidden_posts')->where('user_id', $viewer->id)->where('post_id', $this->id)->exists() : false,
+            'is_owner' => $viewer ? ($this->user_id === $viewer->id) : false,
+            'likes_count' => (int) $this->likes_count,
+            'comments_count' => (int) $this->comments_count,
+            'shares_count' => (int) $this->shares_count,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

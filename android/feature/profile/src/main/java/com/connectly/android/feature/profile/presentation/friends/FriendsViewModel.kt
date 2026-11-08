@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.model.FriendshipStatus
 import com.connectly.android.core.model.User
+import com.connectly.android.core.network.api.ConnectlyApi
 import com.connectly.android.feature.profile.domain.repository.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,10 +18,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FriendsViewModel @Inject constructor(
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val api: ConnectlyApi
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(createInitialState())
+    private val _uiState = MutableStateFlow(FriendsUiState(isLoading = true))
     val uiState: StateFlow<FriendsUiState> = _uiState.asStateFlow()
 
     init {
@@ -40,7 +43,80 @@ class FriendsViewModel @Inject constructor(
     }
 
     private fun loadData() {
-        _uiState.update { it.copy(isLoading = false) }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val friendsDeferred = async { api.getFriends(perPage = 50) }
+                val requestsDeferred = async { api.getFriendRequests(perPage = 50) }
+                val suggestionsDeferred = async { api.getSuggestedFriends(limit = 20) }
+
+                val friendsResp = friendsDeferred.await()
+                val requestsResp = requestsDeferred.await()
+                val suggestionsResp = suggestionsDeferred.await()
+
+                val friends = if (friendsResp.isSuccessful && friendsResp.body()?.data != null) {
+                    friendsResp.body()!!.data.map { dto ->
+                        User(
+                            id = dto.id,
+                            name = dto.name,
+                            username = dto.username,
+                            avatar = dto.resolvedAvatar,
+                            isVerified = dto.is_verified,
+                            isOnline = dto.is_online,
+                            friendsCount = dto.friends_count,
+                            friendshipStatus = FriendshipStatus.FRIENDS
+                        )
+                    }
+                } else emptyList()
+
+                val requests = if (requestsResp.isSuccessful && requestsResp.body()?.data != null) {
+                    requestsResp.body()!!.data.mapNotNull { req ->
+                        val u = req.user ?: return@mapNotNull null
+                        FriendRequestItem(
+                            user = User(
+                                id = u.id,
+                                name = u.name,
+                                username = u.username,
+                                avatar = u.resolvedAvatar,
+                                isVerified = u.is_verified,
+                                friendshipStatus = FriendshipStatus.PENDING_RECEIVED
+                            ),
+                            mutualFriendsCount = u.friends_count,
+                            timeAgo = "Recently"
+                        )
+                    }
+                } else emptyList()
+
+                val suggestions = if (suggestionsResp.isSuccessful && suggestionsResp.body()?.data != null) {
+                    suggestionsResp.body()!!.data.map { u ->
+                        SuggestedFriendItem(
+                            user = User(
+                                id = u.id,
+                                name = u.name,
+                                username = u.username,
+                                avatar = u.resolvedAvatar,
+                                isVerified = u.is_verified,
+                                friendsCount = u.friends_count,
+                                friendshipStatus = FriendshipStatus.NONE
+                            ),
+                            mutualFriendsCount = u.friends_count,
+                            reason = "Suggested based on mutual network"
+                        )
+                    }
+                } else emptyList()
+
+                _uiState.update {
+                    it.copy(
+                        friendsList = friends,
+                        friendRequests = requests,
+                        suggestions = suggestions,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+            }
+        }
     }
 
     private fun acceptFriendRequest(userId: Long) {
@@ -48,7 +124,10 @@ class FriendsViewModel @Inject constructor(
         _uiState.update { state ->
             state.copy(
                 friendRequests = state.friendRequests.filterNot { it.user.id == userId },
-                friendsList = if (accepted != null) state.friendsList + accepted.user else state.friendsList
+                friendsList = if (accepted != null) {
+                    val newFriend = accepted.user.copy(friendshipStatus = FriendshipStatus.FRIENDS)
+                    if (state.friendsList.none { it.id == userId }) state.friendsList + newFriend else state.friendsList
+                } else state.friendsList
             )
         }
         viewModelScope.launch {
@@ -99,78 +178,6 @@ class FriendsViewModel @Inject constructor(
                 profileRepository.unfriendUser(userId).collect { }
             } catch (_: Exception) {}
         }
-    }
-
-    private fun createInitialState(): FriendsUiState {
-        val requests = listOf(
-            FriendRequestItem(
-                user = User(
-                    id = 101L,
-                    name = "Tania Akter",
-                    username = "tania_akter",
-                    avatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2",
-                    isVerified = true,
-                    friendshipStatus = FriendshipStatus.PENDING_RECEIVED
-                ),
-                mutualFriendsCount = 18,
-                timeAgo = "10m"
-            ),
-            FriendRequestItem(
-                user = User(
-                    id = 102L,
-                    name = "Farhan Kabir",
-                    username = "farhan_k",
-                    avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-                    friendshipStatus = FriendshipStatus.PENDING_RECEIVED
-                ),
-                mutualFriendsCount = 6,
-                timeAgo = "2h"
-            ),
-            FriendRequestItem(
-                user = User(
-                    id = 103L,
-                    name = "Nusrat Jahan",
-                    username = "nusrat_j",
-                    avatar = "https://images.unsplash.com/photo-1517841905240-472988babdf9",
-                    friendshipStatus = FriendshipStatus.PENDING_RECEIVED
-                ),
-                mutualFriendsCount = 24,
-                timeAgo = "1d"
-            )
-        )
-
-        val friends = listOf(
-            User(id = 201L, name = "Sadia Islam", username = "sadia_islam", avatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330", isOnline = true, isVerified = true, friendshipStatus = FriendshipStatus.FRIENDS),
-            User(id = 202L, name = "Rahim Ahmed", username = "rahim_ahmed", avatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e", isOnline = true, friendshipStatus = FriendshipStatus.FRIENDS),
-            User(id = 203L, name = "Afrin Akter", username = "afrin_akter", avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb", isOnline = false, friendshipStatus = FriendshipStatus.FRIENDS),
-            User(id = 204L, name = "Rahat Khan", username = "rahat_k", avatar = "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6", isOnline = false, friendshipStatus = FriendshipStatus.FRIENDS)
-        )
-
-        val suggestions = listOf(
-            SuggestedFriendItem(
-                user = User(id = 301L, name = "Imran Hasan", username = "imran_h", avatar = "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61", isVerified = true),
-                mutualFriendsCount = 12,
-                reason = "Followed by Sadia Islam"
-            ),
-            SuggestedFriendItem(
-                user = User(id = 302L, name = "Mahmudur Rahman", username = "mahmud_r", avatar = "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d"),
-                mutualFriendsCount = 9,
-                reason = "Lives in Dhaka"
-            ),
-            SuggestedFriendItem(
-                user = User(id = 303L, name = "Sabrina Yasmin", username = "sabrina_y", avatar = "https://images.unsplash.com/photo-1524504388940-b1c1722653e1"),
-                mutualFriendsCount = 15,
-                reason = "Member of Tech World BD"
-            )
-        )
-
-        return FriendsUiState(
-            selectedTab = "requests",
-            friendRequests = requests,
-            friendsList = friends,
-            suggestions = suggestions,
-            isLoading = false
-        )
     }
 }
 

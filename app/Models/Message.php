@@ -165,6 +165,8 @@ class Message extends Model
         return [
             'id' => $this->id,
             'conversation_id' => $this->conversation_id,
+            'sender_id' => $this->sender_id,
+            'client_message_id' => $this->client_message_id ?? null,
             'reply_to_message_id' => $this->reply_to_message_id,
             'reply_preview' => $replyPreview,
             'reply_to' => $replyPreview,
@@ -196,7 +198,7 @@ class Message extends Model
             'attachment' => $mediaList[0] ?? null,
             'is_image' => ! $isDeleted && ! empty($mediaList) && collect($mediaList)->contains(fn ($m) => str_starts_with($m['mime_type'] ?? '', 'image/')),
             'reactions' => [
-                'counts' => $reactionCounts,
+                'counts' => (object) $reactionCounts,
                 'total' => array_sum($reactionCounts),
                 'my_reaction' => $myReaction,
                 'list' => $reactionList,

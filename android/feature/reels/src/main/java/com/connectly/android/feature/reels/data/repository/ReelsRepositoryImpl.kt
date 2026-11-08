@@ -30,10 +30,10 @@ class ReelsRepositoryImpl @Inject constructor(
     @Dispatcher(ConnectlyDispatchers.IO) private val ioDispatcher: CoroutineDispatcher
 ) : ReelsRepository {
 
-    override fun getReelsFeed(page: Int, perPage: Int): Flow<Result<List<Reel>>> = flow {
+    override fun getReelsFeed(page: Int, perPage: Int, tab: String): Flow<Result<List<Reel>>> = flow {
         emit(Result.Loading)
         try {
-            val response = api.getReelsFeed(page = page, perPage = perPage, tab = "for_you")
+            val response = api.getReelsFeed(page = page, perPage = perPage, tab = tab)
             if (response.isSuccessful && response.body() != null) {
                 val dtos = response.body()!!.data
                 val reels = dtos.map { dto ->
@@ -108,7 +108,7 @@ class ReelsRepositoryImpl @Inject constructor(
             }
 
             val mediaId = (uploadResult as? UploadStatus.Success)?.media?.id
-                ?: throw Exception("ভিডিও আপলোড সম্পন্ন হয়নি।")
+                ?: throw Exception("Video upload could not be completed.")
 
             // 2. Publish reel
             val payload = CreateReelPayload(
@@ -144,7 +144,7 @@ class ReelsRepositoryImpl @Inject constructor(
                 )
                 emit(Result.Success(reel))
             } else {
-                emit(Result.Error(Exception("রিল প্রকাশ ব্যর্থ হয়েছে।")))
+                emit(Result.Error(Exception("Failed to publish reel.")))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -281,7 +281,7 @@ class ReelsRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.Success(Unit))
             } else {
-                emit(Result.Error(Exception("রিল মুছতে ব্যর্থ হয়েছে।")))
+                emit(Result.Error(Exception("Failed to delete reel.")))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))

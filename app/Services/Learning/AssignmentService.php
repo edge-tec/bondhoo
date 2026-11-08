@@ -58,10 +58,15 @@ class AssignmentService
         ?string $feedback = null
     ): LearningAssignmentSubmission {
         return DB::transaction(function () use ($instructor, $submission, $score, $feedback) {
-            $assignment = $submission->assignment;
+            $lockedSubmission = LearningAssignmentSubmission::with('assignment.course')
+                ->whereKey($submission->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $assignment = $lockedSubmission->assignment;
             $passed = $score >= $assignment->passing_score;
 
-            $submission->update([
+            $lockedSubmission->update([
                 'score' => $score,
                 'feedback' => $feedback,
                 'status' => LearningAssignmentSubmission::STATUS_GRADED,
@@ -69,15 +74,17 @@ class AssignmentService
                 'graded_at' => now(),
             ]);
 
-            // If passed, mark assignment lesson as completed
+            // If passed, mark assignment lesson as completed and recalculate course progress
             if ($passed && $assignment->lesson_id) {
                 $enrollment = LearningEnrollment::where('course_id', $assignment->course_id)
-                    ->where('user_id', $submission->user_id)
+                    ->where('user_id', $lockedSubmission->user_id)
+                    ->whereIn('status', [LearningEnrollment::STATUS_ACTIVE, LearningEnrollment::STATUS_COMPLETED])
+                    ->lockForUpdate()
                     ->first();
 
                 LearningLessonProgress::updateOrCreate(
                     [
-                        'user_id' => $submission->user_id,
+                        'user_id' => $lockedSubmission->user_id,
                         'lesson_id' => $assignment->lesson_id,
                     ],
                     [
@@ -87,9 +94,16 @@ class AssignmentService
                         'completed_at' => now(),
                     ]
                 );
+
+                if ($enrollment && $assignment->course) {
+                    $student = User::find($lockedSubmission->user_id);
+                    if ($student) {
+                        app(LearningProgressService::class)->recalculateCourseProgress($enrollment, $student, $assignment->course);
+                    }
+                }
             }
 
-            return $submission;
+            return $lockedSubmission->fresh();
         });
     }
 
@@ -98,12 +112,19 @@ class AssignmentService
      */
     public function createAssignment(User $instructor, LearningCourse $course, array $data): LearningAssignment
     {
-        if ($course->instructor_id !== $instructor->id && ! $instructor->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if ((int) $course->instructor_id !== (int) $instructor->id && ! $instructor->isAdmin()) {
             throw new Exception('Unauthorized to create assignments for this course.');
         }
 
-        $lessonId = $data['lesson_id'] ?? null;
-        if (! $lessonId) {
+        $lessonId = isset($data['lesson_id']) ? (int) $data['lesson_id'] : null;
+        if ($lessonId) {
+            $lessonBelongsToCourse = LearningCourseLesson::where('id', $lessonId)
+                ->where('course_id', $course->id)
+                ->exists();
+            if (! $lessonBelongsToCourse) {
+                throw new Exception('Selected lesson does not belong to this course.');
+            }
+        } else {
             $section = $course->sections()->first();
             if (! $section) {
                 $section = $course->sections()->create([
@@ -137,18 +158,34 @@ class AssignmentService
     }
 
     /**
-     * Instructor updates an assignment.
+     * Instructor updates an assignment (strictly whitelisted fields; course_id immutable).
      */
     public function updateAssignment(User $instructor, LearningAssignment $assignment, array $data): LearningAssignment
     {
         $course = $assignment->course;
-        if ($course->instructor_id !== $instructor->id && ! $instructor->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (! $course || ((int) $course->instructor_id !== (int) $instructor->id && ! $instructor->isAdmin())) {
             throw new Exception('Unauthorized to update this assignment.');
         }
 
-        $assignment->update($data);
+        $safeData = array_intersect_key($data, array_flip([
+            'title',
+            'instructions',
+            'max_score',
+            'passing_score',
+            'due_days_after_enrollment',
+            'allow_resubmissions',
+        ]));
 
-        return $assignment;
+        if (isset($data['description']) && ! isset($safeData['instructions'])) {
+            $safeData['instructions'] = $data['description'];
+        }
+        if (isset($data['total_points']) && ! isset($safeData['max_score'])) {
+            $safeData['max_score'] = (int) $data['total_points'];
+        }
+
+        $assignment->update($safeData);
+
+        return $assignment->fresh();
     }
 
     /**
@@ -157,7 +194,7 @@ class AssignmentService
     public function deleteAssignment(User $instructor, LearningAssignment $assignment): void
     {
         $course = $assignment->course;
-        if ($course->instructor_id !== $instructor->id && ! $instructor->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (! $course || ((int) $course->instructor_id !== (int) $instructor->id && ! $instructor->isAdmin())) {
             throw new Exception('Unauthorized to delete this assignment.');
         }
 
@@ -180,7 +217,7 @@ class AssignmentService
     public function getAssignmentSubmissions(User $instructor, LearningAssignment $assignment): Collection
     {
         $course = $assignment->course;
-        if ($course->instructor_id !== $instructor->id && ! $instructor->hasRole(['ADMIN', 'SUPER_ADMIN'])) {
+        if (! $course || ((int) $course->instructor_id !== (int) $instructor->id && ! $instructor->isAdmin())) {
             throw new Exception('Unauthorized to view submissions for this assignment.');
         }
 

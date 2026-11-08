@@ -59,6 +59,85 @@
           </div>
         </div>
 
+        <!-- Marketplace Hub Sub-Navigation (Discover | Saved Items | My Listings | Orders & Offers) -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-2 shadow-sm flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            @click="switchHubTab('discover')"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer"
+            :class="currentTab === 'discover' ? 'bg-[#1877F2] text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'"
+          >
+            <span>🛍️ Discover</span>
+          </button>
+          <button
+            type="button"
+            @click="switchHubTab('saved')"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer"
+            :class="currentTab === 'saved' ? 'bg-[#1877F2] text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'"
+          >
+            <span>❤️ Saved Items</span>
+            <span v-if="savedItems.length > 0" class="px-1.5 py-0.5 rounded-full text-[10px] bg-rose-500 text-white">
+              {{ savedItems.length }}
+            </span>
+          </button>
+          <a
+            href="/marketplace/my-listings"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shrink-0 flex items-center gap-1.5"
+          >
+            <span>🏷️ My Listings</span>
+          </a>
+          <a
+            href="/marketplace/orders"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shrink-0 flex items-center gap-1.5"
+          >
+            <span>📦 Orders &amp; Offers</span>
+          </a>
+        </div>
+
+        <!-- Saved Items View -->
+        <section v-if="currentTab === 'saved'" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">
+              Saved Marketplace Items ({{ savedItems.length }})
+            </h2>
+            <button
+              type="button"
+              @click="switchHubTab('discover')"
+              class="text-xs font-bold text-[#1877F2] hover:underline cursor-pointer"
+            >
+              ← Back to Discover
+            </button>
+          </div>
+
+          <div v-if="savedItems.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <ProductCard
+              v-for="prod in savedItems"
+              :key="'saved-' + prod.id"
+              :product="prod"
+              @contact="openContactModal"
+              @saved-toggle="(saved) => handleSavedToggle(prod.id, saved)"
+            />
+          </div>
+          <div
+            v-else
+            class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-12 text-center shadow-sm space-y-3"
+          >
+            <h3 class="text-base font-bold text-slate-800 dark:text-white">No saved items yet</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              Tap the heart icon on any Marketplace listing to bookmark it here across Android and Web.
+            </p>
+            <button
+              type="button"
+              @click="switchHubTab('discover')"
+              class="inline-block mt-2 px-4 py-2 rounded-xl bg-[#1877F2] text-white text-xs font-bold"
+            >
+              Browse Marketplace
+            </button>
+          </div>
+        </section>
+
+        <template v-else>
+
         <!-- Category Pills Row -->
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3 shadow-sm">
           <div class="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
@@ -213,6 +292,7 @@
             </button>
           </div>
         </section>
+        </template>
 
       </div>
 
@@ -257,12 +337,12 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ProductCard from '../../Components/Marketplace/ProductCard.vue';
 import FilterSidebar from '../../Components/Marketplace/FilterSidebar.vue';
 import ContactSellerModal from '../../Components/Marketplace/ContactSellerModal.vue';
-import type { MarketplaceCategory, MarketplaceProduct, User, SuggestedFriend, UpcomingEvent } from '../../types';
+import type { MarketplaceCategory, MarketplaceProduct, User, SuggestedFriend, UpcomingEvent, SharedProps } from '../../types';
 
 const props = defineProps<{
   categories: MarketplaceCategory[];
@@ -274,6 +354,8 @@ const props = defineProps<{
     per_page: number;
     total: number;
   };
+  savedListings?: MarketplaceProduct[];
+  activeTab?: string;
   filters: {
     category?: string;
     q?: string;
@@ -291,11 +373,40 @@ const props = defineProps<{
   unreadMessagesCount?: number;
 }>();
 
+const page = usePage<SharedProps>();
+const currentTab = ref(props.activeTab === 'saved' ? 'saved' : 'discover');
+const savedItems = ref<MarketplaceProduct[]>([...(props.savedListings || [])]);
 const activeCategory = ref(props.filters.category || 'all');
 const currentSort = ref(props.filters.sort || 'newest');
 const isMobileFilterOpen = ref(false);
 const isContactModalOpen = ref(false);
 const selectedProduct = ref<MarketplaceProduct | null>(null);
+
+const switchHubTab = async (tab: 'discover' | 'saved') => {
+  if (tab === 'saved' && !page.props.auth?.user) {
+    window.location.href = '/login';
+    return;
+  }
+  currentTab.value = tab;
+  if (tab === 'saved') {
+    try {
+      const res = await fetch('/api/v1/marketplace/favorites', { headers: { Accept: 'application/json' } });
+      if (res.ok) {
+        const payload = await res.json();
+        const items = payload.data?.data || payload.data || [];
+        if (Array.isArray(items)) {
+          savedItems.value = items;
+        }
+      }
+    } catch (_) {}
+  }
+};
+
+const handleSavedToggle = (productId: number, isSaved: boolean) => {
+  if (!isSaved) {
+    savedItems.value = savedItems.value.filter((p) => p.id !== productId);
+  }
+};
 
 const currentFilters = reactive({
   ...props.filters,

@@ -46,6 +46,7 @@ class Story extends Model
         'allow_replies',
         'published_at',
         'expires_at',
+        'expired_at',
         'is_expired',
         'is_archived',
         'is_draft',
@@ -63,6 +64,7 @@ class Story extends Model
         return [
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
+            'expired_at' => 'datetime',
             'is_expired' => 'boolean',
             'is_archived' => 'boolean',
             'is_draft' => 'boolean',
@@ -229,6 +231,7 @@ class Story extends Model
             'published_at' => $this->published_at?->toIso8601String(),
             'expires_at' => $this->expires_at?->toIso8601String(),
             'is_expired' => $this->isExpired(),
+            'is_archived' => (bool) $this->is_archived,
             'time_remaining_seconds' => $this->expires_at ? max(0, (int) now()->diffInSeconds($this->expires_at, false)) : 0,
             'views_count' => $this->views_count,
             'reactions_count' => $this->reactions_count,
@@ -238,7 +241,7 @@ class Story extends Model
             'my_reaction' => $myReaction,
             'media' => $mediaList,
             'created_at' => $this->created_at?->toIso8601String(),
-            'formatted_time' => $this->created_at?->diffForHumans() ?? 'এইমাত্র',
+            'formatted_time' => $this->created_at?->diffForHumans() ?? 'Just now',
         ];
     }
 }

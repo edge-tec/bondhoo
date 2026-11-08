@@ -6,8 +6,12 @@ import com.connectly.android.core.common.result.Result
 import com.connectly.android.core.database.dao.UserDao
 import com.connectly.android.core.database.entity.UserEntity
 import com.connectly.android.core.datastore.TokenStorageManager
+import com.connectly.android.core.model.Post
 import com.connectly.android.core.model.User
 import com.connectly.android.core.network.api.ConnectlyApi
+import com.connectly.android.core.network.api.ProfileAboutDto
+import com.connectly.android.core.network.api.ProfileAnalyticsDto
+import com.connectly.android.core.network.api.ReportContentRequest
 import com.connectly.android.core.network.api.UpdatePrivacySettingsRequest
 import com.connectly.android.core.network.api.UpdateProfileRequest
 import com.connectly.android.feature.profile.domain.repository.ProfileRepository
@@ -33,9 +37,16 @@ class ProfileRepositoryImpl @Inject constructor(
     override fun getUserProfile(username: String): Flow<Result<User>> = flow {
         emit(Result.Loading)
         try {
-            val response = api.getMe()
+            val response = if (username.isBlank() || username == "me") {
+                api.getMe()
+            } else {
+                api.getUserProfile(username)
+            }
             if (response.isSuccessful && response.body() != null) {
                 val dto = response.body()!!.data
+                if (username.isBlank() || username == "me") {
+                    tokenStorageManager.saveUserId(dto.id)
+                }
                 val user = User(
                     id = dto.id,
                     name = dto.name,
@@ -92,6 +103,7 @@ class ProfileRepositoryImpl @Inject constructor(
             )
             if (response.isSuccessful && response.body() != null) {
                 val dto = response.body()!!.data
+                tokenStorageManager.saveUserId(dto.id)
                 val user = User(
                     id = dto.id,
                     name = dto.name,
@@ -169,6 +181,20 @@ class ProfileRepositoryImpl @Inject constructor(
                 emit(Result.Success(Unit))
             } else {
                 emit(Result.Error(Exception("Failed to send friend request.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun cancelFriendRequest(userId: Long): Flow<Result<Unit>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.cancelFriendRequest(userId)
+            if (response.isSuccessful) {
+                emit(Result.Success(Unit))
+            } else {
+                emit(Result.Error(Exception("Failed to cancel friend request.")))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -273,6 +299,27 @@ class ProfileRepositoryImpl @Inject constructor(
         }
     }.flowOn(ioDispatcher)
 
+    override fun reportUser(userId: Long, reason: String, details: String?): Flow<Result<Unit>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.reportContent(
+                ReportContentRequest(
+                    reportable_type = "user",
+                    reportable_id = userId,
+                    reason = reason,
+                    details = details
+                )
+            )
+            if (response.isSuccessful) {
+                emit(Result.Success(Unit))
+            } else {
+                emit(Result.Error(Exception("Failed to submit report.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
     override fun updatePrivacySettings(visibility: String): Flow<Result<Unit>> = flow {
         emit(Result.Loading)
         try {
@@ -287,6 +334,134 @@ class ProfileRepositoryImpl @Inject constructor(
                 emit(Result.Success(Unit))
             } else {
                 emit(Result.Error(Exception("Failed to update privacy settings.")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun getUserPosts(username: String): Flow<Result<List<Post>>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.getUserPosts(username)
+            if (response.isSuccessful && response.body() != null) {
+                val dtos = response.body()!!.data
+                val posts = dtos.map { dto ->
+                    val authorDto = dto.resolvedAuthor
+                    Post(
+                        id = dto.id,
+                        author = User(
+                            id = authorDto.id,
+                            name = authorDto.name,
+                            username = authorDto.username,
+                            avatar = authorDto.avatar,
+                            bio = null,
+                            isVerified = false
+                        ),
+                        content = dto.content ?: "",
+                        mediaUrls = dto.resolvedMediaUrls,
+                        reactionsCount = dto.resolvedReactionsCount,
+                        commentsCount = dto.resolvedCommentsCount,
+                        sharesCount = dto.resolvedSharesCount,
+                        userReaction = dto.resolvedUserReaction,
+                        createdAt = System.currentTimeMillis(),
+                        privacy = dto.audience ?: "public"
+                    )
+                }
+                emit(Result.Success(posts))
+            } else {
+                emit(Result.Success(emptyList()))
+            }
+        } catch (e: Exception) {
+            emit(Result.Success(emptyList()))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun getProfileAnalytics(): Flow<Result<ProfileAnalyticsDto>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.getProfileAnalytics()
+            if (response.isSuccessful && response.body() != null) {
+                emit(Result.Success(response.body()!!.data))
+            } else {
+                emit(Result.Success(ProfileAnalyticsDto()))
+            }
+        } catch (e: Exception) {
+            emit(Result.Success(ProfileAnalyticsDto()))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun getProfileAbout(): Flow<Result<ProfileAboutDto>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.getProfileAbout()
+            if (response.isSuccessful && response.body() != null) {
+                emit(Result.Success(response.body()!!.data))
+            } else {
+                emit(Result.Success(ProfileAboutDto()))
+            }
+        } catch (e: Exception) {
+            emit(Result.Success(ProfileAboutDto()))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun reactToPost(postId: Long, type: String): Flow<Result<Unit>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.reactToPost(postId, com.connectly.android.core.network.api.ReactionRequest(type))
+            if (response.isSuccessful) {
+                emit(Result.Success(Unit))
+            } else {
+                emit(Result.Error(Exception("Failed to react to post")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun getPostComments(postId: Long): Flow<Result<List<com.connectly.android.core.network.api.CommentDto>>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.getComments(postId)
+            if (response.isSuccessful && response.body() != null) {
+                emit(Result.Success(response.body()!!.data))
+            } else {
+                emit(Result.Success(emptyList()))
+            }
+        } catch (e: Exception) {
+            emit(Result.Success(emptyList()))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun addPostComment(postId: Long, content: String): Flow<Result<com.connectly.android.core.network.api.CommentDto>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.createComment(postId, com.connectly.android.core.network.api.CreateCommentPayload(body = content))
+            if (response.isSuccessful && response.body() != null) {
+                emit(Result.Success(response.body()!!.data))
+            } else {
+                emit(Result.Error(Exception("Failed to post comment")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun sharePost(postId: Long, caption: String?, targetType: String, targetId: Long?): Flow<Result<Unit>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.sharePost(
+                postId,
+                com.connectly.android.core.network.api.SharePostPayload(
+                    caption = caption,
+                    target_type = targetType,
+                    target_id = targetId
+                )
+            )
+            if (response.isSuccessful) {
+                emit(Result.Success(Unit))
+            } else {
+                emit(Result.Error(Exception("Failed to share post")))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))

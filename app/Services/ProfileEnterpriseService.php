@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\CoverPhoto;
 use App\Models\Friendship;
+use App\Models\MarketplaceProduct;
 use App\Models\Media;
 use App\Models\PhotoAlbum;
 use App\Models\PhotoAlbumItem;
@@ -547,14 +548,19 @@ class ProfileEnterpriseService
         $normalizedType = match (strtolower(trim($itemType))) {
             'post', 'posts', 'app\\models\\post' => 'post',
             'media', 'app\\models\\media' => 'media',
+            'product', 'marketplace_product', 'app\\models\\marketplaceproduct' => 'marketplace_product',
             default => strtolower(trim($itemType)),
         };
 
         $existing = SavedItem::where('user_id', $user->id)
             ->where(function ($q) use ($normalizedType, $itemType): void {
                 $q->where('item_type', $normalizedType)
-                    ->orWhere('item_type', $itemType)
-                    ->orWhere('item_type', Post::class);
+                    ->orWhere('item_type', $itemType);
+                if ($normalizedType === 'post') {
+                    $q->orWhere('item_type', Post::class);
+                } elseif ($normalizedType === 'marketplace_product') {
+                    $q->orWhere('item_type', MarketplaceProduct::class);
+                }
             })
             ->where('item_id', $itemId)
             ->first();

@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.connectly.android.core.datastore.TokenStorageManager
 import com.connectly.android.core.designsystem.component.BottomBarDestination
 import com.connectly.android.core.designsystem.component.ConnectlyBottomBar
 import com.connectly.android.core.designsystem.component.ConnectlyTopBar
@@ -21,8 +22,10 @@ import com.connectly.android.feature.auth.navigation.SPLASH_ROUTE
 import com.connectly.android.feature.auth.navigation.authGraph
 import com.connectly.android.feature.auth.navigation.navigateToLogin
 import com.connectly.android.core.model.CallType
+import com.connectly.android.feature.calling.navigation.CALL_ROUTE
 import com.connectly.android.feature.calling.navigation.callingGraph
 import com.connectly.android.feature.calling.navigation.navigateToCall
+import com.connectly.android.feature.calling.presentation.incoming.IncomingCallObserver
 import com.connectly.android.feature.feed.navigation.feedGraph
 import com.connectly.android.feature.feed.navigation.navigateToCreatePost
 import com.connectly.android.feature.feed.presentation.feed.FeedScreen
@@ -84,6 +87,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var themeManager: ThemeManager
 
+    @Inject
+    lateinit var tokenStorageManager: TokenStorageManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -104,6 +110,30 @@ class MainActivity : ComponentActivity() {
                 compactDisplay = compactDisplay
             ) {
                 val rootNavController = rememberNavController()
+                val launchOutgoingCall: (Long?, Long?, List<Long>, CallType) -> Unit = { convId, recId, recIds, type ->
+                    rootNavController.navigateToCall(
+                        callId = recId ?: convId ?: recIds.firstOrNull() ?: 0L,
+                        isIncoming = false,
+                        callType = type,
+                        conversationId = convId,
+                        receiverId = recId,
+                        receiverIds = recIds
+                    )
+                }
+
+                IncomingCallObserver(
+                    onIncomingCall = { callId, callType, conversationId ->
+                        val currentRoute = rootNavController.currentDestination?.route.orEmpty()
+                        if (!currentRoute.startsWith(CALL_ROUTE)) {
+                            rootNavController.navigateToCall(
+                                callId = callId,
+                                isIncoming = true,
+                                callType = callType,
+                                conversationId = conversationId
+                            )
+                        }
+                    }
+                )
 
                 NavHost(
                     navController = rootNavController,
@@ -115,7 +145,8 @@ class MainActivity : ComponentActivity() {
                                 popUpTo(0) { inclusive = true }
                             }
                         },
-                        navController = rootNavController
+                        navController = rootNavController,
+                        isUserLoggedIn = { !tokenStorageManager.getAccessToken().isNullOrBlank() }
                     )
 
                     profileGraph(
@@ -125,6 +156,18 @@ class MainActivity : ComponentActivity() {
                             rootNavController.navigate(LOGIN_ROUTE) {
                                 popUpTo(0) { inclusive = true }
                             }
+                        },
+                        onNavigateToChat = { conversationId ->
+                            rootNavController.navigateToChat(conversationId)
+                        },
+                        onNavigateToCreatePost = { action ->
+                            rootNavController.navigateToCreatePost(action)
+                        },
+                        onNavigateToCreateStory = {
+                            rootNavController.navigateToCreateStory()
+                        },
+                        onNavigateToLive = {
+                            rootNavController.navigateToLive()
                         }
                     )
 
@@ -138,6 +181,9 @@ class MainActivity : ComponentActivity() {
                         },
                         onNavigateToProfile = {
                             rootNavController.navigateToProfile()
+                        },
+                        onNavigateToUserProfile = { userIdentifier ->
+                            rootNavController.navigateToProfile(userIdentifier)
                         },
                         onNavigateToLive = { streamId ->
                             rootNavController.navigateToLive(streamId)
@@ -160,7 +206,8 @@ class MainActivity : ComponentActivity() {
                         },
                         onStartVideoCall = { receiverId ->
                             rootNavController.navigateToCall(receiverId, isIncoming = false, callType = CallType.VIDEO)
-                        }
+                        },
+                        onStartCall = launchOutgoingCall
                     )
 
                     callingGraph(
@@ -226,6 +273,7 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToStoryViewer = { storyId -> rootNavController.navigateToStoryViewer(storyId) },
                                         onNavigateToCreateStory = { rootNavController.navigateToCreateStory() },
                                         onNavigateToProfile = { rootNavController.navigateToProfile() },
+                                        onNavigateToUserProfile = { userIdentifier -> rootNavController.navigateToProfile(userIdentifier) },
                                         onNavigateToSearch = { rootNavController.navigateToSearch() },
                                         onNavigateToNotifications = { rootNavController.navigateToNotifications() },
                                         onNavigateToGroups = { rootNavController.navigateToGroups() },
@@ -236,7 +284,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 BottomBarDestination.FRIENDS -> {
                                     FriendsScreen(
-                                        onNavigateToUserProfile = { rootNavController.navigateToProfile() },
+                                        onNavigateToUserProfile = { userId -> rootNavController.navigateToProfile(userId.toString()) },
                                         onNavigateToChat = { conversationId -> rootNavController.navigateToChat(conversationId) },
                                         modifier = Modifier.padding(innerPadding)
                                     )
@@ -253,6 +301,7 @@ class MainActivity : ComponentActivity() {
                                             rootNavController.navigateToChat(conversationId)
                                         },
                                         onNavigateBack = { selectedTab = BottomBarDestination.HOME },
+                                        onStartCall = launchOutgoingCall,
                                         modifier = Modifier.padding(innerPadding)
                                     )
                                 }

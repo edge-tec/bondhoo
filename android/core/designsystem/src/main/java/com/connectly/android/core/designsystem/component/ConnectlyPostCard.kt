@@ -1,6 +1,7 @@
 package com.connectly.android.core.designsystem.component
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,6 +48,7 @@ fun ConnectlyPostCard(
     onAuthorClick: () -> Unit = {},
     onMoreOptionsClick: () -> Unit = {},
     onPhotoClick: (Int) -> Unit = {},
+    moderationStatus: String? = null,
     modifier: Modifier = Modifier
 ) {
     var isReactionBarVisible by remember { mutableStateOf(false) }
@@ -119,6 +121,32 @@ fun ConnectlyPostCard(
                         contentDescription = "Post Options",
                         tint = TextSecondaryLight
                     )
+                }
+            }
+
+            // Moderation Review Status Banner
+            if (moderationStatus == "pending_review") {
+                Surface(
+                    color = Color(0xFFFFFBEB),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, Color(0xFFFDE68A)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🛡️", fontSize = 14.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Safety Review: Visible only to you until approved by moderation.",
+                            color = Color(0xFF92400E),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
 
@@ -216,11 +244,12 @@ fun ConnectlyPostCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Like Button
-                TextButton(
+                val isReacted = userReaction != null
+                Surface(
                     onClick = {
                         if (userReaction == null) {
                             onReactionSelect(ConnectlyReaction.LIKE)
@@ -228,60 +257,93 @@ fun ConnectlyPostCard(
                             isReactionBarVisible = !isReactionBarVisible
                         }
                     },
-                    modifier = Modifier.weight(1f)
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isReacted) Color(0xFFEFF6FF) else Color(0xFFF8FAFC),
+                    border = BorderStroke(1.dp, if (isReacted) ConnectlyBlue.copy(alpha = 0.35f) else Color(0xFFE2E8F0)),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp)
                 ) {
-                    val iconColor = userReaction?.color ?: TextSecondaryLight
-                    Text(
-                        text = userReaction?.emoji ?: "👍",
-                        fontSize = 16.sp
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = userReaction?.label ?: "Like",
-                        color = iconColor,
-                        fontWeight = if (userReaction != null) FontWeight.Bold else FontWeight.SemiBold,
-                        fontSize = 13.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        val iconColor = userReaction?.color ?: Color(0xFF475569)
+                        Text(
+                            text = userReaction?.emoji ?: "👍",
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = userReaction?.label ?: "Like",
+                            color = iconColor,
+                            fontWeight = if (isReacted) FontWeight.Bold else FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
+                    }
                 }
 
                 // Comment Button
-                TextButton(
+                Surface(
                     onClick = onCommentClick,
-                    modifier = Modifier.weight(1f)
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFF8FAFC),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Comment,
-                        contentDescription = "Comment",
-                        tint = TextSecondaryLight,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Comment",
-                        color = TextSecondaryLight,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Comment,
+                            contentDescription = "Comment",
+                            tint = Color(0xFF475569),
+                            modifier = Modifier.size(17.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Comment",
+                            color = Color(0xFF475569),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
+                    }
                 }
 
                 // Share Button
-                TextButton(
+                Surface(
                     onClick = onShareClick,
-                    modifier = Modifier.weight(1f)
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFF8FAFC),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = "Share",
-                        tint = TextSecondaryLight,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Share",
-                        color = TextSecondaryLight,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Share",
+                            tint = Color(0xFF475569),
+                            modifier = Modifier.size(17.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Share",
+                            color = Color(0xFF475569),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
+                    }
                 }
             }
         }

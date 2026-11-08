@@ -63,7 +63,7 @@ import type { User, SharedProps, SuggestedFriend, UpcomingEvent } from '../types
 
 const props = withDefaults(
   defineProps<{
-    currentRoute?: 'feed' | 'friends' | 'notifications' | 'profile' | 'pages' | 'messages' | 'groups' | 'marketplace' | 'reels';
+    currentRoute?: 'feed' | 'friends' | 'notifications' | 'profile' | 'pages' | 'messages' | 'groups' | 'marketplace' | 'reels' | 'learning';
     unreadCount?: number;
     unreadMessagesCount?: number;
     pendingRequests?: any[];

@@ -67,6 +67,7 @@ class Phase1ProfessionalGroupsHomeTest extends TestCase
     {
         $regularUser = User::factory()->create(['email' => 'regular@example.com']);
         $adminUser = User::factory()->create(['email' => 'admin@connectly.test']);
+        $adminUser->assignRole('ADMIN');
 
         // Regular user attempt
         $resForbidden = $this->actingAs($regularUser, 'sanctum')

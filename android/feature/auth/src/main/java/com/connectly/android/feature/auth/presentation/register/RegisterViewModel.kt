@@ -26,6 +26,9 @@ class RegisterViewModel @Inject constructor(
             is RegisterUiIntent.Register -> executeRegister(
                 intent.name,
                 intent.email,
+                intent.phone,
+                intent.birthDate,
+                intent.gender,
                 intent.pass,
                 intent.confirmPass,
                 intent.termsAccepted
@@ -37,12 +40,15 @@ class RegisterViewModel @Inject constructor(
     private fun executeRegister(
         name: String,
         email: String,
+        phone: String,
+        birthDate: String,
+        gender: String,
         pass: String,
         confirmPass: String,
         termsAccepted: Boolean
     ) {
-        if (name.isBlank() || email.isBlank() || pass.isBlank()) {
-            _uiState.value = RegisterUiState.Error("Please fill out all required fields.")
+        if (name.isBlank() || email.isBlank() || phone.isBlank() || birthDate.isBlank() || gender.isBlank() || pass.isBlank()) {
+            _uiState.value = RegisterUiState.Error("Please fill out all required fields (Name, Email, Mobile, Birth Date, Gender, Password).")
             return
         }
 
@@ -57,7 +63,7 @@ class RegisterViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            registerUseCase(name, email, pass, confirmPass).collect { result ->
+            registerUseCase(name, email, phone, birthDate, gender, pass, confirmPass).collect { result ->
                 when (result) {
                     is Result.Loading -> _uiState.value = RegisterUiState.Loading
                     is Result.Success -> {

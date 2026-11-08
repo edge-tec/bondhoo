@@ -144,4 +144,3 @@ class MarketplacePhase16CategorySeeder extends Seeder
         }
     }
 }
-

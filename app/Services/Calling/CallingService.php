@@ -101,6 +101,29 @@ class CallingService
     }
 
     /**
+     * Audit and verify TURN server health without leaking secrets.
+     *
+     * @return array<string, mixed>
+     */
+    public function getTurnHealthStatus(): array
+    {
+        $turnUrl = config('services.turn.url') ?: env('TURN_SERVER_URL');
+        $turnSecret = config('services.turn.secret') ?: env('TURN_SERVER_SECRET');
+        $turnTlsUrl = config('services.turn.tls_url') ?: env('TURN_SERVER_TLS_URL');
+
+        $isConfigured = ! empty($turnUrl) && ! empty($turnSecret) && ! str_contains((string) $turnUrl, 'placeholder');
+
+        return [
+            'is_configured' => $isConfigured,
+            'mode' => $isConfigured ? 'production_coturn' : 'fallback_openrelay',
+            'has_tls' => ! empty($turnTlsUrl) || ($isConfigured && str_starts_with((string) $turnUrl, 'turns:')),
+            'protocols_supported' => ['udp', 'tcp', 'tls'],
+            'ttl_seconds' => (int) (config('services.turn.ttl') ?: env('TURN_CREDENTIAL_TTL', 86400)),
+            'timestamp' => now()->toIso8601String(),
+        ];
+    }
+
+    /**
      * Initiate a 1-to-1 or group audio/video call.
      */
     public function initiateCall(User $caller, Conversation $conversation, string $callType = 'audio', ?int $receiverId = null, array $receiverIds = []): Call

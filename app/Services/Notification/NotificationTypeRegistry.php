@@ -243,6 +243,101 @@ class NotificationTypeRegistry
             'default_title' => 'যুগাজুগে স্বাগতম!',
             'action_url' => '/',
         ],
+
+        // Marketplace Notifications
+        'marketplace_inquiry' => [
+            'category' => NotificationCategory::MESSAGING,
+            'icon' => 'mail',
+            'priority' => 'normal',
+            'default_title' => 'পণ্যের নতুন জিজ্ঞাসা',
+            'action_url' => '/messages',
+        ],
+        'marketplace.offer_submitted' => [
+            'category' => NotificationCategory::SYSTEM,
+            'icon' => 'bell',
+            'priority' => 'important',
+            'default_title' => 'নতুন মূল্যের প্রস্তাব (Offer)',
+            'action_url' => '/marketplace/my-listings',
+        ],
+        'marketplace.offer_accepted' => [
+            'category' => NotificationCategory::SYSTEM,
+            'icon' => 'bell',
+            'priority' => 'important',
+            'default_title' => 'প্রস্তাব গৃহীত হয়েছে',
+            'action_url' => '/marketplace',
+        ],
+        'marketplace.offer_rejected' => [
+            'category' => NotificationCategory::SYSTEM,
+            'icon' => 'bell',
+            'priority' => 'normal',
+            'default_title' => 'প্রস্তাব প্রত্যাখ্যাত হয়েছে',
+            'action_url' => '/marketplace',
+        ],
+        'marketplace.offer_countered' => [
+            'category' => NotificationCategory::SYSTEM,
+            'icon' => 'bell',
+            'priority' => 'important',
+            'default_title' => 'বিক্রেতা পাল্টা প্রস্তাব পাঠিয়েছেন',
+            'action_url' => '/marketplace',
+        ],
+        'marketplace_order_placed' => [
+            'category' => NotificationCategory::SYSTEM,
+            'icon' => 'bell',
+            'priority' => 'important',
+            'default_title' => 'নতুন অর্ডার পাওয়া গেছে',
+            'action_url' => '/marketplace/orders',
+        ],
+        'marketplace_order_status' => [
+            'category' => NotificationCategory::SYSTEM,
+            'icon' => 'bell',
+            'priority' => 'normal',
+            'default_title' => 'অর্ডারের অবস্থা আপডেট হয়েছে',
+            'action_url' => '/marketplace/orders',
+        ],
+        'marketplace_escrow_released' => [
+            'category' => NotificationCategory::SYSTEM,
+            'icon' => 'bell',
+            'priority' => 'important',
+            'default_title' => 'পেমেন্ট রিলিজ হয়েছে',
+            'action_url' => '/marketplace/orders',
+        ],
+        'marketplace_review_received' => [
+            'category' => NotificationCategory::SOCIAL,
+            'icon' => 'heart',
+            'priority' => 'normal',
+            'default_title' => 'নতুন রিভিউ পাওয়া গেছে',
+            'action_url' => '/marketplace/my-listings',
+        ],
+
+        // Learning & Development Notifications
+        'learning.course_enrolled' => [
+            'category' => NotificationCategory::SYSTEM,
+            'icon' => 'file_text',
+            'priority' => 'important',
+            'default_title' => 'কোর্সে ভর্তি নিশ্চিত হয়েছে',
+            'action_url' => '/learning',
+        ],
+        'learning.new_student' => [
+            'category' => NotificationCategory::SOCIAL,
+            'icon' => 'user_plus',
+            'priority' => 'normal',
+            'default_title' => 'কোর্সে নতুন শিক্ষার্থী ভর্তি হয়েছে',
+            'action_url' => '/learning',
+        ],
+        'learning.course_completed' => [
+            'category' => NotificationCategory::SYSTEM,
+            'icon' => 'user_check',
+            'priority' => 'important',
+            'default_title' => 'অভিনন্দন! কোর্স সম্পন্ন হয়েছে',
+            'action_url' => '/learning',
+        ],
+        'learning.certificate_issued' => [
+            'category' => NotificationCategory::SYSTEM,
+            'icon' => 'shield',
+            'priority' => 'important',
+            'default_title' => 'আপনার সার্টিফিকেট প্রস্তুত হয়েছে',
+            'action_url' => '/learning',
+        ],
     ];
 
     /**

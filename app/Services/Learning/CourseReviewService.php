@@ -22,13 +22,17 @@ class CourseReviewService
         int $rating,
         ?string $content = null
     ): LearningCourseReview {
+        if ((int) $course->instructor_id === (int) $user->id) {
+            throw new Exception('Instructors cannot submit reviews for their own course.');
+        }
+
         $isEnrolled = LearningEnrollment::where('course_id', $course->id)
             ->where('user_id', $user->id)
-            ->where('status', LearningEnrollment::STATUS_ACTIVE)
+            ->whereIn('status', [LearningEnrollment::STATUS_ACTIVE, LearningEnrollment::STATUS_COMPLETED])
             ->exists();
 
         if (! $isEnrolled) {
-            throw new Exception('Only actively enrolled students may review this course.');
+            throw new Exception('Only enrolled students may review this course.');
         }
 
         return DB::transaction(function () use ($user, $course, $rating, $content) {
