@@ -58,12 +58,16 @@ class FeedService
             }
 
             // Hidden posts filtering: exclude posts explicitly hidden by viewer
-            $hiddenPostIds = DB::table('hidden_posts')
-                ->where('user_id', $viewer->id)
-                ->pluck('post_id')
-                ->toArray();
-            if (! empty($hiddenPostIds)) {
-                $query->whereNotIn('id', $hiddenPostIds);
+            try {
+                $hiddenPostIds = DB::table('hidden_posts')
+                    ->where('user_id', $viewer->id)
+                    ->pluck('post_id')
+                    ->toArray();
+                if (! empty($hiddenPostIds)) {
+                    $query->whereNotIn('id', $hiddenPostIds);
+                }
+            } catch (\Throwable) {
+                // Table might not be migrated yet on older environments
             }
 
             $friendIds = $viewer->getFriendIds();
@@ -72,22 +76,26 @@ class FeedService
 
             // Muted & Snoozed filtering (only applies to personalized 'for_you' feed)
             if ($tab === null || $tab === 'for_you') {
-                $mutedFriendIds = DB::table('friendships')
-                    ->where('user_id', $viewer->id)
-                    ->where(function ($q) {
-                        $q->where(function ($sq) {
-                            $sq->where('is_muted', 1)
-                                ->where(function ($dsq) {
-                                    $dsq->whereNull('muted_until')
-                                        ->orWhere('muted_until', '>', Carbon::now());
-                                });
-                        })->orWhere('snoozed_until', '>', Carbon::now());
-                    })
-                    ->pluck('friend_id')
-                    ->toArray();
+                try {
+                    $mutedFriendIds = DB::table('friendships')
+                        ->where('user_id', $viewer->id)
+                        ->where(function ($q) {
+                            $q->where(function ($sq) {
+                                $sq->where('is_muted', 1)
+                                    ->where(function ($dsq) {
+                                        $dsq->whereNull('muted_until')
+                                            ->orWhere('muted_until', '>', Carbon::now());
+                                    });
+                            })->orWhere('snoozed_until', '>', Carbon::now());
+                        })
+                        ->pluck('friend_id')
+                        ->toArray();
 
-                if (! empty($mutedFriendIds)) {
-                    $query->whereNotIn('user_id', $mutedFriendIds);
+                    if (! empty($mutedFriendIds)) {
+                        $query->whereNotIn('user_id', $mutedFriendIds);
+                    }
+                } catch (\Throwable) {
+                    // Columns might not exist yet on older environments
                 }
             }
 

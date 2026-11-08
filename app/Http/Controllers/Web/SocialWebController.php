@@ -44,6 +44,7 @@ use Database\Seeders\PageTaxonomySeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -178,44 +179,72 @@ class SocialWebController extends Controller
             }
         }
 
-        $stories = $this->storyService->getActiveFeed($viewer)->toArray();
-        $sidebarData = $this->getSidebarData($viewer);
+        try {
+            $stories = $this->storyService->getActiveFeed($viewer)->toArray();
+        } catch (\Throwable $e) {
+            Log::warning('Stories feed loading failed: '.$e->getMessage());
+            $stories = [];
+        }
 
-        $reels = Reel::with(['user.profile', 'media', 'musicTrack', 'page'])
-            ->where('is_draft', false)
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
-            ->latest('id')
-            ->limit(20)
-            ->get()
-            ->map(fn (Reel $r) => $r->toResponseArray($viewer))
-            ->values()
-            ->all();
+        try {
+            $sidebarData = $this->getSidebarData($viewer);
+        } catch (\Throwable $e) {
+            Log::warning('Sidebar data loading failed: '.$e->getMessage());
+            $sidebarData = [
+                'pendingRequests' => [],
+                'contacts' => [],
+                'suggestions' => [],
+                'upcomingEvents' => [],
+                'unreadCount' => 0,
+                'unreadMessagesCount' => 0,
+            ];
+        }
 
-        $activeLiveStreams = LiveStream::whereIn('status', [LiveStream::STATUS_LIVE, LiveStream::STATUS_READY])
-            ->with(['user.profile', 'page'])
-            ->latest('id')
-            ->limit(5)
-            ->get()
-            ->map(function (LiveStream $stream) {
-                return [
-                    'id' => $stream->id,
-                    'title' => $stream->title,
-                    'description' => $stream->description,
-                    'status' => $stream->status,
-                    'viewer_count' => $stream->current_viewers ?? 0,
-                    'user' => [
-                        'id' => $stream->user?->id,
-                        'name' => $stream->user?->name,
-                        'username' => $stream->user?->username,
-                        'avatar_url' => $stream->user?->profile?->avatar_url ?? $stream->user?->avatar_url,
-                    ],
-                    'created_at' => $stream->created_at?->toIso8601String(),
-                ];
-            })
-            ->values()
-            ->all();
+        try {
+            $reels = Reel::with(['user.profile', 'media', 'musicTrack', 'page'])
+                ->where('is_draft', false)
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->latest('id')
+                ->limit(20)
+                ->get()
+                ->map(fn (Reel $r) => $r->toResponseArray($viewer))
+                ->values()
+                ->all();
+        } catch (\Throwable $e) {
+            Log::warning('Reels feed loading failed: '.$e->getMessage());
+            $reels = [];
+        }
+
+        try {
+            $activeLiveStreams = LiveStream::whereIn('status', [LiveStream::STATUS_LIVE, LiveStream::STATUS_READY])
+                ->with(['user.profile', 'page'])
+                ->latest('id')
+                ->limit(5)
+                ->get()
+                ->map(function (LiveStream $stream) {
+                    return [
+                        'id' => $stream->id,
+                        'title' => $stream->title,
+                        'description' => $stream->description,
+                        'status' => $stream->status,
+                        'viewer_count' => $stream->current_viewers ?? 0,
+                        'user' => [
+                            'id' => $stream->user?->id,
+                            'name' => $stream->user?->name,
+                            'username' => $stream->user?->username,
+                            'avatar_url' => $stream->user?->profile?->avatar_url ?? $stream->user?->avatar_url,
+                        ],
+                        'created_at' => $stream->created_at?->toIso8601String(),
+                    ];
+                })
+                ->values()
+                ->all();
+        } catch (\Throwable $e) {
+            Log::warning('Active live streams loading failed: '.$e->getMessage());
+            $activeLiveStreams = [];
+        }
 
         return Inertia::render('Feed', [
             'posts' => [

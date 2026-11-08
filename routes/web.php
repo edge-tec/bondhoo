@@ -31,6 +31,7 @@ use App\Services\AuthServiceV2;
 use App\Services\Email\SmtpConfigService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -68,7 +69,15 @@ Route::get('/', function (Request $request) use ($resolveWebUser) {
             return view('dashboard');
         }
 
-        return app(SocialWebController::class)->feed($request);
+        try {
+            return app(SocialWebController::class)->feed($request);
+        } catch (Throwable $e) {
+            Log::error('Feed exception, fallback to Blade dashboard: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return view('dashboard');
+        }
     }
 
     return view('auth.login');
@@ -84,7 +93,15 @@ Route::get('/dashboard', function (Request $request) use ($resolveWebUser) {
         return view('dashboard');
     }
 
-    return app(SocialWebController::class)->feed($request);
+    try {
+        return app(SocialWebController::class)->feed($request);
+    } catch (Throwable $e) {
+        Log::error('Feed exception, fallback to Blade dashboard: '.$e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        return view('dashboard');
+    }
 })->name('dashboard.view');
 
 Route::get('/feed', function (Request $request) use ($resolveWebUser) {
@@ -97,7 +114,15 @@ Route::get('/feed', function (Request $request) use ($resolveWebUser) {
         return view('dashboard');
     }
 
-    return app(SocialWebController::class)->feed($request);
+    try {
+        return app(SocialWebController::class)->feed($request);
+    } catch (Throwable $e) {
+        Log::error('Feed exception, fallback to Blade dashboard: '.$e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        return view('dashboard');
+    }
 })->name('feed');
 
 // Authentication Pages & Actions (Facebook-style UX & Government Grade Security)

@@ -173,10 +173,10 @@ class Post extends Model
         return [
             'id' => $this->id,
             'author' => [
-                'id' => $this->user->id,
-                'username' => $this->user->username,
-                'name' => $this->user->name,
-                'avatar_url' => $this->user->profile?->avatar_url,
+                'id' => $this->user?->id ?? 0,
+                'username' => $this->user?->username ?? 'user',
+                'name' => $this->user?->name ?? 'Bondhoo User',
+                'avatar_url' => $this->user?->profile?->avatar_url ?? '/images/default-avatar.png',
             ],
             'content' => $this->content,
             'audience' => $this->audience,
@@ -234,10 +234,28 @@ class Post extends Model
             ] : null,
             'viewer_reaction' => $viewerReaction,
             'user_reaction' => $viewerReaction,
-            'is_saved' => $viewer ? DB::table('saved_items')->where('user_id', $viewer->id)->where(function ($q) {
-                $q->where('item_type', 'post')->orWhere('item_type', Post::class);
-            })->where('item_id', $this->id)->exists() : false,
-            'is_hidden' => $viewer ? DB::table('hidden_posts')->where('user_id', $viewer->id)->where('post_id', $this->id)->exists() : false,
+            'is_saved' => (function () use ($viewer) {
+                if (! $viewer) {
+                    return false;
+                }
+                try {
+                    return DB::table('saved_items')->where('user_id', $viewer->id)->where(function ($q) {
+                        $q->where('item_type', 'post')->orWhere('item_type', Post::class);
+                    })->where('item_id', $this->id)->exists();
+                } catch (\Throwable) {
+                    return false;
+                }
+            })(),
+            'is_hidden' => (function () use ($viewer) {
+                if (! $viewer) {
+                    return false;
+                }
+                try {
+                    return DB::table('hidden_posts')->where('user_id', $viewer->id)->where('post_id', $this->id)->exists();
+                } catch (\Throwable) {
+                    return false;
+                }
+            })(),
             'is_owner' => $viewer ? ($this->user_id === $viewer->id) : false,
             'likes_count' => (int) $this->likes_count,
             'comments_count' => (int) $this->comments_count,
