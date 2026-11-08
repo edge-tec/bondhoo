@@ -4,11 +4,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayCircleOutline
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -16,6 +25,7 @@ import com.connectly.android.core.datastore.TokenStorageManager
 import com.connectly.android.core.designsystem.component.BottomBarDestination
 import com.connectly.android.core.designsystem.component.ConnectlyBottomBar
 import com.connectly.android.core.designsystem.component.ConnectlyTopBar
+import com.connectly.android.core.designsystem.theme.ConnectlyBlue
 import com.connectly.android.core.designsystem.theme.ConnectlyTheme
 import com.connectly.android.feature.auth.navigation.LOGIN_ROUTE
 import com.connectly.android.feature.auth.navigation.SPLASH_ROUTE
@@ -90,6 +100,7 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var tokenStorageManager: TokenStorageManager
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -247,6 +258,7 @@ class MainActivity : ComponentActivity() {
 
                     composable(MAIN_HOME_ROUTE) {
                         var selectedTab by remember { mutableStateOf(BottomBarDestination.HOME) }
+                        var showCreateSheet by remember { mutableStateOf(false) }
 
                         BackHandler(enabled = selectedTab != BottomBarDestination.HOME) {
                             selectedTab = BottomBarDestination.HOME
@@ -258,7 +270,7 @@ class MainActivity : ComponentActivity() {
                                     selectedDestination = selectedTab,
                                     onDestinationClick = { destination ->
                                         if (destination == BottomBarDestination.CREATE) {
-                                            rootNavController.navigateToCreatePost()
+                                            showCreateSheet = true
                                         } else {
                                             selectedTab = destination
                                         }
@@ -339,6 +351,110 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToProfile = { rootNavController.navigateToProfile() },
                                         modifier = Modifier.padding(innerPadding)
                                     )
+                                }
+                            }
+                        }
+
+                        if (showCreateSheet) {
+                            ModalBottomSheet(
+                                onDismissRequest = { showCreateSheet = false }
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                                ) {
+                                    Text(
+                                        text = "Create",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                        modifier = Modifier.padding(bottom = 12.dp)
+                                    )
+                                    ListItem(
+                                        headlineContent = { Text("Post", fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold) },
+                                        supportingContent = { Text("Share thoughts, photos or updates") },
+                                        leadingContent = {
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = Color(0xFFEFF6FF),
+                                                modifier = Modifier.size(40.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(Icons.Default.Edit, contentDescription = "Post", tint = ConnectlyBlue)
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                showCreateSheet = false
+                                                rootNavController.navigateToCreatePost()
+                                            }
+                                    )
+                                    ListItem(
+                                        headlineContent = { Text("Add Story", fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold) },
+                                        supportingContent = { Text("Share a photo or text story for 24 hours") },
+                                        leadingContent = {
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = Color(0xFFFDF2F8),
+                                                modifier = Modifier.size(40.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(Icons.Default.AddCircleOutline, contentDescription = "Story", tint = Color(0xFFEC4899))
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                showCreateSheet = false
+                                                rootNavController.navigateToCreateStory()
+                                            }
+                                    )
+                                    ListItem(
+                                        headlineContent = { Text("Reel", fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold) },
+                                        supportingContent = { Text("Create short entertaining video clips") },
+                                        leadingContent = {
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = Color(0xFFF5F3FF),
+                                                modifier = Modifier.size(40.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(Icons.Default.PlayCircleOutline, contentDescription = "Reel", tint = Color(0xFF8B5CF6))
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                showCreateSheet = false
+                                                rootNavController.navigateToCreateStory()
+                                            }
+                                    )
+                                    ListItem(
+                                        headlineContent = { Text("Go Live", fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold) },
+                                        supportingContent = { Text("Start live video broadcast with comments") },
+                                        leadingContent = {
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = Color(0xFFFEF2F2),
+                                                modifier = Modifier.size(40.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(Icons.Default.Videocam, contentDescription = "Go Live", tint = Color(0xFFEF4444))
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                showCreateSheet = false
+                                                rootNavController.navigateToLive(1L)
+                                            }
+                                    )
+                                    Spacer(modifier = Modifier.height(28.dp))
                                 }
                             }
                         }

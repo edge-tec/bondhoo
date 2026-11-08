@@ -177,8 +177,38 @@ class ChatViewModel @Inject constructor(
     private fun loadConversationMetadata(conversationId: Long) {
         viewModelScope.launch {
             getConversationDetailsUseCase(conversationId).collect { result ->
-                if (result is Result.Success) {
-                    applyConversationMetadata(result.data)
+                when (result) {
+                    is Result.Success -> {
+                        applyConversationMetadata(result.data)
+                    }
+                    is Result.Error -> {
+                        // If this conversation was not found (404), conversationId may be a user/recipient ID!
+                        // Automatically open or create the direct conversation with this user
+                        createConversationUseCase(recipientId = conversationId).collect { createRes ->
+                            if (createRes is Result.Success) {
+                                val resolvedConv = createRes.data
+                                currentLoadedConvId = resolvedConv.id
+                                _uiState.update {
+                                    it.copy(
+                                        conversationId = resolvedConv.id,
+                                        errorMessage = null
+                                    )
+                                }
+                                applyConversationMetadata(resolvedConv)
+                                loadMessages(resolvedConv.id, showLoading = true)
+                                loadPinnedMessages(resolvedConv.id)
+                                subscribeRealtimeEvents(resolvedConv.id)
+                            } else if (createRes is Result.Error) {
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        errorMessage = "Conversation not found."
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    is Result.Loading -> Unit
                 }
             }
         }
@@ -221,11 +251,15 @@ class ChatViewModel @Inject constructor(
                     }
                     is Result.Error -> {
                         if (showLoading) {
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    errorMessage = result.exception.message ?: "Unable to load messages"
-                                )
+                            // If conversation metadata is already loaded, display the error.
+                            // If conversation is still resolving (e.g. from userId), defer to avoid premature 404 toast.
+                            if (_uiState.value.conversation != null) {
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        errorMessage = result.exception.message ?: "Unable to load messages"
+                                    )
+                                }
                             }
                         }
                     }

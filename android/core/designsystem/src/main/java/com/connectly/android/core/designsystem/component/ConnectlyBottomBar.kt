@@ -51,18 +51,34 @@ fun ConnectlyBottomBar(
         tonalElevation = 8.dp,
         modifier = modifier
     ) {
-        val visibleDestinations = BottomBarDestination.entries.filter { it != BottomBarDestination.CREATE }
-        visibleDestinations.forEach { destination ->
+        BottomBarDestination.entries.forEach { destination ->
             val isSelected = destination == selectedDestination
 
             NavigationBarItem(
                 selected = isSelected,
                 onClick = { onDestinationClick(destination) },
                 icon = {
-                    Icon(
-                        imageVector = destination.icon,
-                        contentDescription = destination.title
-                    )
+                    if (destination == BottomBarDestination.CREATE) {
+                        Surface(
+                            shape = CircleShape,
+                            color = ConnectlyBlue,
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = destination.title,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        Icon(
+                            imageVector = destination.icon,
+                            contentDescription = destination.title
+                        )
+                    }
                 },
                 label = {
                     Text(

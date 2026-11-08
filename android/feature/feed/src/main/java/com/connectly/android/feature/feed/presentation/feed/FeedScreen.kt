@@ -452,7 +452,7 @@ fun FeedScreen(
             item {
                 CreatePostCard(
                     onCardClick = { onNavigateToCreatePost(null) },
-                    onLiveClick = { showCreateLiveDialog = true },
+                    onLiveClick = { onNavigateToLive(1L) },
                     onPhotoClick = { onNavigateToCreatePost("photo") },
                     onVideoClick = { onNavigateToCreatePost("video") },
                     onFeelingClick = { onNavigateToCreatePost("feeling") }
