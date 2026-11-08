@@ -150,11 +150,7 @@ class ReverbWebSocketManager @Inject constructor(
         _connectionState.value = ConnectionState.Connecting
 
         val token = tokenStorageManager.getAccessToken()
-        val wsUrl = if (com.connectly.android.core.network.BuildConfig.DEBUG) {
-            "ws://10.0.2.2:8080/app/connectly_reverb_key?protocol=7&client=android&version=1.0.0"
-        } else {
-            "wss://bondhoo.com/app/connectly_reverb_key?protocol=7&client=android&version=1.0.0"
-        }
+        val wsUrl = "wss://bondhoo.com/app/connectly_reverb_key?protocol=7&client=android&version=1.0.0"
         val request = Request.Builder()
             .url(wsUrl)
             .apply {

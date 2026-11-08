@@ -26,20 +26,17 @@ import com.connectly.android.core.designsystem.theme.ConnectlyGreen
 
 fun resolveMediaUrl(url: String?): String? {
     if (url.isNullOrBlank()) return null
-    val isEmu = (android.os.Build.FINGERPRINT.startsWith("generic")
-            || android.os.Build.FINGERPRINT.startsWith("unknown")
-            || android.os.Build.MODEL.contains("google_sdk")
-            || android.os.Build.MODEL.contains("Emulator")
-            || android.os.Build.HARDWARE.contains("goldfish")
-            || android.os.Build.HARDWARE.contains("ranchu"))
-    val targetHost = if (isEmu) "10.0.2.2:8000" else "192.168.0.184:8000"
+    val targetHost = "bondhoo.com"
     val sanitized = url.replace("localhost:8000", targetHost)
         .replace("127.0.0.1:8000", targetHost)
         .replace("10.0.2.2:8000", targetHost)
+        .replace("192.168.0.184:8000", targetHost)
+        .replace("http://bondhoo.com", "https://bondhoo.com")
     return when {
-        sanitized.startsWith("http://") || sanitized.startsWith("https://") -> sanitized
-        sanitized.startsWith("/") -> "http://$targetHost$sanitized"
-        else -> "http://$targetHost/$sanitized"
+        sanitized.startsWith("https://") -> sanitized
+        sanitized.startsWith("http://") -> sanitized.replace("http://", "https://")
+        sanitized.startsWith("/") -> "https://$targetHost$sanitized"
+        else -> "https://$targetHost/$sanitized"
     }
 }
 

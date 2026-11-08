@@ -1176,15 +1176,12 @@ class MessengerRepositoryImpl @Inject constructor(
         } else {
             trimmed
         }
-        return if (serverRoot.contains("10.0.2.2")) {
-            resolved
-                .replace("http://localhost:8000", serverRoot)
-                .replace("http://127.0.0.1:8000", serverRoot)
-                .replace("http://localhost", serverRoot)
-                .replace("http://127.0.0.1", serverRoot)
-        } else {
-            resolved
-        }
+        return resolved
+            .replace("http://localhost:8000", serverRoot)
+            .replace("http://127.0.0.1:8000", serverRoot)
+            .replace("http://10.0.2.2:8000", serverRoot)
+            .replace("http://192.168.0.184:8000", serverRoot)
+            .replace("http://bondhoo.com", "https://bondhoo.com")
     }
 
     private fun parseIsoToMillis(iso: String?): Long =

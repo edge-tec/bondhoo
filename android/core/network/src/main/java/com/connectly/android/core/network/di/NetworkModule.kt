@@ -21,46 +21,28 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val PROD_BASE_URL = "https://bondhoo.com/api/"
-    const val EMULATOR_HOST = "10.0.2.2:8000"
-    const val PHYSICAL_DEVICE_HOST = "192.168.0.184:8000"
+    const val PROD_BASE_URL = "https://bondhoo.com/api/"
+    const val PROD_HOST = "bondhoo.com"
 
     /**
-     * Determines whether the current process is running in an Android emulator or on a physical device.
+     * Primary live production Base URL for all network requests.
+     * All options, registration, login, and real-time operations connect to bondhoo.com.
      */
-    fun isEmulator(): Boolean {
-        return (Build.FINGERPRINT.startsWith("generic")
-                || Build.FINGERPRINT.startsWith("unknown")
-                || Build.MODEL.contains("google_sdk")
-                || Build.MODEL.contains("Emulator")
-                || Build.MODEL.contains("Android SDK built for x86")
-                || Build.MANUFACTURER.contains("Genymotion")
-                || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
-                || "google_sdk" == Build.PRODUCT
-                || Build.HARDWARE.contains("goldfish")
-                || Build.HARDWARE.contains("ranchu"))
-    }
-
-    val ACTIVE_HOST: String = if (isEmulator()) EMULATOR_HOST else PHYSICAL_DEVICE_HOST
-
-    val DEV_BASE_URL: String = "http://$ACTIVE_HOST/api/"
-
-    val BASE_URL: String = if (com.connectly.android.core.network.BuildConfig.DEBUG) {
-        DEV_BASE_URL
-    } else {
-        PROD_BASE_URL
-    }
+    val BASE_URL: String = PROD_BASE_URL
 
     fun resolveMediaUrl(url: String?): String? {
         if (url.isNullOrBlank()) return null
-        val targetHost = if (com.connectly.android.core.network.BuildConfig.DEBUG) ACTIVE_HOST else "bondhoo.com"
+        val targetHost = PROD_HOST
         val sanitized = url.replace("localhost:8000", targetHost)
             .replace("127.0.0.1:8000", targetHost)
             .replace("10.0.2.2:8000", targetHost)
+            .replace("192.168.0.184:8000", targetHost)
+            .replace("http://bondhoo.com", "https://bondhoo.com")
         return when {
-            sanitized.startsWith("http://") || sanitized.startsWith("https://") -> sanitized
-            sanitized.startsWith("/") -> "http://$targetHost$sanitized"
-            else -> "http://$targetHost/$sanitized"
+            sanitized.startsWith("https://") -> sanitized
+            sanitized.startsWith("http://") -> sanitized.replace("http://", "https://")
+            sanitized.startsWith("/") -> "https://$targetHost$sanitized"
+            else -> "https://$targetHost/$sanitized"
         }
     }
 
