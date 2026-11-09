@@ -453,6 +453,7 @@ fun FeedScreen(
             item {
                 StoriesTraySection(
                     storiesTray = state.storiesTray,
+                    currentUserAvatar = state.currentUserAvatar,
                     onAddStoryClick = onNavigateToCreateStory,
                     onStoryClick = { onNavigateToStoryViewer(it) }
                 )
@@ -464,6 +465,7 @@ fun FeedScreen(
                     userAvatar = state.currentUserAvatar,
                     userName = state.currentUserName,
                     onCardClick = { onNavigateToCreatePost(null) },
+                    onStoryClick = onNavigateToCreateStory,
                     onLiveClick = { onNavigateToLive(1L) },
                     onPhotoClick = { onNavigateToCreatePost("photo") },
                     onVideoClick = { onNavigateToCreatePost("video") },
@@ -1216,6 +1218,7 @@ private fun OptionRow(
 @Composable
 private fun StoriesTraySection(
     storiesTray: List<com.connectly.android.core.model.StoryUserTray>,
+    currentUserAvatar: String? = null,
     onAddStoryClick: () -> Unit,
     onStoryClick: (Long) -> Unit
 ) {
@@ -1226,7 +1229,7 @@ private fun StoriesTraySection(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(0.dp)
     ) {
-        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Column(modifier = Modifier.padding(vertical = 10.dp)) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1252,30 +1255,70 @@ private fun StoriesTraySection(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Add Story item
-                item {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable { onAddStoryClick() }
+                // Prominent Facebook-style "Create Story" Card
+                item(key = "create_story_card") {
+                    Card(
+                        modifier = Modifier
+                            .width(105.dp)
+                            .height(160.dp)
+                            .clickable { onAddStoryClick() },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        border = BorderStroke(1.dp, ConnectlyBlue.copy(alpha = 0.35f))
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, ConnectlyBlue, CircleShape)
-                                .background(Color(0xFFE2E8F0)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Story", tint = ConnectlyBlue, modifier = Modifier.size(30.dp))
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            // User Avatar preview on top half
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(105.dp)
+                                    .background(Color(0xFFE2E8F0)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                ConnectlyAvatar(
+                                    imageUrl = currentUserAvatar,
+                                    name = "You",
+                                    size = 54.dp
+                                )
+                            }
+
+                            // Blue "+" button overlapping border
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .offset(y = 25.dp)
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(ConnectlyBlue)
+                                    .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Create Story",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            // Text label at bottom
+                            Text(
+                                text = "Create story",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 8.dp)
+                            )
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("Add Story", fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     }
                 }
 
@@ -1283,31 +1326,43 @@ private fun StoriesTraySection(
                 items(storiesTray) { tray ->
                     val storyId = tray.stories.firstOrNull()?.id ?: tray.user.id
                     val borderColor = if (tray.hasUnseenStories) ConnectlyBlue else Color.LightGray
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable { onStoryClick(storyId) }
+                    Card(
+                        modifier = Modifier
+                            .width(105.dp)
+                            .height(160.dp)
+                            .clickable { onStoryClick(storyId) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+                        border = BorderStroke(2.dp, borderColor)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .border(2.5.dp, borderColor, CircleShape)
-                                .padding(3.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            ConnectlyAvatar(
-                                imageUrl = tray.user.avatar,
-                                name = tray.user.name,
-                                size = 56.dp
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            // User avatar badge top-left
+                            Box(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .border(2.dp, ConnectlyBlue, CircleShape)
+                            ) {
+                                ConnectlyAvatar(
+                                    imageUrl = tray.user.avatar,
+                                    name = tray.user.name,
+                                    size = 38.dp
+                                )
+                            }
+
+                            // User name bottom
+                            Text(
+                                text = tray.user.name.split(" ").firstOrNull() ?: tray.user.name,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(8.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = tray.user.name.split(" ").firstOrNull() ?: tray.user.name,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1
-                        )
                     }
                 }
             }
@@ -1320,6 +1375,7 @@ private fun CreatePostCard(
     userAvatar: String? = null,
     userName: String? = null,
     onCardClick: () -> Unit,
+    onStoryClick: () -> Unit = {},
     onLiveClick: () -> Unit,
     onPhotoClick: () -> Unit,
     onVideoClick: () -> Unit,
@@ -1360,8 +1416,32 @@ private fun CreatePostCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                // Story 📖
+                Surface(
+                    onClick = onStoryClick,
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFFEFF6FF),
+                    border = BorderStroke(1.dp, Color(0xFFDBEAFE)),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddCircle,
+                            contentDescription = "Story",
+                            tint = ConnectlyBlue,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("Story", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ConnectlyBlue)
+                    }
+                }
+
                 // Live 🔴
                 Surface(
                     onClick = onLiveClick,
@@ -1379,10 +1459,10 @@ private fun CreatePostCard(
                             imageVector = Icons.Default.Videocam,
                             contentDescription = "Live",
                             tint = Color(0xFFEF4444),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Live", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("Live", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626))
                     }
                 }
 
@@ -1403,10 +1483,10 @@ private fun CreatePostCard(
                             imageVector = Icons.Default.PhotoLibrary,
                             contentDescription = "Photo",
                             tint = Color(0xFF10B981),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Photo", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("Photo", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
                     }
                 }
 
@@ -1424,13 +1504,13 @@ private fun CreatePostCard(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.VideoCall,
+                            imageVector = Icons.Default.VideoLibrary,
                             contentDescription = "Video",
                             tint = Color(0xFF8B5CF6),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Video", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7C3AED))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("Video", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7C3AED))
                     }
                 }
 

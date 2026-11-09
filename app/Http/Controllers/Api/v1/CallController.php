@@ -24,6 +24,20 @@ class CallController extends Controller
      */
     public function initiate(Request $request): JsonResponse
     {
+        if (! $request->has('call_type') && $request->has('type')) {
+            $request->merge(['call_type' => $request->input('type')]);
+        }
+
+        if ($request->has('conversation_id')) {
+            $convId = (int) $request->input('conversation_id');
+            if ($request->input('receiver_id') == $convId || $request->input('receiver_id') == $request->user()?->id) {
+                $otherUserId = ConversationParticipant::where('conversation_id', $convId)
+                    ->where('user_id', '!=', $request->user()?->id)
+                    ->value('user_id');
+                $request->merge(['receiver_id' => $otherUserId]);
+            }
+        }
+
         $validated = $request->validate([
             'conversation_id' => ['nullable', 'integer', 'exists:conversations,id'],
             'receiver_id' => ['nullable', 'integer', 'exists:users,id'],

@@ -150,16 +150,10 @@ class ChatViewModel @Inject constructor(
             )
         }
 
-        loadConversationMetadata(conversationId)
-        loadMessages(conversationId, showLoading = true)
-        loadPinnedMessages(conversationId)
+        loadConversationMetadata(conversationId, isNewConversation)
 
         viewModelScope.launch {
             markReadUseCase(conversationId).collect()
-        }
-
-        if (isNewConversation) {
-            subscribeRealtimeEvents(conversationId)
         }
     }
 
@@ -167,19 +161,24 @@ class ChatViewModel @Inject constructor(
         val convId = _uiState.value.conversationId
         if (convId <= 0L) return
         loadMessages(convId, showLoading = false)
-        loadConversationMetadata(convId)
+        loadConversationMetadata(convId, isNewConversation = false)
     }
 
     fun onVoicePlaybackCompleted() {
         _uiState.update { it.copy(isAudioPlaying = false, playingMessageId = null) }
     }
 
-    private fun loadConversationMetadata(conversationId: Long) {
+    private fun loadConversationMetadata(conversationId: Long, isNewConversation: Boolean = false) {
         viewModelScope.launch {
             getConversationDetailsUseCase(conversationId).collect { result ->
                 when (result) {
                     is Result.Success -> {
                         applyConversationMetadata(result.data)
+                        loadMessages(conversationId, showLoading = true)
+                        loadPinnedMessages(conversationId)
+                        if (isNewConversation) {
+                            subscribeRealtimeEvents(conversationId)
+                        }
                     }
                     is Result.Error -> {
                         // If this conversation was not found (404), conversationId may be a user/recipient ID!
@@ -202,7 +201,7 @@ class ChatViewModel @Inject constructor(
                                 _uiState.update {
                                     it.copy(
                                         isLoading = false,
-                                        errorMessage = "Conversation not found."
+                                        errorMessage = createRes.exception.message ?: "Conversation not found."
                                     )
                                 }
                             }
@@ -1174,6 +1173,7 @@ class ChatViewModel @Inject constructor(
         val conv = _uiState.value.conversation
         val convId = _uiState.value.conversationId
         if (convId <= 0L || _uiState.value.isSaved) return
+        val otherUserId = conv?.otherUser?.id ?: (if (conv?.type == "direct") convId else null)
         val callType = when {
             conv?.isGroup == true && isVideo -> CallType.GROUP_VIDEO
             conv?.isGroup == true && !isVideo -> CallType.GROUP_AUDIO
@@ -1184,7 +1184,7 @@ class ChatViewModel @Inject constructor(
             _effects.emit(
                 ChatEffect.StartCall(
                     conversationId = convId,
-                    receiverId = conv?.otherUser?.id,
+                    receiverId = otherUserId,
                     receiverIds = emptyList(),
                     callType = callType
                 )

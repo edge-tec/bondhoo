@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Services\Contracts\MessengerServiceInterface;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * কনভার্সন কন্ট্রোলার:
@@ -76,24 +79,39 @@ class ConversationController extends Controller
             return $this->errorResponse('At least one participant is required to create a group conversation.', 422);
         }
 
-        if ($type === Conversation::TYPE_SAVED || ($type === Conversation::TYPE_DIRECT && (int) ($validated['recipient_id'] ?? 0) === $user->id)) {
-            $conversation = $this->messengerService->getOrCreateSavedConversation($user);
-        } elseif ($type === Conversation::TYPE_DIRECT) {
-            $recipientId = (int) ($validated['recipient_id'] ?? 0);
-            $conversation = $this->messengerService->getOrCreateDirectConversation($user, $recipientId);
-        } else {
-            $title = $validated['title'];
-            $participantIds = $validated['participant_ids'] ?? [];
-            $description = $validated['description'] ?? null;
-            $avatarUrl = $validated['avatar_url'] ?? null;
-            $conversation = $this->messengerService->createGroupConversation($user, $title, $participantIds, $description, $avatarUrl);
-        }
+        try {
+            if ($type === Conversation::TYPE_SAVED || ($type === Conversation::TYPE_DIRECT && (int) ($validated['recipient_id'] ?? 0) === $user->id)) {
+                $conversation = $this->messengerService->getOrCreateSavedConversation($user);
+            } elseif ($type === Conversation::TYPE_DIRECT) {
+                $recipientId = (int) ($validated['recipient_id'] ?? 0);
+                if ($recipientId <= 0) {
+                    return $this->errorResponse('A valid recipient ID is required for direct conversation.', 422);
+                }
+                $conversation = $this->messengerService->getOrCreateDirectConversation($user, $recipientId);
+            } else {
+                $title = $validated['title'];
+                $participantIds = $validated['participant_ids'] ?? [];
+                $description = $validated['description'] ?? null;
+                $avatarUrl = $validated['avatar_url'] ?? null;
+                $conversation = $this->messengerService->createGroupConversation($user, $title, $participantIds, $description, $avatarUrl);
+            }
 
-        return $this->successResponse(
-            data: $conversation->toResponseArray($user),
-            message: 'Conversation ready.',
-            statusCode: 201
-        );
+            return $this->successResponse(
+                data: $conversation->toResponseArray($user),
+                message: 'Conversation ready.',
+                statusCode: 201
+            );
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('User or conversation not found.', 404);
+        } catch (\Throwable $e) {
+            Log::error('Conversation create failed: '.$e->getMessage());
+
+            return $this->errorResponse($e->getMessage() ?: 'Failed to start conversation.', 500);
+        }
     }
 
     /**

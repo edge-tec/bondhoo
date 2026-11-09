@@ -4036,9 +4036,9 @@ data class NotificationPreferencesRequest(
 
 @Serializable
 data class MarketplaceCategoryDto(
-    val id: Long,
-    val name: String,
-    val slug: String,
+    val id: Long = 0,
+    val name: String = "",
+    val slug: String = "",
     val icon: String? = null,
     val display_order: Int? = null,
     val products_count: Int? = null,
@@ -4047,9 +4047,9 @@ data class MarketplaceCategoryDto(
 
 @Serializable
 data class MarketplaceSubcategoryDto(
-    val id: Long,
-    val name: String,
-    val slug: String,
+    val id: Long = 0,
+    val name: String = "",
+    val slug: String = "",
     val icon: String? = null,
     val products_count: Int? = null
 )

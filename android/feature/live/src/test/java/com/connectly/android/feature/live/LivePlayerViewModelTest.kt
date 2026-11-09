@@ -57,7 +57,14 @@ class LivePlayerViewModelTest {
             Result.Loading,
             Result.Success(sampleLiveStream)
         )
-        every { observeLiveCommentsUseCase(101L) } returns emptyFlow()
+        every { observeLiveCommentsUseCase(101L) } returns flowOf(
+            LiveComment(
+                id = 1L,
+                streamId = 101L,
+                user = User(id = 10L, name = "Rahat Khan", username = "rahat"),
+                comment = "Great session!"
+            )
+        )
 
         viewModel = LivePlayerViewModel(
             getActiveLiveStreamUseCase,

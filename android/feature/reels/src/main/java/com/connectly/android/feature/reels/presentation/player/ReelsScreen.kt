@@ -41,6 +41,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import com.connectly.android.core.designsystem.component.ConnectlyAvatar
@@ -262,7 +263,9 @@ private fun ReelPlayerItem(
     onFollowClick: () -> Unit
 ) {
     val context = LocalContext.current
-    var isPlaying by remember { mutableStateOf(true) }
+    var isActuallyPlaying by remember { mutableStateOf(false) }
+    var isBuffering by remember { mutableStateOf(true) }
+    var hasError by remember { mutableStateOf(false) }
 
     val resolvedVideoUrl = remember(reel.videoUrl) {
         resolveMediaUrl(reel.videoUrl) ?: reel.videoUrl
@@ -278,13 +281,34 @@ private fun ReelPlayerItem(
         }
     }
 
+    DisposableEffect(exoPlayer) {
+        val listener = object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                isActuallyPlaying = isPlaying
+            }
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                isBuffering = (playbackState == Player.STATE_BUFFERING)
+                if (playbackState == Player.STATE_READY) {
+                    hasError = false
+                }
+            }
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                hasError = true
+                isActuallyPlaying = false
+                isBuffering = false
+            }
+        }
+        exoPlayer.addListener(listener)
+        onDispose {
+            exoPlayer.removeListener(listener)
+        }
+    }
+
     DisposableEffect(isCurrentPage) {
         if (isCurrentPage) {
             exoPlayer.playWhenReady = true
-            isPlaying = true
         } else {
             exoPlayer.playWhenReady = false
-            isPlaying = false
         }
         onDispose {
             exoPlayer.pause()
@@ -320,10 +344,8 @@ private fun ReelPlayerItem(
                     onTap = {
                         if (exoPlayer.isPlaying) {
                             exoPlayer.pause()
-                            isPlaying = false
                         } else {
                             exoPlayer.play()
-                            isPlaying = true
                         }
                     }
                 )
@@ -335,18 +357,29 @@ private fun ReelPlayerItem(
                 PlayerView(ctx).apply {
                     player = exoPlayer
                     useController = false
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 }
             },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Fallback Poster thumbnail
-        if (!isPlaying && !reel.thumbnailUrl.isNullOrBlank()) {
+        // Poster thumbnail visible while buffering, paused, or before first frame renders
+        if ((!isActuallyPlaying || isBuffering || hasError) && !reel.thumbnailUrl.isNullOrBlank()) {
             AsyncImage(
-                model = reel.thumbnailUrl,
+                model = resolveMediaUrl(reel.thumbnailUrl) ?: reel.thumbnailUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        if (isBuffering && !hasError) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .size(40.dp)
+                    .align(Alignment.Center),
+                color = Color.White.copy(alpha = 0.85f),
+                strokeWidth = 3.dp
             )
         }
 

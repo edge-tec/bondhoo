@@ -28,6 +28,8 @@ fun WebRtcVideoRenderer(
                 setScalingType(scalingType)
                 setMirror(isMirror)
                 setEnableHardwareScaler(true)
+                setZOrderMediaOverlay(true)
+                videoTrack?.addSink(this)
             }
         },
         update = { renderer ->
