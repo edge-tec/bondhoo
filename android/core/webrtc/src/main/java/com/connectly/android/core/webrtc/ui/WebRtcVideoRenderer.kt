@@ -18,7 +18,8 @@ fun WebRtcVideoRenderer(
     eglBaseContext: EglBase.Context,
     modifier: Modifier = Modifier,
     isMirror: Boolean = false,
-    scalingType: RendererCommon.ScalingType = RendererCommon.ScalingType.SCALE_ASPECT_FILL
+    scalingType: RendererCommon.ScalingType = RendererCommon.ScalingType.SCALE_ASPECT_FILL,
+    mediaOverlay: Boolean = false
 ) {
     AndroidView(
         modifier = modifier,
@@ -28,7 +29,9 @@ fun WebRtcVideoRenderer(
                 setScalingType(scalingType)
                 setMirror(isMirror)
                 setEnableHardwareScaler(true)
-                setZOrderMediaOverlay(true)
+                if (mediaOverlay) {
+                    setZOrderMediaOverlay(true)
+                }
                 videoTrack?.let { track ->
                     track.addSink(this)
                     this.tag = track
@@ -53,4 +56,3 @@ fun WebRtcVideoRenderer(
         }
     )
 }
-

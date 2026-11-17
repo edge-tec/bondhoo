@@ -858,7 +858,8 @@ private fun ActiveVideoCallContent(
                         videoTrack = state.localVideoTrack,
                         eglBaseContext = state.eglBaseContext,
                         modifier = Modifier.fillMaxSize(),
-                        isMirror = state.isFrontCamera
+                        isMirror = state.isFrontCamera,
+                        mediaOverlay = true
                     )
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
