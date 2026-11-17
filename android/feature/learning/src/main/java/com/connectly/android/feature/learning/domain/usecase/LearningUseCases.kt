@@ -77,3 +77,38 @@ class GetMyCertificatesUseCase @Inject constructor(
     operator fun invoke(): Flow<Result<List<LearningCertificate>>> = repository.getMyCertificates()
 }
 
+class CreateCourseUseCase @Inject constructor(
+    private val repository: LearningRepository
+) {
+    operator fun invoke(
+        title: String,
+        description: String,
+        categoryId: Long? = null,
+        type: String = "free",
+        price: Double = 0.0,
+        discountedPrice: Double? = null,
+        level: String = "all_levels",
+        language: String = "bn",
+        thumbnailUrl: String? = null,
+        publish: Boolean = true
+    ): Flow<Result<LearningCourse>> = repository.createCourse(
+        title = title,
+        description = description,
+        categoryId = categoryId,
+        type = type,
+        price = price,
+        discountedPrice = discountedPrice,
+        level = level,
+        language = language,
+        thumbnailUrl = thumbnailUrl,
+        publish = publish
+    )
+}
+
+class GetInstructorCoursesUseCase @Inject constructor(
+    private val repository: LearningRepository
+) {
+    operator fun invoke(): Flow<Result<List<LearningCourse>>> = repository.getInstructorCourses()
+}
+
+

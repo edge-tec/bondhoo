@@ -20,8 +20,10 @@ import com.connectly.android.feature.learning.domain.repository.LearningReposito
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -365,6 +367,61 @@ class LearningRepositoryImpl @Inject constructor(
                 emit(Result.Success(certificates))
             } else {
                 emit(Result.Error(Exception("Failed to fetch certificates")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun createCourse(
+        title: String,
+        description: String,
+        categoryId: Long?,
+        type: String,
+        price: Double,
+        discountedPrice: Double?,
+        level: String,
+        language: String,
+        thumbnailUrl: String?,
+        publish: Boolean
+    ): Flow<Result<LearningCourse>> = flow {
+        emit(Result.Loading)
+        try {
+            val body = buildJsonObject {
+                put("title", title)
+                put("description", description)
+                categoryId?.let { put("category_id", it) }
+                put("type", type)
+                put("price", price)
+                discountedPrice?.let { put("discounted_price", it) }
+                put("level", level)
+                put("language", language)
+                thumbnailUrl?.takeIf { it.isNotBlank() }?.let { put("thumbnail_url", it) }
+                put("publish", publish)
+            }
+            val response = api.createLearningCourse(body)
+            if (response.isSuccessful && response.body() != null) {
+                val dto = response.body()!!.data
+                emit(Result.Success(dto.toDomain()))
+            } else {
+                val msg = extractErrorMessage(response.errorBody()?.string(), response.body()?.message ?: "Failed to create course")
+                emit(Result.Error(Exception(msg)))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }
+
+    override fun getInstructorCourses(): Flow<Result<List<LearningCourse>>> = flow {
+        emit(Result.Loading)
+        try {
+            val response = api.getInstructorCourses()
+            if (response.isSuccessful && response.body() != null) {
+                val dtos = response.body()?.data ?: emptyList()
+                emit(Result.Success(dtos.map { it.toDomain() }))
+            } else {
+                val msg = extractErrorMessage(response.errorBody()?.string(), response.body()?.message ?: "Failed to load instructor courses")
+                emit(Result.Error(Exception(msg)))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))

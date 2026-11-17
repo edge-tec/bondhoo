@@ -1799,20 +1799,56 @@
     // Initialize on window load
     window.addEventListener('DOMContentLoaded', () => {
         initMediaHardware();
+
+        // Warn broadcaster if clicking any link while live is broadcasting
+        document.querySelectorAll('a').forEach(anchor => {
+            anchor.addEventListener('click', async (e) => {
+                if (isLiveBroadcasting) {
+                    if (anchor.target === '_blank') return;
+                    e.preventDefault();
+                    const confirmLeave = confirm('আপনার লাইভ সম্প্রচার চলছে! পেজ ত্যাগ করলে লাইভ সাথে সাথে শেষ হয়ে যাবে। আপনি কি লাইভ শেষ করে বের হতে চান?');
+                    if (confirmLeave) {
+                        try {
+                            await executeEndLive();
+                        } catch (err) {}
+                        window.location.href = anchor.href;
+                    }
+                }
+            });
+        });
     });
 
-    // Cleanup on beforeunload
-    window.addEventListener('beforeunload', () => {
+    // Cleanup and authoritative server stream termination on beforeunload
+    window.addEventListener('beforeunload', (e) => {
         if (animFrameVu) cancelAnimationFrame(animFrameVu);
         if (localCameraStream) localCameraStream.getTracks().forEach(t => t.stop());
         if (localScreenStream) localScreenStream.getTracks().forEach(t => t.stop());
 
         if (isLiveBroadcasting) {
             try {
+                const token = (typeof currentToken !== 'undefined' && currentToken) ? currentToken : (localStorage.getItem('bondhoo_token') || localStorage.getItem('jugajug_token') || '');
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+                // Terminate live stream immediately via keepalive POST
+                fetch(`/api/v2/live/streams/${STREAM_ID}/end`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf,
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    },
+                    keepalive: true,
+                    body: JSON.stringify({ reason: 'broadcaster_exited' })
+                });
+
                 if (navigator.sendBeacon) {
-                    navigator.sendBeacon(`/api/v2/live/streams/${STREAM_ID}/leave`, new Blob([JSON.stringify({ session_id: 'broadcaster_' + CURRENT_USER_ID })], { type: 'application/json' }));
+                    navigator.sendBeacon(`/api/v2/live/streams/${STREAM_ID}/end`, new Blob([JSON.stringify({ reason: 'broadcaster_exited' })], { type: 'application/json' }));
                 }
-            } catch (e) {}
+            } catch (err) {}
+
+            e.preventDefault();
+            e.returnValue = 'আপনার লাইভ এখনও চলছে। ত্যাগ করলে লাইভ সাথে সাথে শেষ হয়ে যাবে।';
+            return e.returnValue;
         }
     });
 </script>

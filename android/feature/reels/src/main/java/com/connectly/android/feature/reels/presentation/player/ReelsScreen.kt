@@ -360,6 +360,11 @@ private fun ReelPlayerItem(
                     resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 }
             },
+            update = { view ->
+                if (view.player != exoPlayer) {
+                    view.player = exoPlayer
+                }
+            },
             modifier = Modifier.fillMaxSize()
         )
 

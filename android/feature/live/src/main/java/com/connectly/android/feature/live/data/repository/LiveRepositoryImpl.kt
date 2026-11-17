@@ -58,6 +58,9 @@ class LiveRepositoryImpl @Inject constructor(
             val response = api.startLiveStream(CreateLiveStreamRequest(title = title, description = description))
             if (response.isSuccessful && response.body()?.data != null) {
                 val dto = response.body()!!.data
+                try {
+                    api.beginLiveBroadcast(dto.id)
+                } catch (_: Exception) {}
                 val streamerUser = dto.streamer ?: dto.user
                 emit(
                     Result.Success(

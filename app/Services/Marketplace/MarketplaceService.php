@@ -22,6 +22,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 
 class MarketplaceService
@@ -68,10 +69,14 @@ class MarketplaceService
      */
     public function getFeaturedListings(?User $viewer = null, int $limit = 8): array
     {
-        $products = MarketplaceProduct::with(['seller.profile', 'category'])
-            ->where('status', MarketplaceProduct::STATUS_ACTIVE)
-            ->where(fn ($q) => $q->whereNull('stock')->orWhere('stock', '>', 0))
-            ->orderByDesc('is_boosted')
+        $query = MarketplaceProduct::with(['seller.profile', 'category'])
+            ->where('status', MarketplaceProduct::STATUS_ACTIVE);
+
+        if (Schema::hasColumn('marketplace_products', 'stock')) {
+            $query->where(fn ($q) => $q->whereNull('stock')->orWhere('stock', '>', 0));
+        }
+
+        $products = $query->orderByDesc('is_boosted')
             ->orderByDesc('views_count')
             ->latest('id')
             ->take($limit)
@@ -88,8 +93,11 @@ class MarketplaceService
     public function getLatestListings(?User $viewer = null, array $filters = [], int $perPage = 16): LengthAwarePaginator
     {
         $query = MarketplaceProduct::with(['seller.profile', 'category'])
-            ->where('status', MarketplaceProduct::STATUS_ACTIVE)
-            ->where(fn ($q) => $q->whereNull('stock')->orWhere('stock', '>', 0));
+            ->where('status', MarketplaceProduct::STATUS_ACTIVE);
+
+        if (Schema::hasColumn('marketplace_products', 'stock')) {
+            $query->where(fn ($q) => $q->whereNull('stock')->orWhere('stock', '>', 0));
+        }
 
         // Filter by category slug or ID
         if (! empty($filters['category']) && strtolower(trim($filters['category'])) !== 'all') {

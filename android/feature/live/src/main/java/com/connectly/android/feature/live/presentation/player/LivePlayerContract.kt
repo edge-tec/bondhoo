@@ -16,7 +16,8 @@ data class LivePlayerState(
     val isFrontCamera: Boolean = true,
     val isMuted: Boolean = false,
     val isCameraOff: Boolean = false,
-    val streamEnded: Boolean = false
+    val streamEnded: Boolean = false,
+    val durationSeconds: Long = 0L
 )
 
 sealed interface LivePlayerIntent {

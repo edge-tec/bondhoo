@@ -8,8 +8,10 @@ import com.connectly.android.feature.learning.domain.model.LearningCourse
 import com.connectly.android.feature.learning.domain.model.LearningEnrollment
 import com.connectly.android.feature.learning.domain.model.LearningLesson
 import com.connectly.android.feature.learning.domain.model.LearningSection
+import com.connectly.android.feature.learning.domain.usecase.CreateCourseUseCase
 import com.connectly.android.feature.learning.domain.usecase.EnrollCourseUseCase
 import com.connectly.android.feature.learning.domain.usecase.GetCurriculumUseCase
+import com.connectly.android.feature.learning.domain.usecase.GetInstructorCoursesUseCase
 import com.connectly.android.feature.learning.domain.usecase.GetLearningCategoriesUseCase
 import com.connectly.android.feature.learning.domain.usecase.GetLearningCoursesUseCase
 import com.connectly.android.feature.learning.domain.usecase.GetMyCertificatesUseCase
@@ -49,6 +51,8 @@ class LearningViewModelTest {
     private val getMyCertificatesUseCase: GetMyCertificatesUseCase = mockk()
     private val getCurriculumUseCase: GetCurriculumUseCase = mockk(relaxed = true)
     private val syncLessonProgressUseCase: SyncLessonProgressUseCase = mockk(relaxed = true)
+    private val createCourseUseCase: CreateCourseUseCase = mockk(relaxed = true)
+    private val getInstructorCoursesUseCase: GetInstructorCoursesUseCase = mockk(relaxed = true)
 
     private lateinit var viewModel: LearningViewModel
 
@@ -158,7 +162,9 @@ class LearningViewModelTest {
             getMyLearningUseCase = getMyLearningUseCase,
             getMyCertificatesUseCase = getMyCertificatesUseCase,
             getCurriculumUseCase = getCurriculumUseCase,
-            syncLessonProgressUseCase = syncLessonProgressUseCase
+            syncLessonProgressUseCase = syncLessonProgressUseCase,
+            createCourseUseCase = createCourseUseCase,
+            getInstructorCoursesUseCase = getInstructorCoursesUseCase
         )
     }
 
@@ -315,5 +321,40 @@ class LearningViewModelTest {
 
         assertTrue(viewModel.uiState.value.selectedCourseCurriculum[0].lessons[0].isCompleted)
         verify(exactly = 1) { syncLessonProgressUseCase(55L, 1800, true) }
+    }
+
+    @Test
+    fun `create course updates instructorCourses and marks dialog closed`() = runTest {
+        val newCourse = sampleCourse.copy(id = 999L, title = "New Android Course", type = "paid", price = 1500.0)
+        every {
+            createCourseUseCase(
+                title = "New Android Course",
+                description = any(),
+                categoryId = any(),
+                type = "paid",
+                price = 1500.0,
+                discountedPrice = any(),
+                level = any(),
+                language = any(),
+                thumbnailUrl = any(),
+                publish = true
+            )
+        } returns flowOf(Result.Success(newCourse))
+
+        viewModel.handleIntent(
+            LearningIntent.CreateCourse(
+                title = "New Android Course",
+                description = "Deep dive into Android development",
+                type = "paid",
+                price = 1500.0,
+                publish = true
+            )
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.instructorCourses.any { it.id == 999L })
+        assertFalse(state.isCreatingCourse)
+        assertFalse(state.showCreateCourseDialog)
     }
 }

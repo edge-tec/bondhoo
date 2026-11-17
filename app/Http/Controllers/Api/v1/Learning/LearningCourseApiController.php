@@ -115,7 +115,11 @@ class LearningCourseApiController extends Controller
         $user = $request->user();
         $course = $this->courseService->createCourse($user, $request->validated());
 
-        return $this->successResponse($course, 'Course created successfully as draft.', 201);
+        if ($request->boolean('publish', true)) {
+            $course = $this->courseService->publishCourse($course, true);
+        }
+
+        return $this->successResponse($course, 'Course created successfully.', 201);
     }
 
     /**

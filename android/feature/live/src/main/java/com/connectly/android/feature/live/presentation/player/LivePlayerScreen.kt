@@ -2,6 +2,7 @@ package com.connectly.android.feature.live.presentation.player
 
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
@@ -70,6 +71,15 @@ fun LivePlayerScreen(
 
     LaunchedEffect(state.streamEnded) {
         if (state.streamEnded) {
+            onNavigateBack()
+        }
+    }
+
+    BackHandler {
+        if (state.isBroadcaster && !state.streamEnded) {
+            showEndStreamConfirmDialog = true
+        } else {
+            viewModel.handleIntent(LivePlayerIntent.EndStream)
             onNavigateBack()
         }
     }
@@ -165,18 +175,33 @@ fun LivePlayerScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Red LIVE Badge
+                // Red LIVE Badge + Duration Timer
                 Surface(
                     color = Color(0xFFEF4444),
                     shape = RoundedCornerShape(6.dp)
                 ) {
-                    Text(
-                        text = "LIVE",
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "LIVE",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        if (state.durationSeconds > 0) {
+                            val mins = state.durationSeconds / 60
+                            val secs = state.durationSeconds % 60
+                            Text(
+                                text = String.format("%02d:%02d", mins, secs),
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
 
                 // Viewer Count Pill: 👁 4.8K
@@ -240,9 +265,10 @@ fun LivePlayerScreen(
 
                 IconButton(
                     onClick = {
-                        if (state.isBroadcaster) {
+                        if (state.isBroadcaster && !state.streamEnded) {
                             showEndStreamConfirmDialog = true
                         } else {
+                            viewModel.handleIntent(LivePlayerIntent.EndStream)
                             onNavigateBack()
                         }
                     },

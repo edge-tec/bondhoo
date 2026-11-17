@@ -29,19 +29,26 @@ fun WebRtcVideoRenderer(
                 setMirror(isMirror)
                 setEnableHardwareScaler(true)
                 setZOrderMediaOverlay(true)
-                videoTrack?.addSink(this)
+                videoTrack?.let { track ->
+                    track.addSink(this)
+                    this.tag = track
+                }
             }
         },
         update = { renderer ->
             renderer.setMirror(isMirror)
             renderer.setScalingType(scalingType)
-            videoTrack?.let { track ->
-                track.removeSink(renderer)
-                track.addSink(renderer)
+            val attachedTrack = renderer.tag as? VideoTrack
+            if (attachedTrack != videoTrack) {
+                attachedTrack?.removeSink(renderer)
+                videoTrack?.addSink(renderer)
+                renderer.tag = videoTrack
             }
         },
         onRelease = { renderer ->
-            videoTrack?.removeSink(renderer)
+            val attachedTrack = renderer.tag as? VideoTrack ?: videoTrack
+            attachedTrack?.removeSink(renderer)
+            renderer.tag = null
             renderer.release()
         }
     )

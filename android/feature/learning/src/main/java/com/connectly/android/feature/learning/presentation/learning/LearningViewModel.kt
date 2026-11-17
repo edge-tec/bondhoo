@@ -25,7 +25,9 @@ class LearningViewModel @Inject constructor(
     private val getMyLearningUseCase: GetMyLearningUseCase,
     private val getMyCertificatesUseCase: GetMyCertificatesUseCase,
     private val getCurriculumUseCase: GetCurriculumUseCase,
-    private val syncLessonProgressUseCase: SyncLessonProgressUseCase
+    private val syncLessonProgressUseCase: SyncLessonProgressUseCase,
+    private val createCourseUseCase: CreateCourseUseCase,
+    private val getInstructorCoursesUseCase: GetInstructorCoursesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LearningUiState())
@@ -48,8 +50,23 @@ class LearningViewModel @Inject constructor(
                     LearningTab.DISCOVER -> loadCourses()
                     LearningTab.MY_LEARNING -> loadMyLearning()
                     LearningTab.CERTIFICATES -> loadCertificates()
+                    LearningTab.MY_COURSES -> loadInstructorCourses()
                 }
             }
+            is LearningIntent.CreateCourse -> createCourse(
+                title = intent.title,
+                description = intent.description,
+                categoryId = intent.categoryId,
+                type = intent.type,
+                price = intent.price,
+                discountedPrice = intent.discountedPrice,
+                level = intent.level,
+                language = intent.language,
+                thumbnailUrl = intent.thumbnailUrl,
+                publish = intent.publish
+            )
+            LearningIntent.LoadInstructorCourses -> loadInstructorCourses()
+            is LearningIntent.ToggleCreateCourseDialog -> _uiState.update { it.copy(showCreateCourseDialog = intent.show) }
             is LearningIntent.SelectCategory -> {
                 _uiState.update { it.copy(selectedCategoryId = intent.categoryId) }
                 loadCourses()
@@ -249,6 +266,72 @@ class LearningViewModel @Inject constructor(
                             )
                         }
                         _effect.emit(LearningUiEffect.ShowSnackbar(msg))
+                    }
+                    Result.Loading -> Unit
+                }
+            }
+        }
+    }
+
+    fun loadInstructorCourses() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            getInstructorCoursesUseCase().collect { res ->
+                when (res) {
+                    is Result.Success -> _uiState.update { it.copy(isLoading = false, instructorCourses = res.data) }
+                    is Result.Error -> _uiState.update { it.copy(isLoading = false, errorMessage = res.exception.message) }
+                    Result.Loading -> Unit
+                }
+            }
+        }
+    }
+
+    private fun createCourse(
+        title: String,
+        description: String,
+        categoryId: Long?,
+        type: String,
+        price: Double,
+        discountedPrice: Double?,
+        level: String,
+        language: String,
+        thumbnailUrl: String?,
+        publish: Boolean
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCreatingCourse = true, errorMessage = null) }
+            createCourseUseCase(
+                title = title,
+                description = description,
+                categoryId = categoryId,
+                type = type,
+                price = price,
+                discountedPrice = discountedPrice,
+                level = level,
+                language = language,
+                thumbnailUrl = thumbnailUrl,
+                publish = publish
+            ).collect { res ->
+                when (res) {
+                    is Result.Success -> {
+                        val created = res.data
+                        _uiState.update {
+                            it.copy(
+                                isCreatingCourse = false,
+                                showCreateCourseDialog = false,
+                                instructorCourses = listOf(created) + it.instructorCourses.filterNot { c -> c.id == created.id },
+                                courses = listOf(created) + it.courses.filterNot { c -> c.id == created.id },
+                                createCourseSuccessMessage = "কোর্স সফলভাবে যোগ ও প্রকাশ করা হয়েছে!"
+                            )
+                        }
+                        _effect.emit(LearningUiEffect.ShowSnackbar("কোর্সটি সফলভাবে তৈরি ও বিক্রির জন্য উন্মুক্ত করা হয়েছে! 🎉"))
+                        loadCourses()
+                        loadInstructorCourses()
+                    }
+                    is Result.Error -> {
+                        val err = res.exception.message ?: "কোর্স তৈরি ব্যর্থ হয়েছে।"
+                        _uiState.update { it.copy(isCreatingCourse = false, errorMessage = err) }
+                        _effect.emit(LearningUiEffect.ShowSnackbar(err))
                     }
                     Result.Loading -> Unit
                 }

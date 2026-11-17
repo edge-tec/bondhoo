@@ -55,3 +55,19 @@ class ObserveLiveCommentsUseCase @Inject constructor(
     }
 }
 
+class StartLiveStreamUseCase @Inject constructor(
+    private val repository: LiveRepository
+) {
+    operator fun invoke(title: String, description: String? = null): Flow<Result<LiveStream>> {
+        return repository.startLiveStream(title, description)
+    }
+}
+
+class EndLiveStreamUseCase @Inject constructor(
+    private val repository: LiveRepository
+) {
+    operator fun invoke(streamId: Long): Flow<Result<Unit>> {
+        return repository.endLiveStream(streamId)
+    }
+}
+

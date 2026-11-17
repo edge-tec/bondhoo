@@ -1,30 +1,40 @@
 package com.connectly.android.core.designsystem.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.OndemandVideo
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.OndemandVideo
+import androidx.compose.material.icons.outlined.PeopleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.connectly.android.core.designsystem.theme.ConnectlyBlue
 
 enum class BottomBarDestination(
     val title: String,
-    val icon: ImageVector
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector
 ) {
-    HOME("Home", Icons.Default.Home),
-    FRIENDS("Friends", Icons.Default.People),
-    CREATE("Create", Icons.Default.Add),
-    REELS("Videos", Icons.Default.PlayCircle),
-    MESSENGER("Messenger", Icons.Default.Chat),
-    MENU("Menu", Icons.Default.Menu)
+    HOME("Home", Icons.Filled.Home, Icons.Outlined.Home),
+    FRIENDS("Friends", Icons.Filled.People, Icons.Outlined.PeopleOutline),
+    REELS("Videos", Icons.Filled.OndemandVideo, Icons.Outlined.OndemandVideo),
+    MESSENGER("Messenger", Icons.AutoMirrored.Filled.Chat, Icons.AutoMirrored.Outlined.Chat),
+    MENU("Menu", Icons.Filled.Menu, Icons.Outlined.Menu);
+
+    val icon: ImageVector get() = selectedIcon
 }
 
 @Composable
@@ -46,10 +56,14 @@ fun ConnectlyBottomBar(
     onDestinationClick: (BottomBarDestination) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val unselectedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 8.dp,
+        tonalElevation = 6.dp,
         modifier = modifier
+            .fillMaxWidth()
+            .height(66.dp)
     ) {
         BottomBarDestination.entries.forEach { destination ->
             val isSelected = destination == selectedDestination
@@ -58,43 +72,31 @@ fun ConnectlyBottomBar(
                 selected = isSelected,
                 onClick = { onDestinationClick(destination) },
                 icon = {
-                    if (destination == BottomBarDestination.CREATE) {
-                        Surface(
-                            shape = CircleShape,
-                            color = ConnectlyBlue,
-                            modifier = Modifier.size(34.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = destination.title,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        }
-                    } else {
-                        Icon(
-                            imageVector = destination.icon,
-                            contentDescription = destination.title
-                        )
-                    }
+                    Icon(
+                        imageVector = if (isSelected) destination.selectedIcon else destination.unselectedIcon,
+                        contentDescription = destination.title,
+                        modifier = Modifier.size(24.dp)
+                    )
                 },
                 label = {
                     Text(
                         text = destination.title,
-                        style = MaterialTheme.typography.labelSmall
+                        fontSize = 11.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
+                alwaysShowLabel = true,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = ConnectlyBlue,
                     selectedTextColor = ConnectlyBlue,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    unselectedIconColor = unselectedColor,
+                    unselectedTextColor = unselectedColor,
                     indicatorColor = Color.Transparent
                 )
             )
         }
     }
 }
-

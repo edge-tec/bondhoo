@@ -4896,7 +4896,14 @@
 
         @php
             $sessionUser = Auth::guard('web')->user();
-            $serverToken = $sessionUser ? $sessionUser->createToken('bondhoo_web')->plainTextToken : null;
+            $serverToken = null;
+            if ($sessionUser) {
+                try {
+                    $serverToken = $sessionUser->createToken('bondhoo_web')->plainTextToken;
+                } catch (\Throwable $e) {
+                    $serverToken = null;
+                }
+            }
         @endphp
         const __injectedServerToken = @json($serverToken);
         const __injectedServerUser = @json($sessionUser);

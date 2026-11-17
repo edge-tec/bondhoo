@@ -270,11 +270,7 @@ class MainActivity : ComponentActivity() {
                                 ConnectlyBottomBar(
                                     selectedDestination = selectedTab,
                                     onDestinationClick = { destination ->
-                                        if (destination == BottomBarDestination.CREATE) {
-                                            showCreateSheet = true
-                                        } else {
-                                            selectedTab = destination
-                                        }
+                                        selectedTab = destination
                                     }
                                 )
                             }

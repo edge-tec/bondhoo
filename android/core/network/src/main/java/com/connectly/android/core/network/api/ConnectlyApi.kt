@@ -1271,6 +1271,12 @@ interface ConnectlyApi {
     @POST("v1/live/streams")
     suspend fun startLiveStream(@Body body: CreateLiveStreamRequest): Response<ApiResponse<LiveStreamDto>>
 
+    @POST("v1/live/streams/{id}/start")
+    suspend fun beginLiveBroadcast(@Path("id") streamId: Long): Response<ApiResponse<LiveStreamDto>>
+
+    @POST("v1/live/streams/{id}/heartbeat")
+    suspend fun sendLiveHeartbeat(@Path("id") streamId: Long): Response<ApiResponse<Unit>>
+
     @GET("v1/live/streams/{id}")
     suspend fun getLiveStreamDetails(@Path("id") streamId: Long): Response<ApiResponse<LiveStreamDto>>
 
@@ -1588,6 +1594,14 @@ interface ConnectlyApi {
     @POST("v1/learning/courses")
     suspend fun createLearningCourse(
         @Body body: kotlinx.serialization.json.JsonObject
+    ): Response<ApiResponse<LearningCourseDto>>
+
+    @GET("v1/learning/instructor/courses")
+    suspend fun getInstructorCourses(): Response<ApiResponse<List<LearningCourseDto>>>
+
+    @POST("v1/learning/courses/{id}/publish")
+    suspend fun publishLearningCourse(
+        @Path("id") courseId: Long
     ): Response<ApiResponse<LearningCourseDto>>
 
     @GET("v1/learning/courses/{id}/curriculum")

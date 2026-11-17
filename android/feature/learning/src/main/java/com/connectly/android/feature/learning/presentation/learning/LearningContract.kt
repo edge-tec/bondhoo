@@ -9,7 +9,8 @@ import com.connectly.android.feature.learning.domain.model.LearningSection
 enum class LearningTab {
     DISCOVER,
     MY_LEARNING,
-    CERTIFICATES
+    CERTIFICATES,
+    MY_COURSES
 }
 
 data class LearningUiState(
@@ -22,6 +23,10 @@ data class LearningUiState(
     val courses: List<LearningCourse> = emptyList(),
     val myLearning: List<LearningEnrollment> = emptyList(),
     val certificates: List<LearningCertificate> = emptyList(),
+    val instructorCourses: List<LearningCourse> = emptyList(),
+    val isCreatingCourse: Boolean = false,
+    val showCreateCourseDialog: Boolean = false,
+    val createCourseSuccessMessage: String? = null,
     val selectedCourseCurriculum: List<LearningSection> = emptyList(),
     val isLoadingCurriculum: Boolean = false,
     val enrollingCourseIds: Set<Long> = emptySet(),
@@ -33,6 +38,7 @@ data class LearningUiState(
 ) {
     val inProgressCount: Int get() = myLearning.count { !it.isCompleted }
     val completedCount: Int get() = myLearning.count { it.isCompleted }
+    val instructorCoursesCount: Int get() = instructorCourses.size
 }
 
 sealed interface LearningIntent {
@@ -44,6 +50,20 @@ sealed interface LearningIntent {
     data class EnrollCourse(val courseId: Long, val couponCode: String? = null) : LearningIntent
     data class LoadCurriculum(val courseId: Long) : LearningIntent
     data class CompleteLesson(val lessonId: Long, val courseId: Long) : LearningIntent
+    data class CreateCourse(
+        val title: String,
+        val description: String,
+        val categoryId: Long? = null,
+        val type: String = "free",
+        val price: Double = 0.0,
+        val discountedPrice: Double? = null,
+        val level: String = "all_levels",
+        val language: String = "bn",
+        val thumbnailUrl: String? = null,
+        val publish: Boolean = true
+    ) : LearningIntent
+    data object LoadInstructorCourses : LearningIntent
+    data class ToggleCreateCourseDialog(val show: Boolean) : LearningIntent
     data object Refresh : LearningIntent
     data object ClearMessage : LearningIntent
     data object ClearEnrollError : LearningIntent

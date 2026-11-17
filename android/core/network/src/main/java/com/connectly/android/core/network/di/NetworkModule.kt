@@ -33,11 +33,9 @@ object NetworkModule {
     fun resolveMediaUrl(url: String?): String? {
         if (url.isNullOrBlank()) return null
         val targetHost = PROD_HOST
-        val sanitized = url.replace("localhost:8000", targetHost)
-            .replace("127.0.0.1:8000", targetHost)
-            .replace("10.0.2.2:8000", targetHost)
-            .replace("192.168.0.184:8000", targetHost)
-            .replace("http://bondhoo.com", "https://bondhoo.com")
+        var sanitized = url.trim()
+        sanitized = sanitized.replace(Regex("https?://(localhost|127\\.0\\.0\\.1|10\\.0\\.2\\.2|192\\.168\\.\\d+\\.\\d+)(:\\d+)?"), "https://$targetHost")
+            .replace("http://$targetHost", "https://$targetHost")
         return when {
             sanitized.startsWith("https://") -> sanitized
             sanitized.startsWith("http://") -> sanitized.replace("http://", "https://")

@@ -38,5 +38,20 @@ interface LearningRepository {
     fun submitQuiz(quizId: Long, answers: Map<Long, Any>): Flow<Result<LearningQuizResult>>
 
     fun getMyCertificates(): Flow<Result<List<LearningCertificate>>>
+
+    fun createCourse(
+        title: String,
+        description: String,
+        categoryId: Long? = null,
+        type: String = "free",
+        price: Double = 0.0,
+        discountedPrice: Double? = null,
+        level: String = "all_levels",
+        language: String = "bn",
+        thumbnailUrl: String? = null,
+        publish: Boolean = true
+    ): Flow<Result<LearningCourse>>
+
+    fun getInstructorCourses(): Flow<Result<List<LearningCourse>>>
 }
 

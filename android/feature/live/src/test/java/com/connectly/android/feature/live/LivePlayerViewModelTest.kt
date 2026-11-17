@@ -10,12 +10,12 @@ import com.connectly.android.core.webrtc.engine.WebRtcEngine
 import com.connectly.android.feature.live.domain.usecase.*
 import com.connectly.android.feature.live.presentation.player.LivePlayerIntent
 import com.connectly.android.feature.live.presentation.player.LivePlayerViewModel
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -26,13 +26,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.webrtc.EglBase
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LivePlayerViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val getActiveLiveStreamUseCase: GetActiveLiveStreamUseCase = mockk()
+    private val startLiveStreamUseCase: StartLiveStreamUseCase = mockk()
+    private val endLiveStreamUseCase: EndLiveStreamUseCase = mockk()
     private val sendLiveCommentUseCase: SendLiveCommentUseCase = mockk()
     private val sendLiveReactionUseCase: SendLiveReactionUseCase = mockk()
     private val observeLiveCommentsUseCase: ObserveLiveCommentsUseCase = mockk()
@@ -49,6 +50,15 @@ class LivePlayerViewModelTest {
         formattedViewerCount = "4.8K"
     )
 
+    private val sampleBroadcastStream = LiveStream(
+        id = 205L,
+        title = "Bondhoo Live Studio Broadcast",
+        streamer = User(id = 1L, name = "You", username = "you"),
+        viewerCount = 1,
+        formattedViewerCount = "1",
+        isLive = true
+    )
+
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
@@ -57,7 +67,11 @@ class LivePlayerViewModelTest {
             Result.Loading,
             Result.Success(sampleLiveStream)
         )
-        every { observeLiveCommentsUseCase(101L) } returns flowOf(
+        every { startLiveStreamUseCase("Bondhoo Live Studio Broadcast") } returns flowOf(
+            Result.Loading,
+            Result.Success(sampleBroadcastStream)
+        )
+        every { observeLiveCommentsUseCase(any()) } returns flowOf(
             LiveComment(
                 id = 1L,
                 streamId = 101L,
@@ -68,6 +82,8 @@ class LivePlayerViewModelTest {
 
         viewModel = LivePlayerViewModel(
             getActiveLiveStreamUseCase,
+            startLiveStreamUseCase,
+            endLiveStreamUseCase,
             sendLiveCommentUseCase,
             sendLiveReactionUseCase,
             observeLiveCommentsUseCase,
@@ -82,7 +98,7 @@ class LivePlayerViewModelTest {
     }
 
     @Test
-    fun `when loadStream dispatched, loads stream details and retains initial comments`() = runTest {
+    fun `when loadStream dispatched for viewer, loads stream details and retains comments`() = runTest {
         viewModel.handleIntent(LivePlayerIntent.LoadStream(101L))
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -91,6 +107,33 @@ class LivePlayerViewModelTest {
             assertEquals("4.8K", state.liveStream?.formattedViewerCount)
             assertEquals("Sadia Islam", state.liveStream?.streamer?.name)
             assertTrue(state.comments.any { it.user.name == "Rahat Khan" })
+        }
+    }
+
+    @Test
+    fun `when loadStream dispatched for broadcaster, creates live stream and sets broadcaster flag`() = runTest {
+        viewModel.handleIntent(LivePlayerIntent.LoadStream(1L))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertTrue(state.isBroadcaster)
+            assertEquals(205L, state.liveStream?.id)
+            assertEquals("Bondhoo Live Studio Broadcast", state.liveStream?.title)
+        }
+    }
+
+    @Test
+    fun `when endStream dispatched, stops media and marks streamEnded`() = runTest {
+        viewModel.handleIntent(LivePlayerIntent.LoadStream(1L))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.handleIntent(LivePlayerIntent.EndStream)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertTrue(state.streamEnded)
         }
     }
 
@@ -119,4 +162,3 @@ class LivePlayerViewModelTest {
         }
     }
 }
-

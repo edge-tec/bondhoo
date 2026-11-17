@@ -25,6 +25,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
@@ -156,6 +158,23 @@ fun LearningHomeScreen(
                         )
                     }
                 },
+                actions = {
+                    Button(
+                        onClick = { viewModel.handleIntent(LearningIntent.ToggleCreateCourseDialog(true)) },
+                        colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue),
+                        shape = RoundedCornerShape(20.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("কোর্স যোগ করুন", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -245,6 +264,17 @@ fun LearningHomeScreen(
                         )
                     }
                 )
+                Tab(
+                    selected = state.activeTab == LearningTab.MY_COURSES,
+                    onClick = { viewModel.handleIntent(LearningIntent.SelectTab(LearningTab.MY_COURSES)) },
+                    text = {
+                        Text(
+                            text = if (state.instructorCourses.isNotEmpty()) "আমার কোর্স (${state.instructorCourses.size})" else "আমার কোর্স",
+                            fontWeight = if (state.activeTab == LearningTab.MY_COURSES) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+                    }
+                )
             }
 
             if (state.isLoading && state.courses.isEmpty() && state.myLearning.isEmpty()) {
@@ -296,6 +326,12 @@ fun LearningHomeScreen(
                         },
                         onExploreCourses = {
                             viewModel.handleIntent(LearningIntent.SelectTab(LearningTab.DISCOVER))
+                        }
+                    )
+                    LearningTab.MY_COURSES -> MyCoursesTabContent(
+                        state = state,
+                        onAddCourseClick = {
+                            viewModel.handleIntent(LearningIntent.ToggleCreateCourseDialog(true))
                         }
                     )
                 }
@@ -362,6 +398,31 @@ fun LearningHomeScreen(
             onCopyLink = {
                 clipboardManager.setText(AnnotatedString("https://bondhoo.com/verify/cert/${cert.certificateCode}"))
                 Toast.makeText(context, "Credential verification link copied! 📋", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    // 4. Create & Sell Course Modal Dialog
+    if (state.showCreateCourseDialog) {
+        CreateCourseDialog(
+            categories = state.categories,
+            isCreating = state.isCreatingCourse,
+            onDismiss = { viewModel.handleIntent(LearningIntent.ToggleCreateCourseDialog(false)) },
+            onSubmit = { title, description, categoryId, type, price, discountedPrice, level, language, thumbnailUrl, publish ->
+                viewModel.handleIntent(
+                    LearningIntent.CreateCourse(
+                        title = title,
+                        description = description,
+                        categoryId = categoryId,
+                        type = type,
+                        price = price,
+                        discountedPrice = discountedPrice,
+                        level = level,
+                        language = language,
+                        thumbnailUrl = thumbnailUrl,
+                        publish = publish
+                    )
+                )
             }
         )
     }
@@ -1702,6 +1763,456 @@ fun CertificateViewerDialog(
                         Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Copy Verification Link", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// TAB 4: MY COURSES (INSTRUCTOR & SALES) CONTENT
+// -------------------------------------------------------------
+
+@Composable
+fun MyCoursesTabContent(
+    state: LearningUiState,
+    onAddCourseClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (state.instructorCourses.isEmpty()) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(ConnectlyBlue.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.School,
+                        contentDescription = null,
+                        tint = ConnectlyBlue,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "আপনার কোনো তৈরি করা কোর্স নেই",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "আপনার জ্ঞান ও অভিজ্ঞতা শেয়ার করে অনলাইন কোর্স তৈরি করুন এবং বন্ধু প্ল্যাটফর্মে বিক্রি শুরু করুন!",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Button(
+                    onClick = onAddCourseClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("কোর্স তৈরি ও বিক্রি করুন", fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    } else {
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "আমার কোর্স ও বিক্রয়",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "মোট কোর্স: ${state.instructorCourses.size} টি | মোট শিক্ষার্থী: ${state.instructorCourses.sumOf { it.enrollmentsCount }} জন",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Button(
+                            onClick = onAddCourseClick,
+                            colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("নতুন কোর্স", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+
+            items(state.instructorCourses, key = { it.id }) { course ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            if (!course.thumbnailUrl.isNullOrBlank()) {
+                                AsyncImage(
+                                    model = course.thumbnailUrl,
+                                    contentDescription = course.title,
+                                    modifier = Modifier
+                                        .size(72.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(72.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(ConnectlyBlue.copy(alpha = 0.1f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.School,
+                                        contentDescription = null,
+                                        tint = ConnectlyBlue,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = course.title,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = course.categoryName ?: "সাধারণ শিক্ষা",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    val price = course.discountedPrice ?: course.price
+                                    if (price > 0.0) {
+                                        Surface(
+                                            color = Color(0xFF10B981).copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "৳ ${price.toInt()} (বিক্রি হচ্ছে)",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF059669),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    } else {
+                                        Surface(
+                                            color = ConnectlyBlue.copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "বিনামূল্যে (Free)",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = ConnectlyBlue,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "${course.enrollmentsCount} শিক্ষার্থী",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color(0xFF10B981),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "মার্কেটপ্লেসে প্রকাশিত",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF10B981),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            Text(
+                                text = "লেভেল: ${course.level}",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// CREATE & SELL COURSE MODAL DIALOG
+// -------------------------------------------------------------
+
+@Composable
+fun CreateCourseDialog(
+    categories: List<com.connectly.android.feature.learning.domain.model.LearningCategory>,
+    isCreating: Boolean,
+    onDismiss: () -> Unit,
+    onSubmit: (
+        title: String,
+        description: String,
+        categoryId: Long?,
+        type: String,
+        price: Double,
+        discountedPrice: Double?,
+        level: String,
+        language: String,
+        thumbnailUrl: String?,
+        publish: Boolean
+    ) -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var selectedCategoryId by remember { mutableStateOf<Long?>(categories.firstOrNull()?.id) }
+    var isPaid by remember { mutableStateOf(false) }
+    var priceInput by remember { mutableStateOf("") }
+    var discountedPriceInput by remember { mutableStateOf("") }
+    var level by remember { mutableStateOf("all_levels") }
+    var thumbnailUrl by remember { mutableStateOf("") }
+    var publishImmediately by remember { mutableStateOf(true) }
+
+    Dialog(
+        onDismissRequest = { if (!isCreating) onDismiss() },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.94f)
+                .padding(vertical = 16.dp),
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(ConnectlyBlue.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.School, contentDescription = null, tint = ConnectlyBlue)
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "নতুন কোর্স তৈরি ও বিক্রি",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    IconButton(onClick = onDismiss, enabled = !isCreating) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("কোর্সের নাম / শিরোনাম *") },
+                    placeholder = { Text("যেমন: সম্পূর্ণ ওয়েব ডেভেলপমেন্ট ও ফ্রিল্যান্সিং") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("কোর্সের বিস্তারিত বিবরণ *") },
+                    placeholder = { Text("কোর্সে কী কী শেখানো হবে, শিক্ষার্থীদের জন্য কী সুবিধা রয়েছে...") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text("কোর্সের ধরন ও মূল্য:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    FilterChip(
+                        selected = !isPaid,
+                        onClick = { isPaid = false },
+                        label = { Text("বিনামূল্যে (Free)") },
+                        leadingIcon = if (!isPaid) { { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) } } else null
+                    )
+                    FilterChip(
+                        selected = isPaid,
+                        onClick = { isPaid = true },
+                        label = { Text("পেইড - বিক্রি করুন (Paid)") },
+                        leadingIcon = if (isPaid) { { Icon(Icons.Default.AttachMoney, contentDescription = null, modifier = Modifier.size(16.dp)) } } else null
+                    )
+                }
+
+                if (isPaid) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedTextField(
+                            value = priceInput,
+                            onValueChange = { priceInput = it.filter { ch -> ch.isDigit() || ch == '.' } },
+                            label = { Text("মূল্য (৳) *") },
+                            placeholder = { Text("৫০০") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = discountedPriceInput,
+                            onValueChange = { discountedPriceInput = it.filter { ch -> ch.isDigit() || ch == '.' } },
+                            label = { Text("ছাড়ের পর মূল্য (৳)") },
+                            placeholder = { Text("৩৫০") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text("শিক্ষার্থীদের লেভেল:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(6.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val levels = listOf(
+                        "all_levels" to "সকল লেভেল",
+                        "beginner" to "নতুনদের জন্য",
+                        "intermediate" to "মধ্যম লেভেল",
+                        "expert" to "প্রফেশনাল"
+                    )
+                    items(levels) { (key, label) ->
+                        FilterChip(
+                            selected = level == key,
+                            onClick = { level = key },
+                            label = { Text(label, fontSize = 12.sp) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = thumbnailUrl,
+                    onValueChange = { thumbnailUrl = it },
+                    label = { Text("কোর্স থাম্বনেইল ছবির লিঙ্ক (URL)") },
+                    placeholder = { Text("https://...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Button(
+                    onClick = {
+                        val parsedPrice = if (isPaid) (priceInput.toDoubleOrNull() ?: 0.0) else 0.0
+                        val parsedDiscount = if (isPaid) discountedPriceInput.toDoubleOrNull() else null
+                        onSubmit(
+                            title.trim(),
+                            description.trim(),
+                            selectedCategoryId,
+                            if (isPaid) "paid" else "free",
+                            parsedPrice,
+                            parsedDiscount,
+                            level,
+                            "bn",
+                            thumbnailUrl.trim().takeIf { it.isNotBlank() },
+                            publishImmediately
+                        )
+                    },
+                    enabled = title.isNotBlank() && description.isNotBlank() && !isCreating,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    if (isCreating) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("কোর্স তৈরি ও প্রকাশ হচ্ছে...")
+                    } else {
+                        Icon(Icons.Default.School, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("কোর্স প্রকাশ ও বিক্রি শুরু করুন", fontWeight = FontWeight.Bold)
                     }
                 }
             }

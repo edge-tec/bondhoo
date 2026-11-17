@@ -144,6 +144,8 @@ class ChatViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 conversationId = conversationId,
+                conversation = if (isNewConversation) null else it.conversation,
+                participantName = if (isNewConversation) "Loading..." else it.participantName,
                 isLoading = true,
                 errorMessage = null,
                 messages = if (isNewConversation) emptyList() else it.messages
@@ -159,7 +161,7 @@ class ChatViewModel @Inject constructor(
 
     fun silentSync() {
         val convId = _uiState.value.conversationId
-        if (convId <= 0L) return
+        if (convId <= 0L || _uiState.value.conversation == null) return
         loadMessages(convId, showLoading = false)
         loadConversationMetadata(convId, isNewConversation = false)
     }
