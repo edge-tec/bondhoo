@@ -82,6 +82,7 @@ import com.connectly.android.feature.jobs.navigation.jobsScreen
 import com.connectly.android.feature.jobs.navigation.navigateToJobs
 import com.connectly.android.feature.learning.navigation.learningScreen
 import com.connectly.android.feature.learning.navigation.navigateToLearning
+import com.connectly.android.feature.reels.navigation.navigateToCreateReel
 import com.connectly.android.feature.reels.navigation.reelsGraph
 import com.connectly.android.feature.reels.presentation.player.ReelsScreen
 import com.connectly.android.feature.stories.navigation.navigateToCreateStory
@@ -207,7 +208,7 @@ class MainActivity : ComponentActivity() {
 
                     reelsGraph(
                         navController = rootNavController,
-                        onNavigateToCreateReel = { rootNavController.navigateToCreateStory() }
+                        onNavigateToCreateReel = { rootNavController.navigateToCreateReel() }
                     )
 
                     messengerGraph(

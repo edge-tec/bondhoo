@@ -22,6 +22,10 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.File
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -67,7 +71,9 @@ class StoriesRepositoryImpl @Inject constructor(
                                     avatar = dto.user.resolvedAvatar
                                 ),
                                 mediaUrl = s.resolvedMediaUrl,
-                                mediaType = s.resolvedMediaType,
+                                mediaType = if (s.type == "text" && s.resolvedMediaUrl.isBlank()) "text" else s.resolvedMediaType,
+                                content = s.content,
+                                backgroundColor = s.background_color,
                                 durationSeconds = s.duration_seconds,
                                 isSeen = s.resolvedSeen,
                                 userReaction = s.resolvedReaction,
@@ -140,27 +146,62 @@ class StoriesRepositoryImpl @Inject constructor(
         type: String,
         content: String?,
         privacy: String,
-        mediaFile: File?
+        mediaFile: File?,
+        backgroundColor: String?,
+        fontFamily: String?
     ): Flow<Result<Story>> = flow {
         emit(Result.Loading)
         try {
             var mediaId: Long? = null
             var mediaUrl: String? = null
 
-            // If media file is provided (Photo or Video), upload via chunked resumable uploader
+            // If media file is provided (Photo or Video), upload via direct upload with chunked fallback
             if (mediaFile != null && mediaFile.exists()) {
-                val collection = if (mediaFile.name.endsWith(".mp4", ignoreCase = true)) "story_video" else "story_photo"
-                val uploadResult = mediaUploadManager.uploadMedia(
-                    file = mediaFile,
-                    collection = collection
-                ).firstOrNull { it is UploadStatus.Success || it is UploadStatus.Error }
+                val isVideo = mediaFile.name.endsWith(".mp4", ignoreCase = true) ||
+                    mediaFile.name.endsWith(".mov", ignoreCase = true) ||
+                    mediaFile.name.endsWith(".webm", ignoreCase = true) ||
+                    mediaFile.name.endsWith(".3gp", ignoreCase = true)
 
-                if (uploadResult is UploadStatus.Success) {
-                    mediaId = uploadResult.media.id
-                    mediaUrl = uploadResult.media.resolvedUrl
-                } else if (uploadResult is UploadStatus.Error) {
-                    emit(Result.Error(Exception(uploadResult.message)))
-                    return@flow
+                val mimeType = when (mediaFile.extension.lowercase()) {
+                    "jpg", "jpeg" -> "image/jpeg"
+                    "png" -> "image/png"
+                    "webp" -> "image/webp"
+                    "gif" -> "image/gif"
+                    "mp4" -> "video/mp4"
+                    "mov" -> "video/quicktime"
+                    "webm" -> "video/webm"
+                    "m4v" -> "video/x-m4v"
+                    "3gp" -> "video/3gpp"
+                    else -> if (isVideo) "video/mp4" else "image/jpeg"
+                }
+
+                // 1. First attempt fast direct multipart upload
+                try {
+                    val reqFile = mediaFile.asRequestBody(mimeType.toMediaTypeOrNull())
+                    val part = MultipartBody.Part.createFormData("file", mediaFile.name, reqFile)
+                    val collectionPart = "story".toRequestBody("text/plain".toMediaTypeOrNull())
+                    val directRes = api.uploadMedia(part, collectionPart)
+                    if (directRes.isSuccessful && directRes.body() != null) {
+                        mediaId = directRes.body()!!.data.id
+                        mediaUrl = directRes.body()!!.data.url
+                    }
+                } catch (_: Exception) {}
+
+                // 2. If direct upload didn't succeed, fallback to chunked upload
+                if (mediaId == null) {
+                    val uploadResult = mediaUploadManager.uploadMedia(
+                        file = mediaFile,
+                        collection = "story",
+                        mimeType = mimeType
+                    ).firstOrNull { it is UploadStatus.Success || it is UploadStatus.Error }
+
+                    if (uploadResult is UploadStatus.Success) {
+                        mediaId = uploadResult.media.id
+                        mediaUrl = uploadResult.media.resolvedUrl
+                    } else if (uploadResult is UploadStatus.Error) {
+                        emit(Result.Error(Exception(uploadResult.message)))
+                        return@flow
+                    }
                 }
             }
 
@@ -168,7 +209,9 @@ class StoriesRepositoryImpl @Inject constructor(
                 type = type,
                 content = content,
                 privacy = privacy,
-                media_ids = listOfNotNull(mediaId)
+                media_ids = listOfNotNull(mediaId),
+                background_color = backgroundColor,
+                font_family = fontFamily
             )
 
             val response = api.createStory(payload)
@@ -184,26 +227,16 @@ class StoriesRepositoryImpl @Inject constructor(
                     ),
                     mediaUrl = dto.resolvedMediaUrl.ifBlank { mediaUrl ?: "" },
                     mediaType = dto.resolvedMediaType,
+                    content = dto.content ?: content,
+                    backgroundColor = dto.background_color ?: backgroundColor,
                     durationSeconds = dto.duration_seconds,
                     privacy = privacy,
                     expiresAt = System.currentTimeMillis() + 86400000L
                 )
                 emit(Result.Success(story))
             } else {
-                // Fallback optimistic story creation
-                val story = Story(
-                    id = System.currentTimeMillis(),
-                    userId = tokenStorageManager.getUserId(),
-                    author = User(
-                        id = tokenStorageManager.getUserId(),
-                        name = "Connectly User",
-                        username = "user",
-                        avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb"
-                    ),
-                    mediaUrl = mediaUrl ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                    privacy = privacy
-                )
-                emit(Result.Success(story))
+                val errMessage = response.body()?.message ?: "স্টোরি তৈরি করতে ব্যর্থ হয়েছে (${response.code()})।"
+                emit(Result.Error(Exception(errMessage)))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))

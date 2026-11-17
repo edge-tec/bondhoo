@@ -27,11 +27,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
+import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
 import com.connectly.android.core.designsystem.component.ConnectlyAvatar
 import com.connectly.android.core.designsystem.theme.ConnectlyBlue
 
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun StoryViewerScreen(
     storyId: Long,
@@ -117,31 +126,130 @@ fun StoryViewerScreen(
 
         // Story Background & Content
         val story = state.story
-        val isTextStory = story?.mediaType == "text" || story?.mediaUrl.isNullOrBlank() || story?.mediaUrl?.startsWith("http") != true
+        val isVideoStory = story?.mediaType == "video" ||
+            story?.mediaUrl?.contains(".mp4", ignoreCase = true) == true ||
+            story?.mediaUrl?.contains(".mov", ignoreCase = true) == true ||
+            story?.mediaUrl?.contains(".webm", ignoreCase = true) == true
+
+        val isTextStory = !isVideoStory && (
+            story?.mediaType == "text" ||
+            story?.mediaUrl.isNullOrBlank() ||
+            story?.mediaUrl?.startsWith("http") != true
+        )
+
+        val storyBgColor = remember(story?.backgroundColor) {
+            story?.backgroundColor?.let { hex ->
+                try {
+                    Color(android.graphics.Color.parseColor(hex))
+                } catch (_: Exception) {
+                    ConnectlyBlue
+                }
+            } ?: ConnectlyBlue
+        }
 
         if (isTextStory) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(ConnectlyBlue),
+                    .background(storyBgColor),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = story?.mediaUrl.orEmpty(),
+                    text = story?.content ?: story?.mediaUrl.orEmpty(),
                     color = Color.White,
-                    fontSize = 24.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(32.dp)
                 )
             }
+        } else if (isVideoStory && !story?.mediaUrl.isNullOrBlank()) {
+            val context = LocalContext.current
+            val exoPlayer = remember(story?.mediaUrl) {
+                ExoPlayer.Builder(context).build().apply {
+                    setMediaItem(MediaItem.fromUri(story?.mediaUrl!!))
+                    repeatMode = Player.REPEAT_MODE_ALL
+                    prepare()
+                    playWhenReady = true
+                }
+            }
+
+            DisposableEffect(exoPlayer, isPaused) {
+                if (isPaused) {
+                    exoPlayer.pause()
+                } else {
+                    exoPlayer.play()
+                }
+                onDispose {
+                    exoPlayer.release()
+                }
+            }
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                AndroidView(
+                    factory = { ctx ->
+                        PlayerView(ctx).apply {
+                            player = exoPlayer
+                            useController = false
+                            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // Optional Caption over video
+                if (!story?.content.isNullOrBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 90.dp, start = 20.dp, end = 20.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = story?.content.orEmpty(),
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
         } else {
-            AsyncImage(
-                model = story?.mediaUrl ?: "",
-                contentDescription = "Story Media",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                AsyncImage(
+                    model = story?.mediaUrl ?: "",
+                    contentDescription = "Story Media",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // Optional Caption over photo
+                if (!story?.content.isNullOrBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 90.dp, start = 20.dp, end = 20.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = story?.content.orEmpty(),
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
         }
 
         // Gradient top & bottom scrims

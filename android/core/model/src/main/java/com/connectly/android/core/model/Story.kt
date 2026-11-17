@@ -8,7 +8,9 @@ data class Story(
     val userId: Long,
     val author: User,
     val mediaUrl: String,
-    val mediaType: String = "image", // "image", "video"
+    val mediaType: String = "image", // "image", "video", "text"
+    val content: String? = null,
+    val backgroundColor: String? = null,
     val durationSeconds: Int = 5,
     val isSeen: Boolean = false,
     val userReaction: String? = null,

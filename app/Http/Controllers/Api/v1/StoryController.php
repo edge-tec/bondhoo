@@ -61,8 +61,8 @@ class StoryController extends Controller
             'privacy' => ['nullable', 'string', 'in:public,friends,only_me'],
             'media_ids' => ['nullable', 'array'],
             'media_ids.*' => ['integer', 'exists:media,id'],
-            'media' => ['nullable', 'file', 'image', 'max:20480'],
-            'file' => ['nullable', 'file', 'image', 'max:20480'],
+            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp,gif,mp4,mov,qt,webm,3gp,m4v', 'max:51200'],
+            'file' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp,gif,mp4,mov,qt,webm,3gp,m4v', 'max:51200'],
         ])->validate();
 
         $mediaIds = $validated['media_ids'] ?? [];

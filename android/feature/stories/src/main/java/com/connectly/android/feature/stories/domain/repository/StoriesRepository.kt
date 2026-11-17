@@ -9,7 +9,14 @@ import java.io.File
 
 interface StoriesRepository {
     fun getStoriesTray(): Flow<Result<List<StoryUserTray>>>
-    fun createStory(type: String, content: String?, privacy: String, mediaFile: File?): Flow<Result<Story>>
+    fun createStory(
+        type: String,
+        content: String?,
+        privacy: String = "public",
+        mediaFile: File? = null,
+        backgroundColor: String? = null,
+        fontFamily: String? = null
+    ): Flow<Result<Story>>
     fun viewStory(storyId: Long): Flow<Result<Unit>>
     fun getStoryViewers(storyId: Long): Flow<Result<List<User>>>
     fun reactToStory(storyId: Long, reactionType: String): Flow<Result<Unit>>

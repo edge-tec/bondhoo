@@ -19,8 +19,22 @@ class GetStoriesTrayUseCase @Inject constructor(
 class CreateStoryUseCase @Inject constructor(
     private val repository: StoriesRepository
 ) {
-    operator fun invoke(type: String, content: String?, privacy: String, mediaFile: File? = null): Flow<Result<Story>> =
-        repository.createStory(type, content, privacy, mediaFile)
+    operator fun invoke(
+        type: String,
+        content: String?,
+        privacy: String = "public",
+        mediaFile: File? = null,
+        backgroundColor: String? = null,
+        fontFamily: String? = null
+    ): Flow<Result<Story>> =
+        repository.createStory(
+            type = type,
+            content = content,
+            privacy = privacy,
+            mediaFile = mediaFile,
+            backgroundColor = backgroundColor,
+            fontFamily = fontFamily
+        )
 }
 
 class ViewStoryUseCase @Inject constructor(

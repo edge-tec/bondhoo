@@ -19,6 +19,10 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.File
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -158,22 +162,48 @@ class ReelsRepositoryImpl @Inject constructor(
     override fun createReel(videoFile: File, caption: String?, audioTitle: String?): Flow<Result<Reel>> = flow {
         emit(Result.Loading)
         try {
-            // 1. Upload video via chunked upload manager
-            val uploadResult = mediaUploadManager.uploadMedia(
-                file = videoFile,
-                collection = "reel",
-                mimeType = "video/mp4"
-            ).firstOrNull { it is UploadStatus.Success || it is UploadStatus.Error }
+            var mediaId: Long? = null
 
-            if (uploadResult is UploadStatus.Error) {
-                emit(Result.Error(Exception(uploadResult.message)))
+            // 1. First attempt fast direct upload
+            try {
+                val mimeType = when (videoFile.extension.lowercase()) {
+                    "mov" -> "video/quicktime"
+                    "webm" -> "video/webm"
+                    "m4v" -> "video/x-m4v"
+                    "3gp" -> "video/3gpp"
+                    else -> "video/mp4"
+                }
+                val reqFile = videoFile.asRequestBody(mimeType.toMediaTypeOrNull())
+                val part = MultipartBody.Part.createFormData("file", videoFile.name, reqFile)
+                val collectionPart = "reel".toRequestBody("text/plain".toMediaTypeOrNull())
+                val directRes = api.uploadMedia(part, collectionPart)
+                if (directRes.isSuccessful && directRes.body() != null) {
+                    mediaId = directRes.body()!!.data.id
+                }
+            } catch (_: Exception) {}
+
+            // 2. If direct upload didn't succeed, use chunked upload manager
+            if (mediaId == null) {
+                val uploadResult = mediaUploadManager.uploadMedia(
+                    file = videoFile,
+                    collection = "reel",
+                    mimeType = "video/mp4"
+                ).firstOrNull { it is UploadStatus.Success || it is UploadStatus.Error }
+
+                if (uploadResult is UploadStatus.Error) {
+                    emit(Result.Error(Exception(uploadResult.message)))
+                    return@flow
+                }
+
+                mediaId = (uploadResult as? UploadStatus.Success)?.media?.id
+            }
+
+            if (mediaId == null) {
+                emit(Result.Error(Exception("ভিডিও আপলোড সম্পন্ন করা সম্ভব হয়নি।")))
                 return@flow
             }
 
-            val mediaId = (uploadResult as? UploadStatus.Success)?.media?.id
-                ?: throw Exception("Video upload could not be completed.")
-
-            // 2. Publish reel
+            // 3. Publish reel
             val payload = CreateReelPayload(
                 media_id = mediaId,
                 caption = caption,
