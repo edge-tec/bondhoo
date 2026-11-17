@@ -43,6 +43,17 @@ class PageProductV2ApiController extends Controller
     }
 
     /**
+     * পেজের সার্ভিসেস তালিকা
+     */
+    public function services(Request $request, Page $page): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [],
+        ]);
+    }
+
+    /**
      * নতুন প্রোডাক্ট যোগ করা
      */
     public function store(Request $request, Page $page): JsonResponse

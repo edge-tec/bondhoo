@@ -314,7 +314,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/friends/{id}/request', [FriendController::class, 'send'])->whereNumber('id')->middleware('throttle:friend-requests');
         Route::post('/friends/{id}/accept', [FriendController::class, 'accept'])->whereNumber('id');
         Route::post('/friends/{id}/decline', [FriendController::class, 'decline'])->whereNumber('id');
-        Route::post('/friends/{id}/reject', [FriendController::class, 'decline'])->whereNumber('id');
+        Route::match(['post', 'delete'], '/friends/{id}/reject', [FriendController::class, 'decline'])->whereNumber('id');
         Route::post('/friends/{id}/cancel', [FriendController::class, 'cancel'])->whereNumber('id');
         Route::delete('/friends/{id}', [FriendController::class, 'unfriend'])->whereNumber('id');
 
@@ -765,6 +765,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/pages', [PageController::class, 'store']);
         Route::get('/pages/{slug}', [PageController::class, 'show']);
         Route::post('/pages/{id}/follow', [PageController::class, 'follow']);
+        Route::post('/pages/{id}/like', [PageController::class, 'follow']);
         Route::get('/pages/{id}/posts', [PageController::class, 'feed']);
         Route::post('/pages/{id}/posts', [PageController::class, 'storePost']);
 
@@ -1668,6 +1669,7 @@ Route::prefix('v2')->middleware([ApiV2Middleware::class, 'throttle:api'])->group
         Route::get('/{page}/events/{id}', [PageEventV2ApiController::class, 'show']);
         Route::get('/{page}/products', [PageProductV2ApiController::class, 'index']);
         Route::get('/{page}/products/{id}', [PageProductV2ApiController::class, 'show']);
+        Route::get('/{page}/services', [PageProductV2ApiController::class, 'services']);
         Route::get('/{page}/reviews', [PageV2ApiController::class, 'reviews']);
 
         // Authenticated Page Management & Operations
