@@ -2814,7 +2814,7 @@ const publishReel = async () => {
     mediaForm.append('file', reelFile.value);
     mediaForm.append('collection', 'reel');
 
-    const uploadRes = await fetch('/api/v2/upload/chunk', {
+    const uploadRes = await fetch('/api/v2/uploads/chunks', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',

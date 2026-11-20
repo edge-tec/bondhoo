@@ -1095,12 +1095,12 @@
                 </span>
                 <span class="sh-nav-label">Events</span>
             </a>
-            <button type="button" class="sh-nav-item sh-nav-more" onclick="toggleShSeeMore(this)">
+            <a href="/marketplace" class="sh-nav-item sh-nav-more">
                 <span class="sh-nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </span>
-                <span class="sh-nav-label">See more</span>
-            </button>
+                <span class="sh-nav-label">Marketplace</span>
+            </a>
         </nav>
 
         <div class="sh-sidebar-divider"></div>

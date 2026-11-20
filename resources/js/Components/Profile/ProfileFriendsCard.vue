@@ -108,7 +108,7 @@ const handleAddFriend = async (friend: User) => {
   actionPendingId.value = friend.id;
   try {
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
-    const res = await fetch(`/api/v1/friends/request/${friend.id}`, {
+    const res = await fetch(`/api/v1/friends/${friend.id}/request`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',

@@ -273,7 +273,7 @@
                         ইনকামিং কল রিংটোন, ইনকামিং মেসেজ টোন এবং আউটগোয়িং মেসেজ সেন্ট টোন সম্পূর্ণ আলাদাভাবে কনফিগার ও প্রিভিউ করুন। প্রতিটি সাউন্ডের ভলিউম ও সক্রিয়তা স্বাধীনভাবে নিয়ন্ত্রণ করা যায়।
                     </p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" onclick="openMessengerSoundSettings()" style="background: #f0f2f5; color: #0f172a; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                        <button type="button" onclick="openMessengerSoundModal()" style="background: #f0f2f5; color: #0f172a; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
                             <span>🎧</span>
                             <span>মেসেঞ্জার সাউন্ড সেটিংস কনফিগার করুন</span>
                         </button>
@@ -318,7 +318,7 @@
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
             try {
-                const res = await fetch('/api/v2/notifications/preferences', {
+                const res = await fetch('/api/v1/notifications/preferences', {
                     method: 'PUT',
                     headers: {
                         'Accept': 'application/json',

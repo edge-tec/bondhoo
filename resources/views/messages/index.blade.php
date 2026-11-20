@@ -878,6 +878,140 @@
         transform: scale(1.18);
     }
 
+    /* Ultra Enterprise Messenger: Polls, Themes, Location, Speed, Transcription */
+    .chat-poll-card {
+        background: rgba(0, 0, 0, 0.04);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin: 4px 0;
+        min-width: 250px;
+        max-width: 320px;
+        color: var(--ms-text-primary);
+    }
+    .message-row.outgoing .chat-poll-card {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: white;
+    }
+    .chat-poll-question {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .chat-poll-options {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+    }
+    .chat-poll-option-row {
+        position: relative;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        padding: 8px 10px;
+        cursor: pointer;
+        overflow: hidden;
+        transition: all 0.15s ease;
+    }
+    .chat-poll-option-row:hover {
+        background: rgba(0, 0, 0, 0.08);
+    }
+    .message-row.outgoing .chat-poll-option-row {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .chat-poll-option-row.voted {
+        border-left: 3px solid #0084FF;
+        font-weight: 600;
+    }
+    .chat-poll-opt-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: rgba(0, 132, 255, 0.25);
+        border-radius: 8px;
+        pointer-events: none;
+        transition: width 0.3s ease;
+    }
+    .message-row.outgoing .chat-poll-opt-bar {
+        background: rgba(255, 255, 255, 0.35);
+    }
+    .chat-poll-opt-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+    }
+    .chat-poll-footer {
+        margin-top: 10px;
+        font-size: 11px;
+        opacity: 0.8;
+        display: flex;
+        justify-content: space-between;
+    }
+    .voice-speed-pill {
+        background: rgba(0, 0, 0, 0.08);
+        border: none;
+        border-radius: 12px;
+        padding: 2px 7px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        color: inherit;
+        transition: background 0.15s;
+    }
+    .message-row.outgoing .voice-speed-pill {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+    .voice-transcribe-btn {
+        background: none;
+        border: none;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 4px;
+        opacity: 0.8;
+    }
+    .voice-transcription-box {
+        margin-top: 6px;
+        padding: 6px 10px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+    .message-row.outgoing .voice-transcription-box {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .message-location-card {
+        padding: 10px 12px;
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 12px;
+        margin: 4px 0;
+        font-size: 13px;
+    }
+    .message-row.outgoing .message-location-card {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .live-location-badge {
+        color: #22c55e;
+        font-size: 10.5px;
+        font-weight: 800;
+    }
+    .video-note-round {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
     /* Reactions Badge */
     .reactions-badge-row {
         position: absolute;
@@ -2934,7 +3068,55 @@
                                                         <span>{{ $audioDur > 0 ? gmdate('i:s', $audioDur) : '' }}</span>
                                                     </div>
                                                 </div>
+                                                <button type="button" class="voice-speed-pill" onclick="cycleVoiceSpeed(this)" title="প্লেব্যাক স্পিড">1x</button>
+                                                <button type="button" class="voice-transcribe-btn" onclick="transcribeVoiceMessage({{ $mId }}, this)" title="টেক্সটে রূপান্তর">📝</button>
                                             </div>
+                                            @if(!empty($m['transcription']))
+                                                <div class="voice-transcription-box" id="voiceTrans-{{ $mId }}">📝 {{ $m['transcription'] }}</div>
+                                            @else
+                                                <div class="voice-transcription-box" id="voiceTrans-{{ $mId }}" style="display:none;"></div>
+                                            @endif
+                                        @endif
+
+                                        @if(!empty($m['poll']))
+                                            @php $poll = $m['poll']; @endphp
+                                            <div class="chat-poll-card" id="chatPoll-{{ $poll['id'] }}">
+                                                <div class="chat-poll-question">📊 {{ $poll['question'] }}</div>
+                                                @foreach($poll['options'] ?? [] as $opt)
+                                                    @php
+                                                        $totalVotes = max(1, (int) ($poll['total_votes_count'] ?? 0));
+                                                        $optVotes = (int) ($opt['votes_count'] ?? 0);
+                                                        $pct = ($poll['total_votes_count'] ?? 0) > 0 ? round(($optVotes / $totalVotes) * 100) : 0;
+                                                        $voted = !empty($opt['is_voted_by_me']);
+                                                    @endphp
+                                                    <div class="chat-poll-option {{ $voted ? 'voted' : '' }}" onclick="votePoll({{ $poll['id'] }}, {{ $opt['id'] }})">
+                                                        <div class="chat-poll-option-bar" style="width: {{ $pct }}%;"></div>
+                                                        <span class="chat-poll-option-text">{{ $voted ? '✓ ' : '' }}{{ $opt['option_text'] ?? $opt['text'] ?? '' }}</span>
+                                                        <span class="chat-poll-option-pct">{{ $pct }}%</span>
+                                                    </div>
+                                                @endforeach
+                                                <div class="chat-poll-footer">
+                                                    <span>{{ (int) ($poll['total_votes_count'] ?? 0) }} ভোট</span>
+                                                    @if(!empty($poll['is_closed']))<span>বন্ধ</span>@endif
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        @if(!empty($m['location']))
+                                            @php $loc = $m['location']; @endphp
+                                            <a class="message-location-card" href="https://www.google.com/maps/search/?api=1&query={{ $loc['latitude'] ?? 0 }},{{ $loc['longitude'] ?? 0 }}" target="_blank" rel="noopener">
+                                                <div style="font-weight:700;display:flex;align-items:center;gap:6px;">
+                                                    <span>📍 {{ !empty($loc['is_live']) ? 'লাইভ লোকেশন' : 'শেয়ারকৃত লোকেশন' }}</span>
+                                                    @if(!empty($loc['is_live']))<span class="live-location-badge">LIVE</span>@endif
+                                                </div>
+                                                @if(!empty($loc['address']))
+                                                    <div style="font-size:12px;opacity:.85;margin-top:4px;">{{ $loc['address'] }}</div>
+                                                @endif
+                                            </a>
+                                        @endif
+
+                                        @if(!empty($m['video_note']['url']))
+                                            <video class="video-note-round" src="{{ $m['video_note']['url'] }}" controls playsinline></video>
                                         @endif
 
                                         @if($showBody && !empty($trimmedBody))
@@ -3072,6 +3254,27 @@
                         </svg>
                     </button>
                     <input type="file" id="attachmentFileInput" style="display: none;" multiple onchange="handleAttachmentFiles(this.files)">
+
+                    <!-- Enterprise Action Buttons: Poll, Location, Schedule -->
+                    <button type="button" class="ms-composer-btn" title="পোল তৈরি করুন" onclick="openCreatePollModal()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </button>
+                    <button type="button" class="ms-composer-btn" title="লোকেশন শেয়ার করুন" onclick="shareMyLocation()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </button>
+                    <button type="button" class="ms-composer-btn" title="মেসেজ শিডিউল করুন" onclick="openScheduleModal()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </button>
 
                     <!-- Text Composer Box (Capsule Pill with embedded emoji picker) -->
                     <div class="chat-textarea-box" id="composerTextBox">
@@ -3338,6 +3541,14 @@
                         </svg>
                     </span>
                     <span>কল হিস্ট্রি দেখুন</span>
+                </button>
+                <button type="button" class="details-menu-btn" onclick="openDisappearingTimerModal()">
+                    <span class="menu-icon-circle">⏱️</span>
+                    <span>ডিসঅ্যাপিয়ারিং মেসেজ টাইমার</span>
+                </button>
+                <button type="button" class="details-menu-btn" onclick="openChatThemeModal()">
+                    <span class="menu-icon-circle">🎨</span>
+                    <span>চ্যাট থিম কাস্টমাইজ করুন</span>
                 </button>
             </div>
 
@@ -5348,7 +5559,7 @@
                 if (forEveryone) {
                     const bubble = row?.querySelector('.message-bubble');
                     if (bubble) bubble.innerHTML = `<em style="opacity: 0.7;">🚫 এই বার্তাটি মুছে ফেলা হয়েছে।</em>`;
-                    const toolbar = row?.querySelector('.message-hover-toolbar');
+                    const toolbar = row?.querySelector('.message-action-toolbar');
                     if (toolbar) toolbar.remove();
                 } else {
                     row?.remove();
@@ -5485,11 +5696,40 @@
                             <span>${durSec > 0 ? durFormatted : ''}</span>
                         </div>
                     </div>
+                    <button type="button" class="voice-speed-pill" onclick="cycleVoiceSpeed(this)" title="প্লেব্যাক স্পিড">1x</button>
+                    <button type="button" class="voice-transcribe-btn" onclick="transcribeVoiceMessage(${m.id}, this)" title="টেক্সটে রূপান্তর">📝</button>
                 </div>
+                <div class="voice-transcription-box" id="voiceTrans-${m.id}" style="${m.transcription ? '' : 'display:none;'}">${m.transcription ? '📝 ' + escapeHtml(m.transcription) : ''}</div>
             `;
         }
 
-        const isImageOnly = hasImageMedia && !showBody && !voiceHtml;
+        let enterpriseHtml = '';
+        if (m.poll) {
+            const total = m.poll.total_votes_count || 0;
+            const optsHtml = (m.poll.options || []).map(opt => {
+                const pct = total > 0 ? Math.round(((opt.votes_count || 0) / total) * 100) : 0;
+                const voted = !!opt.is_voted_by_me;
+                return `<div class="chat-poll-option ${voted ? 'voted' : ''}" onclick="votePoll(${m.poll.id}, ${opt.id})">
+                    <div class="chat-poll-option-bar" style="width:${pct}%;"></div>
+                    <span class="chat-poll-option-text">${voted ? '✓ ' : ''}${escapeHtml(opt.option_text || opt.text || '')}</span>
+                    <span class="chat-poll-option-pct">${pct}%</span>
+                </div>`;
+            }).join('');
+            enterpriseHtml += `<div class="chat-poll-card" id="chatPoll-${m.poll.id}"><div class="chat-poll-question">📊 ${escapeHtml(m.poll.question || '')}</div>${optsHtml}<div class="chat-poll-footer"><span>${total} ভোট</span></div></div>`;
+        }
+        if (m.location) {
+            const lat = m.location.latitude || 0;
+            const lng = m.location.longitude || 0;
+            enterpriseHtml += `<a class="message-location-card" href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" rel="noopener">
+                <div style="font-weight:700;">📍 ${m.location.is_live ? 'লাইভ লোকেশন' : 'শেয়ারকৃত লোকেশন'}</div>
+                ${m.location.address ? `<div style="font-size:12px;opacity:.85;margin-top:4px;">${escapeHtml(m.location.address)}</div>` : ''}
+            </a>`;
+        }
+        if (m.video_note?.url) {
+            enterpriseHtml += `<video class="video-note-round" src="${m.video_note.url}" controls playsinline></video>`;
+        }
+
+        const isImageOnly = hasImageMedia && !showBody && !voiceHtml && !enterpriseHtml;
 
         const html = `
             <div class="message-row incoming" id="messageRow-${m.id}" data-id="${m.id}">
@@ -5497,6 +5737,7 @@
                     <div class="message-bubble" style="${isImageOnly ? 'padding: 2px !important; background: transparent !important; border: none !important; box-shadow: none !important;' : ''}">
                         ${showBody ? `<div>${escapeHtml(bodyText)}</div>` : ''}
                         ${voiceHtml}
+                        ${enterpriseHtml}
                         ${mediaHtml}
                     </div>
                     <div class="message-meta-row"><span>${time}</span></div>
@@ -7682,6 +7923,252 @@
             renderMobileOpenChatsBar();
         @endif
     });
+
+    // =========================================================================
+    // ULTRA ENTERPRISE MESSENGER & MISSING HANDLERS (Polls, Location, Themes,
+    // Disappearing Timer, Scheduled Messages, Voice Speed & Transcription,
+    // Reactions & Reply)
+    // =========================================================================
+    let currentVoiceSpeed = 1.0;
+
+    function toggleReaction(msgId, emoji) {
+        fetch(`/api/v1/messages/${msgId}/react`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ reaction: emoji })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success || res.status === 'success') {
+                if (typeof showToast === 'function') showToast(`রিঅ্যাকশন ${emoji} আপডেট হয়েছে`);
+                if (typeof loadMessagesSilent === 'function' && currentConvId) loadMessagesSilent(currentConvId);
+            }
+        }).catch(() => {});
+    }
+
+    function initReply(msgId, senderName, previewText) {
+        const input = document.getElementById('replyToMessageId');
+        const banner = document.getElementById('replyPreviewBanner');
+        const senderEl = document.getElementById('replyPreviewSender');
+        const textEl = document.getElementById('replyPreviewText');
+        if (input) input.value = msgId;
+        if (senderEl) senderEl.textContent = senderName || 'রিপ্লাই';
+        if (textEl) textEl.textContent = previewText || '';
+        if (banner) banner.style.display = 'flex';
+        document.getElementById('messageInput')?.focus();
+    }
+
+    function cancelReply() {
+        const input = document.getElementById('replyToMessageId');
+        const banner = document.getElementById('replyPreviewBanner');
+        if (input) input.value = '';
+        if (banner) banner.style.display = 'none';
+    }
+
+    function cycleVoiceSpeed(btn) {
+        const speeds = [1.0, 1.5, 2.0, 0.5];
+        const nextIdx = (speeds.indexOf(currentVoiceSpeed) + 1) % speeds.length;
+        currentVoiceSpeed = speeds[nextIdx];
+        document.querySelectorAll('.voice-speed-pill').forEach(el => {
+            el.textContent = `${currentVoiceSpeed}x`;
+        });
+        if (typeof activeVoiceAudio !== 'undefined' && activeVoiceAudio) {
+            activeVoiceAudio.playbackRate = currentVoiceSpeed;
+        }
+    }
+
+    function transcribeVoiceMessage(msgId, btn) {
+        if (btn) btn.disabled = true;
+        fetch(`/api/v1/messages/${msgId}/transcribe`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        })
+        .then(r => r.json())
+        .then(res => {
+            const text = res.data?.transcription || res.transcription || res.message || '';
+            const box = document.getElementById(`voiceTrans-${msgId}`);
+            if (box && text) {
+                box.textContent = `📝 ${text}`;
+                box.style.display = 'block';
+            }
+        })
+        .finally(() => { if (btn) btn.disabled = false; });
+    }
+
+    function openCreatePollModal() {
+        if (!currentConvId) return;
+        const question = prompt('পোলের প্রশ্ন লিখুন:');
+        if (!question || !question.trim()) return;
+        const opt1 = prompt('অপশন ১ লিখুন:');
+        if (!opt1 || !opt1.trim()) return;
+        const opt2 = prompt('অপশন ২ লিখুন:');
+        if (!opt2 || !opt2.trim()) return;
+        const opt3 = prompt('অপশন ৩ (ঐচ্ছিক, ফাঁকা রাখতে পারেন):') || '';
+        const options = [opt1.trim(), opt2.trim()];
+        if (opt3.trim()) options.push(opt3.trim());
+
+        fetch(`/api/v1/conversations/${currentConvId}/polls`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ question: question.trim(), options, is_multiple_choice: false, is_anonymous: false })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success || res.status === 'success') {
+                if (typeof showToast === 'function') showToast('পোল তৈরি হয়েছে! 📊');
+                location.reload();
+            } else {
+                alert(res.message || 'পোল তৈরি করা যায়নি।');
+            }
+        });
+    }
+
+    function votePoll(pollId, optionId) {
+        fetch(`/api/v1/polls/${pollId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ option_id: optionId })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success || res.status === 'success') {
+                if (typeof showToast === 'function') showToast('ভোট গৃহীত হয়েছে! ✅');
+                location.reload();
+            }
+        });
+    }
+
+    function shareMyLocation() {
+        if (!currentConvId) return;
+        if (!navigator.geolocation) {
+            alert('আপনার ব্রাউজার লোকেশন সাপোর্ট করে না।');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(pos => {
+            fetch(`/api/v1/conversations/${currentConvId}/location`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude,
+                    address: 'বর্তমান লোকেশন',
+                    is_live: false
+                })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success || res.status === 'success') {
+                    if (typeof showToast === 'function') showToast('লোকেশন শেয়ার করা হয়েছে! 📍');
+                    location.reload();
+                }
+            });
+        }, () => alert('লোকেশন পারমিশন পাওয়া যায়নি।'));
+    }
+
+    function openScheduleModal() {
+        if (!currentConvId) return;
+        const body = prompt('শিডিউল মেসেজ লিখুন:');
+        if (!body || !body.trim()) return;
+        const minsStr = prompt('কত মিনিট পর মেসেজটি যাবে? (যেমন: 10)', '10');
+        const mins = parseInt(minsStr || '10', 10);
+        if (isNaN(mins) || mins < 1) return;
+        const scheduledAt = new Date(Date.now() + mins * 60000).toISOString();
+
+        fetch(`/api/v1/conversations/${currentConvId}/scheduled-messages`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                body: body.trim(),
+                scheduled_at: scheduledAt,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Dhaka'
+            })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success || res.status === 'success') {
+                if (typeof showToast === 'function') showToast(`মেসেজ ${mins} মিনিট পরের জন্য শিডিউল করা হয়েছে! ⏰`);
+            } else {
+                alert(res.message || 'শিডিউল করা যায়নি।');
+            }
+        });
+    }
+
+    function openDisappearingTimerModal() {
+        if (!currentConvId) return;
+        const choice = prompt('ডিসঅ্যাপিয়ারিং মেসেজ টাইমার নির্বাচন করুন:\n0 = বন্ধ\n3600 = ১ ঘণ্টা\n86400 = ২৪ ঘণ্টা\n604800 = ৭ দিন', '86400');
+        if (choice === null) return;
+        const seconds = parseInt(choice, 10);
+        fetch(`/api/v1/conversations/${currentConvId}/disappearing-timer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ duration_seconds: seconds > 0 ? seconds : null })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success || res.status === 'success') {
+                if (typeof showToast === 'function') showToast(seconds > 0 ? 'ডিসঅ্যাপিয়ারিং টাইমার চালু হয়েছে ⏱️' : 'ডিসঅ্যাপিয়ারিং টাইমার বন্ধ করা হয়েছে');
+            }
+        });
+    }
+
+    function openChatThemeModal() {
+        if (!currentConvId) return;
+        const hex = prompt('থিমের রঙের কোড দিন (যেমন #1877F2, #10B981, #8B5CF6, #EC4899) অথবা ডিফল্ট করতে reset লিখুন:', '#1877F2');
+        if (!hex) return;
+        if (hex.trim().toLowerCase() === 'reset') {
+            fetch(`/api/v1/conversations/${currentConvId}/theme`, {
+                method: 'DELETE',
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+            }).then(() => {
+                document.documentElement.style.setProperty('--fb-primary', '#0084ff');
+                if (typeof showToast === 'function') showToast('ডিফল্ট থিম রিস্টোর হয়েছে 🎨');
+            });
+            return;
+        }
+        fetch(`/api/v1/conversations/${currentConvId}/theme`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ theme_color: hex.trim(), bubble_color: hex.trim() })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success || res.status === 'success') {
+                document.documentElement.style.setProperty('--fb-primary', hex.trim());
+                if (typeof showToast === 'function') showToast('চ্যাট থিম আপডেট হয়েছে! 🎨');
+            }
+        });
+    }
 </script>
 @endsection
 

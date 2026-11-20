@@ -4407,7 +4407,7 @@
                 </svg>
                 <span class="dock-label">Friends</span>
             </a>
-            <a href="javascript:void(0)" onclick="toggleNotificationsDropdown()" class="dock-item" title="Notifications">
+            <a href="javascript:void(0)" onclick="toggleHeaderNotificationDropdown()" class="dock-item" title="Notifications">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -10883,7 +10883,7 @@
                                     <div style="font-size:13px;font-weight:700;color:var(--fb-text-primary);">🛡️ অবতার প্রোটেকশন গার্ড (Avatar Guard)</div>
                                     <div style="font-size:12px;color:var(--fb-text-secondary);">প্রোফাইল ছবি ডাউনলোড ও স্ক্রিনশট নেওয়া রোধ করুন</div>
                                 </div>
-                                <button type="button" class="fb-btn {{ ($profile['has_avatar_guard'] ?? false) ? 'fb-btn-primary' : 'fb-btn-secondary' }}" style="padding:4px 12px;font-size:12px;" onclick="toggleAvatarGuardAction();">
+                                <button type="button" class="fb-btn {{ ($profile['has_avatar_guard'] ?? false) ? 'fb-btn-primary' : 'fb-btn-secondary' }}" style="padding:4px 12px;font-size:12px;" onclick="(function(btn){ btn.disabled=true; fetch('/api/v1/profile/avatar-guard', { method:'POST', headers:{ 'Accept':'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '' } }).then(r=>r.json()).then(d=>{ location.reload(); }).catch(()=>{ btn.disabled=false; }); })(this);">
                                     {{ ($profile['has_avatar_guard'] ?? false) ? 'সক্রিয় আছে' : 'গার্ড চালু করুন' }}
                                 </button>
                             </div>

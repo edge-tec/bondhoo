@@ -632,12 +632,14 @@ const fetchOrders = async () => {
 const fetchOffers = async () => {
   isLoading.value = true;
   try {
-    const role = activeTab.value === 'offers_received' ? 'seller' : 'buyer';
-    const res = await fetch(`/api/v2/marketplace/offers?role=${role}`, {
+    const endpoint = activeTab.value === 'offers_received'
+      ? '/api/v1/marketplace/offers/received'
+      : '/api/v1/marketplace/offers/my-offers';
+    const res = await fetch(endpoint, {
       headers: { Accept: 'application/json' },
     });
     const payload = await res.json();
-    if (res.ok && payload.status === 'success') {
+    if (res.ok && (payload.status === 'success' || payload.success || Array.isArray(payload.data))) {
       offers.value = payload.data?.data || payload.data || [];
     }
   } catch (e) {
@@ -651,7 +653,7 @@ const respondOffer = async (offerId: number, action: 'accept' | 'reject' | 'canc
   offerBusyId.value = offerId;
   try {
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
-    const res = await fetch(`/api/v2/marketplace/offers/${offerId}/${action}`, {
+    const res = await fetch(`/api/v1/marketplace/offers/${offerId}/${action}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -660,7 +662,7 @@ const respondOffer = async (offerId: number, action: 'accept' | 'reject' | 'canc
       },
     });
     const payload = await res.json();
-    if (res.ok && payload.status === 'success') {
+    if (res.ok && (payload.status === 'success' || payload.success)) {
       await fetchOffers();
     } else {
       alert(payload.message || 'অফার আপডেট করা সম্ভব হয়নি।');
@@ -684,7 +686,7 @@ const submitCounterOffer = async () => {
   offerBusyId.value = offerId;
   try {
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
-    const res = await fetch(`/api/v2/marketplace/offers/${offerId}/counter`, {
+    const res = await fetch(`/api/v1/marketplace/offers/${offerId}/counter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -10305,16 +10305,10 @@
 
         async function toggleGroupJoin(groupId) {
             try {
-                let res = await fetch(`/api/v2/groups/${groupId}/join`, {
+                const res = await fetch(`/api/v1/groups/${groupId}/join`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${currentToken}`, 'Accept': 'application/json' }
                 });
-                if (!res.ok) {
-                    res = await fetch(`/api/v1/groups/${groupId}/join`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${currentToken}`, 'Accept': 'application/json' }
-                    });
-                }
                 const data = await res.json();
                 showToast(data.message || 'আপনি কমিউনিটিতে সফলভাবে যুক্ত হয়েছেন!');
                 loadGroups();

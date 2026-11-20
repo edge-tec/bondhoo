@@ -1061,7 +1061,7 @@ const submitOffer = async () => {
   offerError.value = '';
   try {
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
-    const res = await fetch(`/api/v2/marketplace/products/${liveProduct.value.id}/offers`, {
+    const res = await fetch(`/api/v1/marketplace/products/${liveProduct.value.id}/offers`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

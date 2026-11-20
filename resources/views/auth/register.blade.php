@@ -725,7 +725,7 @@
                     <label class="terms-label">
                         <input type="checkbox" id="acceptTerms" class="terms-checkbox" required>
                         <span>
-                            আমি SocialHub প্ল্যাটফর্মের <a href="#" onclick="event.preventDefault(); alert('SocialHub ব্যবহারের শর্তাবলী: পারস্পরিক শ্রদ্ধা বজায় রাখুন এবং নিরাপদ কমিউনিটি গড়ে তুলুন।');">ব্যবহারের শর্তাবলী</a> এবং <a href="#" onclick="event.preventDefault(); alert('SocialHub প্রাইভেসি পলিসি: আপনার ব্যক্তিগত তথ্য ও গোপনীয়তা সর্বদা সুরক্ষিত।');">প্রাইভেসি পলিসি</a> পড়েছি ও এতে পূর্ণ সম্মতি প্রদান করছি।
+                            আমি Bondhoo প্ল্যাটফর্মের <a href="/terms" target="_blank" rel="noopener">ব্যবহারের শর্তাবলী</a> এবং <a href="/privacy" target="_blank" rel="noopener">প্রাইভেসি পলিসি</a> পড়েছি ও এতে পূর্ণ সম্মতি প্রদান করছি।
                         </span>
                     </label>
                 </div>

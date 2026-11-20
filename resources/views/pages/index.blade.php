@@ -68,7 +68,7 @@
                     <span class="ep-sidebar-icon">@include('pages.partials.icon', ['name' => 'flag', 'size' => 20])</span>
                     <span class="ep-sidebar-label">Pages</span>
                 </a>
-                <a href="javascript:void(0)" class="ep-sidebar-link">
+                <a href="/events" class="ep-sidebar-link">
                     <span class="ep-sidebar-icon">@include('pages.partials.icon', ['name' => 'calendar', 'size' => 20])</span>
                     <span class="ep-sidebar-label">Events</span>
                 </a>

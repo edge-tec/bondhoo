@@ -539,7 +539,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/settings/devices" class="sidebar-menu-btn" title="কানেক্টেড ডিভাইস ও সেশন">
+                        <a href="/devices" class="sidebar-menu-btn" title="কানেক্টেড ডিভাইস ও সেশন">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
                             <span>কানেক্টেড ডিভাইস</span>
                         </a>
@@ -723,7 +723,7 @@
                                 <p style="font-size: 13.5px; font-weight: 600; color: var(--fb-text-primary);">বর্তমান ব্রাউজার ও ডিভাইস সক্রিয়</p>
                                 <p style="font-size: 12px; color: var(--fb-text-secondary);">অন্যান্য অপ্রয়োজনীয় বা সন্দেহজনক সেশন মুছে ফেলতে ডিভাইস ম্যানেজারে যান।</p>
                             </div>
-                            <a href="/settings/devices" class="btn-secondary">
+                            <a href="/devices" class="btn-secondary">
                                 <span>ডিভাইস ম্যানেজার খুলুন</span>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </a>
@@ -1155,7 +1155,7 @@
             <a href="/terms" class="footer-link">ব্যবহারের শর্তাবলী (Terms)</a>
             <a href="/cookies" class="footer-link">কুকিজ পলিসি (Cookies)</a>
             <a href="/settings/privacy" class="footer-link">গোপনীয়তা নীতি (Privacy)</a>
-            <a href="/settings/devices" class="footer-link">ডিভাইস নিরাপত্তা</a>
+            <a href="/devices" class="footer-link">ডিভাইস নিরাপত্তা</a>
             <a href="/dashboard" class="footer-link">হোম</a>
         </div>
         <div>SocialHub Platform © {{ date('Y') }} — সকল অধিকার সংরক্ষিত।</div>

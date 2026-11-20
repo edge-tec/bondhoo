@@ -283,7 +283,7 @@ const filteredFriends = computed(() => {
 const acceptRequest = async (senderId: number) => {
   try {
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
-    const res = await fetch(`/api/v1/friends/accept/${senderId}`, {
+    const res = await fetch(`/api/v1/friends/${senderId}/accept`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -307,7 +307,7 @@ const acceptRequest = async (senderId: number) => {
 const declineRequest = async (senderId: number) => {
   try {
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
-    const res = await fetch(`/api/v1/friends/decline/${senderId}`, {
+    const res = await fetch(`/api/v1/friends/${senderId}/decline`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -349,7 +349,7 @@ const removeFriend = async (friendId: number) => {
 const addSuggestedFriend = async (userId: number) => {
   try {
     const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
-    const res = await fetch(`/api/v1/friends/request/${userId}`, {
+    const res = await fetch(`/api/v1/friends/${userId}/request`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',

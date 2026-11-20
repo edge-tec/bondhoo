@@ -328,8 +328,11 @@
                 window.dispatchEvent(new CustomEvent('jugajug:message-reaction', { detail: { event: evt, payload: p } }));
             } else if (evt.event_type === 'user.typing' || evt.event_type === 'presence.typing') {
                 window.dispatchEvent(new CustomEvent('jugajug:typing', { detail: { event: evt, payload: p } }));
-            } else if (evt.event_type === 'message.read' || evt.event_type === 'message.delivered') {
+            } else if (evt.event_type === 'message.read' || evt.event_type === 'conversation.read' || evt.event_type === 'message.delivered') {
                 window.dispatchEvent(new CustomEvent('jugajug:message-status', { detail: { event: evt, payload: p } }));
+            } else if (evt.event_type === 'poll.created' || evt.event_type === 'poll.voted' || evt.event_type === 'poll.closed' || evt.event_type === 'conversation.theme_updated' || evt.event_type === 'conversation.disappearing_timer_updated') {
+                handleMessageUpdated(p, evt);
+                window.dispatchEvent(new CustomEvent('jugajug:enterprise-messenger', { detail: { event: evt, payload: p } }));
             } else if (evt.event_type === 'conversation.cleared') {
                 handleConversationCleared(p, evt);
                 window.dispatchEvent(new CustomEvent('jugajug:conversation-cleared', { detail: { event: evt, payload: p } }));

@@ -564,7 +564,7 @@
 
             <!-- 2. Story -->
             <a
-              href="/stories/create"
+              href="/feed?create_story=1"
               class="flex flex-col items-center gap-1.5 p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-center group"
             >
               <div class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">

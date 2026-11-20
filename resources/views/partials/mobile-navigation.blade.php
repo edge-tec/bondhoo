@@ -1136,7 +1136,7 @@
         if (typeof openReelsStudioModal === 'function') {
             openReelsStudioModal();
         } else {
-            window.location.href = '/watch/studio';
+            window.location.href = '/reels?create=1';
         }
     }
 

@@ -10,6 +10,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>@yield('title', 'Bondoo — Modern Social Network')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="broadcast-connection" content="{{ config('broadcasting.default', 'log') }}">
+    <meta name="reverb-app-key" content="{{ env('REVERB_APP_KEY', 'connectly_reverb_key') }}">
+    <meta name="reverb-host" content="{{ env('REVERB_HOST', request()->getHost()) }}">
+    <meta name="reverb-port" content="{{ env('REVERB_PORT', '') }}">
+    <meta name="reverb-scheme" content="{{ env('REVERB_SCHEME', request()->getScheme()) }}">
+    <script src="/js/bondhoo-echo-client.js?v={{ @filemtime(public_path('js/bondhoo-echo-client.js')) ?: 1 }}"></script>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <link rel="apple-touch-icon" href="/images/bondhoo-icon-192.png">
