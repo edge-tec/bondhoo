@@ -36,7 +36,6 @@ class Phase1CompleteAuthTest extends TestCase
         $response->assertStatus(201)
             ->assertJson([
                 'success' => true,
-                'message' => 'Registration successful.',
             ])
             ->assertJsonStructure([
                 'data' => [

@@ -147,7 +147,7 @@ class GroupService
             ], $data['settings'] ?? []);
 
             $privacy = $data['privacy'] ?? Group::PRIVACY_PUBLIC;
-            $communityType = match ($privacy) {
+            $communityType = ! empty($data['community_type']) ? $data['community_type'] : match ($privacy) {
                 Group::PRIVACY_HIDDEN => Group::COMMUNITY_HIDDEN,
                 Group::PRIVACY_PRIVATE => Group::COMMUNITY_PRIVATE,
                 default => Group::COMMUNITY_PUBLIC,

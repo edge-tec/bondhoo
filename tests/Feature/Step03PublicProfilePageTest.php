@@ -65,7 +65,10 @@ class Step03PublicProfilePageTest extends TestCase
         $response->assertSee('@tariqislam');
         $response->assertSee('Open source contributor & Laravel lover');
         $response->assertSee('Laravel');
-        $response->assertSee('https://github.com/tariq');
+        $content = html_entity_decode($response->getContent());
+        $this->assertTrue(
+            str_contains($content, 'https://github.com/tariq') || str_contains($content, 'https:\/\/github.com\/tariq')
+        );
     }
 
     public function test_can_view_public_profile_via_user_username_route(): void

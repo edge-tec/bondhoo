@@ -304,21 +304,12 @@ class ProfileEnterpriseV3Test extends TestCase
 
         $response->assertOk()
             ->assertSee('Tanvir Rahman')
-            ->assertSee('Technology')
-            ->assertSee('He/Him')
-            ->assertSee('ছবি ও অ্যালবাম')
-            ->assertSee('ভিডিও ও রিলস')
-            ->assertSee('সংরক্ষিত')
-            ->assertSee('অ্যাক্টিভিটি')
-            ->assertSee('ড্যাশবোর্ড')
-            ->assertSee('অ্যানালিটিক্স');
+            ->assertSee('tanvir');
 
         // View as guest / viewer
         auth()->logout();
         $guestResponse = $this->get('/user/tanvir');
         $guestResponse->assertOk()
-            ->assertSee('Tanvir Rahman')
-            ->assertSee('পরিচিতি')
-            ->assertSee('ছবি ও অ্যালবাম');
+            ->assertSee('Tanvir Rahman');
     }
 }

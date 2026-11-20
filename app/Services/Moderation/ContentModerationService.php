@@ -62,8 +62,15 @@ class ContentModerationService
         if (! empty($mediaIds)) {
             $mediaItems = Media::whereIn('id', $mediaIds)->get();
             foreach ($mediaItems as $media) {
-                $filePath = storage_path('app/public/'.($media->file_path ?? ''));
-                if (file_exists($filePath)) {
+                if (empty($media->file_path)) {
+                    continue;
+                }
+                $mimeType = strtolower((string) ($media->mime_type ?? ''));
+                if ($mimeType !== '' && ! str_starts_with($mimeType, 'image/')) {
+                    continue;
+                }
+                $filePath = storage_path('app/public/'.ltrim($media->file_path, '/'));
+                if (is_file($filePath)) {
                     $mediaResult = $this->imageScanner->moderateImageFile($filePath);
                     $highestFlagged = $highestFlagged || $mediaResult['flagged'];
                     $combinedCategories = array_merge($combinedCategories, $mediaResult['categories']);

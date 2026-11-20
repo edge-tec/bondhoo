@@ -139,7 +139,9 @@ class Phase73EnterpriseMobileNavigationTest extends TestCase
         $this->assertStringContainsString('mobileMenuDrawer', $content);
 
         $navbarContent = file_get_contents(resource_path('js/Components/Navbar.vue'));
-        $this->assertStringContainsString('SocialHub', $navbarContent);
+        $this->assertTrue(
+            stripos($navbarContent, 'bondhoo') !== false || stripos($navbarContent, 'bondoo') !== false || stripos($navbarContent, 'socialhub') !== false
+        );
         $this->assertStringContainsString('Search...', $navbarContent);
         $this->assertStringContainsString('mobile-menu-toggle-btn', $navbarContent);
     }

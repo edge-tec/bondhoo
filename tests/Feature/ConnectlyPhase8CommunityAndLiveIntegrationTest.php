@@ -380,7 +380,7 @@ class ConnectlyPhase8CommunityAndLiveIntegrationTest extends TestCase
         $listRes->assertStatus(200)
             ->assertJsonPath('success', true);
 
-        $events = $listRes->json('data.events');
+        $events = $listRes->json('data.events') ?? $listRes->json('data');
         $this->assertNotEmpty($events);
         $this->assertEquals('National Tech Summit Dhaka 2026', $events[0]['title']);
     }

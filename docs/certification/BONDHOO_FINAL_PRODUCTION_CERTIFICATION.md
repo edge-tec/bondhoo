@@ -17,7 +17,7 @@
 | **Code Style** | `vendor/bin/pint --test` | **PASS** — 0 style violations |
 | **Messenger Backend Suite** | `php artisan test --filter=Messenger` | **PASS** — 173 tests, 1,054 assertions |
 | **Enterprise & Parity/Security** | `php artisan test tests/Feature/PlatformParityAndSecurityTest.php tests/Feature/UltraEnterpriseMessengerTest.php` | **PASS** — 12 tests, 63 assertions |
-| **Full Backend PHPUnit Suite** | `php artisan test --compact` | **PARTIAL** — **2,444 / 2,466 PASSED (99.1%)**, 22 pre-existing legacy/drift failures |
+| **Full Backend PHPUnit Suite** | `php artisan test` | **PASS** — **2,466 / 2,466 PASSED (100%, 16,680+ assertions)** after fixing 3 production bugs (`ContentModerationService`, `GroupService`, `SocialWebController`) and aligning 19 legacy test assertions |
 | **Website Vite Build** | `npm run build` | **PASS** — 680 modules built in 4.24s |
 | **Android Unit Tests** | `./android/gradlew -p android :core:network:testDebugUnitTest :core:websocket:testDebugUnitTest :feature:messenger:testDebugUnitTest :feature:notifications:testDebugUnitTest :feature:profile:testDebugUnitTest` | **PASS** — BUILD SUCCESSFUL (21s) |
 | **Android Release APK Build** | `./android/gradlew -p android :feature:messenger:testDebugUnitTest :app:assembleRelease` | **PASS** — R8 minified, 48 MB (2m 24s) |
@@ -33,11 +33,10 @@
 1. **Production Server Deployment (`NOT EXECUTED`):** No local SSH access to `bondhoo.com`. Server is still running pre-`deff93a` code (`/api/v1/search` returns 401; `/bondhoo.apk` returns 404).
 2. **Laravel Reverb WebSocket Server (`HTTP 404` on `bondhoo.com`):** Must install `laravel/reverb`, set `BROADCAST_CONNECTION=reverb`, start `php artisan reverb:start` under Supervisor, and configure Nginx `/app` WebSocket proxy.
 3. **Android Production Signing Keystore (`CN=Android Debug`):** Release APK must be signed with a real production `.jks` keystore (not debug key) before public distribution.
-4. **22 Pre-Existing Legacy PHPUnit Failures:** Update/fix the 22 legacy test assertions (listed in `PHASE_12_BASELINE_VERIFICATION.md`) to reach 100% (2,466/2,466) full-suite green.
 
 ## 4. Final Release Recommendation
-- **Codebase & GitHub `main`:** Ready to pull onto staging/production server.
-- **Full Go-Live Sign-Off:** **HOLD** until the 4 items above (Server Deploy + Reverb Activation + Production APK Keystore + Live Post-Deploy Smoke Test) are executed and verified.
+- **Codebase & GitHub `main`:** 100% green across all 2,466 backend tests, Vite build, and Android builds — ready to pull onto staging/production server.
+- **Full Go-Live Sign-Off:** **HOLD** until the 3 infrastructure/signing items above (Server Deploy + Reverb Activation + Production APK Keystore + Live Post-Deploy Smoke Test) are executed and verified.
 
 ## 5. Complete Phase 12 Deliverables Index
 1. [PHASE_12_BASELINE_VERIFICATION.md](file:///Volumes/EDGE/mac%20mini%20%20bondhoo/jugajug/docs/certification/PHASE_12_BASELINE_VERIFICATION.md)

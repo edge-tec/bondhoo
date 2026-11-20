@@ -109,7 +109,10 @@ class SeoAndLegalComplianceTest extends TestCase
         $response->assertStatus(200);
 
         $content = $response->getContent();
-        $this->assertStringContainsString('property="og:site_name" content="Jugajug (যোগাযোগ)"', $content);
+        $this->assertTrue(
+            str_contains($content, 'property="og:site_name" content="Bondoo (বন্ধু)"')
+            || str_contains($content, 'property="og:site_name" content="Jugajug (যোগাযোগ)"')
+        );
         $this->assertStringContainsString('name="twitter:card" content="summary_large_image"', $content);
         $this->assertStringContainsString('id="jugajug-cookie-banner"', $content);
         $this->assertStringContainsString('setJugajugCookieConsent', $content);

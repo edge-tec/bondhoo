@@ -36,6 +36,7 @@ use App\Services\GroupService;
 use App\Services\Marketplace\MarketplaceService;
 use App\Services\Messenger\MessengerSoundService;
 use App\Services\NotificationService;
+use App\Services\ProfileAnalyticsService;
 use App\Services\ProfilePrivacyService;
 use App\Services\ProfileService;
 use App\Services\StoryEnterpriseService;
@@ -405,6 +406,10 @@ class SocialWebController extends Controller
 
         $isOwner = (bool) ($viewer && (int) $viewer->id === (int) $targetUser->id);
 
+        if (! $isOwner) {
+            app(ProfileAnalyticsService::class)->recordView($targetUser, $viewer, $request);
+        }
+
         $relationship = $viewer
             ? strtolower(
                 $viewer->id === $targetUser->id
@@ -449,6 +454,7 @@ class SocialWebController extends Controller
             'gender' => $profile?->gender,
             'website' => $profile?->website,
             'interests' => is_array($profile?->interests) ? $profile->interests : [],
+            'social_links' => $targetUser->socialLinks()->where('is_visible', true)->get()->toArray(),
             'joined_date' => $targetUser->created_at ? $targetUser->created_at->format('F Y') : null,
         ];
 

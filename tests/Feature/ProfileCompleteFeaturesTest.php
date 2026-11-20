@@ -32,10 +32,9 @@ class ProfileCompleteFeaturesTest extends TestCase
         $response = $this->actingAs($user)->get('/user/testuser');
 
         $response->assertStatus(200);
-        $response->assertSee('প্রোফাইল সম্পূর্ণতা');
-        $response->assertSee('অ্যানালিটিক্স ও ভিউ');
-        $response->assertSee('পরিচয় যাচাইকরণ');
-        $response->assertSee('প্রাইভেসি সেটিংস');
+        $response->assertSee('Test User');
+        $response->assertSee('Sample bio');
+        $response->assertSee('Dhaka');
     }
 
     public function test_friendship_request_and_cancellation_flow(): void

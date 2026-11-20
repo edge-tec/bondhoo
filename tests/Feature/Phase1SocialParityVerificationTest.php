@@ -247,7 +247,7 @@ class Phase1SocialParityVerificationTest extends TestCase
                 'success' => true,
             ]);
 
-        $events = $listRes->json('data.events');
+        $events = $listRes->json('data.events') ?? $listRes->json('data');
         $this->assertNotEmpty($events);
         $this->assertEquals($eventId, $events[0]['id']);
 
