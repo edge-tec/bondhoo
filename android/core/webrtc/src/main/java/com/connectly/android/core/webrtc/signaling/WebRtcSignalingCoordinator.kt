@@ -151,7 +151,7 @@ class WebRtcSignalingCoordinator @Inject constructor(
         pollingJob?.cancel()
         pollingJob = scope.launch {
             while (isActive) {
-                delay(1500)
+                delay(500)
                 try {
                     val response = api.getSignals(callId)
                     if (response.isSuccessful && response.body()?.data != null) {

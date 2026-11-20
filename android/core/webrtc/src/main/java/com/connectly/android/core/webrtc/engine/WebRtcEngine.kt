@@ -39,6 +39,7 @@ import org.webrtc.MediaConstraints
 import org.webrtc.MediaStream
 import org.webrtc.PeerConnection
 import org.webrtc.PeerConnectionFactory
+import org.webrtc.RtpParameters
 import org.webrtc.RtpReceiver
 import org.webrtc.RtpTransceiver
 import org.webrtc.SdpObserver
@@ -47,6 +48,7 @@ import org.webrtc.SurfaceTextureHelper
 import org.webrtc.VideoCapturer
 import org.webrtc.VideoSource
 import org.webrtc.VideoTrack
+import org.webrtc.audio.JavaAudioDeviceModule
 import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -111,14 +113,20 @@ class WebRtcEngine @Inject constructor(
 
             val encoderFactory = DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true)
             val decoderFactory = DefaultVideoDecoderFactory(eglBase.eglBaseContext)
+            val audioDeviceModule = JavaAudioDeviceModule.builder(context)
+                .setUseHardwareAcousticEchoCanceler(JavaAudioDeviceModule.isBuiltInAcousticEchoCancelerSupported())
+                .setUseHardwareNoiseSuppressor(JavaAudioDeviceModule.isBuiltInNoiseSuppressorSupported())
+                .createAudioDeviceModule()
 
             peerConnectionFactory = PeerConnectionFactory.builder()
+                .setAudioDeviceModule(audioDeviceModule)
                 .setVideoEncoderFactory(encoderFactory)
                 .setVideoDecoderFactory(decoderFactory)
                 .setOptions(PeerConnectionFactory.Options())
                 .createPeerConnectionFactory()
 
-            Log.i(TAG, "Native PeerConnectionFactory initialized successfully.")
+            audioDeviceModule.release()
+            Log.i(TAG, "Native PeerConnectionFactory initialized with hardware AEC/NS and HD codecs.")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize native PeerConnectionFactory", e)
         }
@@ -186,14 +194,14 @@ class WebRtcEngine @Inject constructor(
             peerState = PeerConnectionState.CONNECTING,
             iceState = IceConnectionState.CHECKING,
             isLocalAudioEnabled = true,
-            isLocalVideoEnabled = callType == CallType.VIDEO,
-            isSpeakerOn = callType == CallType.VIDEO,
+            isLocalVideoEnabled = callType.isVideo,
+            isSpeakerOn = callType.isVideo,
             remoteParticipants = mapOf(
                 receiverId to CallParticipantState(userId = receiverId, userName = receiverName)
             )
         )
 
-        audioManager.start(enableSpeaker = callType == CallType.VIDEO)
+        audioManager.start(enableSpeaker = callType.isVideo)
         signalingCoordinator.startSession(callId, conversationId)
 
         scope.launch {
@@ -218,8 +226,8 @@ class WebRtcEngine @Inject constructor(
             peerState = PeerConnectionState.NEW,
             iceState = IceConnectionState.NEW,
             isLocalAudioEnabled = true,
-            isLocalVideoEnabled = callType == CallType.VIDEO,
-            isSpeakerOn = callType == CallType.VIDEO,
+            isLocalVideoEnabled = callType.isVideo,
+            isSpeakerOn = callType.isVideo,
             remoteParticipants = mapOf(
                 callerId to CallParticipantState(userId = callerId, userName = callerName)
             )
@@ -243,7 +251,7 @@ class WebRtcEngine @Inject constructor(
             )
         }
 
-        audioManager.start(enableSpeaker = currentState.callType == CallType.VIDEO)
+        audioManager.start(enableSpeaker = currentState.callType.isVideo)
         notificationManager.showOngoingCallNotification(callId, callerName, currentState.callType)
 
         scope.launch {
@@ -312,8 +320,8 @@ class WebRtcEngine @Inject constructor(
         localAudioTrack = factory.createAudioTrack("ARDAMSa0", audioSource)
         localAudioTrack?.setEnabled(true)
 
-        // 2. Video Track (if VIDEO call)
-        if (callType == CallType.VIDEO) {
+        // 2. Video Track (if VIDEO or GROUP_VIDEO call)
+        if (callType.isVideo) {
             try {
                 surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglBase.eglBaseContext)
                 val enumerator = Camera2Enumerator(context)
@@ -466,6 +474,10 @@ class WebRtcEngine @Inject constructor(
 
             override fun onAddStream(stream: MediaStream) {
                 Log.i(TAG, "onAddStream: audio=${stream.audioTracks.size}, video=${stream.videoTracks.size}")
+                stream.audioTracks.forEach { audioTrack ->
+                    audioTrack.setEnabled(true)
+                    audioTrack.setVolume(1.5)
+                }
                 if (stream.videoTracks.isNotEmpty()) {
                     _remoteVideoTrack.value = stream.videoTracks[0]
                 }
@@ -485,32 +497,63 @@ class WebRtcEngine @Inject constructor(
             override fun onAddTrack(receiver: RtpReceiver, mediaStreams: Array<out MediaStream>) {
                 Log.i(TAG, "onAddTrack")
                 val track = receiver.track()
-                if (track is VideoTrack) {
+                if (track is AudioTrack) {
+                    track.setEnabled(true)
+                    track.setVolume(1.5)
+                } else if (track is VideoTrack) {
                     _remoteVideoTrack.value = track
                 }
             }
 
             override fun onTrack(transceiver: RtpTransceiver) {
                 val track = transceiver.receiver.track()
-                if (track is VideoTrack) {
+                if (track is AudioTrack) {
+                    track.setEnabled(true)
+                    track.setVolume(1.5)
+                } else if (track is VideoTrack) {
                     _remoteVideoTrack.value = track
                 }
             }
         })
 
-        // Attach local tracks
+        // Attach local tracks with HD zero-lag RTP encoding parameters
         localAudioTrack?.let { audioTrack ->
-            peerConnection?.addTrack(audioTrack, listOf("ARDAMS"))
+            val audioSender = peerConnection?.addTrack(audioTrack, listOf("ARDAMS"))
+            audioSender?.let { sender ->
+                try {
+                    val params = sender.parameters
+                    params.encodings.forEach { enc ->
+                        enc.maxBitrateBps = 64_000
+                    }
+                    sender.parameters = params
+                } catch (e: Exception) {
+                    Log.w(TAG, "Audio RTP bitrate tuning skipped: ${e.message}")
+                }
+            }
         }
         _localVideoTrack.value?.let { videoTrack ->
-            peerConnection?.addTrack(videoTrack, listOf("ARDAMS"))
+            val videoSender = peerConnection?.addTrack(videoTrack, listOf("ARDAMS"))
+            videoSender?.let { sender ->
+                try {
+                    val params = sender.parameters
+                    params.degradationPreference = RtpParameters.DegradationPreference.MAINTAIN_FRAMERATE
+                    params.encodings.forEach { enc ->
+                        enc.maxBitrateBps = 2_000_000
+                        enc.minBitrateBps = 350_000
+                        enc.maxFramerate = 30
+                    }
+                    sender.parameters = params
+                } catch (e: Exception) {
+                    Log.w(TAG, "Video RTP HD tuning skipped: ${e.message}")
+                }
+            }
         }
     }
 
     private fun createAndSendOffer(callId: Long, receiverId: Long, callType: CallType) {
         val constraints = MediaConstraints().apply {
             mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-            if (callType == CallType.VIDEO) {
+            if (callType.isVideo) {
                 mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
             }
         }
@@ -557,7 +600,7 @@ class WebRtcEngine @Inject constructor(
 
                 val constraints = MediaConstraints().apply {
                     mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-                    if (callType == CallType.VIDEO) {
+                    if (callType.isVideo) {
                         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
                     }
                 }
@@ -705,7 +748,7 @@ class WebRtcEngine @Inject constructor(
             val restartConstraints = MediaConstraints().apply {
                 mandatory.add(MediaConstraints.KeyValuePair("IceRestart", "true"))
                 mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-                if (_callState.value.callType == CallType.VIDEO) {
+                if (_callState.value.callType.isVideo) {
                     mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
                 }
             }

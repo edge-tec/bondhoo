@@ -10,6 +10,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        window.__BONDHOO_REVERB__ = {
+            key: @json(config('reverb.apps.apps.0.key', env('REVERB_APP_KEY', 'connectly_reverb_key'))),
+            host: @json(config('reverb.apps.apps.0.options.host', env('REVERB_HOST', request()->getHost()))),
+            port: @json((int) config('reverb.apps.apps.0.options.port', env('REVERB_PORT', 443))),
+            scheme: @json(config('reverb.apps.apps.0.options.scheme', env('REVERB_SCHEME', 'https')))
+        };
+    </script>
+    <script src="/js/bondhoo-echo-client.js" defer></script>
     <style>
         :root {
             --call-bg: #0b0f19;
@@ -170,13 +179,52 @@
             background: #000;
         }
 
-        /* Video Elements */
+        /* Facebook Messenger-Style Adaptive Video Viewport (Mobile vs Desktop) */
+        video.remote-video-backdrop {
+            position: absolute;
+            inset: -24px;
+            width: calc(100% + 48px);
+            height: calc(100% + 48px);
+            object-fit: cover;
+            filter: blur(28px) brightness(0.45) saturate(1.2);
+            transform: scale(1.06);
+            display: none;
+            z-index: 1;
+            pointer-events: none;
+        }
+
         video.remote-video {
+            position: relative;
+            z-index: 2;
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: none;
-            background: #000;
+            background: transparent;
+            transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* When a Mobile user (portrait 9:16) calls a Desktop widescreen monitor */
+        video.remote-video.remote-portrait-on-desktop {
+            width: auto;
+            height: calc(100vh - 156px);
+            max-width: 92vw;
+            aspect-ratio: 9 / 16;
+            border-radius: 22px;
+            object-fit: cover;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.14);
+        }
+
+        /* When a Desktop user (landscape 16:9) calls a Mobile portrait device */
+        video.remote-video.remote-landscape-on-mobile {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* User-forced fit mode */
+        video.remote-video.force-fit {
+            object-fit: contain !important;
         }
 
         /* Multi-Party Group Video Grid (LiveKit SFU / Mesh) */
@@ -651,6 +699,11 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
                     <span>+ বন্ধু যুক্ত করুন</span>
                 </button>
+                <!-- Adaptive Layout Mode Pill (Desktop HD vs Mobile HD) -->
+                <button type="button" id="layoutModeBadge" class="network-badge" onclick="toggleRemoteVideoFitMode()" style="cursor: pointer; display: none; color: #e2e8f0;" title="ভিডিও স্ক্রিন ফিট/ফিল পরিবর্তন করুন">
+                    <span id="layoutModeIcon">🖥️</span>
+                    <span id="layoutModeText">HD</span>
+                </button>
                 <!-- Network Quality Indicator Badge -->
                 <div id="networkQualityBadge" class="network-badge" title="নেটওয়ার্ক গুণমান">
                     <span id="netSignalBars">📶</span>
@@ -666,6 +719,8 @@
 
         <!-- Central Viewport -->
         <div class="call-viewport">
+            <!-- Ambient Blurred Backdrop for Cross-Orientation (Mobile <-> Desktop) Calls -->
+            <video id="remoteVideoBackdrop" class="remote-video-backdrop" autoplay playsinline muted></video>
             <!-- Remote Video Stream -->
             <video id="remoteVideo" class="remote-video" autoplay playsinline muted></video>
 
@@ -1451,10 +1506,30 @@
             const wantsVideo = INITIAL_CALL_TYPE === 'video';
 
             if (wantsVideo) {
+                const isMobileViewport = window.innerWidth < window.innerHeight && window.innerWidth <= 768;
+                const videoConstraints = isMobileViewport
+                    ? {
+                        width: { ideal: 720, min: 480, max: 1280 },
+                        height: { ideal: 1280, min: 640, max: 1920 },
+                        frameRate: { ideal: 30, min: 20, max: 30 },
+                        facingMode: 'user'
+                    }
+                    : {
+                        width: { ideal: 1280, min: 640, max: 1920 },
+                        height: { ideal: 720, min: 480, max: 1080 },
+                        frameRate: { ideal: 30, min: 20, max: 30 },
+                        facingMode: 'user'
+                    };
                 try {
                     return await navigator.mediaDevices.getUserMedia({
-                        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-                        video: { width: { ideal: 1280, max: 1920 }, height: { ideal: 720, max: 1080 }, facingMode: 'user' }
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true,
+                            sampleRate: 48000,
+                            channelCount: 1
+                        },
+                        video: videoConstraints
                     });
                 } catch (err1) {
                     console.warn('[WebRTC] Preferred camera constraint failed, trying basic:', err1.name);
@@ -1528,6 +1603,7 @@
             document.getElementById('remoteVideo').style.display = 'none';
 
             setupPeerConnection();
+            startReverbCallListener();
             startSyncListener();
             initDraggablePip();
 
@@ -1642,7 +1718,8 @@
 
             if (localStream) {
                 localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
+                    const sender = peerConnection.addTrack(track, localStream);
+                    applyHdSenderParameters(sender, track.kind);
                 });
             }
             const audioSender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'audio');
@@ -1693,10 +1770,21 @@
                         const hasLiveVideo = videoTracks.some(t => t.readyState === 'live' && t.enabled && !t.muted);
                         if (hasLiveVideo) {
                             remoteVid.style.display = 'block';
+                            const backdrop = document.getElementById('remoteVideoBackdrop');
+                            if (backdrop) {
+                                if (!backdrop.srcObject || backdrop.srcObject !== remoteStream) {
+                                    backdrop.srcObject = remoteStream;
+                                }
+                                backdrop.play().catch(() => {});
+                            }
                             document.getElementById('audioVisualizer').style.display = 'none';
                             remoteVid.play().catch(e => console.warn('[WebRTC] Remote video play error:', e));
+                            updateAdaptiveVideoLayout();
                         }
                     };
+
+                    remoteVid.onloadedmetadata = () => updateAdaptiveVideoLayout();
+                    remoteVid.onresize = () => updateAdaptiveVideoLayout();
 
                     if (event.track.kind === 'video') {
                         renderRemoteVideoIfReady();
@@ -2063,7 +2151,116 @@
             }
         }
 
-        // 10. Polling & Real-time Listeners
+        // 9B. HD Zero-Lag RTP Parameters & Facebook Messenger-Style Adaptive Mobile/Desktop Screen Layout
+        let userForceFitMode = false;
+
+        async function applyHdSenderParameters(sender, kind) {
+            if (!sender || typeof sender.getParameters !== 'function' || typeof sender.setParameters !== 'function') return;
+            try {
+                const params = sender.getParameters();
+                if (!params.encodings || params.encodings.length === 0) {
+                    params.encodings = [{}];
+                }
+                if (kind === 'video') {
+                    params.degradationPreference = 'maintain-framerate';
+                    params.encodings[0].maxBitrate = 2000000;
+                    params.encodings[0].maxFramerate = 30;
+                } else if (kind === 'audio') {
+                    params.encodings[0].maxBitrate = 64000;
+                }
+                await sender.setParameters(params);
+            } catch (e) {
+                console.warn('[WebRTC] HD sender parameter tuning skipped:', e.message || e);
+            }
+        }
+
+        function updateAdaptiveVideoLayout() {
+            const remoteVid = document.getElementById('remoteVideo');
+            const backdrop = document.getElementById('remoteVideoBackdrop');
+            const badge = document.getElementById('layoutModeBadge');
+            const icon = document.getElementById('layoutModeIcon');
+            const text = document.getElementById('layoutModeText');
+            if (!remoteVid || remoteVid.style.display === 'none') return;
+
+            const vw = remoteVid.videoWidth || 0;
+            const vh = remoteVid.videoHeight || 0;
+            if (!vw || !vh) return;
+
+            const remoteIsPortrait = vh > vw;
+            const viewportIsDesktop = window.innerWidth >= window.innerHeight && window.innerWidth >= 768;
+            const viewportIsMobile = window.innerHeight > window.innerWidth || window.innerWidth < 768;
+
+            remoteVid.classList.remove('remote-portrait-on-desktop', 'remote-landscape-on-mobile', 'force-fit');
+
+            if (userForceFitMode) {
+                remoteVid.classList.add('force-fit');
+                if (backdrop) backdrop.style.display = 'block';
+            } else if (remoteIsPortrait && viewportIsDesktop) {
+                // Mobile phone calling Desktop browser -> Facebook Messenger portrait mobile frame + blurred backdrop
+                remoteVid.classList.add('remote-portrait-on-desktop');
+                if (backdrop) backdrop.style.display = 'block';
+            } else if (!remoteIsPortrait && viewportIsMobile) {
+                // Desktop calling Mobile browser -> Full desktop HD screen fit + blurred backdrop
+                remoteVid.classList.add('remote-landscape-on-mobile');
+                if (backdrop) backdrop.style.display = 'block';
+            } else {
+                // Matching orientation (Desktop <-> Desktop or Mobile <-> Mobile) -> Edge-to-edge HD fill
+                if (backdrop) backdrop.style.display = 'none';
+            }
+
+            if (badge && icon && text) {
+                badge.style.display = 'flex';
+                icon.innerText = remoteIsPortrait ? '📱' : '🖥️';
+                text.innerText = remoteIsPortrait ? 'মোবাইল HD' : 'ডেস্কটপ HD';
+            }
+        }
+
+        function toggleRemoteVideoFitMode() {
+            userForceFitMode = !userForceFitMode;
+            updateAdaptiveVideoLayout();
+            showToast(userForceFitMode ? 'সম্পূর্ণ স্ক্রিন ফিট চালু হয়েছে' : 'স্বয়ংক্রিয় স্মার্ট ভিউ চালু হয়েছে');
+        }
+
+        window.addEventListener('resize', () => updateAdaptiveVideoLayout());
+
+        // 10. Real-Time Laravel Reverb WebSocket Listener + Fast Polling Safety Net
+        function startReverbCallListener() {
+            try {
+                if (!window.Echo || typeof window.Echo.private !== 'function') {
+                    setTimeout(() => {
+                        if (!callHasEnded && window.Echo && typeof window.Echo.private === 'function') {
+                            bindReverbCallChannels();
+                        }
+                    }, 800);
+                    return;
+                }
+                bindReverbCallChannels();
+            } catch (e) {
+                console.warn('[WebRTC] Reverb Echo init fallback to fast polling:', e);
+            }
+        }
+
+        function bindReverbCallChannels() {
+            try {
+                const convChannel = window.Echo.private(`conversation.${CONVERSATION_ID}`);
+                convChannel
+                    .listen('.call.signal', (data) => enqueueSignal(data))
+                    .listen('.call.accepted', (data) => handleSyncEvent({ event_type: 'call.accepted', payload: data }))
+                    .listen('.call.rejected', (data) => handleSyncEvent({ event_type: 'call.rejected', payload: data }))
+                    .listen('.call.ended', (data) => handleSyncEvent({ event_type: 'call.ended', payload: data }))
+                    .listen('.call.participant_invited', (data) => handleSyncEvent({ event_type: 'call.participant_invited', payload: data }));
+
+                const userChannel = window.Echo.private(`user.${CURRENT_USER_ID}`);
+                userChannel
+                    .listen('.call.signal', (data) => enqueueSignal(data))
+                    .listen('.call.accepted', (data) => handleSyncEvent({ event_type: 'call.accepted', payload: data }))
+                    .listen('.call.rejected', (data) => handleSyncEvent({ event_type: 'call.rejected', payload: data }))
+                    .listen('.call.ended', (data) => handleSyncEvent({ event_type: 'call.ended', payload: data }));
+            } catch (e) {
+                console.warn('[WebRTC] Reverb channel bind warning:', e);
+            }
+        }
+
         function startFastSignalPolling() {
             if (fastSignalTimer) clearInterval(fastSignalTimer);
             fastSignalTimer = setInterval(async () => {
@@ -2115,6 +2312,11 @@
             if (localVid) localVid.srcObject = null;
             const remoteVid = document.getElementById('remoteVideo');
             if (remoteVid) remoteVid.srcObject = null;
+            const remoteBackdrop = document.getElementById('remoteVideoBackdrop');
+            if (remoteBackdrop) {
+                remoteBackdrop.srcObject = null;
+                remoteBackdrop.style.display = 'none';
+            }
             const remoteAud = document.getElementById('remoteAudio');
             if (remoteAud) remoteAud.srcObject = null;
         }

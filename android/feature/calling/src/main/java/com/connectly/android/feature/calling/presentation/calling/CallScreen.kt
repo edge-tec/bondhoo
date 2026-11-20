@@ -54,6 +54,7 @@ import com.connectly.android.core.model.CallStatus
 import com.connectly.android.core.model.CallType
 import com.connectly.android.core.model.NetworkQuality
 import com.connectly.android.core.webrtc.ui.WebRtcVideoRenderer
+import org.webrtc.RendererCommon
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -215,12 +216,16 @@ fun CallScreen(
                     )
                 }
 
-                // Active 1-to-1 Video Call
-                state.callType.isVideo && state.callStatus == CallStatus.CONNECTED -> {
+                // Active or Outgoing Dialing 1-to-1 Video Call (Facebook Messenger-style instant preview)
+                state.callType.isVideo && (
+                    state.callStatus == CallStatus.CONNECTED ||
+                        (!state.isIncoming && (state.callStatus == CallStatus.DIALING || state.callStatus == CallStatus.RINGING))
+                    ) -> {
                     ActiveVideoCallContent(
                         state = state,
                         onOpenInvite = { viewModel.handleIntent(CallIntent.OpenInviteSheet(true)) },
                         onToggleMute = { viewModel.handleIntent(CallIntent.ToggleMute) },
+                        onToggleSpeaker = { viewModel.handleIntent(CallIntent.ToggleSpeaker) },
                         onToggleCamera = { viewModel.handleIntent(CallIntent.ToggleCamera) },
                         onSwitchCamera = { viewModel.handleIntent(CallIntent.SwitchCamera) },
                         onEndCall = { viewModel.handleIntent(CallIntent.EndCall) }
@@ -739,19 +744,73 @@ private fun ActiveVideoCallContent(
     state: CallState,
     onOpenInvite: () -> Unit,
     onToggleMute: () -> Unit,
+    onToggleSpeaker: () -> Unit,
     onToggleCamera: () -> Unit,
     onSwitchCamera: () -> Unit,
     onEndCall: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    // Detect remote video orientation (Mobile Portrait vs Desktop Landscape) like Facebook Messenger
+    var remoteIsLandscape by remember { mutableStateOf(false) }
+    var userForcedFill by remember { mutableStateOf<Boolean?>(null) }
+    val useFillScaling = userForcedFill ?: !remoteIsLandscape
+    val remoteScalingType = if (useFillScaling) {
+        RendererCommon.ScalingType.SCALE_ASPECT_FILL
+    } else {
+        RendererCommon.ScalingType.SCALE_ASPECT_FIT
+    }
+
+    Box(modifier = modifier.fillMaxSize().background(Color(0xFF060913))) {
         if (state.remoteVideoTrack != null && state.eglBaseContext != null) {
             WebRtcVideoRenderer(
                 videoTrack = state.remoteVideoTrack,
                 eglBaseContext = state.eglBaseContext,
                 modifier = Modifier.fillMaxSize(),
-                isMirror = false
+                isMirror = false,
+                scalingType = remoteScalingType,
+                onFrameResolutionChanged = { w, h, rotation ->
+                    val effectiveW = if (rotation == 90 || rotation == 270) h else w
+                    val effectiveH = if (rotation == 90 || rotation == 270) w else h
+                    remoteIsLandscape = effectiveW > effectiveH
+                }
             )
+        } else if (!state.isCameraOff && state.localVideoTrack != null && state.eglBaseContext != null && state.callStatus != CallStatus.CONNECTED) {
+            // Facebook Messenger-style full-screen local camera preview while dialing/ringing
+            WebRtcVideoRenderer(
+                videoTrack = state.localVideoTrack,
+                eglBaseContext = state.eglBaseContext,
+                modifier = Modifier.fillMaxSize(),
+                isMirror = state.isFrontCamera,
+                scalingType = RendererCommon.ScalingType.SCALE_ASPECT_FILL
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CallAvatar(
+                        name = state.displayTitle,
+                        avatarUrl = state.displayAvatar,
+                        size = 112.dp,
+                        borderColor = Color.White.copy(alpha = 0.8f)
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        text = state.displayTitle,
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = if (state.callStatus == CallStatus.DIALING) "Calling..." else "Ringing...",
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontSize = 15.sp
+                    )
+                }
+            }
         } else {
             Box(
                 modifier = Modifier
@@ -768,7 +827,7 @@ private fun ActiveVideoCallContent(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Connecting video stream...",
+                        text = "Connecting HD video...",
                         color = Color.White.copy(alpha = 0.75f),
                         fontSize = 14.sp
                     )
@@ -823,11 +882,14 @@ private fun ActiveVideoCallContent(
                     Icon(Icons.Default.PersonAdd, contentDescription = "Invite Friend", tint = Color.White)
                 }
                 Surface(
-                    color = Color.Black.copy(alpha = 0.4f),
-                    shape = RoundedCornerShape(12.dp)
+                    color = Color.Black.copy(alpha = 0.45f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.clickable {
+                        userForcedFill = !useFillScaling
+                    }
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
@@ -837,7 +899,12 @@ private fun ActiveVideoCallContent(
                                 .clip(CircleShape)
                                 .background(ConnectlyGreen)
                         )
-                        Text("HD", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (remoteIsLandscape) "Desktop HD" else "Mobile HD",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
@@ -903,6 +970,12 @@ private fun ActiveVideoCallContent(
                 )
 
                 ControlIconButton(
+                    icon = if (state.isSpeakerOn) Icons.Default.VolumeUp else Icons.Default.VolumeDown,
+                    isActive = state.isSpeakerOn,
+                    onClick = onToggleSpeaker
+                )
+
+                ControlIconButton(
                     icon = if (state.isCameraOff) Icons.Default.VideocamOff else Icons.Default.Videocam,
                     isActive = state.isCameraOff,
                     onClick = onToggleCamera
@@ -912,12 +985,6 @@ private fun ActiveVideoCallContent(
                     icon = Icons.Default.FlipCameraAndroid,
                     isActive = false,
                     onClick = onSwitchCamera
-                )
-
-                ControlIconButton(
-                    icon = Icons.Default.PersonAdd,
-                    isActive = false,
-                    onClick = onOpenInvite
                 )
 
                 CallActionButton(

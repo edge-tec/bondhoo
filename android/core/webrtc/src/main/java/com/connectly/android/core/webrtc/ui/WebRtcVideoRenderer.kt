@@ -19,13 +19,26 @@ fun WebRtcVideoRenderer(
     modifier: Modifier = Modifier,
     isMirror: Boolean = false,
     scalingType: RendererCommon.ScalingType = RendererCommon.ScalingType.SCALE_ASPECT_FILL,
-    mediaOverlay: Boolean = false
+    mediaOverlay: Boolean = false,
+    onFrameResolutionChanged: ((width: Int, height: Int, rotation: Int) -> Unit)? = null
 ) {
     AndroidView(
         modifier = modifier,
         factory = { context ->
             SurfaceViewRenderer(context).apply {
-                init(eglBaseContext, null)
+                val rendererEvents = if (onFrameResolutionChanged != null) {
+                    object : RendererCommon.RendererEvents {
+                        override fun onFirstFrameRendered() {}
+                        override fun onFrameResolutionChanged(videoWidth: Int, videoHeight: Int, rotation: Int) {
+                            post {
+                                onFrameResolutionChanged(videoWidth, videoHeight, rotation)
+                            }
+                        }
+                    }
+                } else {
+                    null
+                }
+                init(eglBaseContext, rendererEvents)
                 setScalingType(scalingType)
                 setMirror(isMirror)
                 setEnableHardwareScaler(true)

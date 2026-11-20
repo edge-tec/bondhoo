@@ -2,6 +2,7 @@ package com.connectly.android.core.webrtc.audio
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
@@ -42,8 +43,15 @@ class CallAudioManager @Inject constructor(
 
     fun stop() {
         abandonAudioFocus()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                audioManager.clearCommunicationDevice()
+            } catch (_: Exception) {}
+        }
         audioManager.mode = savedAudioMode
-        setSpeakerphone(savedIsSpeakerphoneOn)
+        @Suppress("DEPRECATION")
+        audioManager.isSpeakerphoneOn = savedIsSpeakerphoneOn
+        _isSpeakerOn.value = savedIsSpeakerphoneOn
         setMicrophoneMute(savedIsMicrophoneMute)
     }
 
@@ -55,7 +63,30 @@ class CallAudioManager @Inject constructor(
 
     fun setSpeakerphone(enable: Boolean) {
         _isSpeakerOn.value = enable
-        audioManager.isSpeakerphoneOn = enable
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                val devices = audioManager.availableCommunicationDevices
+                val targetDevice = if (enable) {
+                    devices.firstOrNull { it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
+                } else {
+                    devices.firstOrNull {
+                        it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
+                            it.type == AudioDeviceInfo.TYPE_BLE_HEADSET ||
+                            it.type == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
+                            it.type == AudioDeviceInfo.TYPE_USB_HEADSET
+                    } ?: devices.firstOrNull { it.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE }
+                }
+                if (targetDevice != null) {
+                    audioManager.setCommunicationDevice(targetDevice)
+                }
+            } catch (_: Exception) {
+                @Suppress("DEPRECATION")
+                audioManager.isSpeakerphoneOn = enable
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.isSpeakerphoneOn = enable
+        }
     }
 
     fun toggleMute(): Boolean {
