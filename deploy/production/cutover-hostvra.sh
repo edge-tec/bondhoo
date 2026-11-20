@@ -7,8 +7,8 @@
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-$(pwd)}"
-BACKUP_DIR="${BACKUP_DIR:-/var/backups/bondhoo}"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/bondhoo/phase16_final_${TIMESTAMP}}"
 
 echo "=== [1/8] Pre-flight check in ${APP_DIR} ==="
 cd "${APP_DIR}"
@@ -18,9 +18,15 @@ if [ ! -f "artisan" ]; then
 fi
 
 mkdir -p "${BACKUP_DIR}"
-git rev-parse HEAD > "${BACKUP_DIR}/pre_cutover_commit_${TIMESTAMP}.txt"
-cp -a .env "${BACKUP_DIR}/env_backup_${TIMESTAMP}"
-chmod 600 "${BACKUP_DIR}/env_backup_${TIMESTAMP}"
+git rev-parse HEAD > "${BACKUP_DIR}/PREVIOUS_COMMIT.txt"
+cp -a .env "${BACKUP_DIR}/.env.backup"
+chmod 600 "${BACKUP_DIR}/.env.backup"
+if [ -d "/etc/nginx/sites-enabled" ]; then
+    cp -a /etc/nginx/sites-enabled "${BACKUP_DIR}/nginx-sites-enabled" 2>/dev/null || true
+fi
+if [ -d "/etc/supervisor/conf.d" ]; then
+    cp -a /etc/supervisor/conf.d "${BACKUP_DIR}/supervisor-conf.d" 2>/dev/null || true
+fi
 
 echo "=== [2/8] Creating verified MySQL database backup ==="
 DB_NAME=$(php -r 'require "vendor/autoload.php"; $app = require_once "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo config("database.connections.mysql.database");')
@@ -29,10 +35,13 @@ DB_PASS=$(php -r 'require "vendor/autoload.php"; $app = require_once "bootstrap/
 
 if [ -n "${DB_NAME}" ] && command -v mysqldump >/dev/null 2>&1; then
     DUMP_FILE="${BACKUP_DIR}/db_${DB_NAME}_${TIMESTAMP}.sql.gz"
-    MYSQL_PWD="${DB_PASS}" mysqldump --single-transaction --routines --triggers -u "${DB_USER}" "${DB_NAME}" | gzip > "${DUMP_FILE}"
+    MYSQL_PWD="${DB_PASS}" mysqldump --single-transaction --routines --triggers -u "${DB_USER}" "${DB_NAME}" | gzip -9 > "${DUMP_FILE}"
+    test -s "${DUMP_FILE}"
     gzip -t "${DUMP_FILE}"
-    chmod 600 "${DUMP_FILE}"
+    sha256sum "${DUMP_FILE}" > "${DUMP_FILE}.sha256"
+    chmod 600 "${DUMP_FILE}" "${DUMP_FILE}.sha256"
     echo "Verified database backup: ${DUMP_FILE} ($(du -h "${DUMP_FILE}" | cut -f1))"
+    cat "${DUMP_FILE}.sha256"
 fi
 
 echo "=== [3/8] Fetching & fast-forwarding origin/main ==="
