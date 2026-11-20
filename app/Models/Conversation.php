@@ -23,6 +23,8 @@ class Conversation extends Model
 
     public const TYPE_SAVED = 'saved';
 
+    public const TYPE_CHANNEL = 'channel';
+
     protected $fillable = [
         'type',
         'title',
@@ -62,6 +64,16 @@ class Conversation extends Model
     public function calls(): HasMany
     {
         return $this->hasMany(Call::class);
+    }
+
+    public function chatPolls(): HasMany
+    {
+        return $this->hasMany(ChatPoll::class);
+    }
+
+    public function scheduledMessages(): HasMany
+    {
+        return $this->hasMany(ScheduledMessage::class);
     }
 
     public function pinnedMessages(): HasMany
@@ -243,6 +255,9 @@ class Conversation extends Model
             'request_status' => $viewerParticipant ? $viewerParticipant->request_status : 'accepted',
             'draft_message' => $viewerParticipant ? $viewerParticipant->draft_message : null,
             'my_role' => $viewerParticipant ? $viewerParticipant->role : 'member',
+            'theme' => $this->settings['theme'] ?? null,
+            'disappearing_duration' => (int) ($this->settings['disappearing_duration'] ?? 0),
+            'is_channel' => $this->type === self::TYPE_CHANNEL,
             'participants_count' => $this->participants->count(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

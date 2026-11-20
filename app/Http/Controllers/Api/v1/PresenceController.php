@@ -347,6 +347,13 @@ class PresenceController extends Controller
      */
     public function typing(Request $request): JsonResponse
     {
+        if ($request->has('is_typing') && is_string($request->input('is_typing'))) {
+            $parsed = filter_var($request->input('is_typing'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($parsed !== null) {
+                $request->merge(['is_typing' => $parsed]);
+            }
+        }
+
         $request->validate([
             'conversation_id' => ['required', 'integer'],
             'is_typing' => ['nullable', 'boolean'],

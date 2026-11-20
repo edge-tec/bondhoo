@@ -90,7 +90,7 @@ Broadcast::channel('page.{pageId}.inbox', function ($user, $pageId) {
     }
 
     return $page->hasPermission($user->id, 'messages.manage');
-});
+}, ['guards' => ['web', 'sanctum']]);
 
 // ৭. পেজ কনভার্সন চ্যানেল (গ্রাহক অথবা পেজের অনুমোদিত টিম মেম্বার)
 Broadcast::channel('page.{pageId}.conversation.{conversationId}', function ($user, $pageId, $conversationId) {
@@ -110,7 +110,7 @@ Broadcast::channel('page.{pageId}.conversation.{conversationId}', function ($use
     $page = $conv->page;
 
     return $page && $page->hasPermission($user->id, 'messages.manage');
-});
+}, ['guards' => ['web', 'sanctum']]);
 
 // ৮. পেজ অ্যাডমিন ও টিম চ্যানেল (শুধুমাত্র ওনার বা অনুমোদিত টিম মেম্বার)
 Broadcast::channel('page.{pageId}.admin', function ($user, $pageId) {
@@ -135,7 +135,7 @@ Broadcast::channel('page.{pageId}.admin', function ($user, $pageId) {
             Page::ROLE_ADMIN,
             Page::ROLE_MANAGER,
         ], true);
-});
+}, ['guards' => ['web', 'sanctum']]);
 
 // ৯. পেজ সেটিংস চ্যানেল (শুধুমাত্র ওনার বা পেজ সেটিংস পারমিশনপ্রাপ্ত মেম্বার)
 Broadcast::channel('page.{pageId}.settings', function ($user, $pageId) {
@@ -153,7 +153,7 @@ Broadcast::channel('page.{pageId}.settings', function ($user, $pageId) {
     }
 
     return $page->hasPermission($user->id, 'page.settings');
-});
+}, ['guards' => ['web', 'sanctum']]);
 
 // ৮. গ্রুপ চ্যানেল (গ্রুপ সদস্য বা পাবলিক গ্রুপের জন্য)
 Broadcast::channel('group.{groupId}', function ($user, $groupId) {
@@ -171,7 +171,7 @@ Broadcast::channel('group.{groupId}', function ($user, $groupId) {
     }
 
     return $group->hasMember((int) $user->id);
-});
+}, ['guards' => ['web', 'sanctum']]);
 
 // ৯. গ্রুপ অ্যাডমিন ও মডারেশন চ্যানেল (শুধুমাত্র ওনার, অ্যাডমিন ও মডারেটর)
 Broadcast::channel('group.{groupId}.admin', function ($user, $groupId) {
@@ -185,7 +185,7 @@ Broadcast::channel('group.{groupId}.admin', function ($user, $groupId) {
     }
 
     return $group->isModerator((int) $user->id);
-});
+}, ['guards' => ['web', 'sanctum']]);
 
 // ১০. রিলস চ্যানেলসমূহ (লাইভ কমেন্ট, রিঅ্যাকশন ও এক্সপায়ারেশন ইভেন্ট)
 Broadcast::channel('reel.{reelId}', function () {
@@ -209,7 +209,7 @@ Broadcast::channel('family.{familyId}.guardians', function ($user, $familyId) {
     $family = Family::find((int) $familyId);
 
     return $family ? $family->hasGuardianAccess((int) $user->id) : false;
-});
+}, ['guards' => ['web', 'sanctum']]);
 
 Broadcast::channel('device.{deviceId}.commands', function ($user, $deviceId) {
     if (! $user) {
@@ -218,4 +218,4 @@ Broadcast::channel('device.{deviceId}.commands', function ($user, $deviceId) {
     $device = ChildDevice::find((int) $deviceId);
 
     return $device ? $device->family->hasGuardianAccess((int) $user->id) : false;
-});
+}, ['guards' => ['web', 'sanctum']]);

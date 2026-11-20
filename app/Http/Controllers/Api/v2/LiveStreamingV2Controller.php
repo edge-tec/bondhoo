@@ -465,12 +465,17 @@ class LiveStreamingV2Controller extends Controller
      */
     public function reaction(int $id, Request $request): JsonResponse
     {
-        if (! $request->has('reaction_type') && $request->has('type')) {
-            $type = $request->input('type');
-            if ($type === 'heart') {
-                $type = 'love';
+        if (! $request->has('reaction_type')) {
+            $rawType = $request->input('type') ?? $request->input('reaction');
+            if ($rawType !== null) {
+                $mappedType = match (strtolower((string) $rawType)) {
+                    'heart' => 'love',
+                    'star' => 'care',
+                    'fire' => 'wow',
+                    default => strtolower((string) $rawType),
+                };
+                $request->merge(['reaction_type' => $mappedType]);
             }
-            $request->merge(['reaction_type' => $type]);
         }
 
         $request->validate([

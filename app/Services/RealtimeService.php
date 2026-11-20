@@ -72,7 +72,11 @@ class RealtimeService implements RealtimeServiceInterface
     public function broadcastToUser(int $userId, string $event, array $payload): void
     {
         try {
-            broadcast(new NewNotificationEvent($userId, $payload));
+            if ($event === 'notification.new' || $event === '') {
+                broadcast(new NewNotificationEvent($userId, $payload));
+            } else {
+                $this->broadcast("private-user.{$userId}", $event, $payload);
+            }
         } catch (Exception $e) {
             Log::warning("WebSocket notification broadcast error to user [{$userId}]: ".$e->getMessage());
         }

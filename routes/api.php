@@ -42,6 +42,7 @@ use App\Http\Controllers\Api\v1\MarketplaceApiController;
 use App\Http\Controllers\Api\v1\MediaController;
 use App\Http\Controllers\Api\v1\MemoriesApiController;
 use App\Http\Controllers\Api\v1\MessageController;
+use App\Http\Controllers\Api\v1\MessengerEnterpriseApiController;
 use App\Http\Controllers\Api\v1\MessengerSearchController;
 use App\Http\Controllers\Api\v1\MessengerSoundController;
 use App\Http\Controllers\Api\v1\MessengerSyncController;
@@ -610,6 +611,26 @@ Route::prefix('v1')->group(function () {
         Route::post('/messages/{messageId}/save', [SavedMessageController::class, 'store']);
         Route::delete('/messages/{messageId}/save', [SavedMessageController::class, 'destroy']);
 
+        // Ultra Enterprise Messenger (Polls, Disappearing, Scheduling, Location, Themes, Voice AI, Channels)
+        Route::post('/conversations/{id}/polls', [MessengerEnterpriseApiController::class, 'createPoll'])->whereNumber('id');
+        Route::get('/polls/{id}', [MessengerEnterpriseApiController::class, 'getPoll'])->whereNumber('id');
+        Route::post('/polls/{id}/vote', [MessengerEnterpriseApiController::class, 'votePoll'])->whereNumber('id');
+        Route::post('/polls/{id}/close', [MessengerEnterpriseApiController::class, 'closePoll'])->whereNumber('id');
+        Route::post('/conversations/{id}/disappearing-timer', [MessengerEnterpriseApiController::class, 'setDisappearingTimer'])->whereNumber('id');
+        Route::get('/conversations/{id}/scheduled-messages', [MessengerEnterpriseApiController::class, 'getScheduledMessages'])->whereNumber('id');
+        Route::post('/conversations/{id}/scheduled-messages', [MessengerEnterpriseApiController::class, 'scheduleMessage'])->whereNumber('id');
+        Route::delete('/scheduled-messages/{id}', [MessengerEnterpriseApiController::class, 'cancelScheduledMessage'])->whereNumber('id');
+        Route::post('/conversations/{id}/location', [MessengerEnterpriseApiController::class, 'shareLocation'])->whereNumber('id');
+        Route::post('/conversations/{id}/location/{messageId}/stop', [MessengerEnterpriseApiController::class, 'stopLiveLocation'])->whereNumber('id')->whereNumber('messageId');
+        Route::post('/conversations/{id}/theme', [MessengerEnterpriseApiController::class, 'updateTheme'])->whereNumber('id');
+        Route::delete('/conversations/{id}/theme', [MessengerEnterpriseApiController::class, 'resetTheme'])->whereNumber('id');
+        Route::post('/messages/{id}/translate', [MessengerEnterpriseApiController::class, 'translateMessage'])->whereNumber('id');
+        Route::post('/messages/{id}/transcribe', [MessengerEnterpriseApiController::class, 'transcribeVoice'])->whereNumber('id');
+        Route::post('/conversations/{id}/video-note', [MessengerEnterpriseApiController::class, 'sendVideoNote'])->whereNumber('id');
+        Route::post('/channels', [MessengerEnterpriseApiController::class, 'createChannel']);
+        Route::post('/channels/{id}/join', [MessengerEnterpriseApiController::class, 'joinChannel'])->whereNumber('id');
+        Route::delete('/channels/{id}/leave', [MessengerEnterpriseApiController::class, 'leaveChannel'])->whereNumber('id');
+
         // Enterprise Audio/Video/Group Calling & WebRTC Signaling
         Route::post('/calls', [CallController::class, 'initiate']);
         Route::get('/calls/history', [CallController::class, 'history']);
@@ -750,7 +771,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/groups/{id}/media', [GroupController::class, 'media']);
         Route::post('/groups/{id}/media', [GroupController::class, 'uploadGroupMedia']);
         Route::post('/groups/{id}/reports', [GroupController::class, 'storeReport']);
-        Route::get('/groups/{id}/moderation/reports', [GroupController::class, 'reports']);
         Route::post('/groups/{id}/moderation/reports/{reportId}/review', [GroupController::class, 'reviewReport']);
         Route::get('/groups/{id}/dashboard', [GroupController::class, 'dashboard']);
         Route::get('/groups/{id}/analytics', [GroupController::class, 'analytics']);
@@ -769,8 +789,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/pages/{id}/posts', [PageController::class, 'feed']);
         Route::post('/pages/{id}/posts', [PageController::class, 'storePost']);
 
-        // Universal Search
-        Route::get('/search', [SearchController::class, 'search'])->middleware('throttle:search');
+        // Universal Search History (Search endpoint itself is registered publicly above with optional Sanctum/Web auth)
         Route::get('/search/history', [SearchController::class, 'history'])->middleware('throttle:search');
         Route::delete('/search/history', [SearchController::class, 'clearHistory'])->middleware('throttle:search');
         Route::delete('/search/history/{term}', [SearchController::class, 'removeHistoryItem'])->middleware('throttle:search');

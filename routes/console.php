@@ -21,6 +21,7 @@ Schedule::command('media:cleanup-abandoned')->daily();
 Schedule::command('media:recover-stuck-jobs')->everyFifteenMinutes();
 Schedule::command('media:reconcile-storage --repair')->daily();
 Schedule::command('pages:publish-scheduled')->everyMinute();
+Schedule::command('messenger:process-queue')->everyMinute()->withoutOverlapping();
 Schedule::command('live:prune-stale')->everyMinute();
 Schedule::command('admin:aggregate-analytics')->dailyAt('00:00')->withoutOverlapping();
 Schedule::command('admin:enforce-data-retention')->dailyAt('02:00')->withoutOverlapping();

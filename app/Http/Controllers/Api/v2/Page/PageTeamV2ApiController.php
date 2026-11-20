@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v2\Page;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
+use App\Models\User;
 use App\Services\Page\EnterprisePageService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -51,14 +52,22 @@ class PageTeamV2ApiController extends Controller
         $validated = $request->validate([
             'identifier' => ['nullable', 'string'],
             'email_or_username' => ['nullable', 'string'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'role' => ['required', 'string', 'in:admin,manager,content_manager,moderator,analyst,editor,viewer'],
             'custom_permissions' => ['nullable', 'array'],
+            'permissions' => ['nullable', 'array'],
         ]);
 
         $identifier = $validated['identifier'] ?? $validated['email_or_username'] ?? null;
+        if (! $identifier && ! empty($validated['user_id'])) {
+            $targetUser = User::find((int) $validated['user_id']);
+            $identifier = $targetUser?->email ?? $targetUser?->username;
+        }
         if (! $identifier) {
             return response()->json(['success' => false, 'message' => 'The identifier or email field is required.'], 422);
         }
+
+        $customPermissions = $validated['custom_permissions'] ?? $validated['permissions'] ?? null;
 
         try {
             $member = $this->enterprisePageService->inviteTeamMember(
@@ -66,7 +75,7 @@ class PageTeamV2ApiController extends Controller
                 $user,
                 $identifier,
                 $validated['role'],
-                $validated['custom_permissions'] ?? null
+                $customPermissions
             );
 
             return response()->json([

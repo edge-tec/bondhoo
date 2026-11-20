@@ -96,6 +96,10 @@ class PageInboxV2ApiController extends Controller
             abort(403, 'You do not have permission to send messages from this page.');
         }
 
+        if (! $request->filled('body') && $request->filled('text')) {
+            $request->merge(['body' => $request->input('text')]);
+        }
+
         $validated = $request->validate([
             'body' => ['required', 'string', 'max:5000'],
         ]);
@@ -137,6 +141,10 @@ class PageInboxV2ApiController extends Controller
         $settings = $page->getMergedSettings();
         if (isset($settings['messaging']['allow_messages']) && ! $settings['messaging']['allow_messages']) {
             abort(403, 'Direct messaging is currently disabled for this page.');
+        }
+
+        if (! $request->filled('body') && $request->filled('text')) {
+            $request->merge(['body' => $request->input('text')]);
         }
 
         $validated = $request->validate([

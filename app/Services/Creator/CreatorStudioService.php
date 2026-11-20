@@ -248,6 +248,8 @@ class CreatorStudioService
                     'timestamp' => now()->toIso8601String(),
                 ];
 
+                $this->realtime->broadcast("live.{$contextId}", 'gift.received', $payload);
+                $this->realtime->broadcast("live.{$contextId}", 'live.gift.received', $payload);
                 $this->realtime->broadcast("live.stream_{$contextId}", 'live.gift.received', $payload);
             }
 

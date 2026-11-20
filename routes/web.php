@@ -25,6 +25,7 @@ use App\Http\Controllers\Web\TwoFactorWebController;
 use App\Http\Controllers\Web\WatchWebController;
 use App\Http\Requests\Auth\RegisterV2Request;
 use App\Models\Admin;
+use App\Models\Page;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\AuthServiceV2;

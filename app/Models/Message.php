@@ -42,6 +42,7 @@ class Message extends Model
         'is_edited',
         'edited_at',
         'edit_history',
+        'expires_at',
     ];
 
     protected $attributes = [
@@ -67,6 +68,7 @@ class Message extends Model
             'is_deleted_for_everyone' => 'boolean',
             'is_forwarded' => 'boolean',
             'is_edited' => 'boolean',
+            'expires_at' => 'datetime',
         ];
     }
 
@@ -113,6 +115,11 @@ class Message extends Model
     public function savedRecords(): HasMany
     {
         return $this->hasMany(SavedMessage::class);
+    }
+
+    public function poll(): HasOne
+    {
+        return $this->hasOne(ChatPoll::class, 'message_id');
     }
 
     /**
@@ -192,6 +199,12 @@ class Message extends Model
             'is_pinned' => $this->relationLoaded('pinnedRecord') ? (bool) $this->pinnedRecord : false,
             'is_saved' => $viewer ? ($this->relationLoaded('savedRecords') ? $this->savedRecords->contains('user_id', $viewer->id) : false) : false,
             'edited_at' => $this->edited_at?->toIso8601String(),
+            'expires_at' => $this->expires_at?->toIso8601String() ?? ($metadata['expires_at'] ?? null),
+            'poll' => $this->relationLoaded('poll') && $this->poll ? $this->poll->toResponseArray($viewer) : ($metadata['poll'] ?? null),
+            'location' => $metadata['location'] ?? null,
+            'video_note' => $metadata['video_note'] ?? null,
+            'translations' => $metadata['translations'] ?? null,
+            'transcription' => $metadata['transcription'] ?? null,
             'metadata' => $metadata,
             'media' => $mediaList,
             'attachments' => $mediaList,

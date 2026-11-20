@@ -342,7 +342,12 @@ class MessengerService implements MessengerServiceInterface
             ->first();
 
         $query = Message::where('conversation_id', $conversation->id)
-            ->with(['sender.profile', 'media', 'reactions.user.profile', 'replyTo.sender.profile', 'pinnedRecord', 'savedRecords']);
+            ->with(['sender.profile', 'media', 'reactions.user.profile', 'replyTo.sender.profile', 'pinnedRecord', 'savedRecords', 'poll.options.votes.user']);
+
+        // মেয়াদোত্তীর্ণ ডিসঅ্যাপিয়ারিং মেসেজ ফিল্টার আউট
+        $query->where(function ($q) {
+            $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+        });
 
         // ব্যবহারকারীর নিজের জন্য ডিলিট করা মেসেজ ফিল্টার আউট
         $query->whereDoesntHave('userDeletions', function ($q) use ($user) {
@@ -471,6 +476,12 @@ class MessengerService implements MessengerServiceInterface
                 ];
             }
 
+            $disappearingDuration = (int) ($conversation->settings['disappearing_duration'] ?? 0);
+            $expiresAt = $disappearingDuration > 0 ? now()->addSeconds($disappearingDuration) : null;
+            if ($expiresAt) {
+                $metadata['expires_at'] = $expiresAt->toIso8601String();
+            }
+
             // ১. মেসেজ তৈরি
             $message = Message::create([
                 'conversation_id' => $conversation->id,
@@ -480,6 +491,7 @@ class MessengerService implements MessengerServiceInterface
                 'body' => $body ?: null,
                 'delivery_status' => Message::STATUS_SENT,
                 'sent_at' => now(),
+                'expires_at' => $expiresAt,
                 'metadata' => $metadata,
             ]);
 
