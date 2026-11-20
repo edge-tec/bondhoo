@@ -415,12 +415,19 @@ class StoryEnterpriseService
             ->paginate($perPage);
 
         $paginator->getCollection()->transform(function (StoryView $view) {
+            $avatarUrl = $view->user?->profile?->avatar_url ?? $view->user?->avatar_url;
+
             return [
+                'id' => $view->user?->id ?? $view->user_id,
+                'name' => $view->user?->name ?? 'User',
+                'username' => $view->user?->username ?? '',
+                'avatar_url' => $avatarUrl,
+                'avatar' => $avatarUrl,
                 'user' => [
                     'id' => $view->user?->id,
                     'name' => $view->user?->name,
                     'username' => $view->user?->username,
-                    'avatar_url' => $view->user?->profile?->avatar_url ?? $view->user?->avatar_url,
+                    'avatar_url' => $avatarUrl,
                 ],
                 'viewed_at' => $view->viewed_at?->toIso8601String(),
                 'formatted_time' => $view->viewed_at?->diffForHumans() ?? 'just now',

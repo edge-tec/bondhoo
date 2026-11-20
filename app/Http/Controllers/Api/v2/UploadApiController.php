@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v2;
 
 use App\Http\Controllers\Controller;
+use App\Models\Media;
 use App\Models\MediaUploadSession;
 use App\Services\Media\ChunkedUploadService;
 use App\Services\Media\DirectCloudUploadService;
@@ -291,6 +292,45 @@ class UploadApiController extends Controller
         $user = $request->user();
         if (! $user) {
             return response()->json(['success' => false, 'message' => 'অননুমোদিত অ্যাক্সেস।'], 401);
+        }
+
+        // Direct single-part @Multipart file upload fallback (used by Android ConnectlyApi.uploadVideo)
+        if ($request->hasFile('file')) {
+            $request->validate([
+                'file' => ['required', 'file', 'max:204800'],
+            ]);
+
+            try {
+                $file = $request->file('file');
+                $collection = (string) $request->input('collection', 'videos');
+                $storedPath = $file->store('uploads/'.$collection.'/'.$user->id, 'public');
+                $media = Media::create([
+                    'user_id' => $user->id,
+                    'collection' => $collection,
+                    'disk' => 'public',
+                    'original_path' => $storedPath,
+                    'mime_type' => $file->getMimeType() ?: 'video/mp4',
+                    'size' => $file->getSize() ?: 0,
+                    'processing_status' => 'completed',
+                    'metadata' => [
+                        'original_name' => $file->getClientOriginalName(),
+                    ],
+                ]);
+                $arr = $media->toResponseArray();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => array_merge($arr, [
+                        'session_id' => (string) ($request->input('session_id') ?? 'direct_'.$media->id),
+                        'media' => $arr,
+                    ]),
+                ], 200);
+            } catch (Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
         }
 
         $validated = $request->validate([

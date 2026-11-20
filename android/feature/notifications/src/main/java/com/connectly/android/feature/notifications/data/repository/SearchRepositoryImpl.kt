@@ -72,10 +72,10 @@ class SearchRepositoryImpl @Inject constructor(
                 }
                 emit(Result.Success(SearchResult(users = users, groups = groups, pages = pages, posts = posts)))
             } else {
-                emit(Result.Success(getSampleSearchResults(query)))
+                emit(Result.Success(SearchResult()))
             }
         } catch (e: Exception) {
-            emit(Result.Success(getSampleSearchResults(query)))
+            emit(Result.Error(e))
         }
     }
 
@@ -96,15 +96,15 @@ class SearchRepositoryImpl @Inject constructor(
                         DiscoveryData(
                             suggestedFriends = users,
                             recommendedGroups = groups,
-                            trendingTopics = listOf("#Connectly", "#BangladeshTech", "#DhakaVibes", "#TravelBD", "#StartupDhaka")
+                            trendingTopics = emptyList()
                         )
                     )
                 )
             } else {
-                emit(Result.Success(getFallbackDiscoveryData()))
+                emit(Result.Success(DiscoveryData()))
             }
         } catch (e: Exception) {
-            emit(Result.Success(getFallbackDiscoveryData()))
+            emit(Result.Error(e))
         }
     }
 
@@ -118,10 +118,10 @@ class SearchRepositoryImpl @Inject constructor(
                 }
                 emit(Result.Success(users))
             } else {
-                emit(Result.Success(getFallbackDiscoveryData().suggestedFriends))
+                emit(Result.Success(emptyList()))
             }
         } catch (e: Exception) {
-            emit(Result.Success(getFallbackDiscoveryData().suggestedFriends))
+            emit(Result.Error(e))
         }
     }
 
@@ -132,10 +132,10 @@ class SearchRepositoryImpl @Inject constructor(
             if (response.isSuccessful && response.body()?.data != null) {
                 emit(Result.Success(response.body()!!.data))
             } else {
-                emit(Result.Success(listOf("Sadia Islam", "#MusicFestival", "Travel Lovers BD", "Tech World")))
+                emit(Result.Success(emptyList()))
             }
         } catch (e: Exception) {
-            emit(Result.Success(listOf("Sadia Islam", "#MusicFestival", "Travel Lovers BD", "Tech World")))
+            emit(Result.Success(emptyList()))
         }
     }
 

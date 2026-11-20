@@ -179,19 +179,7 @@ class FeedRepositoryImpl @Inject constructor(
                 )
                 emit(Result.Success(post))
             } else {
-                val post = Post(
-                    id = System.currentTimeMillis(),
-                    author = User(
-                        id = tokenStorageManager.getUserId(),
-                        name = "Connectly User",
-                        username = "user",
-                        avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
-                        isVerified = true
-                    ),
-                    content = content,
-                    privacy = audience
-                )
-                emit(Result.Success(post))
+                emit(Result.Error(Exception("Failed to create post (${response.code()})")))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -248,7 +236,7 @@ class FeedRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.Success(true))
             } else {
-                emit(Result.Success(true))
+                emit(Result.Error(Exception("Failed to toggle saved post (${response.code()})")))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -270,10 +258,10 @@ class FeedRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.Success(Unit))
             } else {
-                emit(Result.Success(Unit))
+                emit(Result.Error(Exception("Failed to share post (${response.code()})")))
             }
-        } catch (_: Exception) {
-            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
@@ -286,7 +274,7 @@ class FeedRepositoryImpl @Inject constructor(
                 postDao.updateReaction(postId, data.resolvedReaction, data.resolvedCount)
                 emit(Result.Success(data))
             } else {
-                emit(Result.Success(ReactionResponse(reacted = true, type = reactionType, reactions_count = 1)))
+                emit(Result.Error(Exception("Failed to react to post (${response.code()})")))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))
@@ -371,20 +359,7 @@ class FeedRepositoryImpl @Inject constructor(
                 )
                 emit(Result.Success(comment))
             } else {
-                val comment = Comment(
-                    id = System.currentTimeMillis(),
-                    postId = postId,
-                    parentId = parentId,
-                    author = User(
-                        id = tokenStorageManager.getUserId(),
-                        name = "Connectly User",
-                        username = "user",
-                        avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb"
-                    ),
-                    body = body,
-                    createdAt = "Just now"
-                )
-                emit(Result.Success(comment))
+                emit(Result.Error(Exception("Failed to add comment (${response.code()})")))
             }
         } catch (e: Exception) {
             emit(Result.Error(e))

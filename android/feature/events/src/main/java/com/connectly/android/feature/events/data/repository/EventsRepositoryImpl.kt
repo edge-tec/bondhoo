@@ -17,6 +17,12 @@ class EventsRepositoryImpl @Inject constructor(
     private val api: ConnectlyApi
 ) : EventsRepository {
 
+    private fun parseStartTimeMillis(raw: String?): Long {
+        if (raw.isNullOrBlank()) return System.currentTimeMillis()
+        return runCatching { java.time.Instant.parse(raw).toEpochMilli() }.getOrNull()
+            ?: System.currentTimeMillis()
+    }
+
     override fun getEvents(filter: String, page: Int): Flow<Result<List<Event>>> = flow {
         emit(Result.Loading)
         try {
@@ -29,7 +35,7 @@ class EventsRepositoryImpl @Inject constructor(
                         title = dto.title,
                         bannerUrl = dto.banner,
                         location = dto.location,
-                        startTime = System.currentTimeMillis(),
+                        startTime = parseStartTimeMillis(dto.start_time),
                         interestedCount = dto.interested_count,
                         goingCount = dto.going_count
                     )
@@ -56,7 +62,7 @@ class EventsRepositoryImpl @Inject constructor(
                             title = dto.title,
                             bannerUrl = dto.banner,
                             location = dto.location,
-                            startTime = System.currentTimeMillis(),
+                            startTime = parseStartTimeMillis(dto.start_time),
                             interestedCount = dto.interested_count,
                             goingCount = dto.going_count
                         )
