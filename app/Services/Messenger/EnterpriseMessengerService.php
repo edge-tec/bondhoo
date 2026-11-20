@@ -227,13 +227,14 @@ class EnterpriseMessengerService
             throw new InvalidArgumentException('This poll is closed or has expired.');
         }
 
-        $validOptions = $poll->options()->whereIn('id', $optionIds)->get();
-        if ($validOptions->isEmpty()) {
-            throw new InvalidArgumentException('Invalid poll option selected.');
+        $uniqueOptionIds = array_values(array_unique(array_map('intval', $optionIds)));
+        if (! $poll->is_multiple_choice && count($uniqueOptionIds) > 1) {
+            throw new InvalidArgumentException('Multiple choices are not allowed for this poll.');
         }
 
-        if (! $poll->is_multiple_choice && count($optionIds) > 1) {
-            throw new InvalidArgumentException('Multiple choices are not allowed for this poll.');
+        $validOptions = $poll->options()->whereIn('id', $uniqueOptionIds)->get();
+        if ($validOptions->isEmpty() || $validOptions->count() !== count($uniqueOptionIds)) {
+            throw new InvalidArgumentException('Invalid poll option selected.');
         }
 
         return DB::transaction(function () use ($poll, $user, $validOptions) {
@@ -299,7 +300,7 @@ class EnterpriseMessengerService
             ->where('user_id', $user->id)
             ->first();
 
-        $isAdmin = $participant && $participant->role === 'admin';
+        $isAdmin = $participant && in_array($participant->role, ['admin', 'owner'], true);
         if ((int) $poll->creator_id !== (int) $user->id && ! $isAdmin) {
             throw new AuthorizationException('Only the poll creator or group admin can close this poll.');
         }

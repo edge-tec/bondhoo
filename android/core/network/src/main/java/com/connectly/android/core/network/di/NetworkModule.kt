@@ -23,6 +23,7 @@ object NetworkModule {
 
     const val PROD_BASE_URL = "https://bondhoo.com/api/"
     const val PROD_HOST = "bondhoo.com"
+    const val REVERB_APP_KEY = "connectly_reverb_key"
 
     /**
      * Primary live production Base URL for all network requests.

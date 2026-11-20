@@ -65,11 +65,18 @@ class MessengerEnterpriseApiController extends Controller
             'option_ids.*' => ['required', 'integer'],
         ]);
 
-        $pollData = $this->enterpriseService->castPollVote(
-            $poll,
-            $request->user(),
-            $validated['option_ids']
-        );
+        try {
+            $pollData = $this->enterpriseService->castPollVote(
+                $poll,
+                $request->user(),
+                $validated['option_ids']
+            );
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,
@@ -81,7 +88,14 @@ class MessengerEnterpriseApiController extends Controller
     public function closePoll(Request $request, int $id): JsonResponse
     {
         $poll = ChatPoll::with(['conversation'])->findOrFail($id);
-        $closedPoll = $this->enterpriseService->closePoll($poll, $request->user());
+        try {
+            $closedPoll = $this->enterpriseService->closePoll($poll, $request->user());
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,
