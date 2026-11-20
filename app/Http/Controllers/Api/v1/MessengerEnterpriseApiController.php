@@ -56,6 +56,10 @@ class MessengerEnterpriseApiController extends Controller
     {
         $poll = ChatPoll::with(['conversation', 'options.votes.user'])->findOrFail($id);
 
+        if (! $request->has('option_ids') && $request->filled('option_id')) {
+            $request->merge(['option_ids' => [(int) $request->input('option_id')]]);
+        }
+
         $validated = $request->validate([
             'option_ids' => ['required', 'array', 'min:1'],
             'option_ids.*' => ['required', 'integer'],

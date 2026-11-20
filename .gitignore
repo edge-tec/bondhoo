@@ -32,6 +32,8 @@ android/**/build/
 !/public/build/**
 local.properties
 android/local.properties
+keystore.properties
+android/keystore.properties
 test-results/
 playwright-report/
 *.jks

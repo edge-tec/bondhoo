@@ -23,14 +23,35 @@ android {
 
     signingConfigs {
         create("release") {
+            val keystorePropsFile = rootProject.file("keystore.properties")
+            val keystoreProps: Map<String, String> = if (keystorePropsFile.exists()) {
+                keystorePropsFile.readLines()
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() && !it.startsWith("#") && it.contains("=") }
+                    .associate { line ->
+                        val idx = line.indexOf('=')
+                        line.substring(0, idx).trim() to line.substring(idx + 1).trim()
+                    }
+            } else {
+                emptyMap()
+            }
             val storeFilePath = System.getenv("BONDHOO_UPLOAD_STORE_FILE")
+                ?: keystoreProps["storeFile"]
             val storePass = System.getenv("BONDHOO_UPLOAD_STORE_PASSWORD")
+                ?: keystoreProps["storePassword"]
             val kAlias = System.getenv("BONDHOO_UPLOAD_KEY_ALIAS")
+                ?: keystoreProps["keyAlias"]
             val kPass = System.getenv("BONDHOO_UPLOAD_KEY_PASSWORD")
+                ?: keystoreProps["keyPassword"]
 
-            if (!storeFilePath.isNullOrBlank() && File(storeFilePath).exists() &&
+            val resolvedStoreFile = storeFilePath?.takeIf { it.isNotBlank() }?.let { path ->
+                val f = File(path)
+                if (f.isAbsolute) f else rootProject.file(path)
+            }
+
+            if (resolvedStoreFile != null && resolvedStoreFile.exists() &&
                 !storePass.isNullOrBlank() && !kAlias.isNullOrBlank() && !kPass.isNullOrBlank()) {
-                storeFile = File(storeFilePath)
+                storeFile = resolvedStoreFile
                 storePassword = storePass
                 keyAlias = kAlias
                 keyPassword = kPass

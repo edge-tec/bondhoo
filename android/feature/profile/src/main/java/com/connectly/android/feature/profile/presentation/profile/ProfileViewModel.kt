@@ -180,7 +180,10 @@ class ProfileViewModel @Inject constructor(
                         } else if (myUserId > 0L) {
                             user.id == myUserId
                         } else {
-                            user.username == "dixie.mann" && username == "dixie.mann"
+                            false
+                        }
+                        if (user.username.isNotBlank()) {
+                            reverbWebSocketManager.subscribeProfileChannel(user.username)
                         }
                         _uiState.update {
                             it.copy(
@@ -203,9 +206,9 @@ class ProfileViewModel @Inject constructor(
                         } else {
                             _uiState.update { state ->
                                 state.copy(
-                                    analyticsTotalViews = (user.followersCount * 4L + user.friendsCount * 2L).coerceAtLeast(1450L),
-                                    analyticsViewsToday = (user.friendsCount / 4L).coerceAtLeast(65L),
-                                    analyticsViewsWeek = (user.followersCount / 2L).coerceAtLeast(420L)
+                                    analyticsTotalViews = 0L,
+                                    analyticsViewsToday = 0L,
+                                    analyticsViewsWeek = 0L
                                 )
                             }
                         }

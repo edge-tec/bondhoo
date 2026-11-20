@@ -8042,7 +8042,7 @@
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
             },
-            body: JSON.stringify({ option_id: optionId })
+            body: JSON.stringify({ option_ids: [optionId], option_id: optionId })
         })
         .then(r => r.json())
         .then(res => {
