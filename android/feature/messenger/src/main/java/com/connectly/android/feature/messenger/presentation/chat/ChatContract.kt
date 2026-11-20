@@ -2,6 +2,7 @@ package com.connectly.android.feature.messenger.presentation.chat
 
 import com.connectly.android.core.model.ActivePresenceFriend
 import com.connectly.android.core.model.CallType
+import com.connectly.android.core.model.ChatTheme
 import com.connectly.android.core.model.Conversation
 import com.connectly.android.core.model.Message
 import com.connectly.android.core.model.MessageAttachment
@@ -36,6 +37,13 @@ data class ChatState(
     val sharedFiles: List<MessageAttachment> = emptyList(),
     val isLoadingSharedMedia: Boolean = false,
     val availableFriendsForGroup: List<ActivePresenceFriend> = emptyList(),
+    val voicePlaybackSpeed: Float = 1.0f,
+    val chatTheme: ChatTheme? = null,
+    val disappearingTimerSeconds: Int = 0,
+    val showPollDialog: Boolean = false,
+    val showDisappearingDialog: Boolean = false,
+    val showThemeDialog: Boolean = false,
+    val showScheduleDialog: Boolean = false,
     val isLoading: Boolean = false,
     val statusMessage: String? = null,
     val errorMessage: String? = null
@@ -113,4 +121,20 @@ sealed interface ChatIntent {
     data class MessageMemberDirectly(val userId: Long) : ChatIntent
     data class StartCallFromChat(val isVideo: Boolean) : ChatIntent
     data object ClearStatusMessages : ChatIntent
+    data object CycleVoiceSpeed : ChatIntent
+    data class CreatePoll(val question: String, val options: List<String>, val isMultipleChoice: Boolean, val durationHours: Int?) : ChatIntent
+    data class VotePoll(val pollId: Long, val optionIds: List<Long>) : ChatIntent
+    data class ClosePoll(val pollId: Long) : ChatIntent
+    data class SetDisappearingTimer(val durationSeconds: Int) : ChatIntent
+    data class ShareLocation(val latitude: Double, val longitude: Double, val address: String?, val liveDurationSeconds: Int?) : ChatIntent
+    data class StopLiveLocation(val messageId: Long) : ChatIntent
+    data class SelectTheme(val themeColor: String, val bubbleColor: String) : ChatIntent
+    data object ResetTheme : ChatIntent
+    data class TranscribeVoice(val messageId: Long) : ChatIntent
+    data class TranslateMessage(val messageId: Long, val targetLanguage: String) : ChatIntent
+    data class ScheduleMessage(val body: String, val scheduledAtIso: String) : ChatIntent
+    data class TogglePollDialog(val show: Boolean) : ChatIntent
+    data class ToggleDisappearingDialog(val show: Boolean) : ChatIntent
+    data class ToggleThemeDialog(val show: Boolean) : ChatIntent
+    data class ToggleScheduleDialog(val show: Boolean) : ChatIntent
 }

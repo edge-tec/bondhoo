@@ -190,7 +190,7 @@ fun ChatScreen(
     val playingMessage = remember(state.playingMessageId, state.messages) {
         state.messages.firstOrNull { it.id == state.playingMessageId }
     }
-    DisposableEffect(playingMessage?.audioUrl, state.isAudioPlaying) {
+    DisposableEffect(playingMessage?.audioUrl, state.isAudioPlaying, state.voicePlaybackSpeed) {
         var player: MediaPlayer? = null
         val url = playingMessage?.audioUrl
         if (state.isAudioPlaying && !url.isNullOrBlank()) {
@@ -203,7 +203,14 @@ fun ChatScreen(
                             .build()
                     )
                     setDataSource(url)
-                    setOnPreparedListener { mp -> mp.start() }
+                    setOnPreparedListener { mp ->
+                        runCatching {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                mp.playbackParams = mp.playbackParams.setSpeed(state.voicePlaybackSpeed)
+                            }
+                        }
+                        mp.start()
+                    }
                     setOnCompletionListener { viewModel.onVoicePlaybackCompleted() }
                     setOnErrorListener { _, _, _ ->
                         viewModel.onVoicePlaybackCompleted()
@@ -527,9 +534,214 @@ fun ChatScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    AttachmentOptionItem(
+                        icon = Icons.Default.Poll,
+                        label = "Poll",
+                        color = Color(0xFFF59E0B),
+                        onClick = {
+                            showAttachmentMenu = false
+                            viewModel.handleIntent(ChatIntent.TogglePollDialog(true))
+                        }
+                    )
+
+                    AttachmentOptionItem(
+                        icon = Icons.Default.LocationOn,
+                        label = "Location",
+                        color = Color(0xFFEF4444),
+                        onClick = {
+                            showAttachmentMenu = false
+                            viewModel.handleIntent(
+                                ChatIntent.ShareLocation(
+                                    latitude = 23.8103,
+                                    longitude = 90.4125,
+                                    address = "Shared Location",
+                                    liveDurationSeconds = null
+                                )
+                            )
+                        }
+                    )
+
+                    AttachmentOptionItem(
+                        icon = Icons.Default.Timer,
+                        label = "Timer",
+                        color = Color(0xFF06B6D4),
+                        onClick = {
+                            showAttachmentMenu = false
+                            viewModel.handleIntent(ChatIntent.ToggleDisappearingDialog(true))
+                        }
+                    )
+
+                    AttachmentOptionItem(
+                        icon = Icons.Default.Palette,
+                        label = "Theme",
+                        color = Color(0xFF6366F1),
+                        onClick = {
+                            showAttachmentMenu = false
+                            viewModel.handleIntent(ChatIntent.ToggleThemeDialog(true))
+                        }
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+    }
+
+    // Enterprise Poll Creation Dialog
+    if (state.showPollDialog) {
+        var pollQuestion by remember { mutableStateOf("") }
+        var pollOpt1 by remember { mutableStateOf("") }
+        var pollOpt2 by remember { mutableStateOf("") }
+        var pollOpt3 by remember { mutableStateOf("") }
+        var isMultiChoice by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { viewModel.handleIntent(ChatIntent.TogglePollDialog(false)) },
+            title = { Text("Create Poll", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = pollQuestion,
+                        onValueChange = { pollQuestion = it },
+                        label = { Text("Question") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = pollOpt1,
+                        onValueChange = { pollOpt1 = it },
+                        label = { Text("Option 1") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = pollOpt2,
+                        onValueChange = { pollOpt2 = it },
+                        label = { Text("Option 2") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = pollOpt3,
+                        onValueChange = { pollOpt3 = it },
+                        label = { Text("Option 3 (Optional)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = isMultiChoice, onCheckedChange = { isMultiChoice = it })
+                        Text("Allow multiple answers", fontSize = 13.sp)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val options = listOf(pollOpt1, pollOpt2, pollOpt3).map { it.trim() }.filter { it.isNotBlank() }
+                        if (pollQuestion.isNotBlank() && options.size >= 2) {
+                            viewModel.handleIntent(ChatIntent.CreatePoll(pollQuestion.trim(), options, isMultiChoice, null))
+                        }
+                    }
+                ) { Text("Create") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.handleIntent(ChatIntent.TogglePollDialog(false)) }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // Enterprise Disappearing Timer Dialog
+    if (state.showDisappearingDialog) {
+        val timerOptions = listOf(
+            "Off" to 0,
+            "1 Hour" to 3600,
+            "24 Hours" to 86400,
+            "7 Days" to 604800,
+            "90 Days" to 7776000
+        )
+        AlertDialog(
+            onDismissRequest = { viewModel.handleIntent(ChatIntent.ToggleDisappearingDialog(false)) },
+            title = { Text("Disappearing Messages", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    timerOptions.forEach { (label, secs) ->
+                        val selected = state.disappearingTimerSeconds == secs
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { viewModel.handleIntent(ChatIntent.SetDisappearingTimer(secs)) }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = selected, onClick = { viewModel.handleIntent(ChatIntent.SetDisappearingTimer(secs)) })
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(label, fontSize = 14.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.handleIntent(ChatIntent.ToggleDisappearingDialog(false)) }) { Text("Close") }
+            }
+        )
+    }
+
+    // Enterprise Chat Theme Dialog
+    if (state.showThemeDialog) {
+        val themes = listOf(
+            "Ocean Blue" to "#1877F2",
+            "Emerald" to "#10B981",
+            "Royal Purple" to "#8B5CF6",
+            "Sunset Rose" to "#EC4899",
+            "Midnight" to "#1E293B"
+        )
+        AlertDialog(
+            onDismissRequest = { viewModel.handleIntent(ChatIntent.ToggleThemeDialog(false)) },
+            title = { Text("Chat Theme", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    themes.forEach { (name, hex) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    viewModel.handleIntent(
+                                        ChatIntent.SelectTheme(
+                                            themeColor = hex,
+                                            bubbleColor = hex
+                                        )
+                                    )
+                                }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(android.graphics.Color.parseColor(hex)))
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(name, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.handleIntent(ChatIntent.ResetTheme) }) { Text("Reset Default") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.handleIntent(ChatIntent.ToggleThemeDialog(false)) }) { Text("Close") }
+            }
+        )
     }
 
     // Long-Press Message Actions Sheet
@@ -578,6 +790,14 @@ fun ChatScreen(
                 onReport = {
                     selectedMessageForActions = null
                     reportingMessage = msg
+                },
+                onTranslate = {
+                    viewModel.handleIntent(ChatIntent.TranslateMessage(msg.id, "en"))
+                    selectedMessageForActions = null
+                },
+                onTranscribe = {
+                    viewModel.handleIntent(ChatIntent.TranscribeVoice(msg.id))
+                    selectedMessageForActions = null
                 }
             )
         }
@@ -880,8 +1100,13 @@ fun ChatScreen(
                                     message = message,
                                     isGroupChat = state.isGroup,
                                     isPlayingVoice = state.playingMessageId == message.id && state.isAudioPlaying,
+                                    voicePlaybackSpeed = state.voicePlaybackSpeed,
+                                    chatThemeColorHex = state.chatTheme?.bubbleColor,
                                     onLongPress = { selectedMessageForActions = message },
                                     onToggleVoice = { viewModel.handleIntent(ChatIntent.TogglePlayVoice(message)) },
+                                    onCycleVoiceSpeed = { viewModel.handleIntent(ChatIntent.CycleVoiceSpeed) },
+                                    onTranscribeVoice = { viewModel.handleIntent(ChatIntent.TranscribeVoice(message.id)) },
+                                    onVotePoll = { pollId, optionId -> viewModel.handleIntent(ChatIntent.VotePoll(pollId, listOf(optionId))) },
                                     onToggleReaction = { emoji ->
                                         viewModel.handleIntent(ChatIntent.ReactMessage(message.id, emoji))
                                     },
@@ -1127,8 +1352,13 @@ private fun ChatMessageBubble(
     message: Message,
     isGroupChat: Boolean,
     isPlayingVoice: Boolean,
+    voicePlaybackSpeed: Float = 1.0f,
+    chatThemeColorHex: String? = null,
     onLongPress: () -> Unit,
     onToggleVoice: () -> Unit,
+    onCycleVoiceSpeed: () -> Unit = {},
+    onTranscribeVoice: () -> Unit = {},
+    onVotePoll: (Long, Long) -> Unit = { _, _ -> },
     onToggleReaction: (String) -> Unit,
     onRetry: () -> Unit,
     onOpenImage: (String) -> Unit,
@@ -1155,9 +1385,14 @@ private fun ChatMessageBubble(
     }
 
     val isMine = message.isMine
+    val themedPrimary = remember(chatThemeColorHex) {
+        chatThemeColorHex?.let {
+            runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull()
+        } ?: ConnectlyBlue
+    }
     val bubbleColor = when {
         message.isDeleted -> Color(0xFFF1F5F9)
-        isMine -> ConnectlyBlue
+        isMine -> themedPrimary
         else -> Color.White
     }
     val textColor = when {
@@ -1307,36 +1542,166 @@ private fun ChatMessageBubble(
                             }
                         }
 
-                        message.type.equals("voice", ignoreCase = true) -> {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                        message.poll != null -> {
+                            val poll = message.poll!!
+                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Text(
+                                    text = "📊 ${poll.question}",
+                                    color = textColor,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                poll.options.forEach { opt ->
+                                    val pct = if (poll.totalVotesCount > 0) (opt.votesCount * 100 / poll.totalVotesCount) else 0
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = if (opt.isVotedByMe) {
+                                            if (isMine) Color.White.copy(alpha = 0.28f) else ConnectlyBlue.copy(alpha = 0.14f)
+                                        } else {
+                                            if (isMine) Color.White.copy(alpha = 0.14f) else Color(0xFFF1F5F9)
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 3.dp)
+                                            .clickable(enabled = !poll.isClosed) { onVotePoll(poll.id, opt.id) }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = if (opt.isVotedByMe) "✓ ${opt.optionText}" else opt.optionText,
+                                                color = textColor,
+                                                fontSize = 13.sp,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            Text(
+                                                text = "$pct%",
+                                                color = if (isMine) Color.White.copy(alpha = 0.85f) else TextSecondaryLight,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
+                                    }
+                                }
+                                Text(
+                                    text = "${poll.totalVotesCount} vote${if (poll.totalVotesCount == 1) "" else "s"}" + if (poll.isClosed) " • Closed" else "",
+                                    color = if (isMine) Color.White.copy(alpha = 0.8f) else TextSecondaryLight,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
+
+                        message.location != null -> {
+                            val loc = message.location!!
+                            val mapsUrl = "https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}"
+                            Column(
+                                modifier = Modifier
+                                    .clickable { onOpenFile(mapsUrl) }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
                             ) {
-                                IconButton(
-                                    onClick = onToggleVoice,
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isMine) Color.White.copy(alpha = 0.22f) else ConnectlyBlue)
-                                ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
-                                        imageVector = if (isPlayingVoice) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                        contentDescription = if (isPlayingVoice) "Pause" else "Play",
-                                        tint = Color.White
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = "Location",
+                                        tint = if (isMine) Color.White else Color(0xFFEF4444),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = if (loc.isLive) "Live Location" else "Shared Location",
+                                        color = textColor,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
                                     )
                                 }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
+                                if (!loc.address.isNullOrBlank()) {
                                     Text(
-                                        text = if (isPlayingVoice) "Playing voice note..." else "▂▄▆█▄▂▅▇▃▅▆▂▄",
-                                        color = textColor,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
+                                        text = loc.address!!,
+                                        color = if (isMine) Color.White.copy(alpha = 0.9f) else TextSecondaryLight,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(top = 2.dp)
                                     )
+                                }
+                                Text(
+                                    text = "Tap to open in Maps",
+                                    color = if (isMine) Color.White.copy(alpha = 0.8f) else ConnectlyBlue,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
+
+                        message.type.equals("voice", ignoreCase = true) -> {
+                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = onToggleVoice,
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isMine) Color.White.copy(alpha = 0.22f) else ConnectlyBlue)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isPlayingVoice) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                            contentDescription = if (isPlayingVoice) "Pause" else "Play",
+                                            tint = Color.White
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column(modifier = Modifier.weight(1f, fill = false)) {
+                                        Text(
+                                            text = if (isPlayingVoice) "Playing voice note..." else "▂▄▆█▄▂▅▇▃▅▆▂▄",
+                                            color = textColor,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = formatDurationSeconds(message.audioDurationSeconds ?: 0),
+                                            color = if (isMine) Color.White.copy(alpha = 0.85f) else TextSecondaryLight,
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = if (isMine) Color.White.copy(alpha = 0.2f) else Color(0xFFE2E8F0),
+                                        modifier = Modifier.clickable { onCycleVoiceSpeed() }
+                                    ) {
+                                        val speedLabel = if (voicePlaybackSpeed % 1f == 0f) "${voicePlaybackSpeed.toInt()}x" else "${voicePlaybackSpeed}x"
+                                        Text(
+                                            text = speedLabel,
+                                            color = textColor,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = if (isMine) Color.White.copy(alpha = 0.2f) else Color(0xFFE2E8F0),
+                                        modifier = Modifier.clickable { onTranscribeVoice() }
+                                    ) {
+                                        Text(
+                                            text = "Aa",
+                                            color = textColor,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                        )
+                                    }
+                                }
+                                if (!message.transcription.isNullOrBlank()) {
                                     Text(
-                                        text = formatDurationSeconds(message.audioDurationSeconds ?: 0),
-                                        color = if (isMine) Color.White.copy(alpha = 0.85f) else TextSecondaryLight,
-                                        fontSize = 11.sp
+                                        text = "📝 ${message.transcription}",
+                                        color = if (isMine) Color.White.copy(alpha = 0.9f) else TextSecondaryLight,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(top = 6.dp)
                                     )
                                 }
                             }
@@ -1435,6 +1800,14 @@ private fun ChatMessageBubble(
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                                 )
                             }
+                            if (!message.translatedText.isNullOrBlank()) {
+                                Text(
+                                    text = "🌐 ${message.translatedText}",
+                                    color = if (isMine) Color.White.copy(alpha = 0.9f) else TextSecondaryLight,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 6.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -1525,7 +1898,9 @@ private fun MessageActionsSheetContent(
     onCopy: () -> Unit,
     onDeleteForMe: () -> Unit,
     onDeleteForEveryone: () -> Unit,
-    onReport: () -> Unit
+    onReport: () -> Unit,
+    onTranslate: () -> Unit = {},
+    onTranscribe: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -1574,6 +1949,10 @@ private fun MessageActionsSheetContent(
             )
             if (message.body.isNotBlank()) {
                 SheetActionRow(Icons.Default.ContentCopy, "Copy Text", onClick = onCopy)
+                SheetActionRow(Icons.Default.Translate, "Translate Message", onClick = onTranslate)
+            }
+            if (message.type.equals("voice", ignoreCase = true)) {
+                SheetActionRow(Icons.Default.Subtitles, "Transcribe Voice", onClick = onTranscribe)
             }
         }
 

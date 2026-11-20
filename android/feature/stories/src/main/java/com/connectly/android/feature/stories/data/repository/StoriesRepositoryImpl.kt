@@ -284,10 +284,10 @@ class StoriesRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 emit(Result.Success(Unit))
             } else {
-                emit(Result.Success(Unit))
+                emit(Result.Error(Exception("Failed to react to story (${response.code()})")))
             }
-        } catch (_: Exception) {
-            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 

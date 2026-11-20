@@ -247,15 +247,14 @@ class ReelsRepositoryImpl @Inject constructor(
     override fun reactToReel(reelId: Long, reaction: String): Flow<Result<Unit>> = flow {
         emit(Result.Loading)
         try {
-            reelDao.updateLike(reelId, true, 12501)
             val response = api.reactToReel(reelId, ReactionRequest(type = reaction, reaction = reaction))
             if (response.isSuccessful) {
                 emit(Result.Success(Unit))
             } else {
-                emit(Result.Success(Unit))
+                emit(Result.Error(Exception("Failed to react to reel (${response.code()})")))
             }
-        } catch (_: Exception) {
-            emit(Result.Success(Unit))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
@@ -273,19 +272,27 @@ class ReelsRepositoryImpl @Inject constructor(
         emit(Result.Loading)
         try {
             val response = api.saveReel(reelId)
-            emit(Result.Success(response.isSuccessful))
-        } catch (_: Exception) {
-            emit(Result.Success(true))
+            if (response.isSuccessful) {
+                emit(Result.Success(true))
+            } else {
+                emit(Result.Error(Exception("Failed to save reel (${response.code()})")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
     override fun shareReel(reelId: Long): Flow<Result<Unit>> = flow {
         emit(Result.Loading)
         try {
-            api.shareReel(reelId)
-            emit(Result.Success(Unit))
-        } catch (_: Exception) {
-            emit(Result.Success(Unit))
+            val response = api.shareReel(reelId)
+            if (response.isSuccessful) {
+                emit(Result.Success(Unit))
+            } else {
+                emit(Result.Error(Exception("Failed to share reel (${response.code()})")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 
@@ -293,9 +300,13 @@ class ReelsRepositoryImpl @Inject constructor(
         emit(Result.Loading)
         try {
             val response = api.followUser(creatorId)
-            emit(Result.Success(response.isSuccessful))
-        } catch (_: Exception) {
-            emit(Result.Success(true))
+            if (response.isSuccessful) {
+                emit(Result.Success(true))
+            } else {
+                emit(Result.Error(Exception("Failed to follow creator (${response.code()})")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
         }
     }.flowOn(ioDispatcher)
 

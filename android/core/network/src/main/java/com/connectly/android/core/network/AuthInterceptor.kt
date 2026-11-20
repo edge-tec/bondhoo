@@ -15,7 +15,9 @@ class AuthInterceptor @Inject constructor(
         val original = chain.request()
         val builder = original.newBuilder()
             .header("Accept", "application/json")
-            .header("Content-Type", "application/json")
+        if (original.body == null && original.header("Content-Type") == null) {
+            builder.header("Content-Type", "application/json")
+        }
 
         val token = tokenStorageManager.getAccessToken()
         if (!token.isNullOrBlank() && original.header("Authorization") == null) {

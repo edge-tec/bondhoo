@@ -69,4 +69,15 @@ interface MessengerRepository {
     fun observePresence(): Flow<Pair<Long, Boolean>>
     fun searchMessages(query: String, conversationId: Long? = null): Flow<Result<List<Message>>>
     fun syncOfflineEvents(sinceId: Long): Flow<Result<Long>>
+    fun createChatPoll(conversationId: Long, question: String, options: List<String>, isMultipleChoice: Boolean, durationHours: Int? = null): Flow<Result<Boolean>>
+    fun voteChatPoll(pollId: Long, optionIds: List<Long>): Flow<Result<Boolean>>
+    fun closeChatPoll(pollId: Long): Flow<Result<Boolean>>
+    fun setDisappearingTimer(conversationId: Long, durationSeconds: Int): Flow<Result<Boolean>>
+    fun shareLocation(conversationId: Long, latitude: Double, longitude: Double, address: String?, isLive: Boolean): Flow<Result<Message>>
+    fun stopLiveLocation(conversationId: Long, messageId: Long): Flow<Result<Boolean>>
+    fun updateChatTheme(conversationId: Long, themeColor: String, bubbleColor: String): Flow<Result<Boolean>>
+    fun resetChatTheme(conversationId: Long): Flow<Result<Boolean>>
+    fun scheduleMessage(conversationId: Long, body: String, scheduledAtIso: String, timezone: String = "UTC"): Flow<Result<Boolean>>
+    fun transcribeVoice(messageId: Long): Flow<Result<String>>
+    fun translateMessage(messageId: Long, targetLanguage: String): Flow<Result<String>>
 }

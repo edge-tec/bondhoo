@@ -25,7 +25,7 @@ data class SearchUiState(
     val selectedFilter: String = "All",
     val searchResults: SearchResult = SearchResult(),
     val discoveryData: DiscoveryData = DiscoveryData(),
-    val recentSearches: List<String> = listOf("Sadia Islam", "#MusicFestival", "Travel Lovers BD", "Tech World"),
+    val recentSearches: List<String> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )

@@ -83,6 +83,7 @@ import com.connectly.android.feature.jobs.navigation.navigateToJobs
 import com.connectly.android.feature.learning.navigation.learningScreen
 import com.connectly.android.feature.learning.navigation.navigateToLearning
 import com.connectly.android.feature.reels.navigation.navigateToCreateReel
+import com.connectly.android.feature.reels.navigation.navigateToCreateReel
 import com.connectly.android.feature.reels.navigation.reelsGraph
 import com.connectly.android.feature.reels.presentation.player.ReelsScreen
 import com.connectly.android.feature.stories.navigation.navigateToCreateStory
@@ -300,7 +301,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 BottomBarDestination.REELS -> {
                                     ReelsScreen(
-                                        onNavigateToCreateReel = { rootNavController.navigateToCreateStory() },
+                                        onNavigateToCreateReel = { rootNavController.navigateToCreateReel() },
                                         modifier = Modifier.padding(innerPadding)
                                     )
                                 }

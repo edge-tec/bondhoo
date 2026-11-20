@@ -256,7 +256,8 @@ fun NavGraphBuilder.profileGraph(
 
     composable(FRIENDS_ROUTE) {
         FriendsScreen(
-            onNavigateToUserProfile = { userId -> navController.navigateToProfile(userId.toString()) }
+            onNavigateToUserProfile = { userId -> navController.navigateToProfile(userId.toString()) },
+            onNavigateToChat = onNavigateToChat
         )
     }
 

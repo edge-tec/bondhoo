@@ -68,7 +68,7 @@ fun NavGraphBuilder.notificationsGraph(
     composable(SEARCH_ROUTE) {
         SearchScreen(
             onNavigateBack = { navController.popBackStack() },
-            onUserClick = { navController.navigate("profile_route") },
+            onUserClick = { userId -> navController.navigate("profile_route?username=$userId") },
             onGroupClick = { navController.navigate("groups_route") },
             onPageClick = { navController.navigate("pages_route") },
             onEventClick = { navController.navigate("events_route") },

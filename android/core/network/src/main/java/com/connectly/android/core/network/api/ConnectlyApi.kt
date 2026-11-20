@@ -702,6 +702,87 @@ interface ConnectlyApi {
     @GET("v1/saved-messages")
     suspend fun getSavedMessages(): Response<ApiResponse<List<MessageDto>>>
 
+    // -------------------------------------------------------------
+    // Ultra Enterprise Messenger (Polls, Disappearing, Location, Themes, Voice AI)
+    // -------------------------------------------------------------
+    @POST("v1/conversations/{id}/polls")
+    suspend fun createChatPoll(
+        @Path("id") conversationId: Long,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<ApiResponse<JsonElement?>>
+
+    @GET("v1/polls/{id}")
+    suspend fun getChatPoll(
+        @Path("id") pollId: Long
+    ): Response<ApiResponse<JsonElement?>>
+
+    @POST("v1/polls/{id}/vote")
+    suspend fun voteChatPoll(
+        @Path("id") pollId: Long,
+        @Body body: Map<String, List<Long>>
+    ): Response<ApiResponse<JsonElement?>>
+
+    @POST("v1/polls/{id}/close")
+    suspend fun closeChatPoll(
+        @Path("id") pollId: Long
+    ): Response<ApiResponse<JsonElement?>>
+
+    @POST("v1/conversations/{id}/disappearing-timer")
+    suspend fun setDisappearingTimer(
+        @Path("id") conversationId: Long,
+        @Body body: Map<String, Int>
+    ): Response<ApiResponse<JsonElement?>>
+
+    @GET("v1/conversations/{id}/scheduled-messages")
+    suspend fun getScheduledMessages(
+        @Path("id") conversationId: Long
+    ): Response<ApiResponse<JsonElement?>>
+
+    @POST("v1/conversations/{id}/scheduled-messages")
+    suspend fun scheduleMessage(
+        @Path("id") conversationId: Long,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<ApiResponse<JsonElement?>>
+
+    @DELETE("v1/scheduled-messages/{id}")
+    suspend fun cancelScheduledMessage(
+        @Path("id") scheduledId: Long
+    ): Response<ApiResponse<JsonElement?>>
+
+    @POST("v1/conversations/{id}/location")
+    suspend fun shareLocation(
+        @Path("id") conversationId: Long,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<ApiResponse<MessageDto>>
+
+    @POST("v1/conversations/{id}/location/{messageId}/stop")
+    suspend fun stopLiveLocation(
+        @Path("id") conversationId: Long,
+        @Path("messageId") messageId: Long
+    ): Response<ApiResponse<MessageDto>>
+
+    @POST("v1/conversations/{id}/theme")
+    suspend fun updateChatTheme(
+        @Path("id") conversationId: Long,
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<JsonElement?>>
+
+    @DELETE("v1/conversations/{id}/theme")
+    suspend fun resetChatTheme(
+        @Path("id") conversationId: Long
+    ): Response<ApiResponse<JsonElement?>>
+
+    @POST("v1/messages/{id}/transcribe")
+    suspend fun transcribeVoice(
+        @Path("id") messageId: Long
+    ): Response<ApiResponse<JsonElement?>>
+
+    @POST("v1/messages/{id}/translate")
+    suspend fun translateMessage(
+        @Path("id") messageId: Long,
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<JsonElement?>>
+
     @POST("v1/conversations/{id}/pin")
     suspend fun togglePinConversation(@Path("id") conversationId: Long): Response<ApiResponse<JsonObject>>
 
@@ -1683,12 +1764,61 @@ interface ConnectlyApi {
 // -------------------------------------------------------------
 // DTOs & Models
 // -------------------------------------------------------------
-@Serializable
+@Serializable(with = ApiResponseSerializer::class)
 data class ApiResponse<T>(
     val data: T,
     val message: String? = null,
     val meta: MetaDto? = null
 )
+
+class ApiResponseSerializer<T>(
+    private val dataSerializer: kotlinx.serialization.KSerializer<T>
+) : kotlinx.serialization.KSerializer<ApiResponse<T>> {
+    override val descriptor: kotlinx.serialization.descriptors.SerialDescriptor =
+        kotlinx.serialization.descriptors.buildClassSerialDescriptor("ApiResponse") {
+            element("data", dataSerializer.descriptor, isOptional = true)
+            element("message", kotlinx.serialization.descriptors.PrimitiveSerialDescriptor("message", kotlinx.serialization.descriptors.PrimitiveKind.STRING), isOptional = true)
+            element("meta", MetaDto.serializer().descriptor, isOptional = true)
+        }
+
+    override fun serialize(encoder: kotlinx.serialization.encoding.Encoder, value: ApiResponse<T>) {
+        val composite = encoder.beginStructure(descriptor)
+        composite.encodeSerializableElement(descriptor, 0, dataSerializer, value.data)
+        if (value.message != null) {
+            composite.encodeStringElement(descriptor, 1, value.message)
+        }
+        if (value.meta != null) {
+            composite.encodeSerializableElement(descriptor, 2, MetaDto.serializer(), value.meta)
+        }
+        composite.endStructure(descriptor)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun deserialize(decoder: kotlinx.serialization.encoding.Decoder): ApiResponse<T> {
+        val jsonDecoder = decoder as? kotlinx.serialization.json.JsonDecoder
+            ?: throw kotlinx.serialization.SerializationException("ApiResponseSerializer requires JsonDecoder")
+        val obj = jsonDecoder.decodeJsonElement() as? kotlinx.serialization.json.JsonObject
+            ?: throw kotlinx.serialization.SerializationException("Expected JSON object for ApiResponse")
+
+        val message = obj["message"]?.let {
+            if (it is kotlinx.serialization.json.JsonPrimitive && !it.isString.not()) it.content else null
+        }
+        val meta = obj["meta"]?.let {
+            if (it !is kotlinx.serialization.json.JsonNull) jsonDecoder.json.decodeFromJsonElement(MetaDto.serializer(), it) else null
+        }
+        val dataElement = obj["data"]
+        val isUnit = dataSerializer.descriptor.serialName == "kotlin.Unit"
+        val data: T = when {
+            isUnit -> Unit as T
+            dataElement == null || dataElement is kotlinx.serialization.json.JsonNull -> {
+                if (dataSerializer.descriptor.isNullable) null as T
+                else jsonDecoder.json.decodeFromJsonElement(dataSerializer, kotlinx.serialization.json.JsonNull)
+            }
+            else -> jsonDecoder.json.decodeFromJsonElement(dataSerializer, dataElement)
+        }
+        return ApiResponse(data = data, message = message, meta = meta)
+    }
+}
 
 @Serializable
 data class MetaDto(
@@ -2583,6 +2713,8 @@ data class ProfileAboutDto(
 data class MediaUploadResponse(
     val id: Long? = null,
     val url: String? = null,
+    val avatar_url: String? = null,
+    val cover_url: String? = null,
     val path: String? = null,
     val preview_url: String? = null,
     val original_url: String? = null,
@@ -2599,7 +2731,7 @@ data class MediaUploadResponse(
     val metadata: JsonElement? = null
 ) {
     val resolvedUrl: String get() {
-        val raw = preview_url ?: original_url ?: url ?: ""
+        val raw = avatar_url ?: cover_url ?: preview_url ?: original_url ?: url ?: ""
         return com.connectly.android.core.network.di.NetworkModule.resolveMediaUrl(raw) ?: raw
     }
     val resolvedFileName: String get() = filename ?: name ?: "attachment"
@@ -3914,12 +4046,17 @@ data class CreateLiveStreamRequest(
 
 @Serializable
 data class LiveCommentDto(
-    val id: Long,
-    val stream_id: Long,
-    val user: UserDto,
-    val comment: String,
+    val id: Long = 0L,
+    val stream_id: Long = 0L,
+    val live_stream_id: Long = 0L,
+    val user: UserDto? = null,
+    val comment: String = "",
+    val message: String = "",
     val created_at: String = "Just now"
-)
+) {
+    val resolvedStreamId: Long get() = if (stream_id != 0L) stream_id else live_stream_id
+    val resolvedComment: String get() = comment.ifBlank { message }
+}
 
 @Serializable
 data class CreateLiveCommentRequest(

@@ -20,31 +20,41 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import com.connectly.android.core.designsystem.component.ConnectlyAvatar
 import com.connectly.android.core.designsystem.theme.ConnectlyBlue
 import com.connectly.android.core.network.api.ConnectlyApi
 import com.connectly.android.core.network.api.MemoryItemDto
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class MemoriesApiViewModel @Inject constructor(
+    val api: ConnectlyApi
+) : ViewModel()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MemoriesScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    api: ConnectlyApi? = null
+    api: ConnectlyApi? = null,
+    viewModel: MemoriesApiViewModel = hiltViewModel()
 ) {
+    val activeApi = api ?: viewModel.api
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var memories by remember { mutableStateOf<List<MemoryItemDto>>(emptyList()) }
     val scope = rememberCoroutineScope()
 
     fun loadMemories() {
-        if (api == null) return
         isLoading = true
         errorMessage = null
         scope.launch {
             try {
-                val response = api.getMemories()
+                val response = activeApi.getMemories()
                 if (response.isSuccessful && response.body() != null) {
                     memories = response.body()!!.data
                 } else {

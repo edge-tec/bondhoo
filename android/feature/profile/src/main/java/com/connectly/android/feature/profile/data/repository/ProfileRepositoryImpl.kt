@@ -55,14 +55,14 @@ class ProfileRepositoryImpl @Inject constructor(
                     username = dto.username,
                     email = dto.email,
                     avatar = dto.avatar,
-                    coverPhoto = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-                    bio = dto.bio ?: "Dream Big • Work Hard • Be Happy",
-                    occupation = "Software Engineer",
-                    location = "Dhaka, Bangladesh",
+                    coverPhoto = null,
+                    bio = dto.bio,
+                    occupation = null,
+                    location = null,
                     isVerified = dto.is_verified,
-                    friendsCount = if (dto.friends_count > 0) dto.friends_count else 2540,
-                    followersCount = if (dto.followers_count > 0) dto.followers_count else 865,
-                    followingCount = if (dto.following_count > 0) dto.following_count else 128
+                    friendsCount = dto.friends_count,
+                    followersCount = dto.followers_count,
+                    followingCount = dto.following_count
                 )
                 // Cache user in Room for offline profile view
                 userDao.insertUser(
@@ -150,7 +150,7 @@ class ProfileRepositoryImpl @Inject constructor(
             val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
             val response = api.uploadAvatar(body)
             if (response.isSuccessful && response.body() != null) {
-                emit(Result.Success(response.body()!!.data.url ?: ""))
+                emit(Result.Success(response.body()!!.data.resolvedUrl))
             } else {
                 emit(Result.Error(Exception("Failed to upload avatar.")))
             }
@@ -166,7 +166,7 @@ class ProfileRepositoryImpl @Inject constructor(
             val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
             val response = api.uploadCover(body)
             if (response.isSuccessful && response.body() != null) {
-                emit(Result.Success(response.body()!!.data.url ?: ""))
+                emit(Result.Success(response.body()!!.data.resolvedUrl))
             } else {
                 emit(Result.Error(Exception("Failed to upload cover photo.")))
             }

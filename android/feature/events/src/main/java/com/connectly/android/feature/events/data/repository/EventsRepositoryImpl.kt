@@ -72,11 +72,14 @@ class EventsRepositoryImpl @Inject constructor(
 
     override fun rsvpEvent(eventId: Long, status: RsvpStatus): Flow<Result<RsvpStatus>> = flow {
         try {
-            api.rsvpEvent(eventId, RsvpRequest(status = status.value))
-            emit(Result.Success(status))
+            val response = api.rsvpEvent(eventId, RsvpRequest(status = status.value))
+            if (response.isSuccessful) {
+                emit(Result.Success(status))
+            } else {
+                emit(Result.Error(Exception("Failed to RSVP (${response.code()})")))
+            }
         } catch (e: Exception) {
-            // Optimistic success for UI
-            emit(Result.Success(status))
+            emit(Result.Error(e))
         }
     }
 

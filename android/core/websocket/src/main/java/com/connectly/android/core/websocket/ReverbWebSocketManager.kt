@@ -399,7 +399,11 @@ class ReverbWebSocketManager @Inject constructor(
                         val callerObj = data.optJSONObject("caller") ?: callObj?.optJSONObject("caller")
                         val callerId = callerObj?.optLong("id") ?: data.optLong("caller_id")
                         val callerName = callerObj?.optString("name") ?: "Caller"
-                        val callerAvatar = if (callerObj != null && callerObj.has("avatar") && !callerObj.isNull("avatar")) callerObj.getString("avatar") else null
+                        val callerAvatar = when {
+                            callerObj != null && callerObj.has("avatar_url") && !callerObj.isNull("avatar_url") -> callerObj.getString("avatar_url")
+                            callerObj != null && callerObj.has("avatar") && !callerObj.isNull("avatar") -> callerObj.getString("avatar")
+                            else -> null
+                        }
 
                         scope.launch {
                             _callIncomingFlow.emit(
@@ -447,7 +451,7 @@ class ReverbWebSocketManager @Inject constructor(
                         val data = JSONObject(dataStr)
                         val callId = data.optLong("call_id")
                         val status = data.optString("status", "ended")
-                        val duration = data.optInt("duration", 0)
+                        val duration = data.optInt("duration_seconds", data.optInt("duration", 0))
 
                         scope.launch {
                             _callEndedFlow.emit(CallEndedEvent(callId, status, duration))
@@ -552,7 +556,11 @@ class ReverbWebSocketManager @Inject constructor(
                     if (dataStr.isNotBlank()) {
                         val data = JSONObject(dataStr)
                         val userId = data.optLong("user_id")
-                        val notifId = if (data.has("notification_id") && !data.isNull("notification_id")) data.getString("notification_id") else null
+                        val notifId = when {
+                            data.has("id") && !data.isNull("id") -> data.optString("id")
+                            data.has("notification_id") && !data.isNull("notification_id") -> data.optString("notification_id")
+                            else -> null
+                        }
                         val unreadCount = data.optInt("unread_count", 0)
 
                         scope.launch {
@@ -561,7 +569,7 @@ class ReverbWebSocketManager @Inject constructor(
                     }
                 }
 
-                "notification.read.all" -> {
+                "notification.read.all", "notification.read_all" -> {
                     if (dataStr.isNotBlank()) {
                         val data = JSONObject(dataStr)
                         val userId = data.optLong("user_id")
@@ -575,7 +583,7 @@ class ReverbWebSocketManager @Inject constructor(
                     if (dataStr.isNotBlank()) {
                         val data = JSONObject(dataStr)
                         val userId = data.optLong("user_id")
-                        val notifId = data.optString("notification_id", "")
+                        val notifId = data.optString("id", data.optString("notification_id", ""))
                         val unreadCount = data.optInt("unread_count", 0)
 
                         scope.launch {
@@ -710,12 +718,12 @@ class ReverbWebSocketManager @Inject constructor(
                 }
 
                 // Live Streaming events
-                "live.started", "live.ended", "live.comment.received", "live.reaction.created", "gift.received" -> {
+                "live.started", "live.ended", "live.comment.received", "live.comment.created", "live.comment", "live.reaction.created", "gift.received", "live.gift", "live.gift.received" -> {
                     if (dataStr.isNotBlank()) {
                         val data = JSONObject(dataStr)
-                        val channelId = data.optString("channel_id", "")
+                        val channelId = data.optString("channel_id", data.optString("stream_id", ""))
                         val senderName = data.optString("sender_name", data.optString("user_name"))
-                        val msg = data.optString("comment", data.optString("gift_type"))
+                        val msg = data.optString("comment", data.optString("message", data.optString("gift_type")))
 
                         val payload = mutableMapOf<String, Any?>()
                         data.keys().forEach { k -> payload[k] = data.opt(k) }
@@ -799,8 +807,9 @@ class ReverbWebSocketManager @Inject constructor(
 
     fun subscribeUserChannel(userId: Long) {
         val channel = "private-user.$userId"
-        subscribedChannels.add(channel)
-        authorizeAndSubscribe(channel)
+        if (subscribedChannels.add(channel)) {
+            authorizeAndSubscribe(channel)
+        }
     }
 
     fun unsubscribeUserChannel(userId: Long) {
@@ -853,8 +862,9 @@ class ReverbWebSocketManager @Inject constructor(
 
     fun subscribeGroupChannel(groupId: Long) {
         val channel = "group.$groupId"
-        subscribedChannels.add(channel)
-        authorizeAndSubscribe(channel)
+        if (subscribedChannels.add(channel)) {
+            sendPublicSubscribe(channel)
+        }
     }
 
     fun subscribeProfileChannel(username: String) {

@@ -1406,7 +1406,7 @@ fun ProfileScreen(
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text("Followers", fontSize = 12.sp, color = TextSecondaryLight)
-                            Text("${user?.followersCount ?: 865}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("${user?.followersCount ?: 0}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             Text("Growing community", fontSize = 11.sp, color = TextSecondaryLight)
                         }
                     }

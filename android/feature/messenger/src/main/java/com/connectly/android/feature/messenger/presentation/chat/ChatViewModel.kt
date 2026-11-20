@@ -10,6 +10,7 @@ import com.connectly.android.core.model.DeliveryStatus
 import com.connectly.android.core.model.Message
 import com.connectly.android.core.model.MessagePreview
 import com.connectly.android.core.websocket.ReverbWebSocketManager
+import com.connectly.android.feature.messenger.domain.repository.MessengerRepository
 import com.connectly.android.feature.messenger.domain.usecase.CreateConversationUseCase
 import com.connectly.android.feature.messenger.domain.usecase.DeleteMessageUseCase
 import com.connectly.android.feature.messenger.domain.usecase.EditMessageUseCase
@@ -74,7 +75,8 @@ class ChatViewModel @Inject constructor(
     private val observeTypingUseCase: ObserveTypingUseCase,
     private val observePresenceUseCase: ObservePresenceUseCase,
     private val webSocketManager: ReverbWebSocketManager,
-    private val tokenStorageManager: TokenStorageManager
+    private val tokenStorageManager: TokenStorageManager,
+    private val messengerRepository: MessengerRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatState())
@@ -132,6 +134,146 @@ class ChatViewModel @Inject constructor(
             is ChatIntent.StartCallFromChat -> startCallFromChat(intent.isVideo)
             ChatIntent.ClearStatusMessages -> _uiState.update {
                 it.copy(statusMessage = null, errorMessage = null)
+            }
+            ChatIntent.CycleVoiceSpeed -> {
+                val nextSpeed = when (_uiState.value.voicePlaybackSpeed) {
+                    1.0f -> 1.5f
+                    1.5f -> 2.0f
+                    2.0f -> 0.5f
+                    else -> 1.0f
+                }
+                _uiState.update { it.copy(voicePlaybackSpeed = nextSpeed) }
+            }
+            is ChatIntent.TogglePollDialog -> _uiState.update { it.copy(showPollDialog = intent.show) }
+            is ChatIntent.ToggleDisappearingDialog -> _uiState.update { it.copy(showDisappearingDialog = intent.show) }
+            is ChatIntent.ToggleThemeDialog -> _uiState.update { it.copy(showThemeDialog = intent.show) }
+            is ChatIntent.ToggleScheduleDialog -> _uiState.update { it.copy(showScheduleDialog = intent.show) }
+            is ChatIntent.CreatePoll -> {
+                viewModelScope.launch {
+                    messengerRepository?.createChatPoll(
+                        conversationId = _uiState.value.conversationId,
+                        question = intent.question,
+                        options = intent.options,
+                        isMultipleChoice = intent.isMultipleChoice,
+                        durationHours = intent.durationHours
+                    )?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            _uiState.update { it.copy(showPollDialog = false, statusMessage = "Poll created!") }
+                            silentSync()
+                        }
+                    }
+                }
+            }
+            is ChatIntent.VotePoll -> {
+                viewModelScope.launch {
+                    messengerRepository?.voteChatPoll(intent.pollId, intent.optionIds)?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            silentSync()
+                        }
+                    }
+                }
+            }
+            is ChatIntent.ClosePoll -> {
+                viewModelScope.launch {
+                    messengerRepository?.closeChatPoll(intent.pollId)?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            silentSync()
+                        }
+                    }
+                }
+            }
+            is ChatIntent.SetDisappearingTimer -> {
+                viewModelScope.launch {
+                    messengerRepository?.setDisappearingTimer(_uiState.value.conversationId, intent.durationSeconds)?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            _uiState.update { it.copy(disappearingTimerSeconds = intent.durationSeconds, showDisappearingDialog = false) }
+                            silentSync()
+                        }
+                    }
+                }
+            }
+            is ChatIntent.ShareLocation -> {
+                viewModelScope.launch {
+                    messengerRepository?.shareLocation(
+                        conversationId = _uiState.value.conversationId,
+                        latitude = intent.latitude,
+                        longitude = intent.longitude,
+                        address = intent.address,
+                        isLive = intent.liveDurationSeconds != null
+                    )?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            silentSync()
+                        }
+                    }
+                }
+            }
+            is ChatIntent.StopLiveLocation -> {
+                viewModelScope.launch {
+                    messengerRepository?.stopLiveLocation(_uiState.value.conversationId, intent.messageId)?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            silentSync()
+                        }
+                    }
+                }
+            }
+            is ChatIntent.SelectTheme -> {
+                viewModelScope.launch {
+                    messengerRepository?.updateChatTheme(_uiState.value.conversationId, intent.themeColor, intent.bubbleColor)?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            _uiState.update { it.copy(chatTheme = com.connectly.android.core.model.ChatTheme(intent.themeColor, intent.bubbleColor), showThemeDialog = false) }
+                        }
+                    }
+                }
+            }
+            ChatIntent.ResetTheme -> {
+                viewModelScope.launch {
+                    messengerRepository?.resetChatTheme(_uiState.value.conversationId)?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            _uiState.update { it.copy(chatTheme = null, showThemeDialog = false) }
+                        }
+                    }
+                }
+            }
+            is ChatIntent.TranscribeVoice -> {
+                viewModelScope.launch {
+                    messengerRepository?.transcribeVoice(intent.messageId)?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            val text = res.data as? String ?: ""
+                            val updated = _uiState.value.messages.map { msg ->
+                                if (msg.id == intent.messageId) msg.copy(transcription = text) else msg
+                            }
+                            _uiState.update { it.copy(messages = updated) }
+                        }
+                    }
+                }
+            }
+            is ChatIntent.TranslateMessage -> {
+                viewModelScope.launch {
+                    messengerRepository?.translateMessage(intent.messageId, intent.targetLanguage)?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            val text = res.data as? String ?: ""
+                            val updated = _uiState.value.messages.map { msg ->
+                                if (msg.id == intent.messageId) msg.copy(translatedText = text) else msg
+                            }
+                            _uiState.update { it.copy(messages = updated) }
+                        }
+                    }
+                }
+            }
+            is ChatIntent.ScheduleMessage -> {
+                viewModelScope.launch {
+                    messengerRepository?.scheduleMessage(
+                        conversationId = _uiState.value.conversationId,
+                        body = intent.body,
+                        scheduledAtIso = intent.scheduledAtIso
+                    )?.collect { res ->
+                        if (res is Result.Success<*>) {
+                            _uiState.update { it.copy(showScheduleDialog = false, statusMessage = "Message scheduled!") }
+                        } else if (res is Result.Error) {
+                            _uiState.update { it.copy(errorMessage = res.exception.message ?: "Failed to schedule message") }
+                        }
+                    }
+                }
             }
         }
     }

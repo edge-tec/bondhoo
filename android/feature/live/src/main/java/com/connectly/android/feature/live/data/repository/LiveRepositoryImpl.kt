@@ -96,18 +96,35 @@ class LiveRepositoryImpl @Inject constructor(
 
     override fun joinStream(streamId: Long): Flow<Result<LiveStream>> = flow {
         try {
-            val response = api.joinLiveStream(streamId, JoinLiveSessionRequest(currentSessionId))
-            val viewerCount = if (response.isSuccessful && response.body()?.data != null) {
-                response.body()!!.data.viewer_count
+            val joinResponse = api.joinLiveStream(streamId, JoinLiveSessionRequest(currentSessionId))
+            val viewerCount = if (joinResponse.isSuccessful && joinResponse.body()?.data != null) {
+                joinResponse.body()!!.data.viewer_count
             } else 1
 
-            val stream = getSampleLiveStream(streamId).copy(
-                viewerCount = viewerCount,
-                formattedViewerCount = formatViewerCount(viewerCount)
-            )
-            emit(Result.Success(stream))
+            val streamResponse = api.getLiveStreamDetails(streamId)
+            if (streamResponse.isSuccessful && streamResponse.body()?.data != null) {
+                val dto = streamResponse.body()!!.data
+                val streamerUser = dto.streamer ?: dto.user
+                emit(
+                    Result.Success(
+                        LiveStream(
+                            id = dto.id,
+                            title = dto.title,
+                            streamer = streamerUser?.let {
+                                User(id = it.id, name = it.name, username = it.username ?: "", avatar = it.avatar)
+                            } ?: User(id = 0L, name = "Creator", username = "creator"),
+                            playbackUrl = dto.playback_url,
+                            viewerCount = viewerCount,
+                            formattedViewerCount = formatViewerCount(viewerCount),
+                            isLive = dto.is_live
+                        )
+                    )
+                )
+            } else {
+                emit(Result.Error(Exception("Live stream not found")))
+            }
         } catch (e: Exception) {
-            emit(Result.Success(getSampleLiveStream(streamId)))
+            emit(Result.Error(e))
         }
     }
 
@@ -133,9 +150,11 @@ class LiveRepositoryImpl @Inject constructor(
                 val dto = response.body()!!.data
                 val realComment = LiveComment(
                     id = dto.id,
-                    streamId = dto.stream_id,
-                    user = User(id = dto.user.id, name = dto.user.name, username = dto.user.username ?: "", avatar = dto.user.avatar),
-                    comment = dto.comment
+                    streamId = dto.resolvedStreamId,
+                    user = dto.user?.let {
+                        User(id = it.id, name = it.name, username = it.username ?: "", avatar = it.avatar)
+                    } ?: User(id = 0L, name = "Viewer", username = "viewer"),
+                    comment = dto.resolvedComment
                 )
                 incomingCommentsFlow.emit(realComment)
                 emit(Result.Success(realComment))

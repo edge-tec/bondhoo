@@ -29,7 +29,7 @@ class NotificationsRepositoryImpl @Inject constructor(
         emit(Result.Loading)
         try {
             val response = api.getNotifications(filter = filter, category = category, page = page)
-            if (response.isSuccessful && !response.body()?.data.isNullOrEmpty()) {
+            if (response.isSuccessful && response.body() != null) {
                 val items = response.body()!!.data.map { dto ->
                     NotificationItem(
                         id = dto.id,
@@ -44,10 +44,10 @@ class NotificationsRepositoryImpl @Inject constructor(
                 }
                 emit(Result.Success(items))
             } else {
-                emit(Result.Success(getScreen9SampleNotifications(category)))
+                emit(Result.Success(emptyList()))
             }
         } catch (e: Exception) {
-            emit(Result.Success(getScreen9SampleNotifications(category)))
+            emit(Result.Error(e))
         }
     }
 
@@ -55,12 +55,12 @@ class NotificationsRepositoryImpl @Inject constructor(
         try {
             val response = api.getUnreadNotificationCount()
             if (response.isSuccessful && response.body()?.data != null) {
-                emit(response.body()!!.data["unread_count"] ?: 3)
+                emit(response.body()!!.data["unread_count"] ?: 0)
             } else {
-                emit(3)
+                emit(0)
             }
         } catch (e: Exception) {
-            emit(3)
+            emit(0)
         }
     }
 
@@ -92,7 +92,21 @@ class NotificationsRepositoryImpl @Inject constructor(
     }
 
     override fun respondToFriendRequest(userId: Long, accept: Boolean): Flow<Result<Unit>> = flow {
-        emit(Result.Success(Unit))
+        emit(Result.Loading)
+        try {
+            val response = if (accept) {
+                api.acceptFriendRequest(userId)
+            } else {
+                api.rejectFriendRequest(userId)
+            }
+            if (response.isSuccessful) {
+                emit(Result.Success(Unit))
+            } else {
+                emit(Result.Error(Exception("Failed to respond to friend request (${response.code()})")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
     }
 
     override fun search(query: String, type: String): Flow<Result<SearchResult>> =

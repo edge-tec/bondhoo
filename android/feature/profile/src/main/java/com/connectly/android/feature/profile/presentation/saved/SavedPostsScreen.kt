@@ -20,20 +20,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import com.connectly.android.core.designsystem.component.ConnectlyAvatar
 import com.connectly.android.core.designsystem.theme.ConnectlyBlue
 import com.connectly.android.core.network.api.ConnectlyApi
 import com.connectly.android.core.network.api.SavedItemDto
 import com.connectly.android.core.network.api.ToggleSaveItemPayload
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class SavedPostsApiViewModel @Inject constructor(
+    val api: ConnectlyApi
+) : ViewModel()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SavedPostsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    api: ConnectlyApi? = null
+    api: ConnectlyApi? = null,
+    viewModel: SavedPostsApiViewModel = hiltViewModel()
 ) {
+    val activeApi = api ?: viewModel.api
     var selectedFilter by remember { mutableStateOf("All") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -43,13 +54,12 @@ fun SavedPostsScreen(
     val filters = listOf("All", "Posts", "Articles", "Reels")
 
     fun loadSavedItems() {
-        if (api == null) return
         isLoading = true
         errorMessage = null
         scope.launch {
             try {
                 val collectionQuery = if (selectedFilter == "All") null else selectedFilter
-                val response = api.getSavedItems(collection = collectionQuery)
+                val response = activeApi.getSavedItems(collection = collectionQuery)
                 if (response.isSuccessful && response.body() != null) {
                     savedItems = response.body()!!.data
                 } else {
@@ -68,10 +78,9 @@ fun SavedPostsScreen(
     }
 
     fun unsaveItem(item: SavedItemDto) {
-        if (api == null) return
         scope.launch {
             try {
-                api.toggleSavePost(ToggleSaveItemPayload(item_type = item.item_type, item_id = item.item_id))
+                activeApi.toggleSavePost(ToggleSaveItemPayload(item_type = item.item_type, item_id = item.item_id))
                 savedItems = savedItems.filter { it.id != item.id }
             } catch (_: Exception) {
             }

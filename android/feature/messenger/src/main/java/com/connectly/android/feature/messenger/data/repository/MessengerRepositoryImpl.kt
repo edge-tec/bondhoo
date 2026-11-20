@@ -1177,6 +1177,189 @@ class MessengerRepositoryImpl @Inject constructor(
         )
     }
 
+    override fun createChatPoll(
+        conversationId: Long,
+        question: String,
+        options: List<String>,
+        isMultipleChoice: Boolean,
+        durationHours: Int?
+    ): Flow<Result<Boolean>> = flow {
+        emit(Result.Loading)
+        try {
+            val body = mutableMapOf<String, Any?>(
+                "question" to question,
+                "options" to options,
+                "is_multiple_choice" to isMultipleChoice
+            )
+            if (durationHours != null) body["duration_hours"] = durationHours
+            val resp = api.createChatPoll(conversationId, body)
+            if (resp.isSuccessful) {
+                emit(Result.Success(true))
+            } else {
+                emit(Result.Error(Exception("Failed to create poll: ${resp.code()}")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun closeChatPoll(pollId: Long): Flow<Result<Boolean>> = flow {
+        emit(Result.Loading)
+        try {
+            val resp = api.closeChatPoll(pollId)
+            if (resp.isSuccessful) emit(Result.Success(true))
+            else emit(Result.Error(Exception("Failed to close poll: ${resp.code()}")))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun stopLiveLocation(conversationId: Long, messageId: Long): Flow<Result<Boolean>> = flow {
+        emit(Result.Loading)
+        try {
+            val resp = api.stopLiveLocation(conversationId, messageId)
+            if (resp.isSuccessful) emit(Result.Success(true))
+            else emit(Result.Error(Exception("Failed to stop live location: ${resp.code()}")))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun resetChatTheme(conversationId: Long): Flow<Result<Boolean>> = flow {
+        emit(Result.Loading)
+        try {
+            val resp = api.resetChatTheme(conversationId)
+            if (resp.isSuccessful) emit(Result.Success(true))
+            else emit(Result.Error(Exception("Failed to reset theme: ${resp.code()}")))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun scheduleMessage(
+        conversationId: Long,
+        body: String,
+        scheduledAtIso: String,
+        timezone: String
+    ): Flow<Result<Boolean>> = flow {
+        emit(Result.Loading)
+        try {
+            val resp = api.scheduleMessage(
+                conversationId,
+                mapOf(
+                    "body" to body,
+                    "scheduled_at" to scheduledAtIso,
+                    "timezone" to timezone
+                )
+            )
+            if (resp.isSuccessful) emit(Result.Success(true))
+            else emit(Result.Error(Exception("Failed to schedule message: ${resp.code()}")))
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun voteChatPoll(pollId: Long, optionIds: List<Long>): Flow<Result<Boolean>> = flow {
+        emit(Result.Loading)
+        try {
+            val resp = api.voteChatPoll(pollId, mapOf("option_ids" to optionIds))
+            if (resp.isSuccessful) {
+                emit(Result.Success(true))
+            } else {
+                emit(Result.Error(Exception("Failed to vote poll: ${resp.code()}")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun setDisappearingTimer(conversationId: Long, durationSeconds: Int): Flow<Result<Boolean>> = flow {
+        emit(Result.Loading)
+        try {
+            val resp = api.setDisappearingTimer(conversationId, mapOf("duration_seconds" to durationSeconds))
+            if (resp.isSuccessful) {
+                emit(Result.Success(true))
+            } else {
+                emit(Result.Error(Exception("Failed to set timer: ${resp.code()}")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun shareLocation(
+        conversationId: Long,
+        latitude: Double,
+        longitude: Double,
+        address: String?,
+        isLive: Boolean
+    ): Flow<Result<Message>> = flow {
+        emit(Result.Loading)
+        try {
+            val body = mutableMapOf<String, Any?>(
+                "latitude" to latitude,
+                "longitude" to longitude,
+                "address" to address
+            )
+            if (isLive) body["live_duration_seconds"] = 3600
+            val resp = api.shareLocation(conversationId, body)
+            val dto = resp.body()?.data
+            if (resp.isSuccessful && dto != null) {
+                val msg = mapDtoToMessage(dto, conversationId)
+                emit(Result.Success(msg))
+            } else {
+                emit(Result.Error(Exception("Failed to share location: ${resp.code()}")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun updateChatTheme(conversationId: Long, themeColor: String, bubbleColor: String): Flow<Result<Boolean>> = flow {
+        emit(Result.Loading)
+        try {
+            val resp = api.updateChatTheme(conversationId, mapOf("theme_color" to themeColor, "bubble_color" to bubbleColor))
+            if (resp.isSuccessful) {
+                emit(Result.Success(true))
+            } else {
+                emit(Result.Error(Exception("Failed to update theme: ${resp.code()}")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun transcribeVoice(messageId: Long): Flow<Result<String>> = flow {
+        emit(Result.Loading)
+        try {
+            val resp = api.transcribeVoice(messageId)
+            val data = resp.body()?.data?.jsonObject?.get("transcription")?.jsonObject
+            val text = data?.get("text")?.jsonPrimitive?.contentOrNull ?: "অনুলিপি পাওয়া যায়নি"
+            if (resp.isSuccessful) {
+                emit(Result.Success(text))
+            } else {
+                emit(Result.Error(Exception("Failed to transcribe: ${resp.code()}")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
+    override fun translateMessage(messageId: Long, targetLanguage: String): Flow<Result<String>> = flow {
+        emit(Result.Loading)
+        try {
+            val resp = api.translateMessage(messageId, mapOf("target_language" to targetLanguage))
+            val text = resp.body()?.data?.jsonObject?.get("translated_text")?.jsonPrimitive?.contentOrNull ?: ""
+            if (resp.isSuccessful) {
+                emit(Result.Success(text))
+            } else {
+                emit(Result.Error(Exception("Failed to translate: ${resp.code()}")))
+            }
+        } catch (e: Exception) {
+            emit(Result.Error(e))
+        }
+    }.flowOn(ioDispatcher)
+
     private fun normalizeBackendUrl(rawUrl: String?): String? {
         if (rawUrl.isNullOrBlank()) return null
         val trimmed = rawUrl.trim()

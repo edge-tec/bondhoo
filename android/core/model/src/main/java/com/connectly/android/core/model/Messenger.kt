@@ -36,7 +36,10 @@ data class Conversation(
     val memberRoles: Map<Long, String> = emptyMap(),
     val canSendMessages: String = "all",
     val canAddMembers: String = "all",
-    val canEditInfo: String = "admins"
+    val canEditInfo: String = "admins",
+    val theme: ChatTheme? = null,
+    val disappearingDuration: Int = 0,
+    val isChannel: Boolean = false
 ) {
     val isGroup: Boolean get() = type.equals("group", ignoreCase = true)
     val displayTitle: String
@@ -117,7 +120,56 @@ data class Message(
     val createdAt: Long = System.currentTimeMillis(),
     val sentAt: Long? = null,
     val deliveredAt: Long? = null,
-    val readAt: Long? = null
+    val readAt: Long? = null,
+    val expiresAt: String? = null,
+    val poll: ChatPoll? = null,
+    val location: LocationData? = null,
+    val transcription: String? = null,
+    val translatedText: String? = null
+)
+
+@Serializable
+data class ChatPollOption(
+    val id: Long,
+    val pollId: Long,
+    val optionText: String,
+    val votesCount: Int = 0,
+    val percentage: Double = 0.0,
+    val isVotedByMe: Boolean = false
+)
+
+@Serializable
+data class ChatPoll(
+    val id: Long,
+    val question: String,
+    val isMultipleChoice: Boolean = false,
+    val isAnonymous: Boolean = false,
+    val canChangeVote: Boolean = true,
+    val isClosed: Boolean = false,
+    val endsAt: String? = null,
+    val totalVotesCount: Int = 0,
+    val hasVoted: Boolean = false,
+    val myVotedOptionIds: List<Long> = emptyList(),
+    val options: List<ChatPollOption> = emptyList()
+)
+
+@Serializable
+data class LocationData(
+    val latitude: Double,
+    val longitude: Double,
+    val address: String? = null,
+    val isLive: Boolean = false,
+    val liveUntil: String? = null,
+    val mapUrl: String? = null
+)
+
+@Serializable
+data class ChatTheme(
+    val themeColor: String = "#0084FF",
+    val bubbleColor: String = "#0084FF",
+    val wallpaperUrl: String? = null,
+    val gradient: String? = null,
+    val soundPreset: String = "default"
 )
 
 /**
