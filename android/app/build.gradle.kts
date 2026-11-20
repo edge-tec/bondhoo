@@ -55,14 +55,6 @@ android {
                 storePassword = storePass
                 keyAlias = kAlias
                 keyPassword = kPass
-            } else {
-                val debugKeystore = File(System.getProperty("user.home"), ".android/debug.keystore")
-                if (debugKeystore.exists()) {
-                    storeFile = debugKeystore
-                    storePassword = "android"
-                    keyAlias = "androiddebugkey"
-                    keyPassword = "android"
-                }
             }
         }
     }
@@ -76,12 +68,18 @@ android {
             initWith(getByName("release"))
             applicationIdSuffix = ".staging"
             matchingFallbacks += listOf("release")
-            signingConfig = signingConfigs.getByName("release")
+            val releaseConfig = signingConfigs.getByName("release")
+            if (releaseConfig.storeFile != null) {
+                signingConfig = releaseConfig
+            }
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("release")
+            val releaseConfig = signingConfigs.getByName("release")
+            if (releaseConfig.storeFile != null) {
+                signingConfig = releaseConfig
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
