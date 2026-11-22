@@ -418,6 +418,16 @@ fun PrivacySettingsScreen(
 
                             HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 8.dp))
 
+                            // Biometric App Lock
+                            SwitchSettingRow(
+                                title = "Biometric App Lock",
+                                subtitle = "Require fingerprint, face unlock, or device PIN whenever you open Bondhoo.",
+                                checked = state.biometricLockEnabled,
+                                onCheckedChange = { viewModel.handleIntent(PrivacySettingsIntent.BiometricLockToggled(it)) }
+                            )
+
+                            HorizontalDivider(color = BorderLight, modifier = Modifier.padding(vertical = 8.dp))
+
                             // Login Alerts
                             SwitchSettingRow(
                                 title = "Login Alerts",

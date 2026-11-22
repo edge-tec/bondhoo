@@ -19,7 +19,11 @@ class PrivacySettingsViewModel @Inject constructor(
     private val tokenStorageManager: TokenStorageManager
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PrivacySettingsState())
+    private val _uiState = MutableStateFlow(
+        PrivacySettingsState(
+            biometricLockEnabled = tokenStorageManager.isBiometricEnabled()
+        )
+    )
     val uiState: StateFlow<PrivacySettingsState> = _uiState.asStateFlow()
 
     init {
@@ -111,6 +115,19 @@ class PrivacySettingsViewModel @Inject constructor(
 
             // Security
             is PrivacySettingsIntent.TwoFactorToggled -> toggleTwoFactor(intent.enabled)
+            is PrivacySettingsIntent.BiometricLockToggled -> {
+                tokenStorageManager.setBiometricEnabled(intent.enabled)
+                _uiState.update {
+                    it.copy(
+                        biometricLockEnabled = intent.enabled,
+                        successMessage = if (intent.enabled) {
+                            "Biometric App Lock enabled."
+                        } else {
+                            "Biometric App Lock disabled."
+                        }
+                    )
+                }
+            }
             is PrivacySettingsIntent.LoginAlertsToggled -> {
                 _uiState.update { it.copy(loginAlertsEnabled = intent.enabled) }
             }

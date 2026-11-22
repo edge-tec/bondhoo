@@ -3,8 +3,8 @@ package com.connectly.android
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.*
@@ -19,7 +20,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -33,6 +37,7 @@ import com.connectly.android.feature.auth.navigation.LOGIN_ROUTE
 import com.connectly.android.feature.auth.navigation.SPLASH_ROUTE
 import com.connectly.android.feature.auth.navigation.authGraph
 import com.connectly.android.feature.auth.navigation.navigateToLogin
+import com.connectly.android.feature.auth.presentation.biometrics.BiometricPromptHelper
 import com.connectly.android.core.model.CallType
 import com.connectly.android.feature.calling.navigation.CALL_ROUTE
 import com.connectly.android.feature.calling.navigation.callingGraph
@@ -95,7 +100,7 @@ import dagger.hilt.android.AndroidEntryPoint
 const val MAIN_HOME_ROUTE = "main_home"
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var themeManager: ThemeManager
@@ -104,11 +109,40 @@ class MainActivity : ComponentActivity() {
     lateinit var tokenStorageManager: TokenStorageManager
 
     private val pendingDeepLinkState = mutableStateOf<BondhooDeepLink?>(null)
+    private val isAppLockedState = mutableStateOf(false)
+    private val biometricErrorState = mutableStateOf<String?>(null)
+    private lateinit var biometricHelper: BiometricPromptHelper
+
+    private fun shouldRequireBiometricLock(intent: Intent?): Boolean {
+        if (!tokenStorageManager.isBiometricEnabled()) return false
+        if (tokenStorageManager.getAccessToken().isNullOrBlank()) return false
+        if (DeepLinkRouter.parseIntent(intent) is BondhooDeepLink.IncomingCall) return false
+        return ::biometricHelper.isInitialized && biometricHelper.canAuthenticate()
+    }
+
+    private fun triggerBiometricUnlock() {
+        if (!::biometricHelper.isInitialized) return
+        biometricErrorState.value = null
+        biometricHelper.showBiometricPrompt(
+            title = "Unlock Bondhoo",
+            subtitle = "Use fingerprint, face, or device PIN",
+            onSuccess = {
+                isAppLockedState.value = false
+                biometricErrorState.value = null
+            },
+            onError = { err ->
+                biometricErrorState.value = err
+            }
+        )
+    }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         DeepLinkRouter.parseIntent(intent)?.let { link ->
+            if (link is BondhooDeepLink.IncomingCall) {
+                isAppLockedState.value = false
+            }
             pendingDeepLinkState.value = link
         }
     }
@@ -117,6 +151,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        biometricHelper = BiometricPromptHelper(this)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -124,6 +160,10 @@ class MainActivity : ComponentActivity() {
 
         DeepLinkRouter.parseIntent(intent)?.let { link ->
             pendingDeepLinkState.value = link
+        }
+
+        if (shouldRequireBiometricLock(intent)) {
+            isAppLockedState.value = true
         }
 
         setContent {
@@ -156,6 +196,7 @@ class MainActivity : ComponentActivity() {
 
                 IncomingCallObserver(
                     onIncomingCall = { callId, callType, conversationId ->
+                        isAppLockedState.value = false
                         val currentRoute = rootNavController.currentDestination?.route.orEmpty()
                         if (!currentRoute.startsWith(CALL_ROUTE)) {
                             rootNavController.navigateToCall(
@@ -194,10 +235,14 @@ class MainActivity : ComponentActivity() {
                     pendingDeepLinkState.value = null
                 }
 
-                NavHost(
-                    navController = rootNavController,
-                    startDestination = SPLASH_ROUTE
-                ) {
+                val isAppLocked by isAppLockedState
+                val biometricError by biometricErrorState
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    NavHost(
+                        navController = rootNavController,
+                        startDestination = SPLASH_ROUTE
+                    ) {
                     authGraph(
                         onNavigateToHome = {
                             rootNavController.navigate(MAIN_HOME_ROUTE) {
@@ -499,6 +544,76 @@ class MainActivity : ComponentActivity() {
                                             }
                                     )
                                     Spacer(modifier = Modifier.height(28.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                    if (isAppLocked) {
+                        LaunchedEffect(Unit) {
+                            triggerBiometricUnlock()
+                        }
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = ConnectlyBlue.copy(alpha = 0.14f),
+                                    modifier = Modifier.size(88.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.Fingerprint,
+                                            contentDescription = "Biometric Lock",
+                                            tint = ConnectlyBlue,
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Text(
+                                    text = "Bondhoo is Locked",
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Verify with fingerprint, face unlock, or your device PIN to continue.",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                if (!biometricError.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Text(
+                                        text = biometricError!!,
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.error,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(28.dp))
+                                Button(
+                                    onClick = { triggerBiometricUnlock() },
+                                    colors = ButtonDefaults.buttonColors(containerColor = ConnectlyBlue)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Fingerprint,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Unlock Bondhoo", fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }

@@ -17,8 +17,8 @@ class BiometricPromptHelper(
     }
 
     fun showBiometricPrompt(
-        title: String = "Unlock Connectly",
-        subtitle: String = "Use fingerprint or face recognition",
+        title: String = "Unlock Bondhoo",
+        subtitle: String = "Use fingerprint, face, or device PIN",
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {

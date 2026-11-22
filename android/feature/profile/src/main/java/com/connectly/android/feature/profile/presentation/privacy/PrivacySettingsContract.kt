@@ -29,6 +29,7 @@ data class PrivacySettingsState(
 
     // 4. Security
     val twoFactorEnabled: Boolean = false,
+    val biometricLockEnabled: Boolean = false,
     val loginAlertsEnabled: Boolean = true,
     val sessions: List<UserSessionDto> = emptyList(),
     val isSessionsLoading: Boolean = false,
@@ -73,6 +74,7 @@ sealed interface PrivacySettingsIntent {
 
     // Security
     data class TwoFactorToggled(val enabled: Boolean) : PrivacySettingsIntent
+    data class BiometricLockToggled(val enabled: Boolean) : PrivacySettingsIntent
     data class LoginAlertsToggled(val enabled: Boolean) : PrivacySettingsIntent
     data class ConfirmRevokeSession(val session: UserSessionDto) : PrivacySettingsIntent
     object DismissRevokeDialog : PrivacySettingsIntent
