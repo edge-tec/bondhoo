@@ -1,5 +1,7 @@
 package com.connectly.android
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -83,7 +85,6 @@ import com.connectly.android.feature.jobs.navigation.navigateToJobs
 import com.connectly.android.feature.learning.navigation.learningScreen
 import com.connectly.android.feature.learning.navigation.navigateToLearning
 import com.connectly.android.feature.reels.navigation.navigateToCreateReel
-import com.connectly.android.feature.reels.navigation.navigateToCreateReel
 import com.connectly.android.feature.reels.navigation.reelsGraph
 import com.connectly.android.feature.reels.presentation.player.ReelsScreen
 import com.connectly.android.feature.stories.navigation.navigateToCreateStory
@@ -102,9 +103,28 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var tokenStorageManager: TokenStorageManager
 
+    private val pendingDeepLinkState = mutableStateOf<BondhooDeepLink?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        DeepLinkRouter.parseIntent(intent)?.let { link ->
+            pendingDeepLinkState.value = link
+        }
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        }
+
+        DeepLinkRouter.parseIntent(intent)?.let { link ->
+            pendingDeepLinkState.value = link
+        }
 
         setContent {
             val themeMode by themeManager.themeMode.collectAsState()
@@ -147,6 +167,32 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 )
+
+                val pendingDeepLink by pendingDeepLinkState
+                LaunchedEffect(pendingDeepLink) {
+                    val target = pendingDeepLink ?: return@LaunchedEffect
+                    if (tokenStorageManager.getAccessToken().isNullOrBlank()) return@LaunchedEffect
+                    when (target) {
+                        is BondhooDeepLink.IncomingCall -> rootNavController.navigateToCall(
+                            callId = target.callId,
+                            isIncoming = true,
+                            callType = target.callType
+                        )
+                        is BondhooDeepLink.Chat -> rootNavController.navigateToChat(target.conversationId)
+                        is BondhooDeepLink.Profile -> rootNavController.navigateToProfile(target.identifier)
+                        is BondhooDeepLink.LiveStream -> rootNavController.navigateToLive(target.streamId)
+                        BondhooDeepLink.Marketplace -> rootNavController.navigateToMarketplace()
+                        BondhooDeepLink.Groups -> rootNavController.navigateToGroups()
+                        BondhooDeepLink.Pages -> rootNavController.navigateToPages()
+                        BondhooDeepLink.Events -> rootNavController.navigateToEvents()
+                        BondhooDeepLink.Notifications -> rootNavController.navigateToNotifications()
+                        BondhooDeepLink.Jobs -> rootNavController.navigateToJobs()
+                        BondhooDeepLink.Learning -> rootNavController.navigateToLearning()
+                        BondhooDeepLink.Search -> rootNavController.navigateToSearch()
+                        BondhooDeepLink.Settings -> rootNavController.navigateToSettings()
+                    }
+                    pendingDeepLinkState.value = null
+                }
 
                 NavHost(
                     navController = rootNavController,
@@ -428,7 +474,7 @@ class MainActivity : ComponentActivity() {
                                             .fillMaxWidth()
                                             .clickable {
                                                 showCreateSheet = false
-                                                rootNavController.navigateToCreateStory()
+                                                rootNavController.navigateToCreateReel()
                                             }
                                     )
                                     ListItem(
