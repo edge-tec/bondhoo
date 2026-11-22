@@ -9,6 +9,7 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
 import com.connectly.android.core.model.CallType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -113,7 +114,11 @@ class CallNotificationManager @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val typeText = if (callType == CallType.VIDEO) "Incoming Video Call" else "Incoming Audio Call"
+        val typeText = if (callType.isVideo) "Incoming Bondhoo Video Call" else "Incoming Bondhoo Audio Call"
+        val callerPerson = Person.Builder()
+            .setName(callerName)
+            .setImportant(true)
+            .build()
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID_INCOMING_CALLS)
             .setSmallIcon(android.R.drawable.stat_sys_phone_call)
@@ -121,12 +126,18 @@ class CallNotificationManager @Inject constructor(
             .setContentText(typeText)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(false)
             .setOngoing(true)
             .setFullScreenIntent(fullScreenPendingIntent, true)
             .setContentIntent(fullScreenPendingIntent)
-            .addAction(android.R.drawable.ic_menu_call, "Accept", acceptPendingIntent)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Decline", rejectPendingIntent)
+            .setStyle(
+                NotificationCompat.CallStyle.forIncomingCall(
+                    callerPerson,
+                    rejectPendingIntent,
+                    acceptPendingIntent
+                ).setIsVideo(callType.isVideo)
+            )
             .build()
 
         notificationManager.notify(INCOMING_CALL_NOTIFICATION_ID, notification)
@@ -159,7 +170,7 @@ class CallNotificationManager @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val typeText = if (callType == CallType.VIDEO) "Connected Video Call" else "Connected Audio Call"
+        val typeText = if (callType.isVideo) "Connected Bondhoo Video Call" else "Connected Bondhoo Audio Call"
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID_ONGOING_CALLS)
             .setSmallIcon(android.R.drawable.stat_sys_phone_call)

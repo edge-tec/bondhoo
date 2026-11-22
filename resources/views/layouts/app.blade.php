@@ -8,7 +8,19 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>@yield('title', 'Bondoo — Modern Social Network')</title>
+    <title>@yield('title', 'Bondhoo (বন্ধু) — Modern Social Network')</title>
+    <link rel="canonical" href="{{ url()->current() }}">
+    <meta name="description" content="@yield('meta_description', 'Bondhoo (বন্ধু) — বন্ধুদের সাথে যুক্ত হন, ছবি, ভিডিও, রিলস ও রিয়েল-টাইম HD অডিও-ভিডিও কলে কথা বলুন।')">
+    <meta property="og:site_name" content="Bondhoo (বন্ধু)">
+    <meta property="og:type" content="@yield('og_type', 'website')">
+    <meta property="og:title" content="@yield('title', 'Bondhoo (বন্ধু) — Modern Social Network')">
+    <meta property="og:description" content="@yield('meta_description', 'Bondhoo (বন্ধু) — বন্ধুদের সাথে যুক্ত হন, ছবি, ভিডিও, রিলস ও রিয়েল-টাইম HD অডিও-ভিডিও কলে কথা বলুন।')">
+    <meta property="og:image" content="@yield('og_image', asset('images/bondhoo-logo.png'))">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('title', 'Bondhoo (বন্ধু) — Modern Social Network')">
+    <meta name="twitter:description" content="@yield('meta_description', 'Bondhoo (বন্ধু) — বন্ধুদের সাথে যুক্ত হন, ছবি, ভিডিও, রিলস ও রিয়েল-টাইম HD অডিও-ভিডিও কলে কথা বলুন।')">
+    <meta name="twitter:image" content="@yield('og_image', asset('images/bondhoo-logo.png'))">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="broadcast-connection" content="{{ config('broadcasting.default', 'log') }}">
     <meta name="reverb-app-key" content="{{ env('REVERB_APP_KEY', 'connectly_reverb_key') }}">

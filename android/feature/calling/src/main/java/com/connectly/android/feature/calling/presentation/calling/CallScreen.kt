@@ -23,6 +23,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -304,10 +306,10 @@ private fun IncomingCallContent(
     )
 
     val callLabel = when {
-        state.isGroupCall && state.callType.isVideo -> "Incoming Bondoo Group Video Call..."
-        state.isGroupCall -> "Incoming Bondoo Group Audio Call..."
-        state.callType.isVideo -> "Incoming Bondoo Video Call..."
-        else -> "Incoming Bondoo Audio Call..."
+        state.isGroupCall && state.callType.isVideo -> "Incoming Bondhoo Group Video Call..."
+        state.isGroupCall -> "Incoming Bondhoo Group Audio Call..."
+        state.callType.isVideo -> "Incoming Bondhoo Video Call..."
+        else -> "Incoming Bondhoo Audio Call..."
     }
 
     Column(
@@ -504,7 +506,7 @@ private fun ActiveAudioCallContent(
                 )
 
                 ControlIconButton(
-                    icon = if (state.isSpeakerOn) Icons.Default.VolumeUp else Icons.Default.VolumeDown,
+                    icon = if (state.isSpeakerOn) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeDown,
                     isActive = state.isSpeakerOn,
                     onClick = onToggleSpeaker
                 )
@@ -555,7 +557,7 @@ private fun GroupCallContent(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = state.displayTitle.ifBlank { "Bondoo Group Call" },
+                    text = state.displayTitle.ifBlank { "Bondhoo Group Call" },
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
@@ -657,7 +659,7 @@ private fun GroupCallContent(
                     onClick = onToggleMute
                 )
                 ControlIconButton(
-                    icon = if (state.isSpeakerOn) Icons.Default.VolumeUp else Icons.Default.VolumeDown,
+                    icon = if (state.isSpeakerOn) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeDown,
                     isActive = state.isSpeakerOn,
                     onClick = onToggleSpeaker
                 )
@@ -970,7 +972,7 @@ private fun ActiveVideoCallContent(
                 )
 
                 ControlIconButton(
-                    icon = if (state.isSpeakerOn) Icons.Default.VolumeUp else Icons.Default.VolumeDown,
+                    icon = if (state.isSpeakerOn) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeDown,
                     isActive = state.isSpeakerOn,
                     onClick = onToggleSpeaker
                 )
@@ -1125,7 +1127,7 @@ private fun NetworkQualityPill(quality: NetworkQuality) {
             )
             Text(
                 text = when (quality) {
-                    NetworkQuality.EXCELLENT -> "Bondoo HD Voice"
+                    NetworkQuality.EXCELLENT -> "Bondhoo HD Voice"
                     NetworkQuality.GOOD -> "Good Network"
                     NetworkQuality.POOR -> "Weak Network"
                     NetworkQuality.RECONNECTING -> "Reconnecting..."

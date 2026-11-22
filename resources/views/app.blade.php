@@ -12,20 +12,20 @@
     <meta name="reverb-port" content="{{ env('REVERB_PORT', '') }}">
     <meta name="reverb-scheme" content="{{ env('REVERB_SCHEME', request()->getScheme()) }}">
     <script src="/js/bondhoo-echo-client.js?v={{ @filemtime(public_path('js/bondhoo-echo-client.js')) ?: 1 }}"></script>
-    <title>{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Bondoo (বন্ধু) - Professional Social Network') }}</title>
+    <title>{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Bondhoo (বন্ধু) - Professional Social Network') }}</title>
     <link rel="icon" type="image/png" href="/images/bondhoo-icon.png">
 
     <!-- Canonical & Open Graph (OG) / Social Sharing Metadata -->
     <link rel="canonical" href="{{ url()->current() }}">
-    <meta property="og:site_name" content="Bondoo (বন্ধু)">
+    <meta property="og:site_name" content="Bondhoo (বন্ধু)">
     <meta property="og:type" content="{{ $ogType ?? 'website' }}">
-    <meta property="og:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Bondoo (বন্ধু) - Professional Social Network') }}">
-    <meta property="og:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant professional communities on Bondoo.') }}">
+    <meta property="og:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Bondhoo (বন্ধু) - Professional Social Network') }}">
+    <meta property="og:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant professional communities on Bondhoo.') }}">
     <meta property="og:image" content="{{ $ogImage ?? ($page['props']['ogImage'] ?? asset('images/bondhoo-logo.png')) }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Bondoo (বন্ধু) - Professional Social Network') }}">
-    <meta name="twitter:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant professional communities on Bondoo.') }}">
+    <meta name="twitter:title" content="{{ $ogTitle ?? ($page['props']['ogTitle'] ?? 'Bondhoo (বন্ধু) - Professional Social Network') }}">
+    <meta name="twitter:description" content="{{ $ogDescription ?? ($page['props']['ogDescription'] ?? 'Connect, share, and build vibrant professional communities on Bondhoo.') }}">
     <meta name="twitter:image" content="{{ $ogImage ?? ($page['props']['ogImage'] ?? asset('images/bondhoo-logo.png')) }}">
 
     <!-- Google Fonts: Inter -->

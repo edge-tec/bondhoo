@@ -51,7 +51,7 @@ class ConnectlyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(TAG, "FCM message received from: ${remoteMessage.from}, data keys: ${data.keys}")
 
         val type = data["type"] ?: data["action"] ?: "social"
-        val title = data["title"] ?: notification?.title ?: "Connectly"
+        val title = data["title"] ?: notification?.title ?: "Bondhoo"
         val body = data["body"] ?: data["message"] ?: notification?.body ?: "You have a new update."
         val messageId = data["message_id"]?.hashCode() ?: (System.currentTimeMillis() % 100000).toInt()
 
@@ -153,8 +153,13 @@ class ConnectlyFirebaseMessagingService : FirebaseMessagingService() {
         val conversationId = data["conversation_id"]?.toLongOrNull()
         val callerId = data["caller_id"]?.toLongOrNull() ?: 0L
         val callerName = data["caller_name"] ?: defaultTitle
-        val callTypeStr = data["call_type"] ?: "audio"
-        val callType = if (callTypeStr.equals("video", ignoreCase = true)) CallType.VIDEO else CallType.AUDIO
+        val callTypeStr = (data["call_type"] ?: "audio").lowercase()
+        val callType = when (callTypeStr) {
+            "video" -> CallType.VIDEO
+            "group_video" -> CallType.GROUP_VIDEO
+            "group_audio" -> CallType.GROUP_AUDIO
+            else -> CallType.AUDIO
+        }
 
         Log.i(TAG, "Processing incoming call push: callId=$callId, caller=$callerName, type=$callType")
 
