@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>ইমেইল ও নোটিফিকেশন সেটিংস — SocialHub</title>
+    <title>ইমেইল ও নোটিফিকেশন সেটিংস — Bondhoo</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -89,7 +89,7 @@
         </div>
 
         <h1 class="page-title">ইমেইল ও নোটিফিকেশন পছন্দসমূহ</h1>
-        <p class="page-subtitle">আপনি SocialHub থেকে কোন কোন কার্যকলাপের জন্য ইমেইল নোটিফিকেশন পেতে চান তা নির্ধারণ করুন।</p>
+        <p class="page-subtitle">আপনি Bondhoo থেকে কোন কোন কার্যকলাপের জন্য ইমেইল ও পুশ নোটিফিকেশন পেতে চান তা নির্ধারণ করুন।</p>
 
         <div id="saveAlert" class="alert-box" style="background: #e7f3ff; color: #1877f2; border: 1px solid #1877f2;">
             নোটিফিকেশন সেটিংস সফলভাবে সংরক্ষিত হয়েছে! ✅
@@ -281,6 +281,23 @@
                 </div>
             </div>
 
+            <!-- 6. Browser PWA Web Push Notifications -->
+            <div class="card" style="border-left: 4px solid #10b981;">
+                <div class="card-header">
+                    <div class="card-title">📲 ব্রাউজার পুশ নোটিফিকেশন (PWA)</div>
+                    <span id="pwaPushBadge" style="font-size: 11px; background: #f1f5f9; color: #475569; padding: 3px 10px; border-radius: 12px; font-weight: 700;">যাচাই হচ্ছে...</span>
+                </div>
+                <div style="padding: 8px 0;">
+                    <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 14px;">
+                        ব্রাউজার বা ট্যাব বন্ধ থাকলেও নতুন মেসেজ এবং ইনকামিং অডিও/ভিডিও কলের রিয়েল-টাইম নোটিফিকেশন পেতে পুশ নোটিফিকেশন চালু করুন।
+                    </p>
+                    <button type="button" id="btnEnableBrowserPush" onclick="enableBrowserPushNotifications()" style="background: #10b981; color: #ffffff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                        <span>🔔</span>
+                        <span>ব্রাউজার পুশ চালু করুন</span>
+                    </button>
+                </div>
+            </div>
+
             <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
                 <button type="submit" id="btnSubmit" class="btn-save">সেটিংস সংরক্ষণ করুন 💾</button>
             </div>
@@ -344,6 +361,54 @@
                 btn.disabled = false;
             }
         }
+
+        function refreshBrowserPushStatus() {
+            const badge = document.getElementById('pwaPushBadge');
+            const btn = document.getElementById('btnEnableBrowserPush');
+            if (!badge || !btn) return;
+
+            if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+                badge.innerText = 'সাপোর্ট করে না';
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                badge.innerText = 'সক্রিয় ✓';
+                badge.style.background = '#dcfce7';
+                badge.style.color = '#166534';
+                btn.innerHTML = '<span>✅</span><span>ব্রাউজার পুশ সক্রিয় আছে</span>';
+                btn.style.background = '#059669';
+            } else if (Notification.permission === 'denied') {
+                badge.innerText = 'ব্লকড';
+                badge.style.background = '#fee2e2';
+                badge.style.color = '#991b1b';
+                btn.innerHTML = '<span>🚫</span><span>ব্রাউজার সেটিংস থেকে আনব্লক করুন</span>';
+                btn.style.background = '#64748b';
+            } else {
+                badge.innerText = 'নিষ্ক্রিয়';
+            }
+        }
+
+        async function enableBrowserPushNotifications() {
+            if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+            try {
+                await navigator.serviceWorker.register('/sw.js');
+                const perm = await Notification.requestPermission();
+                refreshBrowserPushStatus();
+                if (perm === 'granted') {
+                    new Notification('Bondhoo পুশ সক্রিয় হয়েছে!', {
+                        body: 'এখন থেকে নতুন মেসেজ এবং কলের তাৎক্ষণিক নোটিফিকেশন পাবেন।',
+                        icon: '/images/bondhoo-icon-192.png'
+                    });
+                }
+            } catch (e) {
+                console.warn('Browser push setup failed:', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', refreshBrowserPushStatus);
     </script>
 </body>
 </html>

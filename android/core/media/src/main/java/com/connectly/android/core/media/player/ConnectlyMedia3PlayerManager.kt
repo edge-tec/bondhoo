@@ -33,46 +33,65 @@ class ConnectlyMedia3PlayerManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val playerPool = ConcurrentHashMap<String, ExoPlayer>()
-    private val preloadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    // 100 MB LRU disk cache for instant Reels & Feed video playback with zero re-buffering
-    private val simpleCache: SimpleCache by lazy {
-        val cacheDir = File(context.cacheDir, "bondhoo_media3_cache")
-        val evictor = LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L)
-        val dbProvider = StandaloneDatabaseProvider(context)
-        SimpleCache(cacheDir, evictor, dbProvider)
+    companion object {
+        @Volatile
+        private var sharedCache: SimpleCache? = null
+        @Volatile
+        private var sharedCacheFactory: CacheDataSource.Factory? = null
+        private val sharedPreloadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+        fun getSharedCacheDataSourceFactory(context: Context): CacheDataSource.Factory {
+            sharedCacheFactory?.let { return it }
+            return synchronized(this) {
+                sharedCacheFactory?.let { return it }
+                val appCtx = context.applicationContext
+                val cache = sharedCache ?: SimpleCache(
+                    File(appCtx.cacheDir, "bondhoo_media3_cache"),
+                    LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L),
+                    StandaloneDatabaseProvider(appCtx)
+                ).also { sharedCache = it }
+
+                val upstreamFactory = DefaultHttpDataSource.Factory()
+                    .setAllowCrossProtocolRedirects(true)
+                    .setConnectTimeoutMs(8000)
+                    .setReadTimeoutMs(8000)
+
+                CacheDataSource.Factory()
+                    .setCache(cache)
+                    .setUpstreamDataSourceFactory(upstreamFactory)
+                    .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+                    .also { sharedCacheFactory = it }
+            }
+        }
+
+        fun preload(context: Context, videoUrl: String, bytesToPreload: Long = 1_500_000L) {
+            if (videoUrl.isBlank()) return
+            val factory = getSharedCacheDataSourceFactory(context)
+            sharedPreloadScope.launch {
+                try {
+                    val dataSpec = DataSpec.Builder()
+                        .setUri(Uri.parse(videoUrl))
+                        .setLength(bytesToPreload)
+                        .build()
+                    val cacheDataSource = factory.createDataSourceForDownloading()
+                    val writer = CacheWriter(cacheDataSource, dataSpec, null, null)
+                    writer.cache()
+                } catch (_: Exception) {
+                    // Best-effort preload; player streams seamlessly on fallback
+                }
+            }
+        }
     }
 
-    private val cacheDataSourceFactory: CacheDataSource.Factory by lazy {
-        val upstreamFactory = DefaultHttpDataSource.Factory()
-            .setAllowCrossProtocolRedirects(true)
-            .setConnectTimeoutMs(8000)
-            .setReadTimeoutMs(8000)
-
-        CacheDataSource.Factory()
-            .setCache(simpleCache)
-            .setUpstreamDataSourceFactory(upstreamFactory)
-            .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-    }
+    private val cacheDataSourceFactory: CacheDataSource.Factory
+        get() = getSharedCacheDataSourceFactory(context)
 
     /**
      * Preloads the first ~1.5 MB of an upcoming Reel/video into disk cache for instant zero-lag swipe.
      */
     fun preloadVideo(videoUrl: String, bytesToPreload: Long = 1_500_000L) {
-        if (videoUrl.isBlank()) return
-        preloadScope.launch {
-            try {
-                val dataSpec = DataSpec.Builder()
-                    .setUri(Uri.parse(videoUrl))
-                    .setLength(bytesToPreload)
-                    .build()
-                val cacheDataSource = cacheDataSourceFactory.createDataSourceForDownloading()
-                val writer = CacheWriter(cacheDataSource, dataSpec, null, null)
-                writer.cache()
-            } catch (_: Exception) {
-                // Best-effort preload; player falls back to live stream transparently
-            }
-        }
+        preload(context, videoUrl, bytesToPreload)
     }
 
     /**

@@ -40,7 +40,9 @@ import com.connectly.android.core.designsystem.component.ConnectlyQuickEmojiRow
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
@@ -48,6 +50,7 @@ import com.connectly.android.core.designsystem.component.ConnectlyAvatar
 import com.connectly.android.core.designsystem.component.resolveMediaUrl
 import com.connectly.android.core.designsystem.theme.ConnectlyBlue
 import com.connectly.android.core.designsystem.theme.ConnectlyRose
+import com.connectly.android.core.media.player.ConnectlyMedia3PlayerManager
 import com.connectly.android.core.model.Comment
 import com.connectly.android.core.model.Reel
 
@@ -143,9 +146,17 @@ fun ReelsScreen(
     }
 
     val pagerState = rememberPagerState(pageCount = { state.reels.size })
+    val appContext = LocalContext.current
 
-    LaunchedEffect(pagerState.currentPage) {
+    LaunchedEffect(pagerState.currentPage, state.reels) {
         viewModel.handleIntent(ReelsIntent.PageChanged(pagerState.currentPage))
+        // Preload next 2 reels into 100 MB LRU disk cache for instant TikTok/Facebook-style swipe
+        listOf(pagerState.currentPage + 1, pagerState.currentPage + 2).forEach { nextIndex ->
+            state.reels.getOrNull(nextIndex)?.videoUrl?.let { rawUrl ->
+                val resolved = resolveMediaUrl(rawUrl) ?: rawUrl
+                ConnectlyMedia3PlayerManager.preload(appContext, resolved)
+            }
+        }
     }
 
     Box(
@@ -271,14 +282,24 @@ private fun ReelPlayerItem(
         resolveMediaUrl(reel.videoUrl) ?: reel.videoUrl
     }
 
-    // Media3 ExoPlayer instance lifecycle managed per reel
+    // Disk-cached Media3 ExoPlayer instance for instant zero-buffering playback
     val exoPlayer = remember(context, resolvedVideoUrl) {
-        ExoPlayer.Builder(context).build().apply {
-            val mediaItem = MediaItem.fromUri(resolvedVideoUrl)
-            setMediaItem(mediaItem)
-            repeatMode = Player.REPEAT_MODE_ONE
-            prepare()
-        }
+        val cacheFactory = ConnectlyMedia3PlayerManager.getSharedCacheDataSourceFactory(context)
+        val mediaSourceFactory = DefaultMediaSourceFactory(context).setDataSourceFactory(cacheFactory)
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(1500, 8000, 400, 800)
+            .build()
+
+        ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .setLoadControl(loadControl)
+            .build()
+            .apply {
+                val mediaItem = MediaItem.fromUri(resolvedVideoUrl)
+                setMediaItem(mediaItem)
+                repeatMode = Player.REPEAT_MODE_ONE
+                prepare()
+            }
     }
 
     DisposableEffect(exoPlayer) {

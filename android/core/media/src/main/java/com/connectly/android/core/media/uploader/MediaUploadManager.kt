@@ -1,5 +1,7 @@
 package com.connectly.android.core.media.uploader
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import com.connectly.android.core.common.network.ConnectlyDispatchers
 import com.connectly.android.core.common.network.Dispatcher
 import com.connectly.android.core.media.model.UploadStatus
@@ -15,6 +17,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -42,14 +45,19 @@ class MediaUploadManager @Inject constructor(
             return@flow
         }
 
+        // 0. Smart client-side image compression for large camera photos (> 450 KB -> ~250-350 KB crisp HD)
+        val compressedTempFile = compressImageIfNeeded(file, mimeType)
+        val uploadFile = compressedTempFile ?: file
+        val effectiveMimeType = if (compressedTempFile != null) "image/jpeg" else mimeType
+
         // 1. Calculate file checksum to detect corruption or duplicate uploads
-        val fileChecksum = calculateSha256(file)
+        val fileChecksum = calculateSha256(uploadFile)
 
         // 2. Initialize upload session
         val initRequest = InitUploadRequest(
-            filename = file.name,
-            file_size = file.length(),
-            mime_type = mimeType,
+            filename = uploadFile.name,
+            file_size = uploadFile.length(),
+            mime_type = effectiveMimeType,
             collection = collection,
             checksum = fileChecksum
         )
@@ -57,11 +65,13 @@ class MediaUploadManager @Inject constructor(
         val initResponse = try {
             api.initChunkedUpload(initRequest)
         } catch (e: Exception) {
+            compressedTempFile?.delete()
             emit(UploadStatus.Error("আপলোড সেশন শুরু করা যায়নি: ${e.message}"))
             return@flow
         }
 
         if (!initResponse.isSuccessful || initResponse.body() == null) {
+            compressedTempFile?.delete()
             emit(UploadStatus.Error("সার্ভার থেকে আপলোড সেশন প্রত্যাখ্যান করা হয়েছে।"))
             return@flow
         }
@@ -70,7 +80,7 @@ class MediaUploadManager @Inject constructor(
         val sessionId = session.session_id
         val chunkSize = session.chunk_size
         val totalChunks = session.total_chunks
-        val totalBytes = file.length()
+        val totalBytes = uploadFile.length()
 
         activeUploadJobs[sessionId] = true
 
@@ -87,7 +97,7 @@ class MediaUploadManager @Inject constructor(
             }
 
             // 3. Upload each chunk
-            FileInputStream(file).use { inputStream ->
+            FileInputStream(uploadFile).use { inputStream ->
                 val buffer = ByteArray(chunkSize)
                 var chunkNumber = 1
                 var bytesUploadedCumulative = 0L
@@ -170,8 +180,66 @@ class MediaUploadManager @Inject constructor(
 
         } finally {
             activeUploadJobs.remove(sessionId)
+            compressedTempFile?.delete()
         }
     }.flowOn(ioDispatcher)
+
+    /**
+     * Compresses oversized camera photos (> 450 KB) to max 1920px JPEG (84% quality)
+     * so uploads finish rapidly even on slow mobile networks.
+     */
+    private fun compressImageIfNeeded(source: File, mimeType: String): File? {
+        if (!mimeType.startsWith("image/", ignoreCase = true) || mimeType.contains("gif", ignoreCase = true)) {
+            return null
+        }
+        if (source.length() <= 450_000L) {
+            return null
+        }
+
+        return try {
+            val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(source.absolutePath, boundsOptions)
+            val rawW = boundsOptions.outWidth
+            val rawH = boundsOptions.outHeight
+            if (rawW <= 0 || rawH <= 0) return null
+
+            val maxDim = 1920
+            var sampleSize = 1
+            while ((rawW / sampleSize) > maxDim * 2 || (rawH / sampleSize) > maxDim * 2) {
+                sampleSize *= 2
+            }
+
+            val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+            val decoded = BitmapFactory.decodeFile(source.absolutePath, decodeOptions) ?: return null
+
+            val scale = minOf(maxDim.toFloat() / decoded.width, maxDim.toFloat() / decoded.height, 1f)
+            val finalBitmap = if (scale < 1f) {
+                Bitmap.createScaledBitmap(
+                    decoded,
+                    (decoded.width * scale).toInt().coerceAtLeast(1),
+                    (decoded.height * scale).toInt().coerceAtLeast(1),
+                    true
+                ).also { if (it != decoded) decoded.recycle() }
+            } else {
+                decoded
+            }
+
+            val outFile = File(source.parentFile ?: File(System.getProperty("java.io.tmpdir")), "opt_${System.currentTimeMillis()}_${source.nameWithoutExtension}.jpg")
+            FileOutputStream(outFile).use { fos ->
+                finalBitmap.compress(Bitmap.CompressFormat.JPEG, 84, fos)
+            }
+            finalBitmap.recycle()
+
+            if (outFile.exists() && outFile.length() in 1 until source.length()) {
+                outFile
+            } else {
+                outFile.delete()
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     /**
      * Cancel an active upload session.

@@ -87,6 +87,18 @@ android {
         }
     }
 
+    // Optional ABI split APK support for smaller direct website downloads (-PsplitAbi=true)
+    if (project.hasProperty("splitAbi")) {
+        splits {
+            abi {
+                isEnable = true
+                reset()
+                include("arm64-v8a", "armeabi-v7a")
+                isUniversalApk = true
+            }
+        }
+    }
+
     lint {
         checkReleaseBuilds = false
         abortOnError = false
