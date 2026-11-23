@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.connectly.android.core.designsystem.component.BondhooImageCropperDialog
+import com.connectly.android.core.designsystem.component.CropAspectRatio
 import com.connectly.android.core.designsystem.theme.*
 import com.connectly.android.core.model.User
 import java.io.File
@@ -88,6 +90,22 @@ fun CreatePostScreen(
     var showAudienceDialog by remember { mutableStateOf(false) }
     var showLocationDialog by remember { mutableStateOf(false) }
     var showTagFriendsDialog by remember { mutableStateOf(false) }
+    var fileToCrop by remember { mutableStateOf<File?>(null) }
+
+    fileToCrop?.let { targetFile ->
+        BondhooImageCropperDialog(
+            sourceFile = targetFile,
+            title = "Crop Post Photo",
+            initialAspectRatio = CropAspectRatio.ORIGINAL,
+            isCircular = false,
+            allowAspectRatioSelection = true,
+            onDismiss = { fileToCrop = null },
+            onCropComplete = { croppedFile ->
+                viewModel.handleIntent(CreatePostIntent.MediaReplaced(targetFile, croppedFile))
+                fileToCrop = null
+            }
+        )
+    }
 
     // Media Pickers
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -409,6 +427,25 @@ fun CreatePostScreen(
                                         contentDescription = "Video",
                                         tint = Color.White,
                                         modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            } else {
+                                // Crop button for attached photos
+                                Box(
+                                    modifier = Modifier
+                                        .padding(4.dp)
+                                        .size(24.dp)
+                                        .align(Alignment.BottomStart)
+                                        .clip(CircleShape)
+                                        .background(Color.Black.copy(alpha = 0.65f))
+                                        .clickable { fileToCrop = file },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Crop,
+                                        contentDescription = "Crop Photo",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(14.dp)
                                     )
                                 }
                             }

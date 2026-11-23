@@ -23,6 +23,7 @@ sealed interface CreatePostIntent {
     data class AudienceChanged(val audience: String) : CreatePostIntent
     data class MediaAdded(val file: File, val uri: Uri? = null) : CreatePostIntent
     data class MediaRemoved(val file: File) : CreatePostIntent
+    data class MediaReplaced(val oldFile: File, val newFile: File) : CreatePostIntent
     data class FeelingSelected(val feeling: String?, val emoji: String?) : CreatePostIntent
     data class TaggedUsersChanged(val users: List<User>) : CreatePostIntent
     data class LocationChanged(val location: String?) : CreatePostIntent

@@ -40,6 +40,13 @@ class CreatePostViewModel @Inject constructor(
                     mediaUris = newUris
                 )
             }
+            is CreatePostIntent.MediaReplaced -> _uiState.update { state ->
+                state.copy(
+                    mediaFiles = state.mediaFiles.map { f ->
+                        if (f == intent.oldFile) intent.newFile else f
+                    }
+                )
+            }
             is CreatePostIntent.FeelingSelected -> _uiState.update {
                 it.copy(
                     feelingActivity = intent.feeling,

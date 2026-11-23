@@ -1,5 +1,9 @@
 package com.connectly.android.feature.profile.presentation.edit
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,7 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.connectly.android.core.designsystem.component.BondhooImageCropperDialog
 import com.connectly.android.core.designsystem.component.ConnectlyAvatar
+import com.connectly.android.core.designsystem.component.CropAspectRatio
 import com.connectly.android.core.designsystem.component.resolveMediaUrl
 import com.connectly.android.core.designsystem.theme.*
 
@@ -41,6 +47,56 @@ fun EditProfileScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // In-App Image Cropper states for Avatar (1:1 circle) & Cover (16:9)
+    var pendingAvatarUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingCoverUri by remember { mutableStateOf<Uri?>(null) }
+
+    val avatarPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            pendingAvatarUri = uri
+        }
+    }
+
+    val coverPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            pendingCoverUri = uri
+        }
+    }
+
+    pendingAvatarUri?.let { uri ->
+        BondhooImageCropperDialog(
+            sourceUri = uri,
+            title = "Crop Profile Photo",
+            initialAspectRatio = CropAspectRatio.SQUARE,
+            isCircular = true,
+            allowAspectRatioSelection = false,
+            onDismiss = { pendingAvatarUri = null },
+            onCropComplete = { croppedFile ->
+                pendingAvatarUri = null
+                viewModel.handleIntent(EditProfileIntent.AvatarSelected(croppedFile))
+            }
+        )
+    }
+
+    pendingCoverUri?.let { uri ->
+        BondhooImageCropperDialog(
+            sourceUri = uri,
+            title = "Crop Cover Photo",
+            initialAspectRatio = CropAspectRatio.COVER,
+            isCircular = false,
+            allowAspectRatioSelection = false,
+            onDismiss = { pendingCoverUri = null },
+            onCropComplete = { croppedFile ->
+                pendingCoverUri = null
+                viewModel.handleIntent(EditProfileIntent.CoverSelected(croppedFile))
+            }
+        )
+    }
 
     // Dialog form states
     var currentPass by remember { mutableStateOf("") }
@@ -138,7 +194,11 @@ fun EditProfileScreen(
                         .padding(10.dp)
                         .size(36.dp)
                 ) {
-                    IconButton(onClick = { /* Pick cover image */ }) {
+                    IconButton(onClick = {
+                        coverPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }) {
                         Icon(Icons.Default.CameraAlt, contentDescription = "Change Cover", tint = Color.White, modifier = Modifier.size(18.dp))
                     }
                 }
@@ -154,7 +214,13 @@ fun EditProfileScreen(
                         name = state.name,
                         size = 100.dp,
                         isVerified = state.isIdentityVerified,
-                        modifier = Modifier.border(3.dp, Color.White, CircleShape)
+                        modifier = Modifier
+                            .border(3.dp, Color.White, CircleShape)
+                            .clickable {
+                                avatarPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            }
                     )
 
                     Surface(
@@ -164,7 +230,11 @@ fun EditProfileScreen(
                             .align(Alignment.BottomEnd)
                             .size(32.dp)
                     ) {
-                        IconButton(onClick = { /* Pick avatar image */ }) {
+                        IconButton(onClick = {
+                            avatarPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        }) {
                             Icon(Icons.Default.CameraAlt, contentDescription = "Change Avatar", tint = Color.White, modifier = Modifier.size(16.dp))
                         }
                     }
