@@ -1,8 +1,12 @@
 package com.connectly.android
 
+import android.app.PictureInPictureParams
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.util.Rational
 import androidx.activity.compose.setContent
 import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.background
@@ -112,8 +116,43 @@ class MainActivity : FragmentActivity() {
     private val pendingDeepLinkState = mutableStateOf<BondhooDeepLink?>(null)
     private val isAppLockedState = mutableStateOf(false)
     private val biometricErrorState = mutableStateOf<String?>(null)
+    private val isInPipModeState = mutableStateOf(false)
+    private var isActiveCallRoute: Boolean = false
     private lateinit var biometricHelper: BiometricPromptHelper
     private lateinit var appUpdateHelper: AppUpdateManagerHelper
+
+    private fun buildPipParams(autoEnter: Boolean): PictureInPictureParams {
+        val builder = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(9, 16))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setAutoEnterEnabled(autoEnter)
+            builder.setSeamlessResizeEnabled(true)
+        }
+        return builder.build()
+    }
+
+    private fun enterBondhooPipMode() {
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) return
+        if (!isActiveCallRoute || isInPictureInPictureMode) return
+        runCatching {
+            enterPictureInPictureMode(buildPipParams(autoEnter = true))
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && isActiveCallRoute && !isInPictureInPictureMode) {
+            enterBondhooPipMode()
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        isInPipModeState.value = isInPictureInPictureMode
+    }
 
     private fun shouldRequireBiometricLock(intent: Intent?): Boolean {
         if (!tokenStorageManager.isBiometricEnabled()) return false
@@ -262,7 +301,22 @@ class MainActivity : FragmentActivity() {
 
                 val isAppLocked by isAppLockedState
                 val biometricError by biometricErrorState
+                val isInPipMode by isInPipModeState
                 val isUpdateDownloaded by appUpdateHelper.isUpdateDownloaded.collectAsState()
+
+                LaunchedEffect(rootNavController) {
+                    rootNavController.currentBackStackEntryFlow.collect { entry ->
+                        val onCall = entry.destination.route.orEmpty().startsWith(CALL_ROUTE)
+                        isActiveCallRoute = onCall
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                            packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+                        ) {
+                            runCatching {
+                                setPictureInPictureParams(buildPipParams(autoEnter = onCall))
+                            }
+                        }
+                    }
+                }
 
                 Box(modifier = Modifier.fillMaxSize()) {
                     NavHost(
@@ -341,7 +395,9 @@ class MainActivity : FragmentActivity() {
                     )
 
                     callingGraph(
-                        navController = rootNavController
+                        navController = rootNavController,
+                        isInPipMode = isInPipMode,
+                        onEnterPip = { enterBondhooPipMode() }
                     )
 
                     groupsGraph(

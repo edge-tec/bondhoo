@@ -36,7 +36,9 @@ fun NavController.navigateToCallHistory(navOptions: NavOptions? = null) {
 }
 
 fun NavGraphBuilder.callingGraph(
-    navController: NavController
+    navController: NavController,
+    isInPipMode: Boolean = false,
+    onEnterPip: () -> Unit = {}
 ) {
     composable(
         route = "$CALL_ROUTE/{callId}/{isIncoming}/{callType}?conversationId={conversationId}&receiverId={receiverId}&receiverIds={receiverIds}",
@@ -67,6 +69,8 @@ fun NavGraphBuilder.callingGraph(
             conversationId = conversationId,
             receiverId = receiverId,
             receiverIds = receiverIds,
+            isInPipMode = isInPipMode,
+            onEnterPip = onEnterPip,
             onCallEnded = { navController.popBackStack() }
         )
     }

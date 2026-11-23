@@ -69,6 +69,8 @@ fun CallScreen(
     conversationId: Long? = null,
     receiverId: Long? = null,
     receiverIds: List<Long> = emptyList(),
+    isInPipMode: Boolean = false,
+    onEnterPip: () -> Unit = {},
     onCallEnded: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CallViewModel = hiltViewModel()
@@ -225,6 +227,8 @@ fun CallScreen(
                     ) -> {
                     ActiveVideoCallContent(
                         state = state,
+                        isInPipMode = isInPipMode,
+                        onEnterPip = onEnterPip,
                         onOpenInvite = { viewModel.handleIntent(CallIntent.OpenInviteSheet(true)) },
                         onToggleMute = { viewModel.handleIntent(CallIntent.ToggleMute) },
                         onToggleSpeaker = { viewModel.handleIntent(CallIntent.ToggleSpeaker) },
@@ -744,6 +748,8 @@ private fun GroupParticipantTile(participant: CallParticipant) {
 @Composable
 private fun ActiveVideoCallContent(
     state: CallState,
+    isInPipMode: Boolean = false,
+    onEnterPip: () -> Unit = {},
     onOpenInvite: () -> Unit,
     onToggleMute: () -> Unit,
     onToggleSpeaker: () -> Unit,
@@ -837,127 +843,143 @@ private fun ActiveVideoCallContent(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Black.copy(alpha = 0.5f),
-                            Color.Transparent,
-                            Color.Black.copy(alpha = 0.7f)
+        if (!isInPipMode) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.5f),
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.7f)
+                            )
                         )
                     )
-                )
-        )
+            )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = state.displayTitle,
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = state.formattedDuration,
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontSize = 14.sp
-                )
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconButton(
-                    onClick = onOpenInvite,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.45f))
-                ) {
-                    Icon(Icons.Default.PersonAdd, contentDescription = "Invite Friend", tint = Color.White)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = state.displayTitle,
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = state.formattedDuration,
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 14.sp
+                    )
                 }
-                Surface(
-                    color = Color.Black.copy(alpha = 0.45f),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.clickable {
-                        userForcedFill = !useFillScaling
-                    }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IconButton(
+                        onClick = onEnterPip,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.45f))
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(ConnectlyGreen)
+                        Icon(
+                            imageVector = Icons.Default.PictureInPictureAlt,
+                            contentDescription = "Picture-in-Picture",
+                            tint = Color.White
                         )
-                        Text(
-                            text = if (remoteIsLandscape) "Desktop HD" else "Mobile HD",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    }
+                    IconButton(
+                        onClick = onOpenInvite,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.45f))
+                    ) {
+                        Icon(Icons.Default.PersonAdd, contentDescription = "Invite Friend", tint = Color.White)
+                    }
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.45f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.clickable {
+                            userForcedFill = !useFillScaling
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(ConnectlyGreen)
+                            )
+                            Text(
+                                text = if (remoteIsLandscape) "Desktop HD" else "Mobile HD",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        Surface(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 86.dp, end = 16.dp)
-                .size(width = 110.dp, height = 150.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .border(2.dp, Color.White.copy(alpha = 0.6f), RoundedCornerShape(16.dp)),
-            color = Color.DarkGray
-        ) {
-            if (!state.isCameraOff) {
-                if (state.localVideoTrack != null && state.eglBaseContext != null) {
-                    WebRtcVideoRenderer(
-                        videoTrack = state.localVideoTrack,
-                        eglBaseContext = state.eglBaseContext,
-                        modifier = Modifier.fillMaxSize(),
-                        isMirror = state.isFrontCamera,
-                        mediaOverlay = true
-                    )
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 86.dp, end = 16.dp)
+                    .size(width = 110.dp, height = 150.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .border(2.dp, Color.White.copy(alpha = 0.6f), RoundedCornerShape(16.dp)),
+                color = Color.DarkGray
+            ) {
+                if (!state.isCameraOff) {
+                    if (state.localVideoTrack != null && state.eglBaseContext != null) {
+                        WebRtcVideoRenderer(
+                            videoTrack = state.localVideoTrack,
+                            eglBaseContext = state.eglBaseContext,
+                            modifier = Modifier.fillMaxSize(),
+                            isMirror = state.isFrontCamera,
+                            mediaOverlay = true
+                        )
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                color = ConnectlyBlue,
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            color = ConnectlyBlue,
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
+                        Icon(
+                            Icons.Default.VideocamOff,
+                            contentDescription = "Camera Off",
+                            tint = Color.White.copy(alpha = 0.6f)
                         )
                     }
                 }
-            } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.VideocamOff,
-                        contentDescription = "Camera Off",
-                        tint = Color.White.copy(alpha = 0.6f)
-                    )
-                }
             }
-        }
 
-        Surface(
-            color = Color.Black.copy(alpha = 0.6f),
-            shape = RoundedCornerShape(32.dp),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 36.dp, start = 20.dp, end = 20.dp)
-                .fillMaxWidth()
-        ) {
+            Surface(
+                color = Color.Black.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(32.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 36.dp, start = 20.dp, end = 20.dp)
+                    .fillMaxWidth()
+            ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -994,6 +1016,35 @@ private fun ActiveVideoCallContent(
                     backgroundColor = Color(0xFFEF4444),
                     onClick = onEndCall
                 )
+            }
+            }
+        } else {
+            // Compact PiP live duration pill
+            Surface(
+                color = Color.Black.copy(alpha = 0.55f),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(ConnectlyGreen)
+                    )
+                    Text(
+                        text = state.formattedDuration,
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }
