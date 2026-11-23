@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.connectly.android.core.common.PendingSharePayload
+import com.connectly.android.core.common.PendingShareStore
 import com.connectly.android.core.datastore.TokenStorageManager
 import com.connectly.android.core.designsystem.component.BottomBarDestination
 import com.connectly.android.core.designsystem.component.ConnectlyBottomBar
@@ -298,6 +300,15 @@ class MainActivity : FragmentActivity() {
                             isIncoming = true,
                             callType = target.callType
                         )
+                        is BondhooDeepLink.ShareContent -> {
+                            PendingShareStore.set(
+                                PendingSharePayload(
+                                    text = target.text,
+                                    mediaUris = target.mediaUris
+                                )
+                            )
+                            rootNavController.navigateToCreatePost()
+                        }
                         is BondhooDeepLink.Chat -> rootNavController.navigateToChat(target.conversationId)
                         is BondhooDeepLink.Profile -> rootNavController.navigateToProfile(target.identifier)
                         is BondhooDeepLink.LiveStream -> rootNavController.navigateToLive(target.streamId)

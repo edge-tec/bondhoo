@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.connectly.android.core.common.PendingShareStore
 import com.connectly.android.core.designsystem.component.BondhooImageCropperDialog
 import com.connectly.android.core.designsystem.component.CropAspectRatio
 import com.connectly.android.core.designsystem.theme.*
@@ -123,6 +124,20 @@ fun CreatePostScreen(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
+            val file = uriToFile(context, uri)
+            if (file != null) {
+                viewModel.handleIntent(CreatePostIntent.MediaAdded(file, uri))
+            }
+        }
+    }
+
+    // Consume any content shared from external apps via Android Share Sheet
+    LaunchedEffect(Unit) {
+        val shared = PendingShareStore.consume() ?: return@LaunchedEffect
+        if (!shared.text.isNullOrBlank()) {
+            viewModel.handleIntent(CreatePostIntent.ContentChanged(shared.text!!))
+        }
+        shared.mediaUris.forEach { uri ->
             val file = uriToFile(context, uri)
             if (file != null) {
                 viewModel.handleIntent(CreatePostIntent.MediaAdded(file, uri))
