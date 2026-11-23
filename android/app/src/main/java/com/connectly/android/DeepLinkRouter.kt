@@ -22,6 +22,7 @@ sealed interface BondhooDeepLink {
     data object Learning : BondhooDeepLink
     data object Search : BondhooDeepLink
     data object Settings : BondhooDeepLink
+    data object CreatePost : BondhooDeepLink
 }
 
 object DeepLinkRouter {
@@ -67,6 +68,7 @@ object DeepLinkRouter {
                 "learning" -> BondhooDeepLink.Learning
                 "search" -> BondhooDeepLink.Search
                 "settings" -> BondhooDeepLink.Settings
+                "create-post", "post" -> BondhooDeepLink.CreatePost
                 else -> null
             }
         }
@@ -95,6 +97,7 @@ object DeepLinkRouter {
                 "learning" -> BondhooDeepLink.Learning
                 "search" -> BondhooDeepLink.Search
                 "settings" -> BondhooDeepLink.Settings
+                "create-post", "post" -> BondhooDeepLink.CreatePost
                 else -> null
             }
         }

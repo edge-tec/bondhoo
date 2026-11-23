@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Bondoo</string>
+    <string name="app_name">Bondhoo</string>
     <string name="nav_home">Home</string>
     <string name="nav_friends">Friends</string>
     <string name="nav_videos">Videos</string>
@@ -24,5 +24,15 @@
     <string name="lang_bangla">বাংলা (বাংলাদেশ)</string>
     <string name="save_changes">Save Changes</string>
     <string name="cancel">Cancel</string>
+
+    <!-- Launcher App Shortcuts -->
+    <string name="shortcut_new_post_short">New Post</string>
+    <string name="shortcut_new_post_long">Create a new Bondhoo post</string>
+    <string name="shortcut_search_short">Search</string>
+    <string name="shortcut_search_long">Search Bondhoo people &amp; posts</string>
+    <string name="shortcut_marketplace_short">Marketplace</string>
+    <string name="shortcut_marketplace_long">Browse Bondhoo Marketplace</string>
+    <string name="shortcut_notifications_short">Alerts</string>
+    <string name="shortcut_notifications_long">View Bondhoo Notifications</string>
 </resources>
 

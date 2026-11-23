@@ -54,6 +54,9 @@
                 <data android:scheme="jugajug" />
                 <data android:scheme="connectly" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- Firebase Cloud Messaging Push Service -->

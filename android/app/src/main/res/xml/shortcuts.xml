@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="new_post"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:shortcutShortLabel="@string/shortcut_new_post_short"
+        android:shortcutLongLabel="@string/shortcut_new_post_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.jugajug.android"
+            android:targetClass="com.connectly.android.MainActivity"
+            android:data="bondhoo://create-post" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="search"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_search"
+        android:shortcutShortLabel="@string/shortcut_search_short"
+        android:shortcutLongLabel="@string/shortcut_search_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.jugajug.android"
+            android:targetClass="com.connectly.android.MainActivity"
+            android:data="bondhoo://search" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="marketplace"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:shortcutShortLabel="@string/shortcut_marketplace_short"
+        android:shortcutLongLabel="@string/shortcut_marketplace_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.jugajug.android"
+            android:targetClass="com.connectly.android.MainActivity"
+            android:data="bondhoo://marketplace" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="notifications"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_popup_reminder"
+        android:shortcutShortLabel="@string/shortcut_notifications_short"
+        android:shortcutLongLabel="@string/shortcut_notifications_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.jugajug.android"
+            android:targetClass="com.connectly.android.MainActivity"
+            android:data="bondhoo://notifications" />
+    </shortcut>
+</shortcuts>

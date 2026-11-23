@@ -9,18 +9,27 @@ import android.os.Bundle
 import android.util.Rational
 import androidx.activity.compose.setContent
 import androidx.fragment.app.FragmentActivity
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -120,6 +129,7 @@ class MainActivity : FragmentActivity() {
     private var isActiveCallRoute: Boolean = false
     private lateinit var biometricHelper: BiometricPromptHelper
     private lateinit var appUpdateHelper: AppUpdateManagerHelper
+    private lateinit var networkMonitor: NetworkConnectivityMonitor
 
     private fun buildPipParams(autoEnter: Boolean): PictureInPictureParams {
         val builder = PictureInPictureParams.Builder()
@@ -199,6 +209,9 @@ class MainActivity : FragmentActivity() {
         if (::appUpdateHelper.isInitialized) {
             appUpdateHelper.unregister()
         }
+        if (::networkMonitor.isInitialized) {
+            networkMonitor.stop()
+        }
         super.onDestroy()
     }
 
@@ -209,6 +222,8 @@ class MainActivity : FragmentActivity() {
         biometricHelper = BiometricPromptHelper(this)
         appUpdateHelper = AppUpdateManagerHelper(this)
         appUpdateHelper.registerAndCheckForUpdate()
+        networkMonitor = NetworkConnectivityMonitor(this)
+        networkMonitor.start()
 
         runCatching {
             val userId = tokenStorageManager.getUserId()
@@ -295,6 +310,7 @@ class MainActivity : FragmentActivity() {
                         BondhooDeepLink.Learning -> rootNavController.navigateToLearning()
                         BondhooDeepLink.Search -> rootNavController.navigateToSearch()
                         BondhooDeepLink.Settings -> rootNavController.navigateToSettings()
+                        BondhooDeepLink.CreatePost -> rootNavController.navigateToCreatePost()
                     }
                     pendingDeepLinkState.value = null
                 }
@@ -303,6 +319,21 @@ class MainActivity : FragmentActivity() {
                 val biometricError by biometricErrorState
                 val isInPipMode by isInPipModeState
                 val isUpdateDownloaded by appUpdateHelper.isUpdateDownloaded.collectAsState()
+                val isOnline by networkMonitor.isOnline.collectAsState()
+                var wasOffline by remember { mutableStateOf(false) }
+                var showBackOnlineBanner by remember { mutableStateOf(false) }
+
+                LaunchedEffect(isOnline) {
+                    if (!isOnline) {
+                        wasOffline = true
+                        showBackOnlineBanner = false
+                    } else if (wasOffline) {
+                        showBackOnlineBanner = true
+                        delay(2500L)
+                        showBackOnlineBanner = false
+                        wasOffline = false
+                    }
+                }
 
                 LaunchedEffect(rootNavController) {
                     rootNavController.currentBackStackEntryFlow.collect { entry ->
@@ -632,7 +663,7 @@ class MainActivity : FragmentActivity() {
                     }
                 }
 
-                    if (isUpdateDownloaded && !isAppLocked) {
+                    if (isUpdateDownloaded && !isAppLocked && !isInPipMode) {
                         Snackbar(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
@@ -644,6 +675,42 @@ class MainActivity : FragmentActivity() {
                             }
                         ) {
                             Text("A new Bondhoo update is ready to install.")
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = (!isOnline || showBackOnlineBanner) && !isAppLocked && !isInPipMode,
+                        enter = slideInVertically { -it } + fadeIn(),
+                        exit = slideOutVertically { -it } + fadeOut(),
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .statusBarsPadding()
+                            .padding(top = 8.dp, start = 16.dp, end = 16.dp)
+                    ) {
+                        val onlineNow = isOnline && showBackOnlineBanner
+                        Surface(
+                            color = if (onlineNow) Color(0xFF16A34A) else Color(0xFFDC2626),
+                            shape = RoundedCornerShape(20.dp),
+                            shadowElevation = 4.dp
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (onlineNow) Icons.Default.Wifi else Icons.Default.WifiOff,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = if (onlineNow) "Back Online" else "No Internet Connection",
+                                    color = Color.White,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
 
