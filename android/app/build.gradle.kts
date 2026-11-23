@@ -1,3 +1,5 @@
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -76,6 +79,12 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            val googleServicesFile = file("google-services.json")
+            val isRealFirebaseConfig = googleServicesFile.exists() &&
+                !googleServicesFile.readText().contains("connectly-placeholder-dev")
+            configure<CrashlyticsExtension> {
+                mappingFileUploadEnabled = isRealFirebaseConfig
+            }
             val releaseConfig = signingConfigs.getByName("release")
             if (releaseConfig.storeFile != null) {
                 signingConfig = releaseConfig
@@ -115,6 +124,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -158,6 +168,12 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.analytics)
+    implementation(libs.play.app.update)
+    implementation(libs.play.app.update.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)

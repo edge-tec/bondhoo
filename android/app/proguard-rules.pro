@@ -66,9 +66,11 @@
 -keep class androidx.media3.** { *; }
 -dontwarn androidx.media3.**
 
-# 9. Google Play Services & Firebase Cloud Messaging
+# 9. Google Play Services, Firebase Cloud Messaging, Crashlytics & Play In-App Updates
 -keep class com.google.firebase.** { *; }
 -dontwarn com.google.firebase.**
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
+-keep class com.google.android.play.core.** { *; }
+-dontwarn com.google.android.play.core.**
 

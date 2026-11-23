@@ -95,6 +95,7 @@ import com.connectly.android.feature.reels.presentation.player.ReelsScreen
 import com.connectly.android.feature.stories.navigation.navigateToCreateStory
 import com.connectly.android.feature.stories.navigation.navigateToStoryViewer
 import com.connectly.android.feature.stories.navigation.storiesGraph
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.AndroidEntryPoint
 
 const val MAIN_HOME_ROUTE = "main_home"
@@ -112,6 +113,7 @@ class MainActivity : FragmentActivity() {
     private val isAppLockedState = mutableStateOf(false)
     private val biometricErrorState = mutableStateOf<String?>(null)
     private lateinit var biometricHelper: BiometricPromptHelper
+    private lateinit var appUpdateHelper: AppUpdateManagerHelper
 
     private fun shouldRequireBiometricLock(intent: Intent?): Boolean {
         if (!tokenStorageManager.isBiometricEnabled()) return false
@@ -147,11 +149,34 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (::appUpdateHelper.isInitialized) {
+            appUpdateHelper.resumePendingUpdateIfNeeded()
+        }
+    }
+
+    override fun onDestroy() {
+        if (::appUpdateHelper.isInitialized) {
+            appUpdateHelper.unregister()
+        }
+        super.onDestroy()
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         biometricHelper = BiometricPromptHelper(this)
+        appUpdateHelper = AppUpdateManagerHelper(this)
+        appUpdateHelper.registerAndCheckForUpdate()
+
+        runCatching {
+            val userId = tokenStorageManager.getUserId()
+            if (userId > 0L) {
+                FirebaseCrashlytics.getInstance().setUserId("user_$userId")
+            }
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
@@ -237,6 +262,7 @@ class MainActivity : FragmentActivity() {
 
                 val isAppLocked by isAppLockedState
                 val biometricError by biometricErrorState
+                val isUpdateDownloaded by appUpdateHelper.isUpdateDownloaded.collectAsState()
 
                 Box(modifier = Modifier.fillMaxSize()) {
                     NavHost(
@@ -549,6 +575,21 @@ class MainActivity : FragmentActivity() {
                         }
                     }
                 }
+
+                    if (isUpdateDownloaded && !isAppLocked) {
+                        Snackbar(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(horizontal = 16.dp, vertical = 20.dp),
+                            action = {
+                                TextButton(onClick = { appUpdateHelper.completeFlexibleUpdate() }) {
+                                    Text("Restart", color = ConnectlyBlue, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        ) {
+                            Text("A new Bondhoo update is ready to install.")
+                        }
+                    }
 
                     if (isAppLocked) {
                         LaunchedEffect(Unit) {
